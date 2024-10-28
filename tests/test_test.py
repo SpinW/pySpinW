@@ -7,6 +7,3 @@ def test_test():
 def test_noting():
     pass
 
-
-def test_another_test():
-    pass
