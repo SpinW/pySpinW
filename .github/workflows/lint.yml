@@ -1,8 +1,9 @@
-name: Pylint
+name: Lint
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
+  name: Lint_${{ matrix.python-version }}
   build:
     runs-on: ubuntu-latest
     strategy:
