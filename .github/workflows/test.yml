@@ -1,9 +1,8 @@
-name: Test
+name: Test $${{ matrix.python-version }}_$${{ matrix.os }}
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  name: Test_$${{ matrix.python-version }}_$${{ matrix.os }}
   build:
     runs-on: ${{ matrix.os }}
     strategy:
