@@ -1,0 +1,2 @@
+# pySpinW
+SpinW for Python
