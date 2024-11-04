@@ -27,20 +27,25 @@ Likewise, restoring the ordered state from this deviation is described by the sp
 Now, the _Holstein-Primakoff_ transformation is a mapping between these lowering and raising operators
 to bosonic creation $`\hat{b}^{\dagger}`$ and annihilation $`\hat{b}`$ operators as follows (we drop the hats):
 
-```math
-S^+ = b \hbar \sqrt{2S - b^{\dagger}b} \\
-S^- = b^{\dagger} \hbar \sqrt{2S - b^{\dagger}b} \\
-S^z = \hbar (S - b^{\dagger}b)
-```
 
-The number of magnons is $`b^{\dagger}b`$ and $`S_z`$ is the projection of the spins along the local ordered moment direction.
+$$S^+ = b \sqrt{2S - b^{\dagger}b}$$
+$$S^- = b^{\dagger} \sqrt{2S - b^{\dagger}b}$$
+$$S^z = (S - b^{\dagger}b)$$
+
+(We've also neglected the spin quantum $n\hbar$ in this treatment compared to standard texts in accordance with Petit and Toth and Lake).
+(Note also that the $`\sqrt{2S}`$ in the above refers to the total spin quantum number $S$, which is also often termed the "spin length".
+This is because in some of the literature it is taken to represent the magnitude of the ordered moment rather than a (half integral) quantum number.
+As such, SpinW does not restrict $S$ to taking integer or half-integer values.
+The main effect of changing $S$ is to scale the magnon energies.
+
+The number of magnons is $`b^{\dagger}b`$ and $`S^z`$ is the projection of the spins along the local ordered moment direction.
 We thus see that when no magnons are excited this corresponds to the fully ordered state,
 and that as more magnons are excited the spins become canted perpendicular to this direction,
 as the ladder (raising/lowering) operators can be related to the $x$ and $y$ spin components by $`S^{\pm} = S^x \pm iS^y`$.
 
 The term in the square root is usually expanded in a Taylor series in practical calculations,
 and usually only the first order (linear) term is retained which is equivalent to neglecting the $`b^{\dagger}b`$ term in the square root.
-This is strictly only valid when $2S$ is large (to see this, rearrange to get $`\sqrt{1-b^{\dagger}b/2S}`$).
+This is strictly only valid when $2S$ is large (to see this, rearrange to get $`\sqrt{\frac{1-b^{\dagger}b}{2S}}`$).
 Thus, _linear spin wave theory_ is said to be only valid for large $S$ systems.
 
 
@@ -49,43 +54,173 @@ Thus, _linear spin wave theory_ is said to be only valid for large $S$ systems.
 We see in the above that mapping to the bosonic operators $`b^{\dagger}, b`$ requires the Hamiltonian
 to be described in terms of the local spin ordered moment direction, since it describes small deviations from this direction.
 
-We thus define a set of rotation matrices $`R_i^{\alpha}`$ which transforms a spin vector $`\mathbf{S}'_i`
+We thus define a set of rotation matrices $`R_i^{\alpha}`$ which transforms a spin vector $`\mathbf{S}'_i`$
 in the local coordinate system (where $z$ is along the ordered moment direction)
-to a vector $`\mathbf{S}_i`$ in a Cartesian coordinate system connected to the crystal lattice:
-(In SpinW, this Cartesian system is defined by $x||a$, $z$ perpendicular to $a$ and $c$ and $y$ perpendicular to $x$ and $z$).
+to a vector $`\mathbf{S}_i`$ in a Cartesian coordinate system connected to the crystal lattice
+(In SpinW, this Cartesian system is defined by $x \parallel a$, $z \perp  (a, c)$ and $y \perp (x, z$):
 
 ```math
 \mathbf{S}_i = R_i \mathbf{S}'_i
 ```
 
 where $`R_i`$ is a $3 \times 3$ matrix.
-Additionally, to more easily map to the operators $S^z$, $S^-$ ($b^{\dagger}) and $S^+$ ($b$) operators above,
+Additionally, to more easily map to the operators $S^z$, $S^-$ ($`b^{\dagger}`$) and $S^+$ ($b$) operators above,
 we will define the following vectors from the columns of $`R_i`$ for each spin:
 
 ```math
-\mathbf{z}_i = R_i^1 + i R_i^2 \\
-\mathbf{\eta}_i = R_i^3
+\mathbf{z}_i = R_i^1 + i R_i^2
+```
+```math
+\boldsymbol{\eta}_i = R_i^3
 ```
 
 that is $`z_i`$ is formed from the first and second column of $`R_i`$ whilst $`\eta_i`$ from the third column of $`R_i`$.
 This is so that we can express the spin vector (in the local coordinate system) in terms of the bosonic operators as:
 
 ```math
-\mathbf{S}'_i = \sqrt{\frac{S}{2}}\left( \mathbf{z}_i^* b_i + \mathbf{z}_ib_i^{\dagger} \right) + \mathbf{\eta}_i \left( S_i - b_i^{\dagger} b \right)
+\mathbf{S}'_i = \sqrt{\frac{S}{2}}\left( \mathbf{z}_i^* b_i + \mathbf{z}_ib_i^{\dagger} \right) + \boldsymbol{\eta}_i \left( S_i - b_i^{\dagger} b_i \right)
 ```
 
 where we have made the linear approximation and taken:
 
+$$S^x = \frac{(S^+ + S^-)}{2} = \sqrt{\frac{S}{2}}(b + b^{\dagger}) $$
+$$S^y = \frac{(S^+ - S^-)}{2i} = \frac{\sqrt{S}}{i\sqrt{2}}(b - b^{\dagger}) $$
+$$S^z = S - b^{\dagger}b $$
+
+
+## The Hamiltonian
+
+We can now express the exchange Hamiltonian:
+
 ```math
-S^x = \frac{(S^+ + S^-)}{2} = \sqrt{frac{S}{2}}(b + b^{\dagger}) \\
-S^y = \frac{(S^+ - S^-)}{2i} = \frac{\sqrt{S}}{i\sqrt{2}}(b - b^{\dagger}) \\
-S^z = S - b^{\dagger}b
+\mathcal{H} = \sum_{i\neq j} \mathbf{S}_i J_{ij} \mathbf{S}_j
 ```
 
+in terms of the bosonic operators:
 
-## The Heisenberg Hamiltonian
+```math
+\mathcal{H} = \sum_{i\neq j} \left[ 
+    \sqrt{\frac{S_i}{2}}\left( \mathbf{z}_i^{*\intercal} b_i + \mathbf{z}^{\intercal}_ib_i^{\dagger} \right) + \boldsymbol{\eta}_i \left( S_i - b_i^{\dagger} b_i \right)
+    \right] J_{ij} \left[
+    \sqrt{\frac{S_j}{2}}\left( \mathbf{z}_j^* b_j + \mathbf{z}_jb_j^{\dagger} \right) + \boldsymbol{\eta}_j \left( S_j - b_j^{\dagger} b_j \right)
+    \right]
+```
+
+where the operators $`b_i`$, $`b^{\dagger}_i`$ and vectors $`\mathbf{z}_i`$ and $`\boldsymbol{\eta}_i`$ relate to each site $i$ in real-space,
+and $`J_{ij}`$ is a tensor represented by a $3 \times 3$ matrix.
+(Note that the vector $\mathbf{z}$ is complex and we use the asterisk to denote complex conjugation
+and the $\intercal$ symbol to indicate vector or matrix transpose).
+
+Now in the above equation, the sum over site indices $i$ and $j$ extends over all space,
+but in SpinW we deal exclusively with periodic (crystalline) systems, so we will separate out each index $i$ ($j$)
+into components $i'$ ($j'$) within a unit cell and components $m$ ($n$) between the first and $m^{\mathrm{th}}$ ($n^{\mathrm{th}}$) unit cell.
+The sum over sites within the unit cell thus becomes finite, but we still have an infinite sum over unit cells $`\sum_{m,n}`$.
+As we are looking for wave-like solutions to the Hamiltonian, the next step is thus to perform a Fourier transform to obtain a sum over
+$\mathbf{q}$ vectors in the first Brillouin zone. 
+
+To do this we first need to re-express the sum over unit cells as a sum over distances
+$`\mathbf{r}_m`$ and $`\boldsymbol{\delta}=\mathbf{r}_m - \mathbf{r}_n`$.
+After Fourier transforming both the operators $b$, $b^{\dagger}$ and the exchange interactions $J$,
+we can use the identity $`\sum_{r} \exp(i(\mathbf{q}-\mathbf{q}')\cdot\mathbf{r}) = \delta_{\mathbf{qq}'}`$ to obtain:
+
+```math
+\mathcal{H} = \sum_{\mathbf{q}} \sum_{i'\neq j'} \left[ 
+    \sqrt{\frac{S_{i'}}{2}}\left( \mathbf{z}_{i'}^* b_{i'}(\mathbf{q}) + \mathbf{z}_{i'}b_{i'}^{\dagger}(-\mathbf{q}) \right)
+                           + \boldsymbol{\eta}_i \left( S_{i'} - b_{i'}(\mathbf{q}) b_{i'}^{\dagger}(-\mathbf{q}) \right)
+    \right]^{\intercal} J(\mathbf{q}) \left[
+    \sqrt{\frac{S_{j'}}{2}}\left( \mathbf{z}_{j'}^* b_{j'}(\mathbf{q}) + \mathbf{z}_{j'}b_{j'}^{\dagger}(-\mathbf{q}) \right)
+                           + \boldsymbol{\eta}_j \left( S_{j'} - b_{j'}(\mathbf{q}) b_{j'}^{\dagger}(-\mathbf{q}) \right)
+    \right]
+```
+
+where the sum over $`\mathbf{q}`$ extends over both positive and negative vectors within the first Brillouin zone.
+Noting that the boson operators obey the commutation relation
+
+```math
+[b_{i'}, b_{j'}^{\dagger}] = \delta_{i', j'}
+```
+
+and that the $`\mathbf{z}`$ and $`\boldsymbol{\eta}`$ vectors are perpendicular, we can rewrite the Hamiltonian as a matrix equation 
+if we define a column vector $\mathbf{X}$ as composed of the boson operators within the unit cell:
+
+```math
+\mathbf{X}_m = \left(b_{m,1}, b_{m,2}, \ldots, b_{m,L}, b^{\dagger}_{m,1}, b^{\dagger}_{m,2}, \ldots, b^{\dagger}_{m,L} \right)
+```
+
+where $L$ is the number of sites within the unit cell, giving:
+
+```math
+\mathcal{H} = \sum_{\mathbf{q}} \mathbf{X}^{*\intercal}(\mathbf{q}) \mathrm{h}(\mathbf{q}) \mathbf{X}(\mathbf{q})
+```
+
+where the hermitian matrix $`\mathrm{h}(\mathbf{q})`$ is
+
+```math
+\mathrm{h}(\mathbf{q}) = \left[ \begin{array}{cc}
+\mathrm{A}(\mathbf{q}) - \mathrm{C} && \mathrm{B}(\mathbf{q}) \\
+\mathrm{B}^{*\intercal}(\mathbf{q}) && \mathrm{A}(\mathbf{q}) - \mathrm{C}
+\end{array} \right]
+```
+
+where the $`(i,j)`$ elements (we drop the primes) are:
+
+```math
+\mathrm{A}(\mathbf{q})_{ij} = \frac{\sqrt{S_i S_j}}{2} \mathbf{z}_i^{\intercal} \mathrm{J}_{ij}(\mathbf{q}) \mathbf{z}^*
+```
+```math
+\mathrm{B}(\mathbf{q})_{ij} = \frac{\sqrt{S_i S_j}}{2} \mathbf{z}_i^{\intercal} \mathrm{J}_{ij}(\mathbf{q}) \mathbf{z}
+```
+```math
+\mathrm{C}_{ij} = \delta_{ij} \sum_{\mathcal{l}} S_{\mathcal{l}} \boldsymbol{\eta}_i^{\intercal} \mathrm{J}_{i\mathcal{l}}(\mathbf{q}=\mathbf{0}) \boldsymbol{\eta}_{\mathcal{l}}
+```
+
+The eigenvalues of $`\mathrm{h}(\mathbf{q})`$ are the magnon energies and its eigenvectors can be used to calculate the neutron cross-section.
+Now, often we speak of $`\mathrm{h}(\mathbf{q})`$ as the "Hamiltonian" but strictly the Hamiltonian (the operator which yields the total energy)
+is $`\mathcal{H}`$ which is the sum of $`\mathrm{h}(\mathbf{q})`$ over all $`\mathbf{q}`$ in the Brillouin zone.
+Nonetheless, in order to calculate the inelastic neutron spectra, the quantity we need to calculate (and diagonalise) is $`\mathrm{h}(\mathbf{q})`$.
 
 
+### Code for calculating the "Hamiltonian" matrix
+
+Despite the disclaimer above, in the rest of the text we will use "Hamiltonian matrix" to refer to the hermitian matrix $`\mathrm{h}(\mathbf{q})`$.
+As can be seen from the equations for the submatrices $\mathrm{A}(\mathbf{q})$, $\mathrm{B}(\mathbf{q})$, and $\mathrm{C}$ above,
+the calculation can naturally be divided into a $`\mathbf{q}`$-indepdent part
+(involving the prefactor $`\sqrt{S_i S_j}/2`$ and the $\mathbf{z}$ and $\boldsymbol{\eta}$ vectors)
+and a $`\mathbf{q}`$-dependent part (involving the Fourier transform of the exchange interactions $`\mathrm{J}_{ij}(\mathbf{q})`$ where $i,j$ label sites within the unit cell).
+
+The code to calculate the Hamiltonian is entirely in the [spinwave.m](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%2540spinw/spinwave.m) file.
+First, the `intmatrix` method of the `spinw` object is called to compute $`J_{ij}`$ in real-space 
+(in [line 508](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L508)).
+Next the magnetic structure vectors $`\mathbf{z}`$ and $`\boldsymbol{\eta}`$ are calculated from the magnetic propagation vector and magnetic basis
+(in [lines 555-590](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L555-L590)).
+
+`spinwave.m` uses Matlab vectorisation (using `bsxfun`) in order to speed up calculations, so it needs to expand these vectors to cover the full basis
+(there are $L$ spins in the unit cell but the boson operator basis is $2L$ because it includes both creation and anihilation operators)
+using `repmat` and then compute the vector transpose (`zedL` and `etaL`) using `permute` in 
+[lines 608-612](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L608-L612).
+
+It next computes the $\mathbf{q}$-independent parts of the submatrices $`\mathrm{A}`$ (called `AD0` in the code),
+$`\mathrm{B}`$ (called `BC0`), and $`\mathrm{C}`$ (called `A20` [upper left submatrix] and `D20` [lower right submatrix] in the code) in
+[lines 614-641](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L614-L641).
+These lines also include computing the indices $i$ (`atom1`) and $j$ (`atom2`) which are eventually passed to `accumarray` to actually construct the matrix.
+
+[Lines 856-934](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L614-L641)
+contain the calculation of the $\mathbf{q}$-dependent part of the Hamitonian and forming it into a square matrix.
+First the phase factor $\exp(i\boldsymbol{\delta}\cdot\mathbf{q})$ is computed in
+[line 871](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L871),
+then each submatrix $`\mathrm{A}`$ (split into `A1` for upper left and `D1` for lower right pars) and $`\mathrm{B}`$ is multiplied by this phase factor
+in [lines 874-876](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L874-L876) using `bsxfun`.
+
+Finally `accumarray` is used to construct the square matrix and the diagonal submatrix $`\mathrm{C}`$ added in
+[lines 898-900](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L898-L900).
+
+
+### Takin implementation
+
+As an alternative to the vectorized Matlab code, there is an independent implementation of the formulism in Toth & Lake in the
+[takin](https://arxiv.org/pdf/1903.02632) code which
+[uses a loop over the sites of the unit cell](https://github.com/ILLGrenoble/takin/blob/master/tlibs2/libs/magdyn/hamilton.h#L175-L264)
+which is more transparent with respects to the equations in the paper.
 
 
 

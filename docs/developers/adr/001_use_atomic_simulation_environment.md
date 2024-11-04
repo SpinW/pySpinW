@@ -28,6 +28,7 @@ Proposed
 This adds a significant dependency to the project. The possible downsides are:
 
 * Needing to adapt spinw code to the `Atoms` class which may not be flexible enough for our needs.
+* If `ase` changes its code this might break anything we might build on top of it.
 * Risk that the `ase` project becomes abandoned (considered low as it has a large user base and an STFC staff member is a contributor).
 
 The advantages is:
