@@ -23,7 +23,7 @@ class MagneticStructure:
         return np.any(np.abs(self.propagation_vector%1) > tol) # fractional part > tolerance
 
     def is_helical(self, tol=1e-5) -> bool:
-        return np.any(np.abs(self.propagation_vector%1) > tol)
+        return np.any(np.abs((2*self.propagation_vector)%1) > tol)
 
     def show_warnings(self):
         pass
@@ -67,3 +67,8 @@ def spinwave(q_vectors: np.ndarray,
     # 415-416 - vectors in inverse angstroms - TODO: find out why and if needed
 
     # 418-420 - is helical, moved to MagneticStructure
+
+    # 425-477 - crystal twinning, handle this elsewhere - TODO: Handle crystal twinning
+
+    # 447-487 - more twinning stuff
+
