@@ -13,9 +13,7 @@ closely resembles the original matlab.
 ## Decision
 
 Create a class that mimics the original spinW interface, backed by the new objects. 
-
-A subtle choice here would be to deliberately omit functionality from this class, and force "power users" to
-migrate.
+In particular, this class will only expose functionality which is currently in the Matlab version (and will omit new functionality written for Python) in order to encourage users to migrate.
 
 ## Status
 
