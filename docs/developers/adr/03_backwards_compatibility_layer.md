@@ -17,8 +17,7 @@ In particular, this class will only expose functionality which is currently in t
 
 ## Status
 
-Proposed
-
+Accepted
 
 ## Consequences
 
