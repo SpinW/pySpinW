@@ -14,7 +14,7 @@ In both cases the classes should implement a method to return the set of `zed` a
 
 In addition, it would be useful if the user can specify a set of propagation vector(s) and basis(es) in the explicit representation rather than every spin orientation in the unit cell, but this is an implementation detail to be discussed later.
 
-# Decision
+## Decision
 
 We will create two classes for handling the magnetic structure, a `CommensurateStructure` for the "explicit" representation and a `RotatingFrameStructure` for the "implicit" representation.
 
