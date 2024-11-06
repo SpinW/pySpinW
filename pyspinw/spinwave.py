@@ -28,6 +28,24 @@ class MagneticStructure:
     def show_warnings(self):
         pass
 
+    # Fields from intmatrix.m
+
+    def coupling(self) -> np.ndarray:
+        pass
+
+    def anisotropy(self) -> np.ndarray:
+        pass
+
+    def g_tensor(self) -> np.ndarray:
+        pass
+
+    def quadratic_component(self) -> np.ndarray:
+        pass
+
+    def coordinates(self):
+        pass
+
+
 @dataclass
 class Lattice:
     """ Temporary object representing lattice details"""
@@ -72,3 +90,21 @@ def spinwave(q_vectors: np.ndarray,
 
     # 447-487 - more twinning stuff
 
+    # 485-487 - matlab cell stuff
+
+    # 489-504 - yet more twinning stuff
+
+    #
+    # 508 -> to intmatrix.m - we'll get this information from MagneticStructure
+    #
+
+    # Use same names for now
+    ss = magnetic_structure.coupling()
+    si = magnetic_structure.anisotropy(), magnetic_structure.g_tensor()
+    rr = magnetic_structure.coordinates()
+
+    # 521-529 - biquadratic - what's needed here, needs to be treated differently
+
+    # 531-534 - get the extended q_vectors, already implicit in MagneticStructure
+
+    #
