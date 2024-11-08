@@ -13,13 +13,11 @@ There is a question about whether it should be the location for the option to ap
 
 ## Decision
 
-Create a class representing the macroscopic structure that is responsible for working out the appropriate inputs for the
-main calculation, and constructing the measurable output.
+We will create a base `Sample` class with derived `TwinnedSample` and `PowderSample` classes which will have methods for preprocessing the input **Q**-vector list and post-processing the output spectra from `spinwave()` for the case of twinned crystals and powder (polycrystalline) samples. The base class will be used by default for untwinned crystals.
 
 ## Status
 
-Proposed
-
+Accepted
 
 ## Consequences
 
