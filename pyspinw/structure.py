@@ -2,6 +2,8 @@
 
 from pyspinw._base import MagneticStructure
 
+# pylint: disable=R0903
+
 
 class LatticeIncomensurable(Exception):
     """ Raised when the geometry of an operation doesn't work under the constraints of a given lattice """

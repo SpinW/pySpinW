@@ -2,6 +2,9 @@
 
 from pyspinw._base import Hamiltonian
 
+# pylint: disable=R0903
+
+
 class GeneralHamiltonian(Hamiltonian):
     """
     Hamiltonian of the form: H = Σ s.P.s + Q.s
@@ -10,12 +13,14 @@ class GeneralHamiltonian(Hamiltonian):
 
     """
 
+
 class HeisenbergMagnet(GeneralHamiltonian):
     """
     Heisenberg Ferromagnet Hamiltonian of the form H = - Σ J s.s
 
     More explicitly, the equation is ... TODO
     """
+
 
 class BiQuadratic(Hamiltonian):
     """

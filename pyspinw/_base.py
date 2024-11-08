@@ -4,10 +4,13 @@ This is an abstract outline, the actual implementations are in different files
 
 """
 
+# pylint: disable=R0903
+
 from abc import ABC, abstractmethod
 
 import numpy as np
 from ase.lattice import BravaisLattice
+
 
 
 class MagneticStructure(ABC):
@@ -27,8 +30,9 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def energies(self, q_vectors: np.ndarray):
-        pass
+        """ Get the energy levels of the system at the given q vectors """
 
 class Sample(ABC):
+    """ Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
     def __init__(self):
         pass

@@ -2,6 +2,8 @@
 
 from pyspinw._base import Sample
 
+# pylint: disable=R0903
+
 
 class SingleCrystal(Sample):
     """ Specifies a single crystal sample """
@@ -19,5 +21,3 @@ class Twin(Multidomain):
 
 class Powder(Sample):
     """ Sample is a powder """
-
-
