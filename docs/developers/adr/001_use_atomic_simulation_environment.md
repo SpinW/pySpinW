@@ -34,3 +34,5 @@ This adds a significant dependency to the project. The possible downsides are:
 The advantages is:
 
 * Saving a large amount of coding in order to write a `Lattice` class or the lattice handling part of the `spinw` class.
+* Reading of CIF files is supported by ASE
+* Some plotting is already supported by ASE
