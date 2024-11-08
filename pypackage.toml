@@ -1,0 +1,8 @@
+# TODO: Fill this out fully
+
+[project]
+name = "PySpinW"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyspinw.__version__"}
