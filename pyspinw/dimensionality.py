@@ -41,7 +41,11 @@ def dimensionality_check(**kwargs):
     for keyword in kwargs:
         constraint = kwargs[keyword]
 
-        sizes.append((keyword, len(sizes)))
+        if not isinstance(constraint, tuple):
+            raise TypeError("Size constrains should be specified by tuple of int/str. "
+                            f"Got type {type(constraint)} for '{keyword}'")
+
+        sizes.append((keyword, len(constraint)))
 
         for dimension, size in enumerate(constraint):
 
@@ -62,7 +66,7 @@ def dimensionality_check(**kwargs):
     def decorator(fun: Callable) -> Callable:
 
         # grab the argument names
-        variable_names = fun.__code__.co_argnames
+        variable_names = fun.__code__.co_varnames
         def wrapper(*args, **kwargs):
 
             # shove all the arguments in a dictionary keyed by the variable names
