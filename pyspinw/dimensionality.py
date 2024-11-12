@@ -1,11 +1,14 @@
 import functools
 
-import numpy as np
 from typing import Callable, Any
 from collections import defaultdict
 
+import numpy as np
+
+
 class DimensionalityError(ValueError):
     """ The dimensions of a numpy array don't match the specification """
+
 
 def dimensionality_check(**kwargs):
     """ Decorator to check the dimensionality of a given vector
@@ -69,7 +72,7 @@ def dimensionality_check(**kwargs):
 
         # grab the argument names
         variable_names = fun.__code__.co_varnames
-        
+
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
 
