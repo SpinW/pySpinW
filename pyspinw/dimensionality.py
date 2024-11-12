@@ -1,3 +1,5 @@
+import functools
+
 import numpy as np
 from typing import Callable, Any
 from collections import defaultdict
@@ -67,6 +69,8 @@ def dimensionality_check(**kwargs):
 
         # grab the argument names
         variable_names = fun.__code__.co_varnames
+        
+        @functools.wraps(fun)
         def wrapper(*args, **kwargs):
 
             # shove all the arguments in a dictionary keyed by the variable names
