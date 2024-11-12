@@ -139,16 +139,29 @@ def any_matrix_all_numbers(x):
 @pytest.mark.parametrize('a', vector_check_lengths)
 @pytest.mark.parametrize('b', vector_check_lengths)
 def test_any_matrix(function, a, b):
+    """ Unconstrained"""
     mat = np.zeros((a, b))
     function(mat)
 
+@pytest.mark.parametrize('n', [1,2,3,4])
+def test_any_matrix_dimensionality(n):
+    """ Check that only 2D is allowed"""
+
+    m = np.zeros(tuple([3]*n)) # 3, 3x3, 3x3x3 ...
+
+    if n == 2:
+        any_matrix_all_numbers(m)
+    else:
+        with pytest.raises(DimensionalityError):
+            any_matrix_all_numbers(m)
 @dimensionality_check(x=(1,7))
 def one_by_seven_matrix(x):
-    pass
+    """ Input requires 1x7 matrix"""
 
 @pytest.mark.parametrize('a', vector_check_lengths)
 @pytest.mark.parametrize('b', vector_check_lengths)
 def test_fixed_size_matrix(a, b):
+    """ Check for a matrix with two fixed values"""
     mat = np.zeros((a, b))
 
     if a == 1 and b == 7:
@@ -234,7 +247,62 @@ def test_triple(xa, xb, ya, yb, za, zb):
         with pytest.raises(DimensionalityError):
             triple_constraint(x,y,z)
 
+@dimensionality_check(x=(3,'i','i','j'), y=('j', 7))
+def tensor_1(x, y):
+    """ A big tensor"""
 
+@pytest.mark.parametrize('xa', only_three_lengths)
+@pytest.mark.parametrize('xb', only_three_lengths)
+@pytest.mark.parametrize('xc', only_three_lengths)
+@pytest.mark.parametrize('xd', only_three_lengths)
+@pytest.mark.parametrize('ya', only_three_lengths)
+@pytest.mark.parametrize('yb', only_three_lengths)
+def test_tensor_1(xa, xb, xc, xd, ya, yb):
+    should_pass = xa == 3 and xb == xc and xd == ya and yb == 7
+
+    x = np.zeros((xa, xb, xc, xd))
+    y = np.zeros((ya, yb))
+
+    if should_pass:
+        tensor_1(x, y)
+    else:
+        with pytest.raises(DimensionalityError):
+            tensor_1(x, y)
+
+@dimensionality_check(x=('n','n','n','m'))
+def tensor_2(x):
+    """ Another tensor test"""
+
+@pytest.mark.parametrize('a', only_three_lengths)
+@pytest.mark.parametrize('b', only_three_lengths)
+@pytest.mark.parametrize('c', only_three_lengths)
+@pytest.mark.parametrize('d', only_three_lengths)
+def test_tensor_2(a, b, c, d):
+
+    x = np.zeros((a, b, c, d))
+
+    if a==b==c:
+        tensor_2(x)
+    else:
+        with pytest.raises(DimensionalityError):
+            tensor_2(x)
 #
 # Omissions
 #
+
+@dimensionality_check(y=(3,))
+def omission(x,y):
+    """ Only contrained on second variable"""
+
+@pytest.mark.parametrize("a", only_three_lengths)
+@pytest.mark.parametrize("b", only_three_lengths)
+def test_omission(a, b):
+    x = np.zeros((a, ))
+    y = np.zeros((b, ))
+
+    if b == 3:
+        omission(x, y)
+    else:
+        with pytest.raises(DimensionalityError):
+            omission(x, y)
+
