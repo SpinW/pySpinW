@@ -1,6 +1,8 @@
+""" Tools for checking input shapes """
+
 import functools
 
-from typing import Callable, Any
+from typing import Callable
 from collections import defaultdict
 
 import numpy as np
@@ -43,8 +45,7 @@ def dimensionality_check(**kwargs):
     constants: list[tuple[str, int, int]] = [] # List of variable names and indices that are fixed
     sizes: list[tuple[str, int]] = [] # list of len(shape)
 
-    for keyword in kwargs:
-        constraint = kwargs[keyword]
+    for keyword, constraint in kwargs.items():
 
         if not isinstance(constraint, tuple):
             raise TypeError("Size constrains should be specified by tuple of int/str. "
@@ -77,7 +78,7 @@ def dimensionality_check(**kwargs):
         def wrapper(*args, **kwargs):
 
             # shove all the arguments in a dictionary keyed by the variable names
-            all_args = {name: arg for name, arg in zip(variable_names, args)}
+            all_args = dict(zip(variable_names, args))
             all_args.update(**kwargs)
 
             # Check the sizes, and the type while were at it
@@ -115,7 +116,7 @@ def dimensionality_check(**kwargs):
                         size = data.shape[dimension]
                     else:
                         if not size == data.shape[dimension]:
-                            message_details = ", ".join(["%s:%i" % tup for tup in equalities[symbol]])
+                            message_details = ", ".join([f"{name}:{index}" for name, index in equalities[symbol]])
                             raise DimensionalityError(f"Tensor dimensions specified by '{symbol}' do not all match "
                                                       f"({message_details})")
 
