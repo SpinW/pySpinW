@@ -25,4 +25,4 @@ jobs:
         pip install -r requirements-test.txt
     - name: Analysing the code with pylint
       run: |
-        pylint --disable $(git ls-files '*.py')
+        python -m pylint $(git ls-files '*.py')
