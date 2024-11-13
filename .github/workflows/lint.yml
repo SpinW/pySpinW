@@ -14,8 +14,8 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Set up python paths
-    - run: |
+    - name: Set up python paths (POSIX)
+      run: |
         export PYTHONPATH=pyspinw
     - name: Install dependencies
       run: |

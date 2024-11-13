@@ -15,9 +15,14 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Set up paths
+    - name: Set up python paths (POSIX)
       run: |
         export PYTHONPATH=pyspinw
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+    - name: Set up python paths (Windows)
+      run: |
+        set PYTHONPATH=pyspinw
+      if: matrix.os == 'windows-latest'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
