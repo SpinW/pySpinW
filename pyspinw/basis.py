@@ -17,12 +17,15 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
     # Lengths, for checking for zeros and for normalising
     lengths = np.sqrt(np.sum(vectors**2, axis=1))
 
+    #
     # First basis vector will is just a normalised version of the input
-    e_1 = vectors / lengths.reshape(-1, 1)
+    #
+
+    # Avoid zero divisions by using np.divide instead of /
+    zero_vectors = lengths < rcond
+    e_1 = np.divide(vectors, lengths.reshape(-1, 1), where=zero_vectors.reshape(-1, 1))
 
     # Assign zero vectors to z
-    # Other option: raise ValueError("Input contains length zero vector")
-    zero_vectors = np.abs(lengths) < rcond
     e_1[zero_vectors, 0] = 0.0
     e_1[zero_vectors, 1] = 0.0
     e_1[zero_vectors, 2] = 1.0
