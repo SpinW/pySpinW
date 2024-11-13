@@ -75,9 +75,9 @@ def test_fixed_vector_parameter(length, success):
 
     with pytest.raises(Exception):
 
-        # pylint: disable=no-value-for-parameter
+        # pylint: disable=no-value-for-parameter, unexpected-keyword-arg
         fixed_length_vector(y=test_input)
-        # pylint: enable=no-value-for-parameter
+        # pylint: enable=no-value-for-parameter, unexpected-keyword-arg
 
     with pytest.raises(DimensionalityError):
         fixed_length_vector(np.zeros((4,5)))
