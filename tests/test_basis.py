@@ -10,9 +10,9 @@ from pyspinw.basis import find_aligned_basis
 #
 
 # Random, but deterministic, vectors for testing
-lengths = [0,1,3,100] # Definitely need cases of 0, 1 and 3 for potential issues around array shapes
+input_lengths = [0, 1, 3, 100] # Definitely need cases of 0, 1 and 3 for potential issues around array shapes
 rng = np.random.default_rng(1984)
-test_vectors = [rng.normal(size=(n, 3)) for n in lengths]
+test_vectors = [rng.normal(size=(n, 3)) for n in input_lengths]
 
 test_vectors.append(np.eye(3)) # Basis aligned unit vectors
 test_vectors.append(10*np.eye(3)) # Basis aligned non-unit vectors

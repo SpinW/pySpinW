@@ -6,6 +6,11 @@ It's November.
 
 So yes.
 """
+
+# Disable linting for unused arguments
+
+# pylint: disable=W0613
+
 import numpy as np
 import pytest
 
@@ -22,7 +27,7 @@ vector_check_lengths = [0, 1, 3, 7]
 
 @pytest.mark.parametrize("bad_value", [3, 3.14, "a string", {"dict": "ionary"}])
 def test_failed_definition_type(bad_value):
-
+    """ Check silly inputs the decorator throw"""
     with pytest.raises(TypeError):
         @dimensionality_check(x=bad_value)
         def fun(x):
@@ -47,29 +52,32 @@ def int_arbitrary_length_vector(x):
 
 @pytest.mark.parametrize("length, success", zip(vector_check_lengths, [False, False, False, True]))
 def test_fixed_vector_parameter(length, success):
-    input = np.zeros((length,))
+    """ Check fixed length vectors work """
+    test_input = np.zeros((length,))
 
     # Check vector with right name
     if not success:
         with pytest.raises(DimensionalityError):
-            fixed_length_vector(input)
+            fixed_length_vector(test_input)
 
         # Should work if keyword arguments are supplied instead
         with pytest.raises(DimensionalityError):
-            fixed_length_vector(x=input)
+            fixed_length_vector(x=test_input)
 
     else:
-
         # TODO: check this is how to test a function just runs without error
-        fixed_length_vector(input)
-        fixed_length_vector(x=input)
+        fixed_length_vector(test_input)
+        fixed_length_vector(x=test_input)
 
     # The following this should throw
     #  * wrong variable name specified
     #  * wrong dimensionality
 
     with pytest.raises(Exception):
-        fixed_length_vector(y=input)
+
+        # pylint: disable=no-value-for-parameter
+        fixed_length_vector(y=test_input)
+        # pylint: enable=no-value-for-parameter
 
     with pytest.raises(DimensionalityError):
         fixed_length_vector(np.zeros((4,5)))
@@ -79,18 +87,19 @@ def test_fixed_vector_parameter(length, success):
                                       int_arbitrary_length_vector])
 @pytest.mark.parametrize("length", vector_check_lengths)
 def test_vector_parameter(function, length):
-    input = np.zeros((length,))
+    """ Test arbitrary length vectors work, but still have to be vectors """
+    test_input = np.zeros((length,))
 
     # Should just not fail
-    function(input)
-    function(x=input)
+    function(test_input)
+    function(x=test_input)
 
     # The following this should throw
     #  * wrong variable name specified
     #  * wrong dimensionality
 
     with pytest.raises(Exception):
-        function(y=input)
+        function(y=test_input)
 
     with pytest.raises(DimensionalityError):
         function(np.zeros((4,5)))
@@ -234,7 +243,7 @@ only_three_lengths = [1, 3, 7]
 @pytest.mark.parametrize('za', only_three_lengths)
 @pytest.mark.parametrize('zb', only_three_lengths)
 def test_triple(xa, xb, ya, yb, za, zb):
-
+    """ Test a triple matrix input specification with interrelated constraints"""
     should_pass = xa == zb and xb == yb and ya == za
 
     x = np.zeros((xa, xb))
@@ -258,6 +267,7 @@ def tensor_1(x, y):
 @pytest.mark.parametrize('ya', only_three_lengths)
 @pytest.mark.parametrize('yb', only_three_lengths)
 def test_tensor_1(xa, xb, xc, xd, ya, yb):
+    """ Test a function with big tensor, some self-consistency constraints, some interrelated, some fixed"""
     should_pass = xa == 3 and xb == xc and xd == ya and yb == 7
 
     x = np.zeros((xa, xb, xc, xd))
@@ -271,14 +281,14 @@ def test_tensor_1(xa, xb, xc, xd, ya, yb):
 
 @dimensionality_check(x=('n','n','n','m'))
 def tensor_2(x):
-    """ Another tensor test"""
+    """ Another tensor test object"""
 
 @pytest.mark.parametrize('a', only_three_lengths)
 @pytest.mark.parametrize('b', only_three_lengths)
 @pytest.mark.parametrize('c', only_three_lengths)
 @pytest.mark.parametrize('d', only_three_lengths)
 def test_tensor_2(a, b, c, d):
-
+    """ Test one big tensor with lots of parameters, triple self-constraint"""
     x = np.zeros((a, b, c, d))
 
     if a==b==c:
@@ -297,6 +307,7 @@ def omission(x,y):
 @pytest.mark.parametrize("a", only_three_lengths)
 @pytest.mark.parametrize("b", only_three_lengths)
 def test_omission(a, b):
+    """ Test that we don't throw if something isn't mentioned in the decorator """
     x = np.zeros((a, ))
     y = np.zeros((b, ))
 
@@ -305,4 +316,3 @@ def test_omission(a, b):
     else:
         with pytest.raises(DimensionalityError):
             omission(x, y)
-
