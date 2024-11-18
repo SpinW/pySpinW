@@ -26,9 +26,7 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
     e_1 = np.divide(vectors, lengths.reshape(-1, 1), where=~zero_vectors.reshape(-1, 1))
 
     # Assign zero vectors to z
-    e_1[zero_vectors, 0] = 0.0
-    e_1[zero_vectors, 1] = 0.0
-    e_1[zero_vectors, 2] = 1.0
+    e_1[zero_vectors, :] = np.array([[0.0,0.0,1.0]])
 
     #
     # Second basis, cross with x-axis vector, unless its pointing that way already, then we choose y-axis explicitly
@@ -40,9 +38,7 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
     x_vectors[:, 0] = 1.0
 
     e_2 = np.cross(e_1, x_vectors)
-    e_2[x_aligned, 0] = 0.0
-    e_2[x_aligned, 1] = 1.0
-    e_2[x_aligned, 2] = 0.0
+    e_2[x_aligned, :] = np.array([[0.0, 1.0, 0.0]])
     e_2 /= np.sqrt(np.sum(e_2**2, axis=1)).reshape(-1, 1) # Normalise this one
 
     #
