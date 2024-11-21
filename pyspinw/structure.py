@@ -70,6 +70,8 @@ class RotatingMagneticStructure(MagneticStructure):
 
     @staticmethod
     def _calculate_supercell_scaling(propagation_component: complex, supercell_component: int, max_denominator: int):
+        """ Utility function for calculating scaling of the supercell """
+
         real_frac = Fraction(propagation_component.real).limit_denominator(max_denominator)
         imag_frac = Fraction(propagation_component.imag).limit_denominator(max_denominator)
 
@@ -84,7 +86,7 @@ class RotatingMagneticStructure(MagneticStructure):
     def to_lattice(self, max_denominator: int = 10_000) -> MagneticLattice:
         """ Convert to a lattice, if possible """
 
-        # scale each component
+        # scale for each component of the supercell
         new_cell_size = (RotatingMagneticStructure._calculate_supercell_scaling(
                             complex(self._propagation_vector[0]),
                             self._supercell_size[0],
@@ -97,3 +99,7 @@ class RotatingMagneticStructure(MagneticStructure):
                              complex(self._propagation_vector[2]),
                              self._supercell_size[2],
                              max_denominator=max_denominator))
+
+        # Apply the transform to the magnetic moments
+
+        # Return a new lattice
