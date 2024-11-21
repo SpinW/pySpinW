@@ -12,7 +12,7 @@ class DimensionalityError(ValueError):
     """ The dimensions of a numpy array don't match the specification """
 
 
-def dimensionality_check(**kwargs):
+def check_sizes(**kwargs):
     """ Decorator to check the dimensionality of a given vector
 
     Example usage:
