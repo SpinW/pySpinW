@@ -49,6 +49,13 @@ class Coupling:
         self._coupling_matrix = None
     @property
     def coupling_matrix(self) -> np.ndarray:
+        """ The coupling matrix for this coupling
+
+        i.e. if H is the energy contribution for this coupling, S is the spin state, and
+        M is the coupling matrix, we have
+
+        H = S^T M S
+        """
         if self._coupling_matrix is None:
             raise ValueError("Coupling matrix not initialised - this shouldn't happen")
         else:

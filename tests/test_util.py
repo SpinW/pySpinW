@@ -20,6 +20,11 @@ some_vectors = [np.array(v) for v in [
 @pytest.mark.parametrize("b", some_vectors)
 @pytest.mark.parametrize("c", some_vectors)
 def test_triple_product_matrix_does_triple_product(a,b,c):
+    """ Test that the triple product matrix thing does what it is supposed to,
+
+    i.e. = b.M.c = a . (b x c)
+    """
+
     m = triple_product_matrix(a)
     with_matrix = b @ m @ c
     with_cross = np.dot(a, np.cross(b, c))

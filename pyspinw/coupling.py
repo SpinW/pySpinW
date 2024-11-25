@@ -4,7 +4,7 @@ import numpy as np
 
 from checks import check_sizes
 from pyspinw._base import Coupling, Identifier
-from util import triple_product_matrix
+from pyspinw.util import triple_product_matrix
 
 
 class HeisenbergCoupling(Coupling):
@@ -116,4 +116,3 @@ class DMCoupling(Coupling):
 
         self._dm_vector = dm_vector
         self._coupling_matrix = triple_product_matrix(dm_vector)
-

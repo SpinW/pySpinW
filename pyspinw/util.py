@@ -1,12 +1,8 @@
+""" Generally helpful functions that don't obviously live anywhere else in particular """
+
 import numpy as np
 
 from checks import check_sizes
-
-permutation_epsilon = np.array([
-    [ 0,  1, -1],
-    [-1,  0,  1],
-    [ 1, -1,  0]
-])
 
 
 @check_sizes(v=(3,), force_numpy=True)
