@@ -12,7 +12,7 @@ class DimensionalityError(ValueError):
     """ The dimensions of a numpy array don't match the specification """
 
 
-def check_sizes(**kwargs):
+def check_sizes(force_numpy: bool = False, **kwargs):
     """ Decorator to check the dimensionality of a given vector
 
     Example usage:
@@ -25,6 +25,8 @@ def check_sizes(**kwargs):
 
         Limitations: can only check dimensions are the same, can't check things like whether sizes are related by
                      some arbitrary formula.
+
+    :param force_numpy: default=True, Convert the named arrays into numpy form if they are not already
 
     """
 
@@ -82,19 +84,23 @@ def check_sizes(**kwargs):
             all_args.update(**kwargs)
 
             # Check the sizes, and the type while were at it
+            #
+            #  Note: THIS POTENTIALLY UPDATES all_args
+            #
             for name, size in sizes:
 
                 if name not in all_args:
                     raise ValueError(f"The numpy array required ('{name}') was not given")
 
-                data = all_args[name]
+                if not isinstance(all_args[name], np.ndarray):
+                    if force_numpy:
+                        all_args[name] = np.array(all_args[name])
+                    else:
+                        raise TypeError(f"Argument '{name}' is not a numpy array, but is {type(all_args[name])}")
 
-                if isinstance(data, np.ndarray):
-                    if not len(data.shape) == size:
-                        raise DimensionalityError(f"Expected '{name}' to be a {size}D tensor, "
-                                                  f"but it is {len(data.shape)}D")
-                else:
-                    raise TypeError(f"Argument '{name}' is not a numpy array, but is {type(data)}")
+                if not len(all_args[name].shape) == size:
+                    raise DimensionalityError(f"Expected '{name}' to be a {size}D tensor, "
+                                              f"but it is {len(all_args[name].shape)}D")
 
             # Check all the constant values
             for name, dimension, size in constants:
@@ -122,7 +128,8 @@ def check_sizes(**kwargs):
 
             # if all these have passed then we're peachy
 
-            return fun(*args, **kwargs)
+            # Call function with potentially updated arguments, by keyword, even though we used args before
+            return fun(**all_args)
 
         return wrapper
 

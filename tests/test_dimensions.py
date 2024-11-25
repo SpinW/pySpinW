@@ -316,3 +316,23 @@ def test_omission(a, b):
     else:
         with pytest.raises(DimensionalityError):
             omission(x, y)
+
+@check_sizes(v=(2,), force_numpy=True)
+def for_check_numpy_vec(v) -> np.ndarray:
+    """ For checks that force_numpy works """
+    return v
+
+@check_sizes(m=(2,2), force_numpy=True)
+def for_check_numpy_mat(m):
+    """ For checks that force_numpy works """
+    return m
+
+def test_force_numpy_vec():
+    v = for_check_numpy_vec([0, 1])
+    assert isinstance(v, np.ndarray)
+    assert v.shape == (2,)
+
+def test_force_numpy_mat():
+    m = for_check_numpy_mat([[0, 1], [2, 3]])
+    assert isinstance(m, np.ndarray)
+    assert m.shape == (2, 2)
