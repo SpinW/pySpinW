@@ -90,16 +90,16 @@ $$S^z = S - b^{\dagger}b $$
 
 ## The Hamiltonian
 
-We can now express the exchange Hamiltonian:
+We can now express the spin-Hamiltonian:
 
 ```math
-\mathcal{H} = \sum_{i\neq j} \mathbf{S}_i J_{ij} \mathbf{S}_j
+\mathcal{H} = \sum_{i, j} \mathbf{S}_i J_{ij} \mathbf{S}_j
 ```
 
 in terms of the bosonic operators:
 
 ```math
-\mathcal{H} = \sum_{i\neq j} \left[ 
+\mathcal{H} = \sum_{i,j} \left[
     \sqrt{\frac{S_i}{2}}\left( \mathbf{z}_i^{*\intercal} b_i + \mathbf{z}^{\intercal}_ib_i^{\dagger} \right) + \boldsymbol{\eta}_i \left( S_i - b_i^{\dagger} b_i \right)
     \right] J_{ij} \left[
     \sqrt{\frac{S_j}{2}}\left( \mathbf{z}_j^* b_j + \mathbf{z}_jb_j^{\dagger} \right) + \boldsymbol{\eta}_j \left( S_j - b_j^{\dagger} b_j \right)
@@ -110,13 +110,16 @@ where the operators $`b_i`$, $`b^{\dagger}_i`$ and vectors $`\mathbf{z}_i`$ and 
 and $`J_{ij}`$ is a tensor represented by a $3 \times 3$ matrix.
 (Note that the vector $\mathbf{z}$ is complex and we use the asterisk to denote complex conjugation
 and the $\intercal$ symbol to indicate vector or matrix transpose).
+In addition, in the above summation we explicitly consider terms $`i=j`$ which corresponds to the on-site anisotropy terms
+$`\sum_i \mathbf{S}_i A_i \mathbf{S}_i`$ where $`A_i`$ is also a tensor represented by $`3\times 3`$ matrix.
+Thus in the following treatment, $`J_{ij}`$ is a superset and includes both the exchange and anisotropy terms.
 
 Now in the above equation, the sum over site indices $i$ and $j$ extends over all space,
 but in SpinW we deal exclusively with periodic (crystalline) systems, so we will separate out each index $i$ ($j$)
 into components $i'$ ($j'$) within a unit cell and components $m$ ($n$) between the first and $m^{\mathrm{th}}$ ($n^{\mathrm{th}}$) unit cell.
 The sum over sites within the unit cell thus becomes finite, but we still have an infinite sum over unit cells $`\sum_{m,n}`$.
 As we are looking for wave-like solutions to the Hamiltonian, the next step is thus to perform a Fourier transform to obtain a sum over
-$\mathbf{q}$ vectors in the first Brillouin zone. 
+$\mathbf{q}$ vectors in the first Brillouin zone.
 
 To do this we first need to re-express the sum over unit cells as a sum over distances
 $`\mathbf{r}_m`$ and $`\boldsymbol{\delta}=\mathbf{r}_m - \mathbf{r}_n`$.
@@ -124,7 +127,7 @@ After Fourier transforming both the operators $b$, $b^{\dagger}$ and the exchang
 we can use the identity $`\sum_{r} \exp(i(\mathbf{q}-\mathbf{q}')\cdot\mathbf{r}) = \delta_{\mathbf{qq}'}`$ to obtain:
 
 ```math
-\mathcal{H} = \sum_{\mathbf{q}} \sum_{i'\neq j'} \left[ 
+\mathcal{H} = \sum_{\mathbf{q}} \sum_{i',j'} \left[
     \sqrt{\frac{S_{i'}}{2}}\left( \mathbf{z}_{i'}^* b_{i'}(\mathbf{q}) + \mathbf{z}_{i'}b_{i'}^{\dagger}(-\mathbf{q}) \right)
                            + \boldsymbol{\eta}_i \left( S_{i'} - b_{i'}(\mathbf{q}) b_{i'}^{\dagger}(-\mathbf{q}) \right)
     \right]^{\intercal} J(\mathbf{q}) \left[
@@ -134,13 +137,15 @@ we can use the identity $`\sum_{r} \exp(i(\mathbf{q}-\mathbf{q}')\cdot\mathbf{r}
 ```
 
 where the sum over $`\mathbf{q}`$ extends over both positive and negative vectors within the first Brillouin zone.
+(Note that for single-ion anisotropy terms where $i=j$ and $`\mathbf{r}=\mathbf{0}`$ the phase factor is unity.)
+
 Noting that the boson operators obey the commutation relation
 
 ```math
 [b_{i'}, b_{j'}^{\dagger}] = \delta_{i', j'}
 ```
 
-and that the $`\mathbf{z}`$ and $`\boldsymbol{\eta}`$ vectors are perpendicular, we can rewrite the Hamiltonian as a matrix equation 
+and that the $`\mathbf{z}`$ and $`\boldsymbol{\eta}`$ vectors are perpendicular, we can rewrite the Hamiltonian as a matrix equation
 if we define a column vector $\mathbf{X}$ as composed of the boson operators within the unit cell:
 
 ```math
@@ -158,23 +163,44 @@ where the hermitian matrix $`\mathrm{h}(\mathbf{q})`$ is
 ```math
 \mathrm{h}(\mathbf{q}) = \left[ \begin{array}{cc}
 \mathrm{A}(\mathbf{q}) - \mathrm{C} && \mathrm{B}(\mathbf{q}) \\
-\mathrm{B}^{*\intercal}(\mathbf{q}) && \mathrm{A}(\mathbf{q}) - \mathrm{C}
+\mathrm{B}^{*\intercal}(\mathbf{q}) && \mathrm{A}^*(\mathbf{q}) - \mathrm{C}
 \end{array} \right]
 ```
 
 where the $`(i,j)`$ elements (we drop the primes) are:
 
 ```math
-\mathrm{A}(\mathbf{q})_{ij} = \frac{\sqrt{S_i S_j}}{2} \mathbf{z}_i^{\intercal} \mathrm{J}_{ij}(\mathbf{q}) \mathbf{z}^*
+\mathrm{A}(\mathbf{q})_{ij} = \frac{\sqrt{S_i S_j}}{2} \mathbf{z}_i^{\intercal} \mathrm{J}_{ij}(\mathbf{q}) \mathbf{z}_j^*
 ```
 ```math
-\mathrm{B}(\mathbf{q})_{ij} = \frac{\sqrt{S_i S_j}}{2} \mathbf{z}_i^{\intercal} \mathrm{J}_{ij}(\mathbf{q}) \mathbf{z}
+\mathrm{B}(\mathbf{q})_{ij} = \frac{\sqrt{S_i S_j}}{2} \mathbf{z}_i^{\intercal} \mathrm{J}_{ij}(\mathbf{q}) \mathbf{z}_j
 ```
 ```math
 \mathrm{C}_{ij} = \delta_{ij} \sum_{\mathcal{l}} S_{\mathcal{l}} \boldsymbol{\eta}_i^{\intercal} \mathrm{J}_{i\mathcal{l}}(\mathbf{q}=\mathbf{0}) \boldsymbol{\eta}_{\mathcal{l}}
 ```
 
 The eigenvalues of $`\mathrm{h}(\mathbf{q})`$ are the magnon energies and its eigenvectors can be used to calculate the neutron cross-section.
+
+We should note here that while the anisotropy terms $`A_i`$ are often said to add a "constant to the diagonal" of the "Hamiltonian",
+this is only true when the $`A_i`$ tensors are aligned with the moment direction $`\boldsymbol{\eta}_i`$ such that only the $`C_{ij}`$ terms contribute.
+Let us take a cubic ferromagnetic system with one spin in the unit cell which is aligned along $[0,0,1]$.
+In this case, $`\mathbf{z} = [1, j, 0]`$ and $`\boldsymbol{\eta} = [0, 0, 1]`$.
+If
+
+```math
+A_i = J_{ii} = \left( \begin{array}{ccc} 0 & 0 & 0 \\ 0 & 0 & 0 \\ 0 & 0 & 1 \end{array} \right)
+```
+
+then in the equation above, the $`\mathrm{A}(\mathbf{q})_{ii}`$ and $`\mathrm{B}(\mathbf{q})_{ij}`$ terms will be zero
+because $`A_i\mathbf{z}_i = A_i\mathbf{z}_i^* = 0`$. However, if
+
+```math
+A_i = J_{ii} = \left( \begin{array}{ccc} 1 & 0 & 0 \\ 0 & 0 & 0 \\ 0 & 0 & 0 \end{array} \right)
+```
+
+then $`\mathrm{C}(\mathbf{q})_{ii}`$ will be zero and $`\mathrm{A}(\mathbf{q})_{ii}`$ and $`\mathrm{B}(\mathbf{q})_{ij}`$ will both be non-zero
+so we will get non-diagonal terms due to the single-ion anisotropy.
+
 Now, often we speak of $`\mathrm{h}(\mathbf{q})`$ as the "Hamiltonian" but strictly the Hamiltonian (the operator which yields the total energy)
 is $`\mathcal{H}`$ which is the sum of $`\mathrm{h}(\mathbf{q})`$ over all $`\mathbf{q}`$ in the Brillouin zone.
 Nonetheless, in order to calculate the inelastic neutron spectra, the quantity we need to calculate (and diagonalise) is $`\mathrm{h}(\mathbf{q})`$.
@@ -184,19 +210,19 @@ Nonetheless, in order to calculate the inelastic neutron spectra, the quantity w
 
 Despite the disclaimer above, in the rest of the text we will use "Hamiltonian matrix" to refer to the hermitian matrix $`\mathrm{h}(\mathbf{q})`$.
 As can be seen from the equations for the submatrices $\mathrm{A}(\mathbf{q})$, $\mathrm{B}(\mathbf{q})$, and $\mathrm{C}$ above,
-the calculation can naturally be divided into a $`\mathbf{q}`$-indepdent part
-(involving the prefactor $`\sqrt{S_i S_j}/2`$ and the $\mathbf{z}$ and $\boldsymbol{\eta}$ vectors)
+the calculation can naturally be divided into a $`\mathbf{q}`$-independent part
+(involving the prefactor $`\frac{\sqrt{S_i S_j}}{2}`$ and the $\mathbf{z}$ and $\boldsymbol{\eta}$ vectors)
 and a $`\mathbf{q}`$-dependent part (involving the Fourier transform of the exchange interactions $`\mathrm{J}_{ij}(\mathbf{q})`$ where $i,j$ label sites within the unit cell).
 
 The code to calculate the Hamiltonian is entirely in the [spinwave.m](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%2540spinw/spinwave.m) file.
-First, the `intmatrix` method of the `spinw` object is called to compute $`J_{ij}`$ in real-space 
+First, the `intmatrix` method of the `spinw` object is called to compute $`J_{ij}`$ in real-space
 (in [line 508](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L508)).
 Next the magnetic structure vectors $`\mathbf{z}`$ and $`\boldsymbol{\eta}`$ are calculated from the magnetic propagation vector and magnetic basis
 (in [lines 555-590](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L555-L590)).
 
 `spinwave.m` uses Matlab vectorisation (using `bsxfun`) in order to speed up calculations, so it needs to expand these vectors to cover the full basis
-(there are $L$ spins in the unit cell but the boson operator basis is $2L$ because it includes both creation and anihilation operators)
-using `repmat` and then compute the vector transpose (`zedL` and `etaL`) using `permute` in 
+(there are $L$ spins in the unit cell but the boson operator basis is $2L$ because it includes both creation and annihilation operators)
+using `repmat` and then compute the vector transpose (`zedL` and `etaL`) using `permute` in
 [lines 608-612](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L608-L612).
 
 It next computes the $\mathbf{q}$-independent parts of the submatrices $`\mathrm{A}`$ (called `AD0` in the code),
@@ -205,7 +231,7 @@ $`\mathrm{B}`$ (called `BC0`), and $`\mathrm{C}`$ (called `A20` [upper left subm
 These lines also include computing the indices $i$ (`atom1`) and $j$ (`atom2`) which are eventually passed to `accumarray` to actually construct the matrix.
 
 [Lines 856-934](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L614-L641)
-contain the calculation of the $\mathbf{q}$-dependent part of the Hamitonian and forming it into a square matrix.
+contain the calculation of the $\mathbf{q}$-dependent part of the Hamiltonian and forming it into a square matrix.
 First the phase factor $\exp(i\boldsymbol{\delta}\cdot\mathbf{q})$ is computed in
 [line 871](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L871),
 then each submatrix $`\mathrm{A}`$ (split into `A1` for upper left and `D1` for lower right pars) and $`\mathrm{B}`$ is multiplied by this phase factor
@@ -222,9 +248,28 @@ As an alternative to the vectorized Matlab code, there is an independent impleme
 [uses a loop over the sites of the unit cell](https://github.com/ILLGrenoble/takin/blob/master/tlibs2/libs/magdyn/hamilton.h#L175-L264)
 which is more transparent with respects to the equations in the paper.
 
+<!--
 
+## The spin-spin correlation function
+
+The logical next step (and the one taken by most treatment) is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$
+to find the magnon energies $`E(\mathbf{q})`$ at each $`\mathbf{q}`$ point.
+However,
+
+-->
 
 ## The Bogoliubov transformation
 
+The next step is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$ to find the magnon energies (the eigenvalues of $`h(\mathbf{q})`$,
+and more importantly to find the linear combination of boson operators $`b_i(\mathbf{q})`$ corresponding to these energies so as to compute the neutron structure factor.
+Because the (new) boson operators (also) have to obey the commutation relation we cannot simply use the standard eigenvalue decomposition algorithms.
+Instead we need to compute
 
-## Solving the quadratic form
+
+Instead SpinW uses one of two algorithms:
+
+* That of [Colpa](http://dx.doi.org/10.1016/0378-4371%2878%2990160-7) if the $`h(\mathbf{q})`$ matrix is explicitly treated as Hermitian.
+  Note that this algorithm will give an [error](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L993-L996)
+  if the $`h(\mathbf{q})`$ matrix is not only Hermitian but also positive definite.
+* That of [White et al.](https://doi.org/10.1103/PhysRev.139.A450) for a general $`h(\mathbf{q})`$ matrix.
+  Note that in this case SpinW can return (unphysical) imaginary magnon energies.
