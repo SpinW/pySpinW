@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from checks import check_sizes
+from pyspinw.checks import check_sizes
 from pyspinw._base import Coupling, Identifier
 from pyspinw.util import triple_product_matrix
 
