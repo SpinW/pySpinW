@@ -42,7 +42,7 @@ Identifier = str # temporary choice for now
 
 
 class Coupling:
-    """ Coupling between atoms """
+    """ Coupling between different sites """
     def __init__(self, site_1: Identifier, site_2: Identifier):
         self._site_1 = site_1
         self._site_2 = site_2
@@ -64,6 +64,7 @@ class Coupling:
 
 
 class Anisotropy:
+    """ Defines the anisotropy at a given site"""
     def __init__(self, site: Identifier):
         self._site = site
         self._anisotropy_matrix = None
@@ -74,3 +75,11 @@ class Anisotropy:
             raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
         else:
             return self._anisotropy_matrix
+
+
+class Instrument:
+    """ Defines an instrument
+
+    This class is responsible for instrument specific details, including resolution, energy and q binning, etc.
+    """
+
