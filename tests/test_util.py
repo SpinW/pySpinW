@@ -4,7 +4,7 @@ import pytest
 
 import numpy as np
 
-from util import triple_product_matrix
+from pyspinw.util import triple_product_matrix
 
 
 some_vectors = [np.array(v) for v in [
