@@ -47,9 +47,23 @@ class Coupling:
         self._site_1 = site_1
         self._site_2 = site_2
         self._coupling_matrix = None
+
     @property
     def coupling_matrix(self) -> np.ndarray:
         if self._coupling_matrix is None:
             raise ValueError("Coupling matrix not initialised - this shouldn't happen")
         else:
             return self._coupling_matrix
+
+
+class Anisotropy:
+    def __init__(self, site: Identifier):
+        self._site = site
+        self._anisotropy_matrix = None
+
+    @property
+    def anisotropy_matrix(self) -> np.ndarray:
+        if self._anisotropy_matrix is None:
+            raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
+        else:
+            return self._anisotropy_matrix
