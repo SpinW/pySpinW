@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from checks import check_sizes
+from pyspinw.checks import check_sizes
 
 
 @check_sizes(v=(3,), force_numpy=True)

@@ -1,7 +1,7 @@
 """ The two types of description of the magnetic structure"""
 import math
 from fractions import Fraction
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import numpy as np
 from ase import Atom
@@ -99,6 +99,9 @@ class RotatingMagneticStructure(MagneticStructure):
                              complex(self._propagation_vector[2]),
                              self._supercell_size[2],
                              max_denominator=max_denominator))
+
+        if new_cell_size:
+            pass
 
         # Apply the transform to the magnetic moments
 

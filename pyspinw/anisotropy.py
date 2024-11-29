@@ -2,15 +2,22 @@
 
 from pyspinw._base import Anisotropy
 
+
 class GeneralAnisotropy(Anisotropy):
-    pass
+    """ General anisotropy specification """
+
+
 class DiagonalAnisotropy(Anisotropy):
-    pass
+    """ Anisotropy oriented with axes, but variable amount in x, y and z"""
+
+
 class XAxisAnisotropy(Anisotropy):
-    pass
+    """ Pure X anisotropy"""
+
 
 class YAxisAnisotropy(Anisotropy):
-    pass
+    """ Pure Y anisotropy"""
+
 
 class ZAxisAnisotropy(Anisotropy):
-    pass
+    """ Pure Z anisotropy"""

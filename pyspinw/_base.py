@@ -71,8 +71,8 @@ class Anisotropy:
 
     @property
     def anisotropy_matrix(self) -> np.ndarray:
+        """ Matrix spefifying the anisotropy - `A` term in the Hamiltonian """
         if self._anisotropy_matrix is None:
             raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
         else:
             return self._anisotropy_matrix
-
