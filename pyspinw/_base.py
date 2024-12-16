@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from ase.lattice import BravaisLattice
+from ase.atoms import Atom
 
 
 
@@ -34,7 +35,7 @@ class Hamiltonian(ABC):
 
 class Sample(ABC):
     """ Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
-    def __init__(self):
+    def __init__(self, magnetic_structure: MagneticStructure):
         pass
 
 
