@@ -15,7 +15,7 @@ from ase.atoms import Atom
 
 
 class MagneticStructure(ABC):
-    """ Base class for representations of"""
+    """ Base class for representations of the Magnetic Structures """
     def __init__(self):
         pass
 
@@ -35,8 +35,8 @@ class Hamiltonian(ABC):
 
 class Sample(ABC):
     """ Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
-    def __init__(self, magnetic_structure: MagneticStructure):
-        pass
+    def __init__(self, hamiltonian: Hamiltonian):
+        self.hamiltonian = Hamiltonian
 
 
 Identifier = str # temporary choice for now
@@ -77,3 +77,11 @@ class Anisotropy:
             raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
         else:
             return self._anisotropy_matrix
+
+
+class Data:
+    """ Placeholder """
+
+class Experiment:
+    def __init__(self, sample: Sample, data: Data | None = None):
+        pass
