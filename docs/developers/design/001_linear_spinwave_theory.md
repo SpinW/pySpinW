@@ -91,13 +91,30 @@ $$S^z = S - b^{\dagger}b $$
 
 ## The Hamiltonian
 
-We can now express the spin-Hamiltonian:
+The spin-Hamiltonian used in SpinW is:
 
+```math
+\mathcal{H} = \sum_{m \neq n} \sum_{i \neq j} \mathbf{S}^{\intercal}_{im} J_{im, jn} \mathbf{S}_{jn} 
+    + \sum_{m} \sum_{i} \mathbf{S}^{\intercal}_{im} A_{im} \mathbf{S}_{im} 
+    - \mu_B \mathbf{H}^{\intercal} \sum_{m} \sum_{i} g_i \mathbf{S}_{im} 
+```
+
+where the $\intercal$ symbol indicates matrix transpose, and
+the first term is the pairwise exchange interaction with exchange "constant" $`J_{im,jn}`$,
+the second term is the single-ion anisotropy with anistotropy "constant" $`A_{im}`$ and
+the third term is the Zeeman energy when a finite magnetic field $`\mathbf{H}`$ is applied to the sample, and
+the g-tensor $`g_i`$ is a measure of the sample anisotropy for each magnetic ion in the unit cell
+(note it does not depend on $m$) in an applied field.
+The "constants" are called such for historical reasons but they are inputs to our model and can be
+treated as variable parameters which may be fitted to data.
+$`J_{im,jn}`$, $`A_{im}`$ and $`g_i`$ are all tensors represented by $3 \times 3$ matrices.
+
+Now, if we express $`A_{im} = J_{im, jn}\delta_{ij}\delta_{mn} = J_{im}`$ we can express the first two terms together as:
 
 ```math
 \begin{array}{rcl}
-\mathcal{H} &=& \sum_{m,n} \sum_{i, j} \mathbf{S}_{i,m} J_{im,jn} \mathbf{S}_{j,n} \\
- & = & \sum_{m,n} \sum_{i, j} \mathbf{S}(\mathbf{r}_{i}+\mathbf{r}_m)
+\mathcal{H} &=& \sum_{m,n} \sum_{i,j} \mathbf{S}^{\intercal}_{im} J_{im,jn} \mathbf{S}_{jn} \\
+ & = & \sum_{m,n} \sum_{i, j} \mathbf{S}^{\intercal}(\mathbf{r}_{i}+\mathbf{r}_m)
     J(\mathbf{r}_{i}+\mathbf{r}_m, \mathbf{r}_{j}-\mathbf{r}_n) \mathbf{S}(\mathbf{r}_{j}+\mathbf{r}_n)
 \end{array}
 ```
@@ -105,8 +122,8 @@ We can now express the spin-Hamiltonian:
 where labels $i$ and $j$ denote sites within a magnetic (super)-unit cell whilst labels $m$ and $n$ index the unit cells themselves.
 Note that the sum $`\sum_{ij}`$ is finite whilst the sum $`\sum_{mn}`$ is infinite.
 Now, because SpinW deals exclusively with periodic (crystalline) systems, we can Fourier transform the above equation to replace
-the infinite sum over unit cells with another (infinite) sum over momentum space $`\mathbf{q}`$-points. 
-This is actually a step forward because the "Hamiltonian" at each $`\mathbf{q}`$-point can be diagonalised to obtain wave-like solutions 
+the infinite sum over unit cells with another (infinite) sum over momentum space $`\mathbf{q}`$-points.
+This is actually a step forward because the "Hamiltonian" at each $`\mathbf{q}`$-point can be diagonalised to obtain wave-like solutions
 which are the magnon modes which are measured by inelastic neutron scattering.
 
 The Fourier transform of the spin vector at site $(i,m)$ is:
@@ -115,21 +132,22 @@ The Fourier transform of the spin vector at site $(i,m)$ is:
 \mathbf{S}_{i,m}(\mathbf{q}) = \sum_m \left[ \sum_i \mathbf{S} \exp(-i\mathbf{r}_i\cdot\mathbf{q}) \right] \exp(-i\mathbf{r}_m\cdot\mathbf{q})
 ```
 
-and similarly for the $(j,n)$ indexed terms $`\mathbf{S}_{j,n}`$. In the next part we will denote the term in square brackets as $`\mathbf{S}_i(\mathbf{q})`$.
+and similarly for the $(j,n)$ indexed terms $`\mathbf{S}_{j,n}`$.
+In the next part we will denote the term in square brackets as $`\mathbf{S}_i(\mathbf{q})`$.
 In a similar vein, the Fourier transform of the exchange interaction becomes:
 
 ```math
-J_{ij,mn}(\mathbf{q}) = \sum_m \sum_n 
+J_{ij,mn}(\mathbf{q}) = \sum_m \sum_n
     \left[ \sum_i \sum_j J \exp(-i(\mathbf{r}_i - \mathbf{r}_j)\cdot\mathbf{q}) \right] \exp(-i(\mathbf{r}_m - \mathbf{r}_n)\cdot\mathbf{q})
 ```
 
-And like with the spins the terms in the square brackets will be denoted $`J_{ij}(\mathbf{q})`$.
+As with the spins, the terms in the square brackets will be denoted $`J_{ij}(\mathbf{q})`$.
 Note that for single-ion anisotropy terms $`A_i = J_{ii}`$ where $i=j$ and $`\mathbf{r}=\mathbf{0}`$ the phase factor in $`J_{ij}(\mathbf{q})`$ is unity.
 
-We can now expressed the Fourier transform of the Heisenberg Hamiltonian:
+We can now expressed the Fourier transform of the spin Hamiltonian:
 
 ```math
-\mathcal{H}(\mathbf{q}) = \sum_{m,n} \left[ \sum_{i,l} \mathbf{S}_i(\mathbf{q}) J_{ij}(\mathbf{q}) \mathbf{S}_j(\mathbf{q}') \right] 
+\mathcal{H}(\mathbf{q}) = \sum_{m,n} \left[ \sum_{i,l} \mathbf{S}_i(\mathbf{q}) J_{ij}(\mathbf{q}) \mathbf{S}_j(\mathbf{q}') \right]
     \exp(-i\mathbf{r}_m\cdot\mathbf{q}) \exp(-i\mathbf{r}_n\cdot\mathbf{q}') \exp(-i(\mathbf{r}_m - \mathbf{r}_n)\cdot\mathbf{q})
 ```
 
@@ -143,10 +161,9 @@ If we now take the inverse Fourier transform of this, we can replace the sum $`\
 
 where the sum over $`\mathbf{q}`$ extends over both positive and negative vectors within the first Brillouin zone.
 
-Expressing the spin vectors in terms of the boson operators using the Holstein-Primakoff transformation above
+Expressing the spin vectors in terms of the boson operators using the Holstein-Primakoff transformation described in the last section
 (and noting that because of the complex conjugation the Fourier transform of the creation operator $`b^{\dagger}`$ is
 $`b^{\dagger}(-\mathbf{q})`$):
-
 
 ```math
 \mathcal{H} = \sum_{\mathbf{q}} \sum_{i,j} \left[
@@ -158,13 +175,13 @@ $`b^{\dagger}(-\mathbf{q})`$):
     \right]
 ```
 
-where the operators $`b_i`$, $`b^{\dagger}_i`$ and vectors $`\mathbf{z}_i`$ and $`\boldsymbol{\eta}_i`$ relate to each site $i$ 
+where the operators $`b_i`$, $`b^{\dagger}_i`$ and vectors $`\mathbf{z}_i`$ and $`\boldsymbol{\eta}_i`$ relate to each site $i$
 in the magnetic unit cell in real-space, and $`J_{ij}`$ is a tensor represented by a $3 \times 3$ matrix.
 (Note that the vector $\mathbf{z}$ is complex and we use the asterisk to denote complex conjugation
 and the $\intercal$ symbol to indicate vector or matrix transpose).
 In addition, in the above summation we explicitly consider terms $`i=j`$ which corresponds to the on-site anisotropy terms
 $`\sum_i \mathbf{S}_i A_i \mathbf{S}_i`$ where $`A_i`$ is also a tensor represented by $`3\times 3`$ matrix.
-Thus in the following treatment, $`J_{ij}`$ is a superset and includes both the exchange and anisotropy terms.
+Thus in this treatment, $`J_{ij}`$ is a superset and includes both the exchange and anisotropy terms.
 
 Noting that the boson operators obey the commutation relation
 
@@ -205,6 +222,26 @@ where the $`(i,j)`$ elements are:
 ```math
 \mathrm{C}_{ij} = \delta_{ij} \sum_{\mathcal{l}} S_{\mathcal{l}} \boldsymbol{\eta}_i^{\intercal} \mathrm{J}_{i\mathcal{l}}(\mathbf{q}=\mathbf{0}) \boldsymbol{\eta}_{\mathcal{l}}
 ```
+
+where only terms which are quadratic (two-operator) in the boson operators, e.g. $`b^{\dagger} b`$, have been retained.
+This is because the expectation value of single-operator terms (e.g. $`b^{\dagger}`$) vanish and we ignore higher order terms in _linear_ spin wave theory.
+
+We can use the same treatment above for the Zeeman term, $`\mu_B \mathbf{H}^{\intercal} \sum_m \sum_i g_i \mathbf{S}_{im}`$.
+The Fourier transform yields $`\mu_B \mathbf{H}^{\intercal} \sum_{\mathbf{q}} \sum_i g_i \mathbf{S}_i(\mathbf{q})`$,
+which with the Holstein-Primakoff transformation becomes:
+
+```math
+\mathcal{H}_{\mathrm{Zeeman}} = - \sum_{\mathbf{q}} \sum_i \mu_B \mathbf{H}^{\intercal} g_i \boldsymbol{\eta}_i b^{\dagger}_i(\mathbf{q}) b_i(\mathbf{q})
+```
+
+where again only two-operator terms have been retained.
+This yields an additional matrix element
+
+```math
+\mathrm{A}_{\mathrm{Zeeman}}(\mathbf{q})_{ij} = - \frac{1}{2} \mu_B \mathbf{H}^{\intercal} \delta_{ij} g_i \boldsymbol{\eta}_i
+```
+
+which should be added to the $`\mathrm{A}(\mathbf{q})_{ij}`$ term.
 
 The eigenvalues of $`\mathrm{h}(\mathbf{q})`$ are the magnon energies and its eigenvectors can be used to calculate the neutron cross-section.
 
