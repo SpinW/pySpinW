@@ -2,8 +2,6 @@ from importlib import resources
 
 from dataclasses import dataclass
 
-from Tools.scripts.stable_abi import generators
-
 """ Deals with magnetic symmetry group names and numbers """
 
 @dataclass

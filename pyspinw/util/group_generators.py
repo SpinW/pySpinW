@@ -1,7 +1,7 @@
 import numpy as np
 import re
 
-from safe_expression_evaluation import evaluate_algebra
+from pyspinw.util.safe_expression_evaluation import evaluate_algebra
 
 _number_regex = r"\d+(?:\.\d+)?"
 _symbol_regex = r"x|y|z|\-|\+|/|\*"
@@ -125,6 +125,13 @@ def parse_one_line_generators(generator_string: str):
 
     return output
 
+def spglib_generators_to_list(generators: dict) -> list[tuple[np.ndarray, np.ndarray, float]]:
+    rotations = generators["rotations"]
+    translations = generators["translations"]
+    time_reversals = generators["time_reversals"]
+
+    return [(rotations[i,:,:], translations[i,:], -1.0 if time_reversals[i] < 0.5 else 1.0)
+            for i in range(len(time_reversals))]
 
 if __name__ == "__main__":
     from pyspinw.util.magnetic_symmetry import name_converter
