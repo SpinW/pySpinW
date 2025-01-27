@@ -130,7 +130,7 @@ def spglib_generators_to_list(generators: dict) -> list[tuple[np.ndarray, np.nda
     translations = generators["translations"]
     time_reversals = generators["time_reversals"]
 
-    return [(rotations[i,:,:], translations[i,:], -1.0 if time_reversals[i] < 0.5 else 1.0)
+    return [(rotations[i,:,:], translations[i,:], -1.0 if time_reversals[i] > 0.5 else 1.0)
             for i in range(len(time_reversals))]
 
 if __name__ == "__main__":
