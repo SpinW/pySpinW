@@ -3,6 +3,7 @@ import functools
 import numpy as np
 
 from pyspinw.checks import check_sizes
+from pyspinw.util.group_generators import Generator
 
 def _noisy_site_sort_comparator(tol):
     """ We want to sort a list of points so that equivalent points are next to each other,
@@ -94,16 +95,13 @@ def _remove_duplicates_and_order_points(points: list[np.ndarray], tol) -> np.nda
 
 def _apply_generators_with_moments(
         points: list[np.ndarray],
-        generators: list[tuple[np.ndarray, np.ndarray, float]], tol) -> np.ndarray:
+        generators: list[Generator], tol) -> np.ndarray:
 
-    for i, (quadratic, linear, time_reversal) in enumerate(generators):
+    for i, generator in enumerate(generators):
         # print(f"Generator: {i+1} of {len(generators)}: {points.shape[0]}")
         # print(points)
 
-        transformed_positions = [np.concatenate((
-                                    (point[:3] @ quadratic + linear) % 1,
-                                    point[3:] * time_reversal))
-                                    for point in points]
+        transformed_positions = [generator(point.reshape(1, 6)).reshape(6) for point in points]
 
         joined = points + transformed_positions
 
@@ -121,7 +119,7 @@ def _apply_generators_with_moments(
     return points
 
 @check_sizes(points=(-1, 6))
-def apply_generators_with_moments(points: np.ndarray, generators: list[tuple[np.ndarray, np.ndarray, float]], tol=1e-8) -> np.ndarray:
+def apply_generators_with_moments(points: np.ndarray, generators: list[Generator], tol=1e-8) -> np.ndarray:
     point_list = [points[i, :] for i in range(points.shape[0])]
     point_list = _apply_generators_with_moments(point_list, generators, tol)
 
@@ -129,7 +127,7 @@ def apply_generators_with_moments(points: np.ndarray, generators: list[tuple[np.
 
 def _apply_generators_until_stable(
         points: list[np.ndarray],
-        generators: list[tuple[np.ndarray, np.ndarray, float]],
+        generators: list[Generator],
         tol: float,
         max_iters: int) -> np.ndarray:
 
@@ -147,7 +145,7 @@ def _apply_generators_until_stable(
 
 
 @check_sizes(points=(-1, 6))
-def apply_generators_until_stable(points: np.ndarray, generators: list[tuple[np.ndarray, np.ndarray, float]], tol: float=1e-8, max_iters: int=1000) -> np.ndarray:
+def apply_generators_until_stable(points: np.ndarray, generators: list[Generator], tol: float=1e-8, max_iters: int=1000) -> np.ndarray:
     point_list = [points[i, :] for i in range(points.shape[0])]
     point_list = _apply_generators_until_stable(point_list, generators, tol, max_iters)
 

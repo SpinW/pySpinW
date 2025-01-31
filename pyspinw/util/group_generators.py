@@ -143,7 +143,7 @@ def parse_space_group_generator(
     quadratic = np.array(quadratic)
     linear = np.array(linear)
 
-    return quadratic, linear, time_reversal
+    return Generator(quadratic, linear, time_reversal)
 
 def parse_one_line_generators(generator_string: str):
     """ Expects the generators to be a single line of tuples in terms of x,y,z, separated by commans
@@ -171,12 +171,12 @@ def parse_one_line_generators(generator_string: str):
 
     return output
 
-def spglib_generators_to_list(generators: dict) -> list[tuple[np.ndarray, np.ndarray, float]]:
+def spglib_generators_to_list(generators: dict) -> list[Generator]:
     rotations = generators["rotations"]
     translations = generators["translations"]
     time_reversals = generators["time_reversals"]
 
-    return [(rotations[i,:,:], translations[i,:], -1.0 if time_reversals[i] > 0.5 else 1.0)
+    return [Generator(rotations[i,:,:], translations[i,:], -1.0 if time_reversals[i] > 0.5 else 1.0)
             for i in range(len(time_reversals))]
 
 if __name__ == "__main__":
