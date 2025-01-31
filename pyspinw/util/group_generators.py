@@ -1,11 +1,57 @@
 import numpy as np
 import re
 
+from pyspinw.checks import check_sizes
 from pyspinw.util.safe_expression_evaluation import evaluate_algebra
 
 _number_regex = r"\d+(?:\.\d+)?"
 _symbol_regex = r"x|y|z|\-|\+|/|\*"
 _number_symbol_regex = "("+_number_regex+"|"+_symbol_regex+"|\s+)"
+
+class Generator:
+
+    def __init__(self,
+                 rotation: np.ndarray,
+                 translation: np.ndarray,
+                 time_reversal: int,
+                 name: str | None = None):
+
+        self.rotation = rotation
+        self.translation = translation
+        self.time_reversal = time_reversal
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        if self._name is None:
+            return "<unknown>"
+        else:
+            return self._name
+
+    @check_sizes(points=(-1, 6))
+    def __call__(self, points: np.ndarray) -> np.ndarray:
+        """ Apply this generator to a set of points and momenta"""
+
+        new_points = points.copy()
+
+        new_points[:, :3] = new_points[:, :3] @ self.rotation  + self.translation.reshape(1, 3)
+        new_points[:, :3] %= 1 # To unit cell
+
+        new_points[:, 3:] *= self.time_reversal
+
+        return new_points
+
+    def and_then(self, other: "Generator") -> "Generator":
+        """ Composition of generators """
+
+        return Generator(
+            rotation = self.rotation @ other.rotation,
+            translation = (self.translation.reshape(1, 3) @ other.rotation + other.translation) % 1,
+            time_reversal = self.time_reversal * other.time_reversal,
+            name=self.name + "->" + other.name)
+
+    def __lt__(self, other: "Generator") -> bool:
+        raise NotImplementedError()
 
 def _convert_token_to_number(token: str, to_zero: str, to_one: str) -> str:
     """ Helper function, converts a token to "0" or "1" based on whether it is in each of the given strings

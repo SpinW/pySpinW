@@ -1,7 +1,32 @@
+import functools
+
 import numpy as np
 
+from pyspinw.checks import check_sizes
 
-def _remove_duplicates_and_order_points(points: np.ndarray, tol=1e-8) -> np.ndarray:
+def _noisy_site_sort_comparator(tol):
+    """ We want to sort a list of points so that equivalent points are next to each other,
+    numerically, they only need to be within a tolerance, the sort comparison is therefore
+    fairly non-standard
+
+    We want to be able to provide a two place function with a fixed tolerance, therefore, it
+    has been Curryed
+    """
+
+    def comparator(a: np.ndarray, b: np.ndarray):
+
+
+        if np.abs(a[0] - b[0]) > tol:
+            return 1 if a[0] < b[0] else -1
+        else:
+            if np.abs(a[1] - b[1]) > tol:
+                return 1 if a[1] < b[1] else -1
+            else:
+                return 1 if a[2] < b[2] else -1
+
+    return comparator
+
+def _remove_duplicates_and_order_points(points: list[np.ndarray], tol) -> np.ndarray:
     """ Assumes there are no duplicate sites with different moments"""
 
     # Remove duplicates first, as order might be very sensitive to rounding
@@ -9,24 +34,30 @@ def _remove_duplicates_and_order_points(points: np.ndarray, tol=1e-8) -> np.ndar
 
     # Step one, sort by coordinates
 
-    points = points[points[:,0].argsort(), :] # Fastest search
-
-    for i in range(1, 3):
-        points = points[points[:, i].argsort(kind='mergesort'), :]  # mergesort keeps order from other dimensions
-
+    points = sorted(points, key=functools.cmp_to_key(_noisy_site_sort_comparator(tol)))
     # Step 2: collate points at same locations
 
-    this_location = [points[0, :]]
+
+    # import matplotlib.pyplot as plt
+    # plt.subplot(1,2,1)
+    # plt.scatter(points[:, 0], points[:, 1])
+    # plt.subplot(1,2,2)
+    # plt.scatter(points[:, 0], points[:, 2])
+    # plt.show()
+
+    last_point = points[0]
+    this_location = [last_point]
     unique_locations = [this_location]
-    for i in range(1, points.shape[0]):
-        last_point = points[i-1, :]
-        this_point = points[i, :]
+
+    for this_point in points[1:]:
 
         if np.sum((this_point[:3] - last_point[:3])**2) < tol_squared:
             this_location.append(this_point)
         else:
             this_location = [this_point]
             unique_locations.append(this_location)
+
+        last_point = this_point
 
     # Go through the collections of points at each location,
     # and merge them in a way that makes their momentum zero if they are opposite
@@ -42,66 +73,82 @@ def _remove_duplicates_and_order_points(points: np.ndarray, tol=1e-8) -> np.ndar
             case 1:
                 full_list += location
             case 2:
-                full_list.append(0.5*(location[0] + location[1]))
+                if np.sum(np.abs(location[0][3:] - location[1][3:])) < tol:
+                    full_list.append(location[0])
+                elif np.sum(np.abs(location[0][3:] + location[1][3:])) < tol:
+                    zeroed = location[0].copy()
+                    zeroed[3:] = np.zeros((3,))
+                    full_list.append(zeroed)
+                else:
+                    raise Exception("This is a problem")
             case _:
-                for point in location[1:]:
-                    diff = np.sum((point - location[0]) ** 2)
-
-                    if diff > tol_squared:
-                        print(points)
-                        print(location)
-                        raise ValueError(f"Expected points with more than two copies to be exactly the same")
-
-                full_list.append(location[0])
+                print(location)
+                raise ValueError(f"Expected at most two copies of a given site (with potentially opposing momenta)")
 
     # Return as an array
-    return np.array(full_list, dtype=float)
+    return full_list
 
 
 
 
-def apply_generators_with_moments(points: np.ndarray, generators: list[tuple[np.ndarray, np.ndarray, float]], tol=1e-8) -> np.ndarray:
+
+def _apply_generators_with_moments(
+        points: list[np.ndarray],
+        generators: list[tuple[np.ndarray, np.ndarray, float]], tol) -> np.ndarray:
 
     for i, (quadratic, linear, time_reversal) in enumerate(generators):
         # print(f"Generator: {i+1} of {len(generators)}: {points.shape[0]}")
         # print(points)
 
-        transformed_positions = points[:, :3] @ quadratic + linear
-        transformed_positions %= 1 # Move back to unit cell
+        transformed_positions = [np.concatenate((
+                                    (point[:3] @ quadratic + linear) % 1,
+                                    point[3:] * time_reversal))
+                                    for point in points]
 
-        transformed_moments = time_reversal * points[:, 3:]
+        joined = points + transformed_positions
 
-        print(quadratic, linear, time_reversal)
-
-        joined = np.concatenate((points,
-                    np.concatenate((transformed_positions, transformed_moments), axis=1)), axis=0)
+        # print("\n\n\nPoints")
+        # for point in points:
+        #     print(point)
+        #
+        # print("\n\n\nJoined")
+        # for point in joined:
+        #     print(point)
 
         points = _remove_duplicates_and_order_points(joined, tol=tol)
 
-        # print(points)
 
     return points
 
-def apply_generators_until_stable(
-        points: np.ndarray,
-        generators: list[tuple[np.ndarray, np.ndarray, float]], tol=1e-8,
-        max_iters: int=1000) -> np.ndarray:
+@check_sizes(points=(-1, 6))
+def apply_generators_with_moments(points: np.ndarray, generators: list[tuple[np.ndarray, np.ndarray, float]], tol=1e-8) -> np.ndarray:
+    point_list = [points[i, :] for i in range(points.shape[0])]
+    point_list = _apply_generators_with_moments(point_list, generators, tol)
 
-    points = _remove_duplicates_and_order_points(points)
+    return np.array(point_list)
+
+def _apply_generators_until_stable(
+        points: list[np.ndarray],
+        generators: list[tuple[np.ndarray, np.ndarray, float]],
+        tol: float,
+        max_iters: int) -> np.ndarray:
 
 
     for i in range(max_iters): # Big but finite number
         # print(f"Repeated application: {i}")
-        new_points = apply_generators_with_moments(points, generators)
+        new_points = _apply_generators_with_moments(points, generators, tol)
 
-        if new_points.shape == points.shape:
-
-            difference = np.sum((points - new_points)**2)
-
-            if difference < new_points.shape[0]*new_points.shape[1]*tol*tol:
+        if len(new_points) == len(points):
                 return points
 
         points = new_points
 
     raise Exception(f"Failed to reach steady state after {max_iters} iterations")
 
+
+@check_sizes(points=(-1, 6))
+def apply_generators_until_stable(points: np.ndarray, generators: list[tuple[np.ndarray, np.ndarray, float]], tol: float=1e-8, max_iters: int=1000) -> np.ndarray:
+    point_list = [points[i, :] for i in range(points.shape[0])]
+    point_list = _apply_generators_until_stable(point_list, generators, tol, max_iters)
+
+    return np.array(point_list)
