@@ -1,7 +1,10 @@
 import numpy as np
 import pytest
 
-from pyspinw.util.group_generators import Generator
+import spglib
+
+from pyspinw.util.group_generators import Generator, _spglib_generators_to_objects
+
 
 def random_rotoreflection(rng: np.random.Generator):
     # Can only have -1,0,1 in each location
@@ -90,6 +93,7 @@ def test_composition_no_translation_or_reversal(points, g1, g2):
 @pytest.mark.parametrize("g1", random_generator_info)
 @pytest.mark.parametrize("g2", random_generator_info)
 def test_composition_full(points, g1, g2):
+    """ Test that g2(g1(x)) == (g1 and_then g2)(x) """
     generator_1 = Generator(*g1, name="Generator 1")
     generator_2 = Generator(*g2, name="Generator 2")
 
@@ -98,3 +102,45 @@ def test_composition_full(points, g1, g2):
 
     assert np.all(np.abs(transformed_points_compose - transformed_points_sequential) < 1e-10)
 
+
+generators_for_testing = _spglib_generators_to_objects(spglib.get_magnetic_symmetry_from_database(1651))
+seeds = [1234, 76423, 2093478, 7973634]
+@pytest.mark.parametrize("seed", seeds)
+def test_generator_sorting(seed: int):
+    rng = np.random.default_rng(seed)
+    random_order = np.arange(len(generators_for_testing))
+    rng.shuffle(random_order)
+
+    initial_copy = generators_for_testing.copy()
+    other_copy = [initial_copy[i] for i in random_order]
+
+    initial_copy.sort()
+    other_copy.sort()
+
+    for a, b in zip(initial_copy, other_copy):
+        assert a == b
+
+@pytest.mark.parametrize("g", random_generator_info)
+def test_generator_equality_but_not_identity(g):
+
+    generator_1 = Generator(*g, name="Generator 1")
+    generator_2 = Generator(*g, name="Generator 2")
+
+    assert generator_1 is not generator_2
+    assert generator_1 == generator_2
+
+
+@pytest.mark.parametrize("index_1", range(len(random_generator_info)))
+@pytest.mark.parametrize("delta", range(len(random_generator_info)-1))
+def test_generator_not_equal(index_1: int, delta: int):
+    """ Check non-equal pairs are not identified as equal"""
+    index_2 = (index_1 + 1 + delta) % len(random_generator_info)
+
+    g1 = random_generator_info[index_1]
+    g2 = random_generator_info[index_2]
+
+    generator_1 = Generator(*g1, name="Generator 1")
+    generator_2 = Generator(*g2, name="Generator 2")
+
+    assert generator_1 is not generator_2
+    assert generator_1 != generator_2

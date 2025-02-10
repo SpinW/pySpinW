@@ -1,5 +1,9 @@
+from gettext import translation
+
 import numpy as np
 import re
+
+import spglib
 
 from pyspinw.checks import check_sizes
 from pyspinw.util.safe_expression_evaluation import evaluate_algebra
@@ -10,6 +14,9 @@ _number_symbol_regex = "("+_number_regex+"|"+_symbol_regex+"|\s+)"
 
 class Generator:
 
+    _comparison_tolerance = 1e-10
+
+    @check_sizes(rotation=(3,3), translation=(3,))
     def __init__(self,
                  rotation: np.ndarray,
                  translation: np.ndarray,
@@ -18,13 +25,13 @@ class Generator:
 
         self.rotation = rotation
         self.translation = translation
-        self.time_reversal = time_reversal
+        self.time_reversal = int(time_reversal)
         self._name = name
 
     @property
     def name(self) -> str:
         if self._name is None:
-            return "<unknown>"
+            return self.text_form
         else:
             return self._name
 
@@ -46,12 +53,66 @@ class Generator:
 
         return Generator(
             rotation = self.rotation @ other.rotation,
-            translation = (self.translation.reshape(1, 3) @ other.rotation + other.translation) % 1,
-            time_reversal = self.time_reversal * other.time_reversal,
+            translation = ((self.translation.reshape(1, 3) @ other.rotation + other.translation) % 1).reshape(3),
+            time_reversal = int(self.time_reversal * other.time_reversal),
             name=self.name + "->" + other.name)
 
+    @property
+    def text_form(self) -> str:
+        """ Represent this generator as a triple of equations in xyz"""
+
+        string = ""
+        for i in range(3):
+            first = True
+            for j, symbol in enumerate("xyz"):
+
+                match self.rotation[i, j]:
+                    case 1:
+                        string += symbol if first else " + " + symbol
+                        first = False
+                    case 0:
+                        pass
+                    case -1:
+                        string += "-" + symbol if first else " - " + symbol
+                        first = False
+                    case _:
+                        raise ValueError("Magnetic space group rotation matrices should only contain -1, 0 or 1")
+
+            if self.translation[i] < 0:
+                string += f" - {-self.translation[i]}"
+            elif self.translation[i] > 0:
+                string += f" + {self.translation[i]}"
+
+            string += ","
+
+        return "(" + string[:-1] + f",{self.time_reversal})"
+
+
     def __lt__(self, other: "Generator") -> bool:
-        raise NotImplementedError()
+
+        for i in range(3):
+            for j in range(3):
+                if self.rotation[i,j] < other.rotation[i, j] - self._comparison_tolerance:
+                    return True
+                if self.rotation[i,j] > other.rotation[i, j] + self._comparison_tolerance:
+                    return False
+
+        for i in range(3):
+            if self.translation[i] < other.translation[i] - self._comparison_tolerance:
+                return True
+            elif self.translation[i] > other.translation[i] + self._comparison_tolerance:
+                return False
+
+        return self.time_reversal < other.time_reversal
+
+
+    def __eq__(self, other: "Generator"):
+        return np.all(np.abs(self.rotation - other.rotation) < self._comparison_tolerance) and \
+                np.all(np.abs(self.translation - other.translation) < self._comparison_tolerance) and \
+                self.time_reversal == other.time_reversal
+
+    def __repr__(self):
+        return self.text_form
 
 def _convert_token_to_number(token: str, to_zero: str, to_one: str) -> str:
     """ Helper function, converts a token to "0" or "1" based on whether it is in each of the given strings
@@ -87,7 +148,7 @@ def _evaluate_generator_with_subsitution(tokens: list[str], to_zero: str, to_one
 
 def parse_space_group_generator(
         generator_string: str,
-        time_reversed: bool | None = None) -> tuple[np.ndarray, np.ndarray, float | None]:
+        time_reversed: bool | None = None) -> Generator:
 
     """ Parse a space group generator string, e.g. '-x,y,-z+1/2' (three components)
     or 'x+1/2,y+1/2,z,-1' (four components, magnetic)
@@ -143,7 +204,7 @@ def parse_space_group_generator(
     quadratic = np.array(quadratic)
     linear = np.array(linear)
 
-    return Generator(quadratic, linear, time_reversal)
+    return Generator(quadratic, linear, 1 if time_reversal is None else time_reversal)
 
 def parse_one_line_generators(generator_string: str):
     """ Expects the generators to be a single line of tuples in terms of x,y,z, separated by commans
@@ -171,13 +232,21 @@ def parse_one_line_generators(generator_string: str):
 
     return output
 
-def spglib_generators_to_list(generators: dict) -> list[Generator]:
+def _spglib_generators_to_objects(generators: dict) -> list[Generator]:
+    """ Convert the spglib dictionary object to objects"""
     rotations = generators["rotations"]
     translations = generators["translations"]
     time_reversals = generators["time_reversals"]
 
-    return [Generator(rotations[i,:,:], translations[i,:], -1.0 if time_reversals[i] > 0.5 else 1.0)
+    return [Generator(rotations[i,:,:], translations[i,:], -1 if time_reversals[i] > 0.5 else 1)
             for i in range(len(time_reversals))]
+
+
+def spglib_generators(number: int) -> list[Generator]:
+    """ Get spglib database data for magnetic space group with number """
+    generator_data = spglib.get_magnetic_symmetry_from_database(number)
+    return _spglib_generators_to_objects(generator_data)
+
 
 if __name__ == "__main__":
     from pyspinw.util.magnetic_symmetry import name_converter
