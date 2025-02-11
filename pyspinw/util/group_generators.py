@@ -66,7 +66,7 @@ class Generator:
             first = True
             for j, symbol in enumerate("xyz"):
 
-                match self.rotation[i, j]:
+                match int(self.rotation[i, j]):
                     case 1:
                         string += symbol if first else " + " + symbol
                         first = False
@@ -76,7 +76,7 @@ class Generator:
                         string += "-" + symbol if first else " - " + symbol
                         first = False
                     case _:
-                        raise ValueError("Magnetic space group rotation matrices should only contain -1, 0 or 1")
+                        raise ValueError(f"Magnetic space group rotation matrices should only contain -1, 0 or 1, got {self.rotation[i, j]}")
 
             if self.translation[i] < 0:
                 string += f" - {-self.translation[i]}"
@@ -234,6 +234,7 @@ def parse_one_line_generators(generator_string: str):
 
 def _spglib_generators_to_objects(generators: dict) -> list[Generator]:
     """ Convert the spglib dictionary object to objects"""
+
     rotations = generators["rotations"]
     translations = generators["translations"]
     time_reversals = generators["time_reversals"]
