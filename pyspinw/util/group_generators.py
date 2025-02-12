@@ -24,7 +24,7 @@ def fractional_round(array: np.ndarray):
 
     for i in range(linear.shape[0]):
         f = Fraction.from_float(linear[i])
-        f.limit_denominator()
+        f = f.limit_denominator(1000)
         output[i] = float(f)
 
     return output.reshape(shape)
@@ -46,6 +46,9 @@ class Generator:
         self.translation = fractional_round(translation)
         self.time_reversal = int(time_reversal)
         self._name = name
+
+        if np.any(translation > 0.99):
+            print(self.translation)
 
     @property
     def name(self) -> str:

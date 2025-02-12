@@ -36,7 +36,7 @@ def check_closed(number):
 
 all_closed = True
 for i in range(1651):
-    all_closed = all_closed and check_closed(i+1)
+    all_closed = check_closed(i+1) and all_closed
 
 if all_closed:
     print("All closed")
