@@ -1,7 +1,8 @@
-from gettext import translation
+from fractions import Fraction
 
 import numpy as np
 import re
+
 
 import spglib
 
@@ -12,9 +13,25 @@ _number_regex = r"\d+(?:\.\d+)?"
 _symbol_regex = r"x|y|z|\-|\+|/|\*"
 _number_symbol_regex = "("+_number_regex+"|"+_symbol_regex+"|\s+)"
 
+
+def fractional_round(array: np.ndarray):
+    """ Round fractions to canonical form"""
+
+    shape = array.shape
+    linear = array.reshape(-1)
+
+    output = np.empty(linear.shape, dtype=float)
+
+    for i in range(linear.shape[0]):
+        f = Fraction.from_float(linear[i])
+        f.limit_denominator()
+        output[i] = float(f)
+
+    return output.reshape(shape)
+
 class Generator:
 
-    _comparison_tolerance = 1e-10
+    _comparison_tolerance = 1e-6 # Given that things are only ever going to be a/b for b << 100, this is quite strict
 
     @check_sizes(rotation=(3,3), translation=(3,))
     def __init__(self,
@@ -23,8 +40,10 @@ class Generator:
                  time_reversal: int,
                  name: str | None = None):
 
-        self.rotation = rotation
-        self.translation = translation
+
+
+        self.rotation = fractional_round(rotation)
+        self.translation = fractional_round(translation)
         self.time_reversal = int(time_reversal)
         self._name = name
 
@@ -53,7 +72,7 @@ class Generator:
 
         return Generator(
             rotation = self.rotation @ other.rotation,
-            translation = ((self.translation.reshape(1, 3) @ other.rotation + other.translation) % 1).reshape(3),
+            translation = (fractional_round(self.translation.reshape(1, 3) @ other.rotation + other.translation) % 1).reshape(3),
             time_reversal = int(self.time_reversal * other.time_reversal),
             name=self.name + "->" + other.name)
 
@@ -239,7 +258,10 @@ def _spglib_generators_to_objects(generators: dict) -> list[Generator]:
     translations = generators["translations"]
     time_reversals = generators["time_reversals"]
 
-    return [Generator(rotations[i,:,:], translations[i,:], -1 if time_reversals[i] > 0.5 else 1)
+    # return [Generator(rotations[i,:,:], translations[i,:], -1 if time_reversals[i] > 0.5 else 1)
+    #         for i in range(len(time_reversals))]
+
+    return [Generator(rotations[i,:,:].T, translations[i,:], -1 if time_reversals[i] > 0.5 else 1)
             for i in range(len(time_reversals))]
 
 
