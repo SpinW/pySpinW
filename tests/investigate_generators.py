@@ -35,24 +35,36 @@ def compare_closure(number):
     left_len = max([len(pair[0].text_form) if pair[0] is not None else 0 for pair in pairs])
     # right_len = max([len(pair[1].text_form) for pair in pairs])
 
-    print(f"{number}:", end="")
-    if len(remaining_pyspinw):
+    print(f"{number} ({name_converter.litvin[number].bns_number}):", end="")
+    if len(remaining_pyspinw) > 0:
         print("Not subset")
+
+        name1 = "spglib"
+        name2 = "spinw"
+
+        print(" ", name1+(" "*(left_len - len(name1) + 3)), name2)
+
+        for g1, g2 in pairs:
+            s1 = "" if g1 is None else g1.text_form
+            s2 = "" if g2 is None else g2.text_form
+            s1 += " "*(left_len - len(s1) + 3)
+
+            star = "*" if g1 is not None and g2 is not None else " "
+            print(star, s1, s2)
+
+
     else:
         print("Subset")
 
-    for g1, g2 in pairs:
-        s1 = "" if g1 is None else g1.text_form
-        s2 = "" if g2 is None else g2.text_form
-        s1 += " "*(left_len - len(s1) + 3)
+    # for g1, g2 in pairs:
+    #     s1 = "" if g1 is None else g1.text_form
+    #     s2 = "" if g2 is None else g2.text_form
+    #     s1 += " "*(left_len - len(s1) + 3)
+    #
+    #     star = "*" if g1 is not None and g2 is not None else " "
+    #     print(star, s1, s2)
+    #
 
-        star = "*" if g1 is not None and g2 is not None else " "
-        print(star, s1, s2)
-
-
-
-
-# histogram_comparison()
 
 for i in range(1651):
     compare_closure(i+1)
