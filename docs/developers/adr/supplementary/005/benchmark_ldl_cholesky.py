@@ -2,23 +2,7 @@ import numpy as np
 from scipy.linalg import ldl, cholesky
 import time
 
-def generate_random_hermitian_matrix(size: int, seed: int | None=None):
-    rng = np.random.default_rng(seed)
-    m_real = rng.random((size, size))
-    m_imag = rng.random((size, size))
-
-    m = m_real + 1j*m_imag
-
-    # might be unnecessary to do both of these, but we need the multiplication
-    m = m @ m.conj().T
-    m = 0.5*(m + m.conj().T)
-
-    return m
-
-def generate_random_positive_semidefinite_matrix(size: int, seed: int | None=None):
-    m = generate_random_hermitian_matrix(size, seed)
-    m[0, :] = 0.0
-    return m
+from random_matrices import generate_random_positive_semidefinite_matrix, generate_random_hermitian_matrix
 
 def benchmark(matrix_size: int, sufficient_time=1.0, max_matrices=100):
     matrices = [generate_random_hermitian_matrix(matrix_size) for _ in range(max_matrices)]
