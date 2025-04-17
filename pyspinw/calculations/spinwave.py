@@ -79,13 +79,14 @@ def spinwave_calculation(rotations: np.ndarray,
         #
         # In matrix form we do
         #
-        #     M = K C K^dagger
+        #     M = K^dagger C K
         #
         # where C is a diagonal matrix of length 2n, with the first n entries being 1, and the
-        # remaining entries being -1.
+        # remaining entries being -1. Note the adjoint is on the other side to the definition in
+        # of the decomposition
         #
-        # We can also do this via an LDL decomposition, but the method is slightly different
-        # Instead we have a decomposition into
+        # We can also do this via an LDL decomposition, but the method is very slightly different
+
 
         try:
             sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
@@ -93,13 +94,20 @@ def spinwave_calculation(rotations: np.ndarray,
             sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
             sqrt_hamiltonian_with_commutation[:, n_sites:] *= -1
 
-            to_diagonalise = sqrt_hamiltonian @ np.conj(sqrt_hamiltonian_with_commutation).T
+            to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
-        except:
-            l, d, perm = ldl(hamiltonian_matrix)
+        except np.linalg.LinAlgError: # Catch postive definiteness errors
 
-            to_negate = perm[n_sites:] # indexes
 
+            l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
+            sqrt_hamiltonian = l @ np.sqrt(d)
+
+            # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
+
+            sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
+            sqrt_hamiltonian_with_commutation[:, n_sites:] *= -1
+
+            to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
         eig_res = np.linalg.eig(to_diagonalise)
 
@@ -109,22 +117,3 @@ def spinwave_calculation(rotations: np.ndarray,
 
 
 
-if __name__ == "__main__":
-    # Basic ferromagnet for checking
-    # Single site
-    rotations = np.eye(3).reshape(1,3,3)
-    magnitudes = np.array([1.5]) # spin 3/2
-    q_mags = np.linspace(0, 1, 100).reshape(-1,1)
-    q_vectors = np.array([0,1,0]).reshape(1,3) * q_mags
-    couplings = [Coupling(0,0,np.eye(3),inter_site_vector=np.array([0,1,0])),
-                 Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, -1, 0])),
-                 ]
-
-    energies = spinwave_calculation(rotations,
-                                     magnitudes,
-                                     q_vectors,
-                                     couplings)
-
-    import matplotlib.pyplot as plt
-    plt.plot(q_mags, energies)
-    plt.show()

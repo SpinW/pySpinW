@@ -1,1 +1,0 @@
-from pyspinw.structure import
