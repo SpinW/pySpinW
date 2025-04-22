@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 
 import numpy as np
 from scipy.linalg import ldl
@@ -11,6 +12,16 @@ class Coupling:
     index2: int
     matrix: np.ndarray
     inter_site_vector: np.ndarray
+
+class CalculationMethod(Enum):
+    cholesky = 0
+    ldl = 1
+
+@dataclass
+class SpinwaveResult:
+    q_vectors: np.ndarray
+    raw_energies: list[np.ndarray]
+    method: list[CalculationMethod]
 
 
 @check_sizes(rotations=('n_sites',3,3),
@@ -39,6 +50,7 @@ def spinwave_calculation(rotations: np.ndarray,
     total_spin_coefficients = root_mags.reshape(-1, 1) * root_mags.reshape(1, -1)
 
     energies = []
+    methods = []
     for q in q_vectors:
 
         A = np.zeros((n_sites, n_sites), dtype=complex)
@@ -96,6 +108,8 @@ def spinwave_calculation(rotations: np.ndarray,
 
             to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
+            methods.append(CalculationMethod.cholesky)
+
         except np.linalg.LinAlgError: # Catch postive definiteness errors
 
 
@@ -109,11 +123,18 @@ def spinwave_calculation(rotations: np.ndarray,
 
             to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
+            methods.append(CalculationMethod.ldl)
+
         eig_res = np.linalg.eig(to_diagonalise)
 
         energies.append(eig_res.eigenvalues) # These are currently the square energies
 
-    return energies
+    return SpinwaveResult(
+                q_vectors=q_vectors,
+                raw_energies=energies,
+                method=methods)
+
+
 
 
 
