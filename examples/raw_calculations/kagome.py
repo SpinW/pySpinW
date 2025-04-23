@@ -21,19 +21,21 @@ def kagome_ferromagnet():
     # We need to have them in both directions, for both permutations
     #  making 12 in total
 
+    k = 0.5
+
     couplings = [
-                 Coupling(0, 1, np.eye(3), inter_site_vector=0.5*np.array([ 1,  0, 0])),
-                 Coupling(0, 1, np.eye(3), inter_site_vector=0.5*np.array([-1,  0, 0])),
-                 Coupling(1, 0, np.eye(3), inter_site_vector=0.5*np.array([ 1,  0, 0])),
-                 Coupling(1, 0, np.eye(3), inter_site_vector=0.5*np.array([-1,  0, 0])),
-                 Coupling(0, 2, np.eye(3), inter_site_vector=0.5*np.array([ 1,  1, 0])),
-                 Coupling(0, 2, np.eye(3), inter_site_vector=0.5*np.array([-1, -1, 0])),
-                 Coupling(2, 0, np.eye(3), inter_site_vector=0.5*np.array([ 1,  1, 0])),
-                 Coupling(2, 0, np.eye(3), inter_site_vector=0.5*np.array([-1, -1, 0])),
-                 Coupling(1, 2, np.eye(3), inter_site_vector=0.5*np.array([ 0,  1, 0])),
-                 Coupling(1, 2, np.eye(3), inter_site_vector=0.5*np.array([ 0, -1, 0])),
-                 Coupling(2, 1, np.eye(3), inter_site_vector=0.5*np.array([ 0,  1, 0])),
-                 Coupling(2, 1, np.eye(3), inter_site_vector=0.5*np.array([ 0, -1, 0]))
+                 Coupling(0, 1, np.eye(3), inter_site_vector=k*np.array([ 1,  0, 0])),
+                 Coupling(0, 1, np.eye(3), inter_site_vector=k*np.array([-1,  0, 0])),
+                 Coupling(1, 0, np.eye(3), inter_site_vector=k*np.array([ 1,  0, 0])),
+                 Coupling(1, 0, np.eye(3), inter_site_vector=k*np.array([-1,  0, 0])),
+                 Coupling(0, 2, np.eye(3), inter_site_vector=k*np.array([ 1,  1, 0])),
+                 Coupling(0, 2, np.eye(3), inter_site_vector=k*np.array([-1, -1, 0])),
+                 Coupling(2, 0, np.eye(3), inter_site_vector=k*np.array([ 1,  1, 0])),
+                 Coupling(2, 0, np.eye(3), inter_site_vector=k*np.array([-1, -1, 0])),
+                 Coupling(1, 2, np.eye(3), inter_site_vector=k*np.array([ 0,  1, 0])),
+                 Coupling(1, 2, np.eye(3), inter_site_vector=k*np.array([ 0, -1, 0])),
+                 Coupling(2, 1, np.eye(3), inter_site_vector=k*np.array([ 0,  1, 0])),
+                 Coupling(2, 1, np.eye(3), inter_site_vector=k*np.array([ 0, -1, 0]))
                  ]
 
 
@@ -49,9 +51,12 @@ def kagome_ferromagnet():
             q_mags[1:].reshape(-1, 1) * np.array([0, 1, 0]).reshape(1, -1)
     ))
 
+    # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
+
     indices = np.arange(201)
 
     label_indices = [0, 100, 200]
+    # label_indices = []
 
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
 
@@ -70,10 +75,15 @@ if __name__ == "__main__":
 
     energies = [np.sort(energy.real) for energy in result.raw_energies]
 
+    positive_energies = [energy[energy>0] for energy in energies]
+    min_energy = min([np.min(energy) for energy in positive_energies])
+    translated_energies = [energy - min_energy for energy in positive_energies]
+
+
     # Note: we get complex data types with real part zero
 
-    plt.plot(indices, energies)
-    plt.plot(indices, [30*method.value for method in result.method])
+    plt.plot(indices, translated_energies)
+    # plt.plot(indices, [method.value for method in result.method])
     plt.xticks(label_indices, labels)
 
     plt.show()

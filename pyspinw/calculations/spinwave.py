@@ -47,7 +47,7 @@ def spinwave_calculation(rotations: np.ndarray,
 
     # Create the matrix sqrt(S_i S_j)/2
     root_mags = np.sqrt(0.5*magnitudes) # S_i / sqrt(2)
-    total_spin_coefficients = root_mags.reshape(-1, 1) * root_mags.reshape(1, -1)
+    spin_coefficients = root_mags.reshape(-1, 1) * root_mags.reshape(1, -1)
 
     energies = []
     methods = []
@@ -70,19 +70,21 @@ def spinwave_calculation(rotations: np.ndarray,
 
 
             for l in range(n_sites):
-                C[i, l] += eta[i, :] @ coupling.matrix @ eta[l, :]
-                C[l, j] += eta[j, :] @ coupling.matrix @ eta[l, :]
+                C[j, j] += spin_coefficients[l,l] * eta[j, :].T @ coupling.matrix @ eta[l, :]
 
-        A *= total_spin_coefficients
-        B *= total_spin_coefficients
-        C *= total_spin_coefficients # should be done over each site, but doesn't matter for now
+        A *= spin_coefficients
+        B *= spin_coefficients
+        C *= 2
         #
         # print("A", A)
         # print("B", B)
         # print("C", C)
 
 
-        hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A - C]])
+        # hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+        hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+
+        pass
 
         #
         # We need to enforce the bosonic commutation properties, we do this
@@ -133,8 +135,6 @@ def spinwave_calculation(rotations: np.ndarray,
                 q_vectors=q_vectors,
                 raw_energies=energies,
                 method=methods)
-
-
 
 
 
