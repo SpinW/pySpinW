@@ -5,9 +5,16 @@ from pyspinw.checks import check_sizes
 
 @dataclass
 class InteractionGeometries:
+    """ Holds the output from the algorithm to find relative positions"""
+
     cell_indices: np.ndarray
+    """ Indices of the cells where a point was found at a sufficiently close distance"""
+
     vectors: np.ndarray
+    """ Vectors for each position found"""
+
     distances: np.ndarray
+    """ Distance to the each point"""
 
 
 @check_sizes(fractional_coordinates=(3,),
