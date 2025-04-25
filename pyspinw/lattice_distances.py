@@ -16,7 +16,18 @@ def find_relative_positions(
         fractional_coordinates: np.ndarray,
         unit_cell_transform: np.ndarray,
         max_distance: float,
-        tol: float=1e-9) -> InteractionGeometries:
+        tol: float=1e-7,
+        allow_self=True) -> InteractionGeometries:
+
+    """ Find all sets of fractional coordinates produced by translations of input coordinates by multiples
+     of the unit cell, and that differ by a cartesian distance of a most max_distance from (0,0,0)
+
+     :param fractional_coordinates: Fractional coordinates of the base point
+     :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates
+     :param max_distance: Maximum distance
+     :param tol: tolerance used to check for identity
+     :param allow_self: include the original point with no translation (i,j,k = 0,0,0)
+     """
 
     fractional_coordinate_offsets = get_cell_offsets_containing_bounding_box(unit_cell_transform, max_distance)
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
@@ -27,9 +38,16 @@ def find_relative_positions(
 
     within_distance = square_distances <= (max_distance + tol)**2
 
-    output_indices = np.array(fractional_coordinate_offsets[within_distance, :], dtype=int)
-    output_positions = cartesian_position[within_distance, :]
-    output_distances = np.sqrt(square_distances[within_distance])
+    if allow_self:
+        valid_distance = within_distance
+    else:
+        not_self = square_distances > tol*tol
+        valid_distance = np.logical_and(within_distance, not_self)
+
+
+    output_indices = np.array(fractional_coordinate_offsets[valid_distance, :], dtype=int)
+    output_positions = cartesian_position[valid_distance, :]
+    output_distances = np.sqrt(square_distances[valid_distance])
 
     return InteractionGeometries(output_indices, output_positions, output_distances)
 
@@ -103,10 +121,15 @@ def demo_point_finding():
     import matplotlib.pyplot as plt
 
     radius = 5
+    # transform =np.array(object=
+    #     [[ 2, 0,          0         ],
+    #      [ 1, 1.73205078, 0         ],
+    #      [ 1, 0.57735026, 1.63299322]])
+
     transform =np.array(object=
-        [[ 2, 0,          0         ],
-         [ 1, 1.73205078, 0         ],
-         [ 1, 0.57735026, 1.63299322]])
+        [[ 1, -0.1, 0.02 ],
+         [ 0.6, 3, 0.02 ],
+         [ 1, 1.3, 1.2 ]])
 
     point_fractional_position = np.array([0.2, 0.4, 0.6])
     # point_fractional_position = np.array([0, 0, 0], dtype=float)
@@ -154,7 +177,16 @@ def demo_point_finding():
 
     plt.figure("Cartesian Space")
 
+    # Plot the cicle
     plt.plot(untransformed_slice[0, :], untransformed_slice[1, :])
+
+    # Plot the checked points
+    fractional_positions = initial_points + point_fractional_position.reshape(1, 3)
+    cartesian_position = fractional_positions @ transform.T
+
+    plt.scatter(cartesian_position[:, 0], cartesian_position[:, 1])
+
+    # Plot the chosen points
     plt.scatter(results.vectors[:, 0], results.vectors[:, 1])
 
     plt.show()
