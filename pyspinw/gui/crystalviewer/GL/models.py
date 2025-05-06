@@ -10,8 +10,8 @@ import numpy as np
 
 from OpenGL.GL import *
 
-from gui.rendering.GL.renderable import Renderable
-from gui.rendering.GL.color import ColorSpecification, ColorSpecificationMethod
+from pyspinw.gui.crystalviewer.GL.renderable import Renderable
+from pyspinw.gui.crystalviewer.GL.color import ColorSpecification, ColorSpecificationMethod
 
 VertexData = Union[Sequence[Tuple[float, float, float]], np.ndarray]
 EdgeData = Union[Sequence[Tuple[int, int]], np.ndarray]

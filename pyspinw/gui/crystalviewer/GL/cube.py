@@ -1,7 +1,7 @@
 from typing import Optional
 
-from gui.rendering.GL.models import FullModel
-from gui.rendering.GL.color import ColorSpecification
+from pyspinw.gui.crystalviewer.GL.models import FullModel
+from pyspinw.gui.crystalviewer.GL.color import ColorSpecification
 
 
 class Cube(FullModel):

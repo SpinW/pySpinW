@@ -4,15 +4,15 @@ import numpy as np
 
 from PySide6 import QtWidgets
 
-from src.gui.rendering.GL.scene import Scene
-from src.gui.rendering.GL.models import ModelBase
-from src.gui.rendering.GL.color import uniform_coloring, mesh_coloring
-from src.gui.rendering.GL.surface import Surface
-from src.gui.rendering.GL.cone import Cone
-from src.gui.rendering.GL.cube import Cube
-from src.gui.rendering.GL.cylinder import Cylinder
-from src.gui.rendering.GL.icosahedron import Icosahedron
-from src.gui.rendering.GL.sphere import Sphere
+from pyspinw.gui.crystalviewer.GL.scene import Scene
+from pyspinw.gui.crystalviewer.GL.models import ModelBase
+from pyspinw.gui.crystalviewer.GL.color import uniform_coloring, mesh_coloring
+from pyspinw.gui.crystalviewer.GL.surface import Surface
+from pyspinw.gui.crystalviewer.GL.cone import Cone
+from pyspinw.gui.crystalviewer.GL.cube import Cube
+from pyspinw.gui.crystalviewer.GL.cylinder import Cylinder
+from pyspinw.gui.crystalviewer.GL.icosahedron import Icosahedron
+from pyspinw.gui.crystalviewer.GL.sphere import Sphere
 
 
 def mesh_example():

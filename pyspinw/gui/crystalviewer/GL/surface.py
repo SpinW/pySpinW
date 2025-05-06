@@ -3,8 +3,8 @@ from typing import Tuple
 import logging
 import numpy as np
 
-from gui.rendering.GL.models import FullModel
-from gui.rendering.GL.color import ColorMap, uniform_coloring
+from pyspinw.gui.crystalviewer.GL.models import FullModel
+from pyspinw.gui.crystalviewer.GL.color import ColorMap, uniform_coloring
 
 logger = logging.getLogger("GL.Surface")
 

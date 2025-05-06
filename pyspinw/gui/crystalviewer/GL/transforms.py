@@ -5,7 +5,7 @@ import numpy as np
 
 from OpenGL.GL import *
 
-from gui.rendering.GL.renderable import Renderable
+from pyspinw.gui.crystalviewer.GL.renderable import Renderable
 
 
 logger = logging.getLogger("GL.transforms")

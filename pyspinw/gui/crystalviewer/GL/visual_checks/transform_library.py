@@ -2,13 +2,13 @@
 
 from PySide6 import QtWidgets
 
-from src.gui.rendering.GL.scene import Scene
-from src.gui.rendering.GL.color import uniform_coloring
-from src.gui.rendering.GL.cone import Cone
-from src.gui.rendering.GL.cube import Cube
-from src.gui.rendering.GL.cylinder import Cylinder
-from src.gui.rendering.GL.icosahedron import Icosahedron
-from src.gui.rendering.GL.transforms import SceneGraphNode, Translation, Rotation, Scaling
+from pyspinw.gui.crystalviewer.GL.scene import Scene
+from pyspinw.gui.crystalviewer.GL.color import uniform_coloring
+from pyspinw.gui.crystalviewer.GL.cone import Cone
+from pyspinw.gui.crystalviewer.GL.cube import Cube
+from pyspinw.gui.crystalviewer.GL.cylinder import Cylinder
+from pyspinw.gui.crystalviewer.GL.icosahedron import Icosahedron
+from pyspinw.gui.crystalviewer.GL.transforms import SceneGraphNode, Translation, Rotation, Scaling
 
 def transform_tests():
     """ Shows all the existing primitives that can be rendered, press a key to go through them

@@ -2,8 +2,8 @@ from typing import Optional
 
 import numpy as np
 
-from gui.rendering.GL.models import FullModel
-from gui.rendering.GL.color import ColorSpecification
+from pyspinw.gui.crystalviewer.GL.models import FullModel
+from pyspinw.gui.crystalviewer.GL.color import ColorSpecification
 
 
 class Sphere(FullModel):
