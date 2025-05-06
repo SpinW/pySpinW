@@ -2,3 +2,6 @@ numpy >= 2.0.0
 ase
 PyCifRW
 spglib == 2.5.0
+
+pyopengl
+pyside6
