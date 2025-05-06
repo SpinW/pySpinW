@@ -1,3 +1,5 @@
+""" Spinwave Calculations"""
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -8,17 +10,20 @@ from pyspinw.checks import check_sizes
 
 @dataclass
 class Coupling:
+    """ Temporary description of the coupling between atoms"""
     index1: int
     index2: int
     matrix: np.ndarray
     inter_site_vector: np.ndarray
 
 class CalculationMethod(Enum):
-    cholesky = 0
-    ldl = 1
+    """ Type of method used (for debugging purposes) """
+    CHOLESKY = 0
+    LDL = 1
 
 @dataclass
 class SpinwaveResult:
+    """ Results from a spinwave calculation"""
     q_vectors: np.ndarray
     raw_energies: list[np.ndarray]
     method: list[CalculationMethod]
@@ -36,6 +41,9 @@ def spinwave_calculation(rotations: np.ndarray,
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
 
     """
+
+    # Disable linting for bad variable names, because they should match the docs
+    # pylint: disable=C0103
 
     n_sites = rotations.shape[0]
 
@@ -84,8 +92,6 @@ def spinwave_calculation(rotations: np.ndarray,
         # hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
         hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
 
-        pass
-
         #
         # We need to enforce the bosonic commutation properties, we do this
         # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
@@ -110,12 +116,13 @@ def spinwave_calculation(rotations: np.ndarray,
 
             to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
-            methods.append(CalculationMethod.cholesky)
+            methods.append(CalculationMethod.CHOLESKY)
 
         except np.linalg.LinAlgError: # Catch postive definiteness errors
 
 
-            l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
+            # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
+            l, d, _ = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
             sqrt_hamiltonian = l @ np.sqrt(d)
 
             # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
@@ -125,16 +132,15 @@ def spinwave_calculation(rotations: np.ndarray,
 
             to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
-            methods.append(CalculationMethod.ldl)
+            methods.append(CalculationMethod.LDL)
 
         eig_res = np.linalg.eig(to_diagonalise)
 
         energies.append(eig_res.eigenvalues) # These are currently the square energies
 
+    # pylint: enable=C0103
+
     return SpinwaveResult(
                 q_vectors=q_vectors,
                 raw_energies=energies,
                 method=methods)
-
-
-

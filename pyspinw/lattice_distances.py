@@ -1,3 +1,5 @@
+""" Calculations for finding distances between sites in a lattice """
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -125,7 +127,10 @@ def get_cell_offsets_containing_bounding_box(
 def demo_point_finding():
     """ Demonstrate the calculation of the calculation of cells for searching in """
 
+    # We want to only import matplotlib here
+    #pylint: disable=C0415
     import matplotlib.pyplot as plt
+    # pylint: enable=C0415
 
     radius = 5
     # transform =np.array(object=
