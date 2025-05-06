@@ -1,9 +1,9 @@
 """ Functions for working with different basis vectors"""
 
 import numpy as np
-from pyspinw.dimensionality import dimensionality_check
+from pyspinw.checks import check_sizes
 
-@dimensionality_check(vectors=(-1, 3))
+@check_sizes(vectors=(-1, 3))
 def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """ Find a set of orthonormal basis vectors aligned with the first being aligned to the input vectors
 

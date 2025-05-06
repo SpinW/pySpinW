@@ -1,0 +1,30 @@
+
+nCoupling = size(JJ,3);
+
+zedL = repmat(permute(zed(:,atom1),[1 3 2]),[1 3 1]);
+zedR = repmat(permute(zed(:,atom2),[3 1 2]),[3 1 1]);
+
+etaL = repmat(permute(eta(:,atom1),[1 3 2]),[1 3 1]);
+etaR = repmat(permute(eta(:,atom2),[3 1 2]),[3 1 1]);
+
+SiSj = sqrt(S0(atom1).*S0(atom2));
+
+AD  =  shiftdim(sum(sum(etaL.*JJ.*etaR,2),1),1);
+A20 = -S0(atom2).*AD;
+D20 = -S0(atom1).*AD;
+BC0 =  SiSj.*shiftdim(sum(sum(zedL.*JJ.*     zedR ,2),1),1);
+AD0 =  SiSj.*shiftdim(sum(sum(zedL.*JJ.*conj(zedR),2),1),1);
+
+ExpF = exp(1i*permute(sum(bsxfun(@times,dR,permute(hklExtMEM,[1 3 2])),1),[2 3 1]))';
+
+% Creates the matrix elements containing zed.
+A1 = bsxfun(@times,     AD0 ,ExpF);
+B  = bsxfun(@times,     BC0 ,ExpF);
+D1 = bsxfun(@times,conj(AD0),ExpF);
+
+
+ABCD   = [A1     2*B      D1];
+
+
+ham = accumarray(idxAll,ABCD(:),[2*nMagExt 2*nMagExt nHklMEM]);
+ham = ham + repmat(accumarray([idxA2; idxD2],2*[A20 D20],[1 1]*2*nMagExt),[1 1 nHklMEM]);
