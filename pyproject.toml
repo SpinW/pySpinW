@@ -1,0 +1,15 @@
+# TODO: Fill this out fully
+
+[project]
+name = "PySpinW"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyspinw.__version__"}
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["PL"]
+ignore = ["PLR"]
