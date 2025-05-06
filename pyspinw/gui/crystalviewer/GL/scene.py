@@ -25,7 +25,7 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
         self.view_centre = np.array([0.0, 0.0, 0.0])
         self.view_fov = 60
 
-        self.background_color = np.array([0.0, 0.0, 0.0])
+        self.background_color = np.array([0.0, 0.0, 0.0, 0.0])
 
         self.min_distance = 0.1
         self.max_distance = 250
