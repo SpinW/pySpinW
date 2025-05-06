@@ -5,7 +5,8 @@ from PySide6 import QtWidgets
 
 from pyspinw.gui.crystalviewer.GL.color import uniform_coloring
 from pyspinw.gui.crystalviewer.GL.scene import Scene
-from pyspinw.gui.crystalviewer.unitcell import UnitCellGraphics
+from pyspinw.gui.crystalviewer.arrowgraphics import ArrowGraphics
+from pyspinw.gui.crystalviewer.unitcellgraphics import UnitCellGraphics
 from pyspinw.unitcell import UnitCell
 
 class CrystalViewer(Scene):
@@ -41,6 +42,8 @@ def main():
 
     unit_cell = UnitCell(3,4,5, 60, 45)
     viewer = CrystalViewer(unit_cell)
+
+    viewer.add(ArrowGraphics(uniform_coloring(1,0,0)))
 
     mainWindow.setCentralWidget(viewer)
     mainWindow.show()
