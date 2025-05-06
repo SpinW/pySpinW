@@ -83,5 +83,6 @@ class Data:
     """ Placeholder """
 
 class Experiment:
+    """ The setup of a neutron experiment (base class)"""
     def __init__(self, sample: Sample, data: Data | None = None):
         pass

@@ -14,6 +14,7 @@ class GeneralAnisotropy(Anisotropy):
 
         self._a = a
 
+    @property
     def anisotropy_matrix(self) -> np.ndarray:
         return self._a
 
