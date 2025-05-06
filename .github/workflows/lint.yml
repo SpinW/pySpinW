@@ -20,9 +20,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install ruff 
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-    - name: Analysing the code with pylint
+    - name: Analysing the code with ruff 
       run: |
-        python -m pylint $(git ls-files 'pyspinw/*.py')
+        ruff check pyspinw/ 
