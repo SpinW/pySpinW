@@ -10,25 +10,41 @@ from pyspinw.gui.crystalviewer.unitcellgraphics import UnitCellGraphics
 from pyspinw.unitcell import UnitCell
 
 class CrystalViewer(Scene):
-    def __init__(self, unit_cell: UnitCell,
+    def __init__(self,
                  parent=None,
                  on_key: Callable[[int], None] = lambda x: None):
 
         super().__init__(parent, on_key=on_key)
 
-        self.unit_cell_graphics = UnitCellGraphics(unit_cell, uniform_coloring(1,1,1))
+        self._unit_cell = None
+        self._unit_cell_graphics = UnitCellGraphics(UnitCell(1,1,1,90,90,90), uniform_coloring(1, 1, 1))
+        self._unit_cell_graphics.wireframe_render_enabled = False
 
-        self.add(self.unit_cell_graphics)
+        self.add(self._unit_cell_graphics)
 
         # Set the scale and position of things
-
-        self.view_centre = unit_cell.centre
 
         self.min_distance = 0.01
         self.max_distance = 250
 
-        self.view_distance = 3*np.linalg.norm(unit_cell.centre)
 
+    @property
+    def unit_cell(self) -> UnitCell | None:
+        return self.unit_cell
+
+    @unit_cell.setter
+    def unit_cell(self, unit_cell: UnitCell | None):
+        self._unit_cell = unit_cell
+
+        if unit_cell is None:
+            self._unit_cell_graphics.wireframe_render_enabled = False
+        else:
+            self._unit_cell_graphics.wireframe_render_enabled = True
+            self._unit_cell_graphics.cell = unit_cell
+            self.view_centre = unit_cell.centre
+            self.view_distance = 3*np.linalg.norm(unit_cell.centre)
+
+        self.update()
 
 def main():
     """ Show a demo of the opengl.rst window """

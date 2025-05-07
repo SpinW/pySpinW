@@ -18,6 +18,8 @@ class UnitCellGraphics(WireModel):
                  unit_cell: UnitCell,
                  edge_colors: ColorSpecification | None):
 
+        self._cell = unit_cell
+
         # Based on cube primitive geometry
         vertices = [unit_cell.fractional_to_cartesian(np.array([vert])+0.5)[0,:] for vert in Cube.cube_vertices]
 
@@ -28,3 +30,11 @@ class UnitCellGraphics(WireModel):
             edges=edges,
             edge_colors=edge_colors)
 
+    @property
+    def cell(self):
+        return self._cell
+
+    @cell.setter
+    def cell(self, unit_cell: UnitCell):
+        self._cell = unit_cell
+        self.vertices = [unit_cell.fractional_to_cartesian(np.array([vert])+0.5)[0,:] for vert in Cube.cube_vertices]

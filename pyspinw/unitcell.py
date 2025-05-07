@@ -4,11 +4,19 @@ from pyspinw.checks import check_sizes
 
 from ase.geometry.cell import cellpar_to_cell
 
+class BadCellDefinition(Exception):
+    """ Error for bad cell defintion"""
+
 class RawUnitCell:
     """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""
     def __init__(self, xyz):
         self._xyz = xyz
-        self._xyz_inv = np.linalg.inv(xyz)
+
+        try:
+            self._xyz_inv = np.linalg.inv(xyz)
+
+        except np.linalg.LinAlgError as e:
+            raise BadCellDefinition(f"{self._xyz}")
 
     @check_sizes(points=(-1, 3))
     def fractional_to_cartesian(self, points: np.ndarray):
@@ -60,3 +68,6 @@ class UnitCell(RawUnitCell):
         xyz = cellpar_to_cell([a,b,c,alpha,beta,gamma], ab_normal=ab_normal, a_direction=direction)
 
         super().__init__(xyz)
+
+    def __repr__(self):
+        return f"UnitCell({self.a}, {self.b}, {self.c} | {self.alpha}, {self.beta}, {self.gamma})"
