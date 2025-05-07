@@ -18,7 +18,7 @@ class ArrowGraphics(Renderable):
             Translation(0,0,1,
                         Scaling(cone_scale, cone_scale, cone_scale,
                             Cone(colors=color))),
-            Scaling(cylinder_width_scale, cylinder_width_scale, 1, Cylinder(colors=color)))
+                                 Scaling(cylinder_width_scale, cylinder_width_scale, 1, Cylinder(colors=color)))
 
     def render_solid(self):
         self.tree.render_solid()
