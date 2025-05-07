@@ -1,4 +1,4 @@
-""" Coupling Terms """
+"""Coupling Terms"""
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from pyspinw.util import triple_product_matrix
 
 
 class HeisenbergCoupling(Coupling):
-    """ Heisenberg Coupling, which takes the form
+    """Heisenberg Coupling, which takes the form
 
     H_ij = J_ij (S_i . S_j)
 
@@ -26,7 +26,7 @@ class HeisenbergCoupling(Coupling):
 
 
 class DiagonalCoupling(Coupling):
-    """ Diagonal coupling, which takes the form
+    """Diagonal coupling, which takes the form
 
     H_ij = J^x_ij S^x_i S^x_j + J^y_ij S^y_i S^y_j + J^z_ij S^z_i S^z_j
 
@@ -46,8 +46,7 @@ class DiagonalCoupling(Coupling):
 
 
 class XYCoupling(Coupling):
-
-    """ "XY" coupling, which takes the form
+    """ "XY"  coupling, which takes the form
 
     H_ij = J_ij (S^x_i S^x_j + S^y_i S^y_j)
 
@@ -65,7 +64,6 @@ class XYCoupling(Coupling):
 
 
 class XXZCoupling(Coupling):
-
     """ "XXZ" coupling, which takes the form
 
     H_ij = J_xy (S^x_i S^x_j + S^y_i S^y_j) + J_z (S^z_i S^z_j)
@@ -76,6 +74,7 @@ class XXZCoupling(Coupling):
     :param j_z: The coupling coefficient for the z component
 
     """
+
     def __init__(self, site_1: Identifier, site_2: Identifier, j_xy, j_z):
         super().__init__(site_1, site_2)
         self._j_xy = j_xy
@@ -84,7 +83,7 @@ class XXZCoupling(Coupling):
 
 
 class IsingCoupling(Coupling):
-    """ Ising coupling (z component only), which takes the form
+    """Ising coupling (z component only), which takes the form
 
     H_ij = J_ij S^z_i S^z_j
 
@@ -101,7 +100,7 @@ class IsingCoupling(Coupling):
 
 
 class DMCoupling(Coupling):
-    """ Dzyaloshinskii–Moriya coupling, which takes the form
+    """Dzyaloshinskii–Moriya coupling, which takes the form
 
     H_ij = D_ij (S_i x S_j)
 
@@ -110,6 +109,7 @@ class DMCoupling(Coupling):
     :param dm_vector: The vector D above
 
     """
+
     @check_sizes(d_vector=(3,), force_numpy=True)
     def __init__(self, site_1: Identifier, site_2: Identifier, dm_vector: np.ndarray):
         super().__init__(site_1, site_2)
