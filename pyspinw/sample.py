@@ -1,4 +1,4 @@
-""" Different Kinds of samples"""
+"""Different Kinds of samples"""
 
 from pyspinw._base import Sample
 
@@ -6,18 +6,19 @@ from pyspinw._base import Sample
 
 
 class SingleCrystal(Sample):
-    """ Specifies a single crystal sample """
+    """Specifies a single crystal sample"""
 
 
 class Multidomain(Sample):
-    """ Sample consisting of multiple domains"""
+    """Sample consisting of multiple domains"""
 
 
 class Twin(Multidomain):
-    """ Specify a twinned crystal.
+    """Specify a twinned crystal.
 
-    Special case of multidomain """
+    Special case of multidomain
+    """
 
 
 class Powder(Sample):
-    """ Sample is a powder """
+    """Sample is a powder"""

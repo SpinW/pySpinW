@@ -1,4 +1,4 @@
-""" Tools for checking input shapes """
+"""Tools for checking input shapes"""
 
 import functools
 
@@ -9,11 +9,11 @@ import numpy as np
 
 
 class DimensionalityError(ValueError):
-    """ The dimensions of a numpy array don't match the specification """
+    """The dimensions of a numpy array don't match the specification"""
 
 
 def check_sizes(force_numpy: bool = False, **kwargs):
-    """ Decorator to check the dimensionality of a given vector
+    """Decorator to check the dimensionality of a given vector
 
     Example usage:
         check that a function has an n-by-3 vector input called `a`, and
@@ -29,7 +29,6 @@ def check_sizes(force_numpy: bool = False, **kwargs):
     :param force_numpy: default=True, Convert the named arrays into numpy form if they are not already
 
     """
-
     # If assertions are not enabled, give a decorator that just return the function as is
     if not __debug__:
         def identity(fun):

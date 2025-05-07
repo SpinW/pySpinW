@@ -1,4 +1,4 @@
-""" The two types of description of the magnetic structure"""
+"""The two types of description of the magnetic structure"""
 import math
 from fractions import Fraction
 from typing import Sequence
@@ -15,11 +15,11 @@ from pyspinw.checks import check_sizes
 
 
 class LatticeIncomensurable(Exception):
-    """ Raised when the geometry of an operation doesn't work under the constraints of a given lattice """
+    """Raised when the geometry of an operation doesn't work under the constraints of a given lattice"""
 
 
 class MagneticLattice(MagneticStructure):
-    """ A magnetic structure commensurate with the underlying crystal structure """
+    """A magnetic structure commensurate with the underlying crystal structure"""
 
     def __init__(self,
                  lattice: BravaisLattice,
@@ -35,8 +35,7 @@ class MagneticLattice(MagneticStructure):
 
     @check_sizes(vector=(3,))
     def add_propagation(self, vector: np.ndarray) -> "RotatingMagneticStructure":
-        """ Create a magnetic structure based on this with an additional propagation vector"""
-
+        """Create a magnetic structure based on this with an additional propagation vector"""
         return RotatingMagneticStructure(
             self._lattice,
             self._atoms,
@@ -44,15 +43,15 @@ class MagneticLattice(MagneticStructure):
             vector)
 
 class RotatingMagneticStructure(MagneticStructure):
-    """ A magnetic structure specified by a basic lattice and propagation vector
+    """A magnetic structure specified by a basic lattice and propagation vector
 
-     :param lattice: Bravais lattice describing the unit cell
-     :param atoms: list of atoms within the magnetic cell, with coordinates in terms of the unit cell. You might,
-                   for example, have a magnetic cell made of two crystal unit cells, you would then specify
-                   atoms for each crystal cell, with say, [1/2,0,0], and [3/2,0,0] on top of which you would define the
-                   corresponding magnetism
-     :param supercell_size: number of crystal unit cells making up the magnetic cell
-     """
+    :param lattice: Bravais lattice describing the unit cell
+    :param atoms: list of atoms within the magnetic cell, with coordinates in terms of the unit cell. You might,
+                  for example, have a magnetic cell made of two crystal unit cells, you would then specify
+                  atoms for each crystal cell, with say, [1/2,0,0], and [3/2,0,0] on top of which you would define the
+                  corresponding magnetism
+    :param supercell_size: number of crystal unit cells making up the magnetic cell
+    """
 
     @check_sizes(propagation_vector=(3,))
     def __init__(self,
@@ -70,8 +69,7 @@ class RotatingMagneticStructure(MagneticStructure):
 
     @staticmethod
     def _calculate_supercell_scaling(propagation_component: complex, supercell_component: int, max_denominator: int):
-        """ Utility function for calculating scaling of the supercell """
-
+        """Utility function for calculating scaling of the supercell"""
         real_frac = Fraction(propagation_component.real).limit_denominator(max_denominator)
         imag_frac = Fraction(propagation_component.imag).limit_denominator(max_denominator)
 
@@ -84,8 +82,7 @@ class RotatingMagneticStructure(MagneticStructure):
         return math.lcm(real, imag, cell)
 
     def to_lattice(self, max_denominator: int = 10_000) -> MagneticLattice:
-        """ Convert to a lattice, if possible """
-
+        """Convert to a lattice, if possible"""
         # scale for each component of the supercell
         new_cell_size = (RotatingMagneticStructure._calculate_supercell_scaling(
                             complex(self._propagation_vector[0]),

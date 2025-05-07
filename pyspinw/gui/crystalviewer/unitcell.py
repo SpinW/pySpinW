@@ -1,7 +1,10 @@
+"""Graphics for viewing the unit cell."""
 from pyspinw.gui.crystalviewer.GL.models import WireModel
 
 
 class UnitCellGraphics(WireModel):
+    """Class for a wire model of the unit cell."""
+
     cube_vertices = [
         (-0.5, -0.5, -0.5),
         (-0.5, -0.5, 0.5),
@@ -27,7 +30,7 @@ class UnitCellGraphics(WireModel):
         (4, 6),
         (0, 2)
     ]
-    
+
     def __init__(self,
                  colors: Optional[ColorSpecification]=None,
                  edge_colors: Optional[ColorSpecification]=None):

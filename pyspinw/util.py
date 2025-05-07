@@ -1,4 +1,4 @@
-""" Generally helpful functions that don't obviously live anywhere else in particular """
+"""Generally helpful functions that don't obviously live anywhere else in particular"""
 
 import numpy as np
 
@@ -11,7 +11,6 @@ def triple_product_matrix(v: np.ndarray):
 
     X^T M Y = V . (X x Y)
     """
-
     x, y, z = v
 
     return np.array([
@@ -21,7 +20,7 @@ def triple_product_matrix(v: np.ndarray):
 
 
 def demo_triple_product_matrix():
-    """ Show an example of making a matrix that does the triple product """
+    """Show an example of making a matrix that does the triple product"""
     v = [1, 2, 3]
     m = triple_product_matrix(v)
     print(m)

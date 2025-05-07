@@ -1,4 +1,4 @@
-""" Spinwave Calculations"""
+"""Spinwave Calculations"""
 
 from dataclasses import dataclass
 from enum import Enum
@@ -8,22 +8,29 @@ from scipy.linalg import ldl
 
 from pyspinw.checks import check_sizes
 
+
+# Disable linting for bad variable names, because they should match the docs
+# ruff: noqa: E741
+
 @dataclass
 class Coupling:
-    """ Temporary description of the coupling between atoms"""
+    """Temporary description of the coupling between atoms"""
+
     index1: int
     index2: int
     matrix: np.ndarray
     inter_site_vector: np.ndarray
 
 class CalculationMethod(Enum):
-    """ Type of method used (for debugging purposes) """
+    """Type of method used (for debugging purposes)"""
+
     CHOLESKY = 0
     LDL = 1
 
 @dataclass
 class SpinwaveResult:
-    """ Results from a spinwave calculation"""
+    """Results from a spinwave calculation"""
+
     q_vectors: np.ndarray
     raw_energies: list[np.ndarray]
     method: list[CalculationMethod]
@@ -36,15 +43,11 @@ def spinwave_calculation(rotations: np.ndarray,
                          magnitudes: np.ndarray,
                          q_vectors: np.ndarray,
                          couplings: list[Coupling]):
-    """ Main calculation step
+    """Main calculation step
 
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
 
     """
-
-    # Disable linting for bad variable names, because they should match the docs
-    # pylint: disable=C0103
-
     n_sites = rotations.shape[0]
 
     z = rotations[:,:,0] + 1j*rotations[:,:,1] # n-by-3, complex
