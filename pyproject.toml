@@ -11,5 +11,16 @@ version = {attr = "pyspinw.__version__"}
 line-length = 120
 
 [tool.ruff.lint]
-select = ["PL"]
-ignore = ["PLR"]
+select = ["D1",  # undocumented objects 
+          "D2",  # docstring formating w.r.t. whitespace
+          "E",  # pycodestyle errors
+          "PL",  # pylint
+          "W",  # pycodestyle warnings
+          ]
+
+ignore = ["D107",  # undocumented __init__
+          "D203",  # 1 blank line before class docstring
+          "D210",  # whitespace surrounding docstring text
+          "D213",  # multi-line summary starts at second line
+          "PLR",  # pylint refactor suggestions
+          ]

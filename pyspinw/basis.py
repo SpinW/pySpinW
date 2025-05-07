@@ -1,16 +1,15 @@
-""" Functions for working with different basis vectors"""
+"""Functions for working with different basis vectors"""
 
 import numpy as np
 from pyspinw.checks import check_sizes
 
 @check_sizes(vectors=(-1, 3))
 def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """ Find a set of orthonormal basis vectors aligned with the first being aligned to the input vectors
+    """Find a set of orthonormal basis vectors aligned with the first being aligned to the input vectors
 
     :param vectors: an n-by-3 numpy array containing the vectors to use to calculate the basis
     :param rcond: tolerance on the calculation, default is 3 * machine precision
     """
-
     if rcond is None:
         rcond = 3*np.finfo(vectors.dtype).eps # N * floating point epsilon
 
@@ -51,8 +50,7 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
 
 
 def demo_find_aligned_basis():
-    """ Example / test for find_aligned_basis"""
-
+    """Example / test for find_aligned_basis"""
     test_vectors = np.array([
         [2, 0, 0],
         [0, 3, 0],

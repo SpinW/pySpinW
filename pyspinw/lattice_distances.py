@@ -1,4 +1,4 @@
-""" Calculations for finding distances between sites in a lattice """
+"""Calculations for finding distances between sites in a lattice"""
 
 from dataclasses import dataclass
 
@@ -7,7 +7,7 @@ from pyspinw.checks import check_sizes
 
 @dataclass
 class InteractionGeometries:
-    """ Holds the output from the algorithm to find relative positions"""
+    """Holds the output from the algorithm to find relative positions"""
 
     cell_indices: np.ndarray
     """ Indices of the cells where a point was found at a sufficiently close distance"""
@@ -27,17 +27,17 @@ def find_relative_positions(
         max_distance: float,
         tol: float=1e-7,
         allow_self=True) -> InteractionGeometries:
+    """Find fractional coordinates from translations of the unit cell close to the origin.
 
-    """ Find all sets of fractional coordinates produced by translations of input coordinates by multiples
-     of the unit cell, and that differ by a cartesian distance of a most max_distance from (0,0,0)
+    Find all sets of fractional coordinates produced by translations of input coordinates by multiples
+    of the unit cell, and that differ by a cartesian distance of a most max_distance from (0,0,0)
 
-     :param fractional_coordinates: Fractional coordinates of the base point
-     :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates
-     :param max_distance: Maximum distance
-     :param tol: tolerance used to check for identity
-     :param allow_self: include the original point with no translation (i,j,k = 0,0,0)
-     """
-
+    :param fractional_coordinates: Fractional coordinates of the base point
+    :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates
+    :param max_distance: Maximum distance
+    :param tol: tolerance used to check for identity
+    :param allow_self: include the original point with no translation (i,j,k = 0,0,0)
+    """
     fractional_coordinate_offsets = get_cell_offsets_containing_bounding_box(unit_cell_transform, max_distance)
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
 
@@ -63,13 +63,11 @@ def find_relative_positions(
 def get_cell_offsets_containing_bounding_box(
         unit_cell_transform: np.ndarray,
         radius: np.ndarray) -> np.ndarray:
-
-    """ List of unit cell translations that corresponds to
+    """List of unit cell translations that corresponds to
 
     :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
     :param radius: maximum radius
     """
-
     # Note: In fractional coordinates, a fixed radius sphere is an ellipsoid
     # Note: We want any unit cell that overlaps with the ellipsoid, as such, we need to add
     #       a value of 0.5 at many points
@@ -125,8 +123,7 @@ def get_cell_offsets_containing_bounding_box(
 
 
 def demo_point_finding():
-    """ Demonstrate the calculation of the calculation of cells for searching in """
-
+    """Demonstrate the calculation of the calculation of cells for searching in"""
     # We want to only import matplotlib here
     #pylint: disable=C0415
     import matplotlib.pyplot as plt
