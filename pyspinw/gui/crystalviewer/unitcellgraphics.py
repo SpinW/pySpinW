@@ -21,8 +21,6 @@ class UnitCellGraphics(WireModel):
         # Based on cube primitive geometry
         vertices = [unit_cell.fractional_to_cartesian(np.array([vert])+0.5)[0,:] for vert in Cube.cube_vertices]
 
-        print(vertices)
-
         edges = Cube.cube_edges
 
         super().__init__(
