@@ -1,5 +1,6 @@
 """Spinwave Calculations"""
 
+from concurrent.futures import wait, ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 
@@ -57,9 +58,6 @@ def spinwave_calculation(rotations: np.ndarray,
     root_mags = np.sqrt(0.5*magnitudes) # S_i / sqrt(2)
     spin_coefficients = root_mags.reshape(-1, 1) * root_mags.reshape(1, -1)
 
-    energies = []
-    methods = []
-
     # calculate the C matrix for h(q), which is q-independent
     C = np.zeros((n_sites, n_sites), dtype=complex)
     sites_term = np.vecdot(magnitudes, eta, axis=0)
@@ -67,15 +65,16 @@ def spinwave_calculation(rotations: np.ndarray,
         j = coupling.index2
         C[j, j] += eta[j, :].T @ coupling.matrix @ sites_term
 
-    for q in q_vectors:
-        eigenvalues, method = _calc_single_q(q, C, n_sites, z, spin_coefficients, couplings)
-        energies.append(eigenvalues)  # These are currently the square energies
-        methods.append(method)
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        q_calculations = [executor.submit(_calc_single_q, q, C, n_sites, z, spin_coefficients, couplings)
+                          for q in q_vectors]
+    wait(q_calculations)
+    energies = [future.result() for future in q_calculations]
 
     return SpinwaveResult(
                 q_vectors=q_vectors,
                 raw_energies=energies,
-                method=methods)
+                method=[])
 
 
 def _calc_single_q(q: float,
@@ -144,7 +143,5 @@ def _calc_single_q(q: float,
 
     to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
 
-    return np.linalg.eigvals(to_diagonalise), method
-
-
+    return np.linalg.eigvals(to_diagonalise)
 
