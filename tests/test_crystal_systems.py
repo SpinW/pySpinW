@@ -17,7 +17,7 @@ def test_all_systems_present():
 
     names = []
     for crystal_system in crystal_systems:
-        names += [crystal_system.letter + big_letter for big_letter in crystal_system.bravais_options.letters]
+        names += [crystal_system.letter + bravais.letter for bravais in crystal_system.bravais_options.bravias]
 
     names.sort()
 

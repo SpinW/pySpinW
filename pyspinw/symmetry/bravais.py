@@ -1,15 +1,22 @@
 from dataclasses import dataclass
 
-from pyspinw.symmetry.system import CrystalSystem
-
-
+@dataclass
 class LatticeType:
     name: str
     letter: str
 
-@dataclass
-class Bravais:
-    system: CrystalSystem
-    lattice_type: LatticeType
+PRIMITIVE = LatticeType(name="Primitive", letter="P")
+BASE_CENTERED = LatticeType(name="Base Centered", letter="S")
+BODY_CENTERED = LatticeType(name="Body Centered", letter="I")
+FACE_CENTERED = LatticeType(name="Face Centered", letter="F")
+RHOMBOHEDRAL = LatticeType(name="Rhombohedral", letter="R")
 
-lattice_types: list[LatticeType] = []
+lattice_types: list[LatticeType] = [
+    PRIMITIVE,
+    BASE_CENTERED,
+    BODY_CENTERED,
+    FACE_CENTERED,
+    RHOMBOHEDRAL
+]
+
+lattice_type_name_lookup = {bravais.name: bravais for bravais in lattice_types}

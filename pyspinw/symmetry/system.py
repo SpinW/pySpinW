@@ -1,6 +1,7 @@
 from abc import ABC, abstractproperty, abstractmethod
 from dataclasses import dataclass
 
+from pyspinw.symmetry.bravais import PRIMITIVE, BASE_CENTERED, BODY_CENTERED, FACE_CENTERED, RHOMBOHEDRAL
 from pyspinw.symmetry.unitcell import UnitCell
 
 
@@ -25,24 +26,24 @@ class BravaisOptions:
     rhombohedral: bool = False
 
     @property
-    def letters(self):
+    def bravias(self):
         """List all possible uppercase lattice letters"""
         out = []
 
         if self.primitive:
-            out.append("P")
+            out.append(PRIMITIVE)
 
         if self.base_centered:
-            out.append("S")
+            out.append(BASE_CENTERED)
 
         if self.body_centered:
-            out.append("I")
+            out.append(BODY_CENTERED)
 
         if self.face_centered:
-            out.append("F")
+            out.append(FACE_CENTERED)
 
         if self.rhombohedral:
-            out.append("R")
+            out.append(RHOMBOHEDRAL)
 
         return out
 
@@ -211,6 +212,6 @@ crystal_system_name_lookup = {crystal_system.name: crystal_system for crystal_sy
 
 if __name__ == "__main__":
     for crystal_system in crystal_systems:
-        symbols = [crystal_system.letter + big_letter for big_letter in crystal_system.bravais_options.letters]
+        symbols = [crystal_system.letter + bravais.letter for bravais in crystal_system.bravais_options.bravias]
         print(f"{crystal_system.name}: " + ",".join(symbols))
 
