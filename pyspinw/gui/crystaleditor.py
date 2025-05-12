@@ -3,7 +3,8 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QApplication
 
 from pyspinw.gui.crystalviewer.viewer import CrystalViewer
 from pyspinw.gui.lattice import LatticeParameters
-from pyspinw.unitcell import UnitCell
+from pyspinw.gui.sites import SiteEditor
+from pyspinw.symmetry.unitcell import UnitCell
 
 
 class CrystalEditor(QMainWindow):
@@ -14,16 +15,19 @@ class CrystalEditor(QMainWindow):
 
         self.viewer = CrystalViewer(parent=self)
         self.lattice_parameters = LatticeParameters()
+        self.sites = SiteEditor()
 
         self.setCentralWidget(self.viewer)
 
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.lattice_parameters)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.sites)
 
         # Connections
-        self.lattice_parameters.unit_cell_changed.connect(self._on_unit_cell_changed)
+        self.lattice_parameters.unit_cell_widget.unit_cell_changed.connect(self._on_unit_cell_changed)
 
     def _on_unit_cell_changed(self, unit_cell: UnitCell):
         self.viewer.unit_cell = unit_cell
+
 
 
 if __name__ == "__main__":

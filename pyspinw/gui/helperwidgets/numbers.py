@@ -68,7 +68,8 @@ class FloatField(QWidget):
                  allow_slider: bool = True,
                  minimise_slider: bool = True,
                  slider_bottom: float | None = None,
-                 slider_top: float | None = None):
+                 slider_top: float | None = None,
+                 parent=None):
 
         """Floating point field wrapper
 
@@ -78,7 +79,7 @@ class FloatField(QWidget):
         :param allow_slider: turn on the slider
         :param minimise_slider: make the slider small
         """
-        super().__init__()
+        super().__init__(parent=parent)
 
         self.bottom = bottom
         self.top = top
@@ -143,7 +144,7 @@ class FloatField(QWidget):
         self.setLayout(outer_layout)
 
         # Remove padding
-        self.setContentsMargins(0,0,0,0)
+        # self.setContentsMargins(0,0,0,0)
 
         self._value = value
 

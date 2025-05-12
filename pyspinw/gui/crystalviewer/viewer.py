@@ -7,7 +7,7 @@ from pyspinw.gui.crystalviewer.GL.color import uniform_coloring
 from pyspinw.gui.crystalviewer.GL.scene import Scene
 from pyspinw.gui.crystalviewer.arrowgraphics import ArrowGraphics
 from pyspinw.gui.crystalviewer.unitcellgraphics import UnitCellGraphics
-from pyspinw.unitcell import UnitCell
+from pyspinw.symmetry.unitcell import UnitCell
 
 class CrystalViewer(Scene):
     def __init__(self,

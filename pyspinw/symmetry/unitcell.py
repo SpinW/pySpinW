@@ -63,11 +63,41 @@ class UnitCell(RawUnitCell):
         self.beta = beta
         self.gamma = gamma
 
+        self.ab_normal = ab_normal
+        self.direction = direction
+
         self.abc = np.array([a,b,c])
 
         xyz = cellpar_to_cell([a,b,c,alpha,beta,gamma], ab_normal=ab_normal, a_direction=direction)
 
         super().__init__(xyz)
+
+    def updated(self,
+                a: float | None = None,
+                b: float | None = None,
+                c: float | None = None,
+                alpha: float | None = None,
+                beta: float | None = None,
+                gamma: float | None = None,
+                ab_normal: tuple[float, float, float] | None = None,
+                direction: tuple[float, float, float] | None = None,
+                replace_direction=False):
+
+        a = self.a if a is None else a
+        b = self.b if b is None else b
+        c = self.c if c is None else c
+
+        alpha = self.alpha if alpha is None else alpha
+        beta = self.beta if beta is None else beta
+        gamma = self.gamma if gamma is None else gamma
+
+        ab_normal = self.ab_normal if ab_normal is None else ab_normal
+
+        if not replace_direction:
+            direction = self.direction
+
+        return UnitCell(a, b, c, alpha, beta, gamma, ab_normal, direction)
+
 
     def __repr__(self):
         return f"UnitCell({self.a}, {self.b}, {self.c} | {self.alpha}, {self.beta}, {self.gamma})"

@@ -7,7 +7,7 @@ from pyspinw.gui.crystalviewer.GL.color import ColorSpecification
 from pyspinw.gui.crystalviewer.GL.models import WireModel
 from pyspinw.gui.crystalviewer.GL.cube import Cube
 
-from pyspinw.unitcell import UnitCell
+from pyspinw.symmetry.unitcell import UnitCell
 
 
 
