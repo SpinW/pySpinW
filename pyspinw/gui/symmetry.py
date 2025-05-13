@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QGridLayout, QWidget, QComboBox, QLabel
 
-from pyspinw.symmetry.system import crystal_systems, crystal_system_name_lookup
+from pyspinw.symmetry.system import lattice_systems, lattice_system_name_lookup
 
 class QRightLabel(QLabel):
     def __init__(self, text: str):
@@ -26,7 +26,7 @@ class SymmetryWidget(QWidget):
         self.bravais_type_combo.currentTextChanged.connect(self._on_bravais_changed)
 
         # Fill in the crystal system combo, and set
-        for crystal_system in crystal_systems:
+        for crystal_system in lattice_systems:
             self.system_combo.addItem(crystal_system.name)
 
         self.system_combo.setCurrentText("Triclinic")
@@ -65,7 +65,7 @@ class SymmetryWidget(QWidget):
 
     def _on_crystal_system_changed(self):
         self._set_bravais_combo()
-        
+
         # Do this last
         self.symmetry_changed.emit()
 
@@ -74,5 +74,5 @@ class SymmetryWidget(QWidget):
 
     @property
     def current_crystal_system(self):
-        return crystal_system_name_lookup[self.system_combo.currentText()]
+        return lattice_system_name_lookup[self.system_combo.currentText()]
 

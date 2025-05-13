@@ -1,4 +1,4 @@
-from pyspinw.symmetry.system import crystal_systems
+from pyspinw.symmetry.system import lattice_systems
 
 def test_all_systems_present():
     """ Test that all the Bravais lattices are there are correct """
@@ -16,8 +16,8 @@ def test_all_systems_present():
     assert len(expected_names) == 14 # Sanity check
 
     names = []
-    for crystal_system in crystal_systems:
-        names += [crystal_system.letter + bravais.letter for bravais in crystal_system.bravais_options.bravias]
+    for lattice_system in lattice_systems:
+        names += [lattice_system.letter + bravais.letter for bravais in lattice_system.bravais_options.bravias]
 
     names.sort()
 

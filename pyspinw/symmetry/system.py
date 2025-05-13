@@ -47,7 +47,7 @@ class BravaisOptions:
 
         return out
 
-class CrystalSystem(ABC):
+class LatticeSystem(ABC):
 
     name: str = ""
     letter: str = ""
@@ -66,7 +66,7 @@ class CrystalSystem(ABC):
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
 
-class Triclinic(CrystalSystem):
+class Triclinic(LatticeSystem):
     name = "Triclinic"
     letter = "a"
 
@@ -82,7 +82,7 @@ class Triclinic(CrystalSystem):
         return BravaisOptions()
 
 
-class Monoclinic(CrystalSystem):
+class Monoclinic(LatticeSystem):
     name = "Monoclinic"
     letter = "m"
 
@@ -98,7 +98,7 @@ class Monoclinic(CrystalSystem):
         return BravaisOptions(base_centered=True)
 
 
-class Orthorhombic(CrystalSystem):
+class Orthorhombic(LatticeSystem):
     name = "Orthorhombic"
     letter = "o"
 
@@ -117,7 +117,7 @@ class Orthorhombic(CrystalSystem):
             face_centered=True)
 
 
-class Tetragonal(CrystalSystem):
+class Tetragonal(LatticeSystem):
     name = "Tetragonal"
     letter = "t"
 
@@ -137,7 +137,7 @@ class Tetragonal(CrystalSystem):
         return BravaisOptions(body_centered=True)
 
 
-class Rhombohedral(CrystalSystem):
+class Rhombohedral(LatticeSystem):
     name = "Rhombohedral"
     letter = "h"
 
@@ -157,7 +157,7 @@ class Rhombohedral(CrystalSystem):
         return BravaisOptions(primitive=False, rhombohedral=True)
 
 
-class Hexagonal(CrystalSystem):
+class Hexagonal(LatticeSystem):
     name = "Hexagonal"
     letter = "h"
 
@@ -177,7 +177,7 @@ class Hexagonal(CrystalSystem):
         return BravaisOptions()
 
 
-class Cubic(CrystalSystem):
+class Cubic(LatticeSystem):
     name = "Cubic"
     letter = "c"
 
@@ -198,7 +198,7 @@ class Cubic(CrystalSystem):
         return BravaisOptions(body_centered=True, face_centered=True)
 
 # All the possible systems
-crystal_systems: list[CrystalSystem] = [
+lattice_systems: list[LatticeSystem] = [
     Triclinic(),
     Monoclinic(),
     Orthorhombic(),
@@ -207,11 +207,12 @@ crystal_systems: list[CrystalSystem] = [
     Hexagonal(),
     Cubic()]
 
-# For looking things up by name
-crystal_system_name_lookup = {crystal_system.name: crystal_system for crystal_system in crystal_systems}
+# For looking things up by name or letter
+lattice_system_name_lookup = {lattice.name: lattice for lattice in lattice_systems}
+lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_systems}
 
 if __name__ == "__main__":
-    for crystal_system in crystal_systems:
-        symbols = [crystal_system.letter + bravais.letter for bravais in crystal_system.bravais_options.bravias]
-        print(f"{crystal_system.name}: " + ",".join(symbols))
+    for lattice_system in lattice_systems:
+        symbols = [lattice_system.letter + bravais.letter for bravais in lattice_system.bravais_options.bravias]
+        print(f"{lattice_system.name}: " + ",".join(symbols))
 

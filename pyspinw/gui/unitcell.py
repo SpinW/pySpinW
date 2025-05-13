@@ -2,7 +2,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QGridLayout, QLabel
 
 from pyspinw.gui.helperwidgets.numbers import FloatField
-from pyspinw.symmetry.system import crystal_systems, CrystalSystem
+from pyspinw.symmetry.system import lattice_systems, LatticeSystem
 from pyspinw.symmetry.unitcell import UnitCell
 
 class UnitCellWidget(QWidget):
@@ -13,7 +13,7 @@ class UnitCellWidget(QWidget):
         super().__init__(parent)
 
         self._current_unit_cell = UnitCell(1,1,1, 90, 90, 90) if unit_cell is None else unit_cell
-        self._crystal_system = crystal_systems[0]
+        self._crystal_system = lattice_systems[0]
 
         self.a = FloatField(self.current_unit_cell.a, bottom=0.0001, slider_top=50, parent=self)
         self.b = FloatField(self.current_unit_cell.b, bottom=0.0001, slider_top=50, parent=self)
@@ -64,11 +64,11 @@ class UnitCellWidget(QWidget):
         self.grid_layout = layout
 
     @property
-    def crystal_system(self) -> CrystalSystem:
+    def crystal_system(self) -> LatticeSystem:
         return self._crystal_system
 
     @crystal_system.setter
-    def crystal_system(self, crystal_system: CrystalSystem):
+    def crystal_system(self, crystal_system: LatticeSystem):
         self._crystal_system = crystal_system
 
         free_parameters = crystal_system.free_parameters

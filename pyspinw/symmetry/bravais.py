@@ -20,3 +20,4 @@ lattice_types: list[LatticeType] = [
 ]
 
 lattice_type_name_lookup = {bravais.name: bravais for bravais in lattice_types}
+lattice_type_letter_lookup = {bravais.name: bravais for bravais in lattice_types}
