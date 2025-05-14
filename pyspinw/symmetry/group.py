@@ -127,6 +127,7 @@ def _load_spg_group_data():
 
 # Load the data
 spacegroups, spacegroup_lattice_symbol_lookup = _load_spg_group_data()
+spacegroup_symbol_lookup = {group.symbol: group for group in spacegroups}
 
 if __name__ == "__main__":
     print(spacegroup_lattice_symbol_lookup)

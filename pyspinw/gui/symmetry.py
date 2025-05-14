@@ -4,7 +4,8 @@ from ase.lattice import bravais_lattices
 
 from pyspinw.symmetry.system import lattice_systems, lattice_system_name_lookup
 from pyspinw.symmetry.bravais import lattice_type_name_lookup
-from pyspinw.symmetry.group import spacegroup_lattice_symbol_lookup
+from pyspinw.symmetry.group import spacegroup_lattice_symbol_lookup, SymmetryGroup, MagneticSpaceGroup, SpaceGroup, \
+    spacegroup_symbol_lookup
 
 from pyspinw.gui.helperwidgets.misc import QRightLabel
 
@@ -99,7 +100,8 @@ class SymmetryWidget(QWidget):
     def _on_bravais_changed(self):
         self._set_spacegroup_combo()
 
-        self.symmetry_changed
+        # Do this last
+        self.symmetry_changed.emit()
 
     @property
     def current_lattice_system(self):
@@ -115,3 +117,11 @@ class SymmetryWidget(QWidget):
         lattice = self.current_lattice_system
         bravais = self.current_bravais
         return lattice.letter + bravais.letter
+
+    @property
+    def current_spacegroup_name(self):
+        return self.space_group_combo.currentText()
+
+    @property
+    def current_spacegroup(self) -> SpaceGroup:
+        return spacegroup_symbol_lookup[self.current_spacegroup_name]

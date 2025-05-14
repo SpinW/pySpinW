@@ -1,63 +1,13 @@
+import sys
+
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import QLineEdit, QWidget, QHBoxLayout, QApplication, QSlider, QPushButton, QVBoxLayout
 from PySide6.QtCore import Signal, Qt
 
-import sys
-
-class FloatSlider(QWidget):
-
-    changed = Signal(float)
-    resolution = 1000
-
-    def __init__(self, orientation: Qt.Orientation, value: float, bottom: float, top: float, parent=None):
-        super().__init__(parent)
-
-        self.slider = QSlider(orientation)
-        self.slider.setRange(0, FloatSlider.resolution)
-
-        self.top = top
-        self.bottom = bottom
-        self.scale = (top - bottom) / FloatSlider.resolution
-
-        self._value = value
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.slider)
-        self.setLayout(layout)
-
-        self._update_slider(value)
-
-
-        self.slider.sliderMoved.connect(self._on_changed)
-
-    def _on_changed(self):
-        self.changed.emit(self.value)
-
-    @property
-    def value(self) -> float:
-        return self.slider.value() * self.scale + self.bottom
-
-    @value.setter
-    def value(self, value):
-        self._value = value
-        self._update_slider(value, no_message=True)
-
-    def _update_slider(self, value: float, no_message: bool=False):
-        slider_value = max(min(int((value - self.bottom) / self.scale), FloatSlider.resolution), 0)
-
-        if no_message:
-            self.slider.blockSignals(True)
-
-        self.slider.setValue(slider_value)
-
-        if no_message:
-            self.slider.blockSignals(False)
-
-
+from pyspinw.gui.helperwidgets.misc import FloatSlider
 
 
 class FloatField(QWidget):
-
 
     changed = Signal(float)
 
@@ -80,6 +30,7 @@ class FloatField(QWidget):
         :param minimise_slider: make the slider small
         """
         super().__init__(parent=parent)
+
 
         self.bottom = bottom
         self.top = top
@@ -109,7 +60,8 @@ class FloatField(QWidget):
             self.slider.setVisible(False)
 
         self.text_field = QLineEdit(str(value))
-        self.slider_toggle = QPushButton("...")
+        self.slider_toggle = QPushButton("◄ ►", flat=True)
+        self.slider_toggle.setMaximumWidth(30)
 
         if bottom is None:
             bottom = -sys.float_info.max
@@ -128,30 +80,31 @@ class FloatField(QWidget):
 
         # Layout
 
-        outer_layout = QVBoxLayout()
-        inner_widget = QWidget(self)
 
+        inner_widget = QWidget(parent=self)
         inner_layout = QHBoxLayout()
+        inner_layout.setContentsMargins(0, 0, 0, 0)
+        inner_layout.setSpacing(0)
+
         inner_widget.setLayout(inner_layout)
         inner_layout.addWidget(self.text_field)
 
+        outer_layout = QVBoxLayout()
         outer_layout.addWidget(inner_widget)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.setLayout(outer_layout)
 
         if allow_slider:
             inner_layout.addWidget(self.slider_toggle)
             outer_layout.addWidget(self.slider)
 
-        self.setLayout(outer_layout)
-
-        # Remove padding
-        # self.setContentsMargins(0,0,0,0)
-
         self._value = value
 
-        # self.setStyleSheet("background-color: lightblue;")
 
     def _on_slider_changed(self):
-        """ Event when the slider is changed"""
+        """ Event when the slider is changed """
 
         self._value = self.slider.value
         self.text_field.blockSignals(True)
@@ -188,11 +141,17 @@ class FloatField(QWidget):
         """Floating point value of field"""
         return self._value
 
+    @value.setter
+    def value(self, value):
+        self._value = value
+        self.text_field.setText(str(value))
+
 if __name__ == "__main__":
 
     app = QApplication([])
 
-    field = FloatField(17.84763, slider_bottom=0, slider_top=100)
+    field = FloatField(17.84763, slider_bottom=0, slider_top=100, allow_slider=False)
+
 
     field.show()
 

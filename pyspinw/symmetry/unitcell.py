@@ -18,13 +18,13 @@ class RawUnitCell:
         except np.linalg.LinAlgError as e:
             raise BadCellDefinition(f"{self._xyz}")
 
-    @check_sizes(points=(-1, 3))
+    # @check_sizes(points=(-1, 3))
     def fractional_to_cartesian(self, points: np.ndarray):
         """ Convert a list of points  from the fractional (ijk) type to cartesian (xyz) """
 
         return points @ self._xyz
 
-    @check_sizes(points=(-1, 3))
+    # @check_sizes(points=(-1, 3))
     def cartesian_to_fractional(self, points: np.ndarray):
         """ Convert a list of points from cartesian (xyz) to  fractional (ijk) """
 
