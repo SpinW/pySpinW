@@ -2,7 +2,7 @@ from collections import defaultdict
 import spglib
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
-
+from importlib import resources
 
 class SymmetryGroup:
     pass
@@ -50,6 +50,11 @@ def _load_spg_group_data():
         "R": "R",
     }
 
+    spacegroup_names = []
+    with resources.open_text("pyspinw.symmetry.data", "spacegroup_names.txt") as file:
+        for line in file:
+            spacegroup_names.append(line.strip())
+
     # Make a lookup for spacegroups
     spacegroup_to_magnetic_group = defaultdict(list[int])
     for i in range(1,1652):
@@ -88,12 +93,12 @@ def _load_spg_group_data():
     for i in range(1, 231):
 
         # Get the relevant data
-        metadata = spglib.get_spacegroup_type(i)
+        
         op_data = spglib.get_symmetry_from_database(i)
         corresponding_magnetic_groups = [magnetic_groups[idx-1] for idx in spacegroup_to_magnetic_group[i]]
 
         # Classify
-        name = metadata["international_full"]
+        name = spacegroup_names[i-1]
         lattice_type_from_name = name[0]
 
         first_letter = spacegroup_number_to_lattice_system[i-1]
@@ -121,7 +126,7 @@ def _load_spg_group_data():
     return spacegroups, lattice_symbol_to_spacegroups
 
 # Load the data
-spacegroups, lattice_symbol_to_spacegroups = _load_spg_group_data()
+spacegroups, spacegroup_lattice_symbol_lookup = _load_spg_group_data()
 
 if __name__ == "__main__":
-    print(lattice_symbol_to_spacegroups)
+    print(spacegroup_lattice_symbol_lookup)

@@ -1,7 +1,10 @@
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QGridLayout, QWidget, QComboBox, QLabel
+from ase.lattice import bravais_lattices
 
 from pyspinw.symmetry.system import lattice_systems, lattice_system_name_lookup
+from pyspinw.symmetry.bravais import lattice_type_name_lookup
+from pyspinw.symmetry.group import spacegroup_lattice_symbol_lookup
 
 class QRightLabel(QLabel):
     def __init__(self, text: str):
@@ -22,8 +25,6 @@ class SymmetryWidget(QWidget):
         self.space_group_combo = QComboBox(self)
         self.magnetic_space_group_combo = QComboBox(self)
 
-        self.system_combo.currentTextChanged.connect(self._on_crystal_system_changed)
-        self.bravais_type_combo.currentTextChanged.connect(self._on_bravais_changed)
 
         # Fill in the crystal system combo, and set
         for crystal_system in lattice_systems:
@@ -33,10 +34,14 @@ class SymmetryWidget(QWidget):
 
         # Fill in the bravais lattice combo
         self._set_bravais_combo()
+        self._set_spacegroup_combo()
+
+        self.system_combo.currentTextChanged.connect(self._on_lattice_system_changed)
+        self.bravais_type_combo.currentTextChanged.connect(self._on_bravais_changed)
 
         # Do the layout
 
-        layout.addWidget(QRightLabel("Crystal System"), 0, 0)
+        layout.addWidget(QRightLabel("Lattice System"), 0, 0)
         layout.addWidget(self.system_combo, 0, 1)
 
         layout.addWidget(QRightLabel("Bravais Type"), 1, 0)
@@ -53,26 +58,63 @@ class SymmetryWidget(QWidget):
     def _set_bravais_combo(self):
         current_selection = self.bravais_type_combo.currentText()
 
+        self.bravais_type_combo.blockSignals(True)
         self.bravais_type_combo.clear()
 
-        names = [bravais.name for bravais in self.current_crystal_system.bravais_options.bravias]
+        names = [bravais.name for bravais in self.current_lattice_system.bravais_options.bravias]
 
         for name in names:
             self.bravais_type_combo.addItem(name)
 
         if current_selection in names:
             self.bravais_type_combo.setCurrentText(current_selection)
+        else:
+            self.bravais_type_combo.setCurrentText(names[0])
 
-    def _on_crystal_system_changed(self):
+        self.bravais_type_combo.blockSignals(False)
+
+    def _set_spacegroup_combo(self):
+        current_selection = self.space_group_combo.currentText()
+
+        self.space_group_combo.blockSignals(True)
+
+        symbol = self.current_bravais_symbol
+        names = [spacegroup.symbol for spacegroup in spacegroup_lattice_symbol_lookup[symbol]]
+
+        self.space_group_combo.clear()
+        for name in names:
+            self.space_group_combo.addItem(name)
+
+        if current_selection in names:
+            self.space_group_combo.setCurrentText(current_selection)
+        else:
+            self.space_group_combo.setCurrentText(names[0])
+
+        self.space_group_combo.blockSignals(False)
+
+    def _on_lattice_system_changed(self):
         self._set_bravais_combo()
+        self._set_spacegroup_combo()
 
         # Do this last
         self.symmetry_changed.emit()
 
     def _on_bravais_changed(self):
-        pass
+        self._set_spacegroup_combo()
+
+        self.symmetry_changed
 
     @property
-    def current_crystal_system(self):
+    def current_lattice_system(self):
         return lattice_system_name_lookup[self.system_combo.currentText()]
 
+    @property
+    def current_bravais(self):
+        return lattice_type_name_lookup[self.bravais_type_combo.currentText()]
+
+
+    @property
+    def current_bravais_symbol(self):
+        lattice = self.current_lattice_system
+        bravais = self.current_bravais
+        return lattice.letter + bravais.letter

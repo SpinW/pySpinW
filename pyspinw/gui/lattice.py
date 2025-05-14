@@ -40,7 +40,7 @@ class LatticeParameters(SpinWDockWidget):
 
     def _on_crystal_system_changed(self):
         """ Called when the crystal system is changed, updates the visible boxes"""
-        self.unit_cell_widget.crystal_system = self.symmetry_widget.current_crystal_system
+        self.unit_cell_widget.crystal_system = self.symmetry_widget.current_lattice_system
 
 if __name__ == "__main__":
     app = QApplication([])
