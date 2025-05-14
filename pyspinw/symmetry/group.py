@@ -93,7 +93,7 @@ def _load_spg_group_data():
     for i in range(1, 231):
 
         # Get the relevant data
-        
+
         op_data = spglib.get_symmetry_from_database(i)
         corresponding_magnetic_groups = [magnetic_groups[idx-1] for idx in spacegroup_to_magnetic_group[i]]
 

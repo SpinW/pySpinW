@@ -6,10 +6,7 @@ from pyspinw.symmetry.system import lattice_systems, lattice_system_name_lookup
 from pyspinw.symmetry.bravais import lattice_type_name_lookup
 from pyspinw.symmetry.group import spacegroup_lattice_symbol_lookup
 
-class QRightLabel(QLabel):
-    def __init__(self, text: str):
-        super().__init__(text)
-        self.setAlignment(Qt.AlignRight)
+from pyspinw.gui.helperwidgets.misc import QRightLabel
 
 class SymmetryWidget(QWidget):
 
