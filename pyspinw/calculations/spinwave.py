@@ -9,6 +9,8 @@ from scipy.linalg import ldl
 
 from pyspinw.checks import check_sizes
 
+PARALLEL = False
+
 
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
@@ -65,11 +67,14 @@ def spinwave_calculation(rotations: np.ndarray,
         j = coupling.index2
         C[j, j] += eta[j, :].T @ coupling.matrix @ sites_term
 
-    with ProcessPoolExecutor(max_workers=1) as executor:
-        q_calculations = [executor.submit(_calc_single_q, q, C, n_sites, z, spin_coefficients, couplings)
-                          for q in q_vectors]
-    wait(q_calculations)
-    energies = [future.result() for future in q_calculations]
+    if PARALLEL:
+        with ProcessPoolExecutor() as executor:
+            q_calculations = [executor.submit(_calc_single_q, q, C, n_sites, z, spin_coefficients, couplings)
+                              for q in q_vectors]
+        wait(q_calculations)
+        energies = [future.result() for future in q_calculations]
+    else:
+        energies = [_calc_single_q(q, C, n_sites, z, spin_coefficients, couplings) for q in q_vectors]
 
     return SpinwaveResult(
                 q_vectors=q_vectors,
