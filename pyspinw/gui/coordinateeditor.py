@@ -3,7 +3,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QApplication, QLabel
 
 from pyspinw.gui.helperwidgets.misc import QRightLabel, QLeftLabel
-from pyspinw.gui.helperwidgets.numbers import FloatField, FloatField
+from pyspinw.gui.helperwidgets.floatfield import FloatField, FloatField
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 

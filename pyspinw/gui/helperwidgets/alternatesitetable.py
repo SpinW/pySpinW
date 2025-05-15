@@ -1,0 +1,241 @@
+import sys
+
+import numpy as np
+
+from PySide6.QtCore import Qt, QModelIndex, QSize, Signal
+from PySide6.QtGui import QTextDocument, QFontMetrics, QDoubleValidator
+from PySide6.QtWidgets import QTableWidget, QApplication, QHeaderView, QStyleOptionHeader, QStyle, QStyleOptionViewItem, \
+    QTableWidgetItem, QAbstractItemView, QStyledItemDelegate, QLineEdit
+
+from pyspinw.site import LatticeSite
+from pyspinw.symmetry.unitcell import UnitCell
+
+
+class HtmlHeader(QHeaderView):
+    """ Header that can render html """
+
+    def paintSection(self, painter, rect, logicalIndex):
+        painter.save()
+
+        # Draw background and borders
+        opt = QStyleOptionHeader()
+        self.initStyleOption(opt)
+        opt.rect = rect
+        opt.section = logicalIndex
+        self.style().drawControl(QStyle.CE_Header, opt, painter, self)
+
+        # Draw HTML text
+        doc = QTextDocument()
+        doc.setHtml(self.model().headerData(logicalIndex, self.orientation(), Qt.DisplayRole))
+        doc.setTextWidth(rect.width())
+
+        painter.translate(rect.topLeft())
+        ctx = doc.documentLayout().PaintContext()
+        doc.documentLayout().draw(painter, ctx)
+
+        painter.restore()
+
+    def sectionSizeFromContents(self, logicalIndex):
+        """ Needed for the header to be resized"""
+
+        # Return width required by HTML text
+        doc = QTextDocument()
+        html = self.model().headerData(logicalIndex, self.orientation(), Qt.DisplayRole)
+        doc.setHtml(html)
+        size = doc.size()
+        # Slight padding for spacing
+        return QSize(int(size.width()) + 10, int(size.height()) + 6)
+
+
+def numeric_entry(x: float):
+    """ How are we formatting numbers in the table"""
+    item = QTableWidgetItem()
+    item.setData(Qt.ItemDataRole.DisplayRole, float(x))
+    return item
+
+
+class FloatValidatorDelegate(QStyledItemDelegate):
+    """ Provides QLineEdits with float validators """
+
+    def createEditor(self, parent, option, index):
+
+        if not index.isValid():
+            return None
+
+        editor = QLineEdit(parent)
+        # validator = QDoubleValidator(bottom=-sys.float_info.max, top=sys.float_info.min, decimals=100, parent=editor)
+        validator = QDoubleValidator(bottom=-1e-100, top=1e100, decimals=100, parent=editor)
+        validator.setNotation(QDoubleValidator.StandardNotation)
+        editor.setValidator(validator)
+        return editor
+
+
+
+class SiteTable(QTableWidget):
+
+    site_selected = Signal()
+
+    def __init__(self, unit_cell: UnitCell | None = None, parent=None):
+
+        super().__init__(parent=parent)
+
+        self._unit_cell = UnitCell(1,1,1) if unit_cell is None else unit_cell
+        self._sites: list[LatticeSite] = []
+
+        self.setRowCount(0)
+        self.setColumnCount(13)
+
+        header = HtmlHeader(Qt.Horizontal)
+        self.setHorizontalHeader(header)
+        self.setHorizontalHeaderLabels(["Name",
+                                        "i", "j", "k",
+                                        "m<sub>i</sub>", "m<sub>j</sub>", "m<sub>k</sub>",
+                                        "x", "y", "z",
+                                        "m<sub>x</sub>", "m<sub>y</sub>", "m<sub>z</sub>"])
+
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.itemSelectionChanged.connect(self._on_selection)
+
+        # Deligates for dealing with editing, needs to be kept in a list or python will dispose them
+        #  and bad, confusing things will happen
+        self._column_deligates = [FloatValidatorDelegate() for i in range(13)]
+
+        for i in range(1,13):
+            self.setItemDelegateForColumn(i, self._column_deligates[i])
+
+        self.verticalHeader().hide()
+
+        self.itemChanged.connect(self._on_item_changed)
+        self.resizeColumnsToContents()
+
+    def add_site(self, site: LatticeSite):
+        self._sites.append(site)
+        self._update_entries()
+
+    def remove_site(self, index):
+        self._sites.pop(index)
+        self._update_entries()
+
+    @property
+    def unit_cell(self):
+        return self._unit_cell
+
+    @unit_cell.setter
+    def unit_cell(self, unit_cell: UnitCell):
+        self._unit_cell = unit_cell
+        self._update_entries()
+
+    def _on_selection(self):
+        self.site_selected.emit()
+
+    def _update_entries(self):
+        self.blockSignals(True)
+        self.setRowCount(len(self._sites))
+        for i, site in enumerate(self._sites):
+            self.setItem(i, 0, QTableWidgetItem(str(site.name)))
+
+            self.setItem(i, 1, numeric_entry(site.i))
+            self.setItem(i, 2, numeric_entry(site.j))
+            self.setItem(i, 3, numeric_entry(site.k))
+
+            self.setItem(i, 4, numeric_entry(site.mi))
+            self.setItem(i, 5, numeric_entry(site.mj))
+            self.setItem(i, 6, numeric_entry(site.mk))
+
+            xyz = self._unit_cell.fractional_to_cartesian(site.ijk)
+            mxyz = self._unit_cell.fractional_to_cartesian(site.m)
+
+            self.setItem(i, 7, numeric_entry(xyz[0]))
+            self.setItem(i, 8, numeric_entry(xyz[1]))
+            self.setItem(i, 9, numeric_entry(xyz[2]))
+
+            self.setItem(i, 10, numeric_entry(mxyz[0]))
+            self.setItem(i, 11, numeric_entry(mxyz[1]))
+            self.setItem(i, 12, numeric_entry(mxyz[2]))
+
+        self.resizeColumnsToContents()
+        self.blockSignals(False)
+
+    def _on_item_changed(self, item: QTableWidgetItem):
+
+        row = item.row()
+        col = item.column()
+
+        name = self.item(row, 0).text()
+
+        ijk = np.array([
+            float(self.item(row, 1).text()),
+            float(self.item(row, 2).text()),
+            float(self.item(row, 3).text())
+        ])
+
+        mijk = np.array([
+            float(self.item(row, 4).text()),
+            float(self.item(row, 5).text()),
+            float(self.item(row, 6).text())
+        ])
+
+        xyz = np.array([
+            float(self.item(row, 7).text()),
+            float(self.item(row, 8).text()),
+            float(self.item(row, 9).text())
+        ])
+
+        mxyz = np.array([
+            float(self.item(row, 10).text()),
+            float(self.item(row, 11).text()),
+            float(self.item(row, 12).text())
+        ])
+
+        new_site = None
+
+        if col < 7:
+            new_site = LatticeSite(
+                ijk[0], ijk[1], ijk[2],
+                mijk[0], mijk[1], mijk[2],
+                name = name)
+
+        elif 7 <= col < 10:
+
+            ijk_from_xyz = self._unit_cell.cartesian_to_fractional(xyz)
+
+            new_site = LatticeSite(
+                ijk_from_xyz[0], ijk_from_xyz[1], ijk_from_xyz[2],
+                mijk[0], mikj[1], mijk[2],
+                name=name)
+
+        elif 10 <= col < 13:
+
+            mijk_from_mxyz = self._unit_cell.cartesian_to_fractional(mxyz)
+
+            new_site = LatticeSite(
+                ijk[0], ijk[1], ijk[2],
+                mijk_from_mxyz[0], mijk_from_mxyz[1], mijk_from_mxyz[2],
+                name=name)
+
+        else:
+            return
+
+        # replace the site in the list, and update
+
+        self._sites.pop(row)
+        self._sites.insert(row, new_site)
+
+
+        self._update_entries()
+
+if __name__ == "__main__":
+    app = QApplication([])
+
+    site_table = SiteTable()
+
+    site_table.unit_cell = UnitCell(2,3,4)
+
+    site_table.add_site(LatticeSite(1,1,1))
+    site_table.add_site(LatticeSite(1,1,2))
+    site_table.add_site(LatticeSite(1,2,1))
+
+    site_table.show()
+
+
+    app.exec_()

@@ -4,30 +4,38 @@ import numpy as np
 
 from pydantic import BaseModel, Field
 
-from pyspinw.symmetry.unitcell import UnitCell
-
 
 class LatticeSite(BaseModel):
     """A spin site within a lattice """
 
-    i: Annotated[float, Field(ge=0.0, lt=1.0)]
-    j: Annotated[float, Field(ge=0.0, lt=1.0)]
-    k: Annotated[float, Field(ge=0.0, lt=1.0)]
+    i: float
+    j: float
+    k: float
 
     mi: float = 0.0
     mj: float = 0.0
     mk: float = 0.0
 
-    ijk: float | None = Field(default=None, init=False)
-    m: float | None = Field(default=None, init=False)
+    name: str | None = None
+
+    _ijk: np.ndarray | None = None
+    _m: np.ndarray | None = None
 
 
     def __init__(self,
                  i: float, j: float, k: float,
-                 mi: float = 0, mj: float = 0, mk: float = 0):
+                 mi: float = 0, mj: float = 0, mk: float = 0, name: str | None = None):
 
-        super().__init__(i=i, j=j, k=k, mi=mi, m=mj, mk=mk)
+        super().__init__(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
 
     def model_post_init(self, __context):
-        self.ijk = np.array([self.i, self.j, self.k], dtype=float)
-        self.m = np.array([self.mi, self.mj, self.mk], dtype=float)
+        self._ijk = np.array([self.i, self.j, self.k], dtype=float)
+        self._m = np.array([self.mi, self.mj, self.mk], dtype=float)
+
+    @property
+    def ijk(self):
+        return self._ijk
+
+    @property
+    def m(self):
+        return self._m

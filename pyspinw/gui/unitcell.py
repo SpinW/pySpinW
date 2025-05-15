@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QGridLayout, QLabel
 
-from pyspinw.gui.helperwidgets.numbers import FloatField
+from pyspinw.gui.helperwidgets.floatfield import FloatField
 from pyspinw.symmetry.system import lattice_systems, LatticeSystem
 from pyspinw.symmetry.unitcell import UnitCell
 
