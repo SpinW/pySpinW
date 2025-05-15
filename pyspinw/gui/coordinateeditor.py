@@ -4,20 +4,23 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QApplication, Q
 
 from pyspinw.gui.helperwidgets.misc import QRightLabel, QLeftLabel
 from pyspinw.gui.helperwidgets.numbers import FloatField, FloatField
+from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-class SiteEditor(QWidget):
+class CoordinateEditor(QWidget):
     """ Widget for editing a site """
 
     changed = Signal()
 
-    def __init__(self, unit_cell: UnitCell | None = None, parent=None):
+    def __init__(self, unit_cell: UnitCell | None = None, site: LatticeSite | None = None, parent=None):
         super().__init__(parent=parent)
 
         self._unit_cell = UnitCell(1,1,1) if unit_cell is None else unit_cell
-        self._position_editable = True
-        self._moment_editable = True
+        self._site = site
+
+        self._position_editable = False
+        self._moment_editable = False
 
         # Fractional part
 
@@ -131,6 +134,8 @@ class SiteEditor(QWidget):
         self.setLayout(main_layout)
 
         # Update the xyz coordinates
+        self.position_editable = False
+        self.moment_editable = False
         self._on_fractional_or_cell_changed()
 
 
@@ -192,6 +197,26 @@ class SiteEditor(QWidget):
     def cartesian_moment(self):
         return np.array([self.mx_editor.value, self.my_editor.value, self.mz_editor.value])
 
+    @property
+    def site(self):
+        return LatticeSite(
+            i=self.i_editor.value,
+            j=self.j_editor.value,
+            k=self.k_editor.value,
+            mi=self.mi_editor.value,
+            mj=self.mj_editor.value,
+            mk=self.mk_editor.value)
+
+    @site.setter
+    def site(self, site: LatticeSite):
+        self.i_editor.value = site.i
+        self.j_editor.value = site.j
+        self.k_editor.value = site.k
+
+        self.mi_editor.value = site.mi
+        self.mj_editor.value = site.mj
+        self.mk_editor.value = site.mk
+
     def _on_fractional_or_cell_changed(self):
 
         # self.cartesian_widget.blockSignals(True)
@@ -235,7 +260,7 @@ class SiteEditor(QWidget):
 if __name__ == "__main__":
     app = QApplication([])
 
-    editor = SiteEditor()
+    editor = CoordinateEditor()
     editor.unit_cell = UnitCell(2,2,2)
     editor.show()
 

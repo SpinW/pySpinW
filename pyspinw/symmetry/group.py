@@ -50,10 +50,12 @@ def _load_spg_group_data():
         "R": "R",
     }
 
-    spacegroup_names = []
-    with resources.open_text("pyspinw.symmetry.data", "spacegroup_names.txt") as file:
-        for line in file:
-            spacegroup_names.append(line.strip())
+    spacegroup_names = {}
+    for i in range(1, 531):
+        group_data = spglib.get_spacegroup_type(i)
+        number = group_data["number"]
+        name = group_data["international_full"]
+        spacegroup_names[number] = name
 
     # Make a lookup for spacegroups
     spacegroup_to_magnetic_group = defaultdict(list[int])
@@ -98,7 +100,7 @@ def _load_spg_group_data():
         corresponding_magnetic_groups = [magnetic_groups[idx-1] for idx in spacegroup_to_magnetic_group[i]]
 
         # Classify
-        name = spacegroup_names[i-1]
+        name = spacegroup_names[i]
         lattice_type_from_name = name[0]
 
         first_letter = spacegroup_number_to_lattice_system[i-1]
