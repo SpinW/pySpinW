@@ -35,6 +35,9 @@ class RawUnitCell:
         """ Point at centre of cell in cartesian coordinates"""
         return self.fractional_to_cartesian(np.array([[0.5,0.5,0.5]]))[0, :]
 
+    def __eq__(self, other: "UnitCell"):
+        return np.all(np.abs(self._xyz - other._xyz) < 1e-10)
+
 
 class UnitCell(RawUnitCell):
     """ A Unit Cell Definition """

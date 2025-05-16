@@ -125,3 +125,9 @@ class SymmetryWidget(QWidget):
     @property
     def current_spacegroup(self) -> SpaceGroup:
         return spacegroup_symbol_lookup[self.current_spacegroup_name]
+
+    def lattice_autoset(self, lattice_system_name):
+        if lattice_system_name in lattice_system_name_lookup: # Check for existence
+            self.system_combo.setCurrentText(lattice_system_name)
+        else:
+            raise ValueError("Not a valid LatticeSystem name")

@@ -1,13 +1,16 @@
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget, QGridLayout, QLabel
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtWidgets import QWidget, QGridLayout, QLabel, QVBoxLayout
 
 from pyspinw.gui.helperwidgets.floatfield import FloatField
-from pyspinw.symmetry.system import lattice_systems, LatticeSystem
+from pyspinw.symmetry.system import lattice_systems, LatticeSystem, find_unit_cell_type
 from pyspinw.symmetry.unitcell import UnitCell
+
+
 
 class UnitCellWidget(QWidget):
 
     unit_cell_changed = Signal(UnitCell)
+    auto_update_lattice_system_request = Signal(LatticeSystem)
 
     def __init__(self, unit_cell: UnitCell | None = None, parent=None):
         super().__init__(parent)
@@ -23,19 +26,26 @@ class UnitCellWidget(QWidget):
         self.beta = FloatField(self.current_unit_cell.beta, 0, 180, parent=self)
         self.gamma = FloatField(self.current_unit_cell.gamma, 0, 180, parent=self)
 
-        self.a.changed.connect(self._on_cell_changed)
-        self.b.changed.connect(self._on_cell_changed)
-        self.c.changed.connect(self._on_cell_changed)
+        self.a.changed.connect(self._on_cell_or_system_changed)
+        self.b.changed.connect(self._on_cell_or_system_changed)
+        self.c.changed.connect(self._on_cell_or_system_changed)
 
-        self.alpha.changed.connect(self._on_cell_changed)
-        self.beta.changed.connect(self._on_cell_changed)
-        self.gamma.changed.connect(self._on_cell_changed)
+        self.alpha.changed.connect(self._on_cell_or_system_changed)
+        self.beta.changed.connect(self._on_cell_or_system_changed)
+        self.gamma.changed.connect(self._on_cell_or_system_changed)
+
+
+        outer_layout = QVBoxLayout()
+        self.setLayout(outer_layout)
+
+        values_widget = QWidget()
+        outer_layout.addWidget(values_widget)
 
         layout = QGridLayout(parent=self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.setLayout(layout)
+        values_widget.setLayout(layout)
 
         layout.addWidget(QLabel("a"), 0, 0)
         layout.addWidget(QLabel("b"), 1, 0)
@@ -63,6 +73,20 @@ class UnitCellWidget(QWidget):
 
         self.grid_layout = layout
 
+        self.message_label = QLabel("")
+        outer_layout.addWidget(self.message_label)
+        self.message_label.setStyleSheet("color: red;")
+
+        self.message_label.setWordWrap(True)
+
+        self.message_label.setOpenExternalLinks(False)  # Don't open in browser
+        self.message_label.setTextInteractionFlags(self.message_label.textInteractionFlags() |
+                                           Qt.LinksAccessibleByMouse)
+
+        self.message_label.linkActivated.connect(self._auto_update_lattice_system)
+
+        self._on_cell_or_system_changed()
+
     @property
     def crystal_system(self) -> LatticeSystem:
         return self._crystal_system
@@ -80,7 +104,7 @@ class UnitCellWidget(QWidget):
         self._set_grid_row_visible(4, free_parameters.beta)
         self._set_grid_row_visible(5, free_parameters.gamma)
 
-        self._on_cell_changed()
+        self._on_cell_or_system_changed()
 
     @property
     def current_unit_cell(self) -> UnitCell:
@@ -92,7 +116,7 @@ class UnitCellWidget(QWidget):
             if item and item.widget():
                 item.widget().setVisible(value)
 
-    def _on_cell_changed(self):
+    def _on_cell_or_system_changed(self):
         """ Called when any element of the unit cell is changed"""
         self._current_unit_cell = self.crystal_system.constrain(
                                     UnitCell(
@@ -103,4 +127,45 @@ class UnitCellWidget(QWidget):
                                         self.beta.value,
                                         self.gamma.value))
 
+        self.message_label.setText(UnitCellWidget._validity_message(self.crystal_system, self._current_unit_cell))
+
         self.unit_cell_changed.emit(self.current_unit_cell)
+
+
+
+    @staticmethod
+    def _validity_message(suggested_type: LatticeSystem, unit_cell: UnitCell) -> str:
+
+        violated_constraints = suggested_type.violated_negative_constraints(unit_cell)
+
+        if len(violated_constraints) == 0:
+            return ""
+
+        else:
+            left = violated_constraints[:-1]
+            right = violated_constraints[-1]
+
+            if len(left) > 0:
+                constraint_string = ", ".join(left) + " and " + right
+
+            else:
+                constraint_string = right
+
+            actual_cell = find_unit_cell_type(unit_cell)
+
+            if len(actual_cell) == 0:
+                message = f"Invalid unit cell parameters, expected {constraint_string}"
+
+            else:
+
+                message = f"Cell parameters have higher symmetry than {suggested_type.name}, expected {constraint_string}."
+
+                if len(actual_cell) == 1:
+                    message += f'It looks like {actual_cell[0].name}. '
+                    message += f'<a href="{actual_cell[0].name}"><font color="orange">Click here to set.</font></a>'
+
+            return message
+
+    def _auto_update_lattice_system(self, link):
+        """ Called when the auto update link is clicked """
+        self.auto_update_lattice_system_request.emit(link)

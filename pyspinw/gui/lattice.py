@@ -25,6 +25,7 @@ class LatticeParameters(SpinWDockWidget):
         # Slots and signals
 
         self.symmetry_widget.symmetry_changed.connect(self._on_crystal_system_changed)
+        self.unit_cell_widget.auto_update_lattice_system_request.connect(self.symmetry_widget.lattice_autoset)
 
         # Layout
 

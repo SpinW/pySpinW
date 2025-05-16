@@ -1,5 +1,6 @@
 from abc import ABC, abstractproperty, abstractmethod
 from dataclasses import dataclass
+from typing import Callable
 
 from pyspinw.symmetry.bravais import PRIMITIVE, BASE_CENTERED, BODY_CENTERED, FACE_CENTERED, RHOMBOHEDRAL
 from pyspinw.symmetry.unitcell import UnitCell
@@ -52,6 +53,9 @@ class LatticeSystem(ABC):
     name: str = ""
     letter: str = ""
 
+    negative_constraints: dict[str, Callable[UnitCell, bool]] = {}
+    """ Functions that check whether the unit cell parameters are appropriate """
+
     @property
     @abstractmethod
     def free_parameters(self) -> FreeParameters:
@@ -66,9 +70,27 @@ class LatticeSystem(ABC):
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
 
+    def violated_negative_constraints(self, unit_cell: UnitCell) -> list[str]:
+        """ Check whether any of the constraints on specific values are violated by this unit cell """
+        out = []
+        for name, constraint in self.negative_constraints.items():
+            if not constraint(unit_cell):
+                out.append(name)
+        return out
+
+
 class Triclinic(LatticeSystem):
     name = "Triclinic"
     letter = "a"
+
+    negative_constraints = {
+        "a ≠ b": lambda cell: cell.a != cell.b,
+        "b ≠ c": lambda cell: cell.b != cell.c,
+        "c ≠ a": lambda cell: cell.c != cell.a,
+        "α ≠ 90°": lambda cell: cell.alpha != 90,
+        "β ≠ 90°": lambda cell: cell.beta != 90,
+        "γ ≠ 90°": lambda cell: cell.gamma != 90
+    }
 
     @property
     def free_parameters(self) -> FreeParameters:
@@ -82,9 +104,17 @@ class Triclinic(LatticeSystem):
         return BravaisOptions()
 
 
+
 class Monoclinic(LatticeSystem):
     name = "Monoclinic"
     letter = "m"
+
+    negative_constraints = {
+        "a ≠ b": lambda cell: cell.a != cell.b,
+        "b ≠ c": lambda cell: cell.b != cell.c,
+        "c ≠ a": lambda cell: cell.c != cell.a,
+        "γ ≠ 90°": lambda cell: cell.gamma != 90
+    }
 
     @property
     def free_parameters(self) -> FreeParameters:
@@ -101,6 +131,13 @@ class Monoclinic(LatticeSystem):
 class Orthorhombic(LatticeSystem):
     name = "Orthorhombic"
     letter = "o"
+
+
+    negative_constraints = {
+        "a ≠ b": lambda cell: cell.a != cell.b,
+        "b ≠ c": lambda cell: cell.b != cell.c,
+        "c ≠ a": lambda cell: cell.c != cell.a,
+    }
 
     @property
     def free_parameters(self) -> FreeParameters:
@@ -120,6 +157,10 @@ class Orthorhombic(LatticeSystem):
 class Tetragonal(LatticeSystem):
     name = "Tetragonal"
     letter = "t"
+
+    negative_constraints = {
+        "b ≠ c": lambda cell: cell.b != cell.c,
+    }
 
     @property
     def free_parameters(self) -> FreeParameters:
@@ -141,6 +182,11 @@ class Rhombohedral(LatticeSystem):
     name = "Rhombohedral"
     letter = "h"
 
+    negative_constraints = {
+        "α ≠ 90°": lambda cell: cell.alpha != 90,
+        "α ≤ 120°": lambda cell: cell.alpha <= 120
+    }
+
     @property
     def free_parameters(self) -> FreeParameters:
         return FreeParameters(b=False, c=False, beta=False, gamma=False)
@@ -160,6 +206,10 @@ class Rhombohedral(LatticeSystem):
 class Hexagonal(LatticeSystem):
     name = "Hexagonal"
     letter = "h"
+
+    negative_constraints = {
+        "a ≠ c": lambda cell: cell.a != cell.c,
+    }
 
     @property
     def free_parameters(self) -> FreeParameters:
@@ -210,6 +260,18 @@ lattice_systems: list[LatticeSystem] = [
 # For looking things up by name or letter
 lattice_system_name_lookup = {lattice.name: lattice for lattice in lattice_systems}
 lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_systems}
+
+def find_unit_cell_type(unit_cell: UnitCell) -> list[LatticeSystem]:
+    """ Find the lattice system for a unit cell, it should be a length zero or one list, but it might not be """
+
+    # get potential lattice systems
+    potential_systems = [system for system in lattice_systems if system.constrain(unit_cell) == unit_cell]
+
+    # check for violated constraints, and return
+    return [system for system in potential_systems if len(system.violated_negative_constraints(unit_cell)) == 0]
+
+
+
 
 if __name__ == "__main__":
     for lattice_system in lattice_systems:
