@@ -2,7 +2,7 @@ from collections import defaultdict
 import spglib
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
-from importlib import resources
+from pyspinw.symmetry.data.msg_symbols import msg_symbols
 
 class SymmetryGroup:
     pass
@@ -75,14 +75,14 @@ def _load_spg_group_data():
         translations = op_data["translations"]
         time_reversals = 2*op_data["time_reversals"]-1
 
-        hall_symbol = f"{i}" #metadata["hall_symbol"]
+        symbol = msg_symbols[i].uni
 
         operations = []
         for rotation, translation, time_reversal in zip(rotations, translations, time_reversals):
-            op = MagneticOperation.from_numpy(rotation, translation, time_reversal, name=hall_symbol)
+            op = MagneticOperation.from_numpy(rotation, translation, time_reversal)
             operations.append(op)
 
-        group = MagneticSpaceGroup(i, hall_symbol, operations)
+        group = MagneticSpaceGroup(i, symbol, operations)
         magnetic_groups.append(group)
 
 

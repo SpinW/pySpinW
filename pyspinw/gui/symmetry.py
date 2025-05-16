@@ -21,7 +21,7 @@ class SymmetryWidget(QWidget):
         self.system_combo = QComboBox(self)
         self.bravais_type_combo = QComboBox(self)
         self.space_group_combo = QComboBox(self)
-        self.magnetic_space_group_combo = QComboBox(self)
+        self.magnetic_spacegroup_combo = QComboBox(self)
 
 
         # Fill in the crystal system combo, and set
@@ -33,9 +33,12 @@ class SymmetryWidget(QWidget):
         # Fill in the bravais lattice combo
         self._set_bravais_combo()
         self._set_spacegroup_combo()
+        self._set_magnetic_spacegroup_combo()
 
         self.system_combo.currentTextChanged.connect(self._on_lattice_system_changed)
         self.bravais_type_combo.currentTextChanged.connect(self._on_bravais_changed)
+        self.space_group_combo.currentTextChanged.connect(self._on_spacegroup_changed)
+        self.magnetic_spacegroup_combo.currentTextChanged.connect(self._on_magnetic_spacegroup_changed)
 
         # Do the layout
 
@@ -49,7 +52,7 @@ class SymmetryWidget(QWidget):
         layout.addWidget(self.space_group_combo, 2, 1)
 
         layout.addWidget(QRightLabel("Magnetic Group"), 3, 0)
-        layout.addWidget(self.magnetic_space_group_combo, 3, 1)
+        layout.addWidget(self.magnetic_spacegroup_combo, 3, 1)
 
         self.setLayout(layout)
 
@@ -90,17 +93,45 @@ class SymmetryWidget(QWidget):
 
         self.space_group_combo.blockSignals(False)
 
+    def _set_magnetic_spacegroup_combo(self):
+        current_selection = self.magnetic_spacegroup_combo.currentText()
+
+        names = [magnetic.symbol for magnetic in self.current_spacegroup.magnetic_variants]
+
+        self.magnetic_spacegroup_combo.clear()
+        for name in names:
+            self.magnetic_spacegroup_combo.addItem(name)
+
+        if current_selection in names:
+            self.magnetic_spacegroup_combo.setCurrentText(current_selection)
+        else:
+            self.magnetic_spacegroup_combo.setCurrentText(names[0])
+
+
     def _on_lattice_system_changed(self):
         self._set_bravais_combo()
         self._set_spacegroup_combo()
+        self._set_magnetic_spacegroup_combo()
 
         # Do this last
         self.symmetry_changed.emit()
 
     def _on_bravais_changed(self):
         self._set_spacegroup_combo()
+        self._set_magnetic_spacegroup_combo()
 
         # Do this last
+        self.symmetry_changed.emit()
+
+    def _on_spacegroup_changed(self):
+        self._set_magnetic_spacegroup_combo()
+
+        # Do this last
+        self.symmetry_changed.emit()
+
+    def _on_magnetic_spacegroup_changed(self):
+
+        # Do this last (not that theres currently anything before)
         self.symmetry_changed.emit()
 
     @property
