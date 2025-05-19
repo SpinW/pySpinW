@@ -47,7 +47,7 @@ class CrystalViewer(Scene):
         self.update()
 
 def main():
-    """ Show a demo of the opengl.rst window """
+    """ Show a demo of the opengl window """
     import os
 
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "1"
@@ -57,7 +57,7 @@ def main():
 
 
     unit_cell = UnitCell(3,4,5, 60, 45)
-    viewer = CrystalViewer(unit_cell)
+    viewer = CrystalViewer()
 
     viewer.add(ArrowGraphics(uniform_coloring(1,0,0)))
 

@@ -1,6 +1,9 @@
 from collections import defaultdict
+
+import numpy as np
 import spglib
 
+from pyspinw.site import LatticeSite
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
 
@@ -8,13 +11,42 @@ class SymmetryGroup:
     pass
 
 class MagneticSpaceGroup(SymmetryGroup):
-    def __init__(self, number, symbol, operations):
+    def __init__(self, number: int, symbol: str, operations: list[MagneticOperation]):
         self.number = number
         self.symbol = symbol
         self.operations = operations
 
     def __repr__(self):
         return f"SpaceGroup({self.number}, {self.symbol})"
+
+    def duplicates(self, site: LatticeSite):
+        """ Find "duplicate" sites of a given site """
+
+        coordinates = site.values
+
+        new_coordinates = []
+        for operation in self.operations:
+
+            candidate = operation(coordinates.reshape(1, -1))
+
+            if np.all(np.abs(candidate - coordinates) < 1e-10):
+                continue
+
+            for ijkm in new_coordinates:
+                if np.all(np.abs(candidate - ijkm) < 1e-10):
+                    continue
+
+            new_coordinates.append(candidate)
+
+        new_sites = []
+        for i, ijkm in enumerate(new_coordinates):
+            new_site = LatticeSite.from_coordinates(ijkm.reshape(-1), name=site.name + f" [{i+1}]")
+
+            new_sites.append(new_site)
+
+        return new_sites
+
+
 
 class SpaceGroup(SymmetryGroup):
     def __init__(self, number, international_symbol, operations, magnetic_variants: list[MagneticSpaceGroup]):
@@ -125,11 +157,12 @@ def _load_spg_group_data():
         spacegroups.append(group)
         lattice_symbol_to_spacegroups[bravais_lattice].append(group)
 
-    return spacegroups, lattice_symbol_to_spacegroups
+    return spacegroups, lattice_symbol_to_spacegroups, magnetic_groups
 
 # Load the data
-spacegroups, spacegroup_lattice_symbol_lookup = _load_spg_group_data()
+spacegroups, spacegroup_lattice_symbol_lookup, magnetic_groups = _load_spg_group_data()
 spacegroup_symbol_lookup = {group.symbol: group for group in spacegroups}
+magnetic_group_symbol_lookup = {group.symbol: group for group in magnetic_groups}
 
 if __name__ == "__main__":
     print(spacegroup_lattice_symbol_lookup)

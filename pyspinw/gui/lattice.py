@@ -4,10 +4,14 @@ from PySide6.QtWidgets import QBoxLayout, QGridLayout, QWidget, QApplication, QL
 
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
 from pyspinw.gui.symmetry import SymmetryWidget
+from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.gui.unitcell import UnitCellWidget
 
 
 class LatticeParameters(SpinWDockWidget):
+
+    symmetry_changed = Signal()
+
     def __init__(self, parent=None):
 
         super().__init__(parent=parent)
@@ -26,6 +30,7 @@ class LatticeParameters(SpinWDockWidget):
 
         self.symmetry_widget.symmetry_changed.connect(self._on_crystal_system_changed)
         self.unit_cell_widget.auto_update_lattice_system_request.connect(self.symmetry_widget.lattice_autoset)
+        self.unit_cell_widget.unit_cell_changed.connect(self._on_unit_cell_changed)
 
         # Layout
 
@@ -39,9 +44,26 @@ class LatticeParameters(SpinWDockWidget):
 
         self.setWidget(main_widget)
 
+
+
     def _on_crystal_system_changed(self):
         """ Called when the crystal system is changed, updates the visible boxes"""
         self.unit_cell_widget.crystal_system = self.symmetry_widget.current_lattice_system
+
+        # We don't need to trigger the change event, but maybe we will need to
+        # self.symmetry_changed.emit()
+
+    def _on_unit_cell_changed(self):
+        """ Triggered when the unit call is changed """
+        self.symmetry_changed.emit()
+
+    @property
+    def symmetry(self) -> SymmetrySettings:
+        return SymmetrySettings(
+            space_group=self.symmetry_widget.current_spacegroup,
+            magnetic_group=self.symmetry_widget.current_magetic_group,
+            unit_cell=self.unit_cell_widget.current_unit_cell)
+
 
 if __name__ == "__main__":
     app = QApplication([])

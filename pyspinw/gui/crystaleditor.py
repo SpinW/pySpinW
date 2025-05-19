@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QApplication
 
 from pyspinw.gui.crystalviewer.viewer import CrystalViewer
 from pyspinw.gui.lattice import LatticeParameters
-from pyspinw.gui.sites import SiteEditor
+from pyspinw.gui.alternatesiteeditor import SiteEditor
 from pyspinw.symmetry.unitcell import UnitCell
 
 
@@ -24,11 +24,13 @@ class CrystalEditor(QMainWindow):
 
         # Connections
         self.lattice_parameters.unit_cell_widget.unit_cell_changed.connect(self._on_unit_cell_changed)
+        self.lattice_parameters.symmetry_changed.connect(self._on_symmetry_changed)
 
     def _on_unit_cell_changed(self, unit_cell: UnitCell):
         self.viewer.unit_cell = unit_cell
 
-
+    def _on_symmetry_changed(self):
+        self.sites.symmetry = self.lattice_parameters.symmetry
 
 if __name__ == "__main__":
     app = QApplication([])

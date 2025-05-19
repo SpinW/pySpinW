@@ -5,7 +5,7 @@ from ase.lattice import bravais_lattices
 from pyspinw.symmetry.system import lattice_systems, lattice_system_name_lookup
 from pyspinw.symmetry.bravais import lattice_type_name_lookup
 from pyspinw.symmetry.group import spacegroup_lattice_symbol_lookup, SymmetryGroup, MagneticSpaceGroup, SpaceGroup, \
-    spacegroup_symbol_lookup
+    spacegroup_symbol_lookup, magnetic_group_symbol_lookup
 
 from pyspinw.gui.helperwidgets.misc import QRightLabel
 
@@ -21,7 +21,7 @@ class SymmetryWidget(QWidget):
         self.system_combo = QComboBox(self)
         self.bravais_type_combo = QComboBox(self)
         self.space_group_combo = QComboBox(self)
-        self.magnetic_spacegroup_combo = QComboBox(self)
+        self.magnetic_group_combo = QComboBox(self)
 
 
         # Fill in the crystal system combo, and set
@@ -38,7 +38,7 @@ class SymmetryWidget(QWidget):
         self.system_combo.currentTextChanged.connect(self._on_lattice_system_changed)
         self.bravais_type_combo.currentTextChanged.connect(self._on_bravais_changed)
         self.space_group_combo.currentTextChanged.connect(self._on_spacegroup_changed)
-        self.magnetic_spacegroup_combo.currentTextChanged.connect(self._on_magnetic_spacegroup_changed)
+        self.magnetic_group_combo.currentTextChanged.connect(self._on_magnetic_spacegroup_changed)
 
         # Do the layout
 
@@ -52,7 +52,7 @@ class SymmetryWidget(QWidget):
         layout.addWidget(self.space_group_combo, 2, 1)
 
         layout.addWidget(QRightLabel("Magnetic Group"), 3, 0)
-        layout.addWidget(self.magnetic_spacegroup_combo, 3, 1)
+        layout.addWidget(self.magnetic_group_combo, 3, 1)
 
         self.setLayout(layout)
 
@@ -94,37 +94,49 @@ class SymmetryWidget(QWidget):
         self.space_group_combo.blockSignals(False)
 
     def _set_magnetic_spacegroup_combo(self):
-        current_selection = self.magnetic_spacegroup_combo.currentText()
+        current_selection = self.magnetic_group_combo.currentText()
 
         names = [magnetic.symbol for magnetic in self.current_spacegroup.magnetic_variants]
 
-        self.magnetic_spacegroup_combo.clear()
+        self.magnetic_group_combo.clear()
         for name in names:
-            self.magnetic_spacegroup_combo.addItem(name)
+            self.magnetic_group_combo.addItem(name)
 
         if current_selection in names:
-            self.magnetic_spacegroup_combo.setCurrentText(current_selection)
+            self.magnetic_group_combo.setCurrentText(current_selection)
         else:
-            self.magnetic_spacegroup_combo.setCurrentText(names[0])
+            self.magnetic_group_combo.setCurrentText(names[0])
 
 
     def _on_lattice_system_changed(self):
+        self.blockSignals(True)
+
         self._set_bravais_combo()
         self._set_spacegroup_combo()
         self._set_magnetic_spacegroup_combo()
+
+        self.blockSignals(False)
 
         # Do this last
         self.symmetry_changed.emit()
 
     def _on_bravais_changed(self):
+        self.blockSignals(True)
+
         self._set_spacegroup_combo()
         self._set_magnetic_spacegroup_combo()
+
+        self.blockSignals(False)
 
         # Do this last
         self.symmetry_changed.emit()
 
     def _on_spacegroup_changed(self):
+        self.blockSignals(True)
+
         self._set_magnetic_spacegroup_combo()
+
+        self.blockSignals(False)
 
         # Do this last
         self.symmetry_changed.emit()
@@ -150,12 +162,21 @@ class SymmetryWidget(QWidget):
         return lattice.letter + bravais.letter
 
     @property
-    def current_spacegroup_name(self):
+    def current_spacegroup_symbol(self):
         return self.space_group_combo.currentText()
 
     @property
     def current_spacegroup(self) -> SpaceGroup:
-        return spacegroup_symbol_lookup[self.current_spacegroup_name]
+        return spacegroup_symbol_lookup[self.current_spacegroup_symbol]
+
+    @property
+    def current_magnetic_group_symbol(self):
+        return self.magnetic_group_combo.currentText()
+
+    @property
+    def current_magetic_group(self):
+        return magnetic_group_symbol_lookup[self.current_magnetic_group_symbol]
+
 
     def lattice_autoset(self, lattice_system_name):
         if lattice_system_name in lattice_system_name_lookup: # Check for existence

@@ -7,6 +7,7 @@ from PySide6.QtGui import QTextDocument, QFontMetrics, QDoubleValidator, QIcon
 from PySide6.QtWidgets import QTableWidget, QApplication, QHeaderView, QStyleOptionHeader, QStyle, QStyleOptionViewItem, \
     QTableWidgetItem, QAbstractItemView, QStyledItemDelegate, QLineEdit
 
+from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
@@ -97,11 +98,11 @@ class SiteTable(QTableWidget):
 
     site_selected = Signal()
 
-    def __init__(self, unit_cell: UnitCell | None = None, parent=None):
+    def __init__(self, symmetry: SymmetrySettings=DEFAULT_SYMMETRY, parent=None):
 
         super().__init__(parent=parent)
 
-        self._unit_cell = UnitCell(1,1,1) if unit_cell is None else unit_cell
+        self._symmetry =symmetry
         self._sites: list[LatticeSite] = []
         self._implied_sites: list[LatticeSite] = []
 
@@ -148,20 +149,30 @@ class SiteTable(QTableWidget):
         self._update_entries()
 
     @property
-    def unit_cell(self):
-        return self._unit_cell
+    def symmetry(self):
+        return self._symmetry
 
-    @unit_cell.setter
-    def unit_cell(self, unit_cell: UnitCell):
-        self._unit_cell = unit_cell
+    @symmetry.setter
+    def symmetry(self, symmetry: SymmetrySettings):
+        self._symmetry = symmetry
         self._update_entries()
 
     def _on_selection(self):
         self.site_selected.emit()
 
+    def _update_sites(self):
+        implied_sites = []
+        for site in self._sites:
+            implied_sites += self.symmetry.magnetic_group.duplicates(site)
+        self._implied_sites = implied_sites
+
     def _update_entries(self):
         self.blockSignals(True)
+
+        self._update_sites()
+
         self.setRowCount(len(self._sites) + len(self._implied_sites))
+
 
         for i, site in enumerate(self._sites):
             self.setItem(i, 0, implied_entry(False))
@@ -176,8 +187,8 @@ class SiteTable(QTableWidget):
             self.setItem(i, 6, numeric_entry(site.mj))
             self.setItem(i, 7, numeric_entry(site.mk))
 
-            xyz = self._unit_cell.fractional_to_cartesian(site.ijk)
-            mxyz = self._unit_cell.fractional_to_cartesian(site.m)
+            xyz = self.unit_cell.fractional_to_cartesian(site.ijk)
+            mxyz = self.unit_cell.fractional_to_cartesian(site.m)
 
             self.setItem(i, 8, numeric_entry(xyz[0]))
             self.setItem(i, 9, numeric_entry(xyz[1]))
@@ -203,8 +214,8 @@ class SiteTable(QTableWidget):
             self.setItem(i, 6, numeric_entry(site.mj, editable=False))
             self.setItem(i, 7, numeric_entry(site.mk, editable=False))
 
-            xyz = self._unit_cell.fractional_to_cartesian(site.ijk)
-            mxyz = self._unit_cell.fractional_to_cartesian(site.m)
+            xyz = self.unit_cell.fractional_to_cartesian(site.ijk)
+            mxyz = self.unit_cell.fractional_to_cartesian(site.m)
 
             self.setItem(i, 8, numeric_entry(xyz[0], editable=False))
             self.setItem(i, 9, numeric_entry(xyz[1], editable=False))
@@ -217,6 +228,14 @@ class SiteTable(QTableWidget):
 
         self.resizeColumnsToContents()
         self.blockSignals(False)
+
+    @property
+    def unit_cell(self):
+        return self._symmetry.unit_cell
+
+    @unit_cell.setter
+    def unit_cell(self, unit_cell):
+        raise Exception("Can't set the unit cell like this, use .symmetry with a SymmetrySettings object")
 
     def _on_item_changed(self, item: QTableWidgetItem):
 
