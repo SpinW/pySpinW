@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QL
 
 from pyspinw.gui.decorated import DecoratedSite
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
-from pyspinw.gui.helperwidgets.alternatesitetable import SiteTable
+from pyspinw.gui.helperwidgets.sitetable import SiteTable
 from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 
