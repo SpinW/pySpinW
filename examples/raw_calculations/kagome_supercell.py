@@ -8,22 +8,26 @@ import numpy as np
 
 from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
-def sym_coupling(idx1, idx2, inter_site_vector):
+def sym_coupling(idx1, idx2, rot1, rot2, inter_site_vector):
     """Create a symmetric coupling."""
-    return (Coupling(idx1, idx2, np.eye(3), inter_site_vector),
-            Coupling(idx2, idx1, np.eye(3), -inter_site_vector))
+    # the matrix for a coupling is
+    # R_{idx1} @ R_{idx2}^{-1}
+    # and rotation matrices are orthogonal so this is equal to
+    # R_{idx1} @ R_{idx2}^T
+    return (Coupling(idx1, idx2, rot1 @ rot2.T, inter_site_vector),
+            Coupling(idx2, idx1, rot2 @ rot1.T, -inter_site_vector))
 
-def unit_cell_couplings(cell_number: int):
+def unit_cell_couplings(cell_number: int, rotations):
     """Create all the couplings within a unit cell."""
     k = 0.5
     c = cell_number*3
     return      [
-                 *sym_coupling(c, c+1, k*np.array([ 1,  0, 0])),
-                 *sym_coupling(c, c+1, k*np.array([-1,  0, 0])),
-                 *sym_coupling(c, c+2, k*np.array([ 1,  1, 0])),
-                 *sym_coupling(c, c+2, k*np.array([-1, -1, 0])),
-                 *sym_coupling(c+1, c+2, k*np.array([ 0,  1, 0])),
-                 *sym_coupling(c+1, c+2, k*np.array([ 0, -1, 0])),
+                 *sym_coupling(c, c+1, rotations[c], rotations[c+1], k*np.array([ 1,  0, 0])),
+                 *sym_coupling(c, c+1, rotations[c], rotations[c+1], k*np.array([-1,  0, 0])),
+                 *sym_coupling(c, c+2, rotations[c], rotations[c+2], k*np.array([ 1,  1, 0])),
+                 *sym_coupling(c, c+2, rotations[c], rotations[c+2], k*np.array([-1, -1, 0])),
+                 *sym_coupling(c+1, c+2, rotations[c+1], rotations[c+2], k*np.array([ 0,  1, 0])),
+                 *sym_coupling(c+1, c+2, rotations[c+1], rotations[c+2], k*np.array([ 0, -1, 0])),
                  ]
 
 # define our rotation matrices
@@ -92,7 +96,7 @@ def kagome_supercell():
     couplings = []
 
     for cell in range(0, 8):
-        couplings.extend(unit_cell_couplings(cell))
+        couplings.extend(unit_cell_couplings(cell, rotations))
 
     n_q = 101
     q_mags = 0.5*np.linspace(0, 1, n_q).reshape(-1, 1)
