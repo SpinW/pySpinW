@@ -2,20 +2,20 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QApplication
 
 from pyspinw.gui.crystalviewer.viewer import CrystalViewer
-from pyspinw.gui.lattice import LatticeParameters
-from pyspinw.gui.alternatesiteeditor import SiteEditor
+from pyspinw.gui.symmetryeditor import SymmetryEditor
+from pyspinw.gui.sitecouplingeditor import SiteAndCouplingEditor
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-class CrystalEditor(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("pySpinW Crystal Editor")
 
         self.viewer = CrystalViewer(parent=self)
-        self.lattice_parameters = LatticeParameters()
-        self.sites = SiteEditor()
+        self.lattice_parameters = SymmetryEditor()
+        self.sites = SiteAndCouplingEditor()
 
         self.setCentralWidget(self.viewer)
 
@@ -40,7 +40,7 @@ class CrystalEditor(QMainWindow):
 if __name__ == "__main__":
     app = QApplication([])
 
-    editor = CrystalEditor()
+    editor = MainWindow()
     editor.viewer.unit_cell = UnitCell(1,1,1,90,90,90)
     editor.show()
 

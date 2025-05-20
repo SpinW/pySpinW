@@ -8,7 +8,7 @@ from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.gui.unitcell import UnitCellWidget
 
 
-class LatticeParameters(SpinWDockWidget):
+class SymmetryEditor(SpinWDockWidget):
 
     symmetry_changed = Signal()
 
@@ -68,7 +68,7 @@ class LatticeParameters(SpinWDockWidget):
 if __name__ == "__main__":
     app = QApplication([])
 
-    parameter_widget = LatticeParameters()
+    parameter_widget = SymmetryEditor()
     parameter_widget.show()
 
     app.exec_()

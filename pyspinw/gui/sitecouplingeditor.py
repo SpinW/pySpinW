@@ -43,7 +43,7 @@ class SiteButtons(QWidget):
     def _on_reify(self):
         self.reify_button.emit()
 
-class SiteEditor(SpinWDockWidget):
+class SiteAndCouplingEditor(SpinWDockWidget):
     """ Editor dock window for magnetic sites"""
 
     graphics_relevant_change = Signal()
