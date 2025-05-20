@@ -25,12 +25,17 @@ class CrystalEditor(QMainWindow):
         # Connections
         self.lattice_parameters.unit_cell_widget.unit_cell_changed.connect(self._on_unit_cell_changed)
         self.lattice_parameters.symmetry_changed.connect(self._on_symmetry_changed)
+        self.sites.graphics_relevant_change.connect(self._on_graphics_relevant_site_change)
 
     def _on_unit_cell_changed(self, unit_cell: UnitCell):
         self.viewer.unit_cell = unit_cell
 
     def _on_symmetry_changed(self):
         self.sites.symmetry = self.lattice_parameters.symmetry
+
+    def _on_graphics_relevant_site_change(self):
+        self.viewer.sites = self.sites.sites_for_drawing
+        self.viewer.update()
 
 if __name__ == "__main__":
     app = QApplication([])

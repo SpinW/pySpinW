@@ -22,21 +22,27 @@ class MagneticSpaceGroup(SymmetryGroup):
     def duplicates(self, site: LatticeSite):
         """ Find "duplicate" sites of a given site """
 
-        coordinates = site.values
+        coordinates = site.values.reshape(1, -1)
 
         new_coordinates = []
         for operation in self.operations:
 
-            candidate = operation(coordinates.reshape(1, -1))
+            candidate = operation(coordinates)
 
+            # If its not the input, continue
             if np.all(np.abs(candidate - coordinates) < 1e-10):
                 continue
 
+            # Is it one we've already found
+            new = True
             for ijkm in new_coordinates:
                 if np.all(np.abs(candidate - ijkm) < 1e-10):
-                    continue
+                    new = False
+                    break
 
-            new_coordinates.append(candidate)
+            if new:
+                new_coordinates.append(candidate)
+
 
         new_sites = []
         for i, ijkm in enumerate(new_coordinates):
@@ -105,7 +111,7 @@ def _load_spg_group_data():
 
         rotations = op_data["rotations"]
         translations = op_data["translations"]
-        time_reversals = 2*op_data["time_reversals"]-1
+        time_reversals = 1 - 2*op_data["time_reversals"]
 
         symbol = msg_symbols[i].uni
 

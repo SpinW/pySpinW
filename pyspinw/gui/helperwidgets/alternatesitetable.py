@@ -2,15 +2,15 @@ import sys
 
 import numpy as np
 
-from PySide6.QtCore import Qt, QModelIndex, QSize, Signal
+from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QEvent, QObject
 from PySide6.QtGui import QTextDocument, QFontMetrics, QDoubleValidator, QIcon
 from PySide6.QtWidgets import QTableWidget, QApplication, QHeaderView, QStyleOptionHeader, QStyle, QStyleOptionViewItem, \
     QTableWidgetItem, QAbstractItemView, QStyledItemDelegate, QLineEdit
 
+from pyspinw.gui.decorated import DecoratedSite, InteractionFlags
 from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-
 
 class HtmlHeader(QHeaderView):
     """ Header that can render html """
@@ -94,20 +94,43 @@ class FloatValidatorDelegate(QStyledItemDelegate):
 
 
 
+class HoverEventFilter(QObject):
+    """ Event filter for detecting hover events, signals the row hovered, or -1 if nothing hovered """
+
+    def __init__(self, table: "SiteTable"):
+        super().__init__()
+        self.table = table
+
+    def eventFilter(self, source, event):
+        """ Event filter that picks out the mouse move over the table and interprets it"""
+        if event.type() == QEvent.MouseMove and source is self.table.viewport():
+            index = self.table.indexAt(event.pos())
+            if index.isValid():
+                self.table._on_hover(index.row()) # Not the nicest way, but signals don't work from here
+            else:
+                self.table._on_hover(-1)
+
+        return super().eventFilter(source, event)
+
+
 class SiteTable(QTableWidget):
 
-    site_selected = Signal()
+    graphics_relevant_change = Signal()
 
     def __init__(self, symmetry: SymmetrySettings=DEFAULT_SYMMETRY, parent=None):
 
         super().__init__(parent=parent)
 
         self._symmetry =symmetry
+
+        # Data for the sites, the implied sites, and references both ways for linking them
         self._sites: list[LatticeSite] = []
         self._implied_sites: list[LatticeSite] = []
+        self._implied_site_to_site: list[int] = []
+        self._site_to_implied_site: list[list[int]] = []
 
         self.setRowCount(0)
-        self.setColumnCount(13)
+        self.setColumnCount(14)
 
         header = HtmlHeader(Qt.Horizontal)
         self.setHorizontalHeader(header)
@@ -121,8 +144,13 @@ class SiteTable(QTableWidget):
                                         "m<sub>y</sub> (μ<sub>B</sub>)",
                                         "m<sub>z</sub> (μ<sub>B</sub>)"])
 
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.itemSelectionChanged.connect(self._on_selection)
+        # Multi-Row selection behaviour
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.setSelectionMode(QAbstractItemView.MultiSelection)
+
+        # callback for item selection
+        self.itemSelectionChanged.connect(self._on_select)
+
 
         # Deligates for dealing with editing, needs to be kept in a list or python will dispose them
         #  and bad, confusing things will happen
@@ -134,14 +162,20 @@ class SiteTable(QTableWidget):
         self.verticalHeader().hide()
 
         self.itemChanged.connect(self._on_item_changed)
+
+        # Hovering
+        self.setMouseTracking(True)
+        self._hover_filter = HoverEventFilter(self)
+        self.viewport().installEventFilter(self._hover_filter)
+        self._current_hover_row = -1
+
+        # Scale the columns
         self.resizeColumnsToContents()
+
+
 
     def add_site(self, site: LatticeSite):
         self._sites.append(site)
-        self._update_entries()
-
-    def _add_implied_site(self, site: LatticeSite):
-        self._implied_sites.append(site)
         self._update_entries()
 
     def remove_site(self, index):
@@ -157,14 +191,28 @@ class SiteTable(QTableWidget):
         self._symmetry = symmetry
         self._update_entries()
 
-    def _on_selection(self):
-        self.site_selected.emit()
 
     def _update_sites(self):
         implied_sites = []
-        for site in self._sites:
-            implied_sites += self.symmetry.magnetic_group.duplicates(site)
+        implied_site_to_site = []
+        site_to_implied_site = []
+
+        count = 0
+        for site_index, site in enumerate(self._sites):
+            extra_sites = self.symmetry.magnetic_group.duplicates(site)
+
+            end_count = count + len(extra_sites)
+
+            implied_sites += extra_sites
+            implied_site_to_site += [site_index for _ in extra_sites]
+
+            site_to_implied_site.append([i for i in range(count, end_count)])
+
+            count = end_count
+
         self._implied_sites = implied_sites
+        self._implied_site_to_site = implied_site_to_site
+        self._site_to_implied_site = site_to_implied_site
 
     def _update_entries(self):
         self.blockSignals(True)
@@ -229,6 +277,9 @@ class SiteTable(QTableWidget):
         self.resizeColumnsToContents()
         self.blockSignals(False)
 
+        # Main place to call this for actual changes
+        self.graphics_relevant_change.emit()
+
     @property
     def unit_cell(self):
         return self._symmetry.unit_cell
@@ -236,6 +287,11 @@ class SiteTable(QTableWidget):
     @unit_cell.setter
     def unit_cell(self, unit_cell):
         raise Exception("Can't set the unit cell like this, use .symmetry with a SymmetrySettings object")
+
+    def _on_hover(self, row: int):
+        if self._current_hover_row != row:
+            self._current_hover_row = row
+            self.graphics_relevant_change.emit()
 
     def _on_item_changed(self, item: QTableWidgetItem):
 
@@ -305,6 +361,75 @@ class SiteTable(QTableWidget):
 
         self._update_entries()
 
+    def _on_select(self):
+        self.graphics_relevant_change.emit()
+
+
+    @property
+    def _implicitness_marked_all_sites(self) -> list[LatticeSite, bool]:
+        return [(site, False) for site in self._sites] + \
+                [(site, True) for site in self._implied_sites]
+
+    @property
+    def sites_for_drawing(self) -> list[DecoratedSite]:
+        """ List of sites that will get sent to the graphics, these are decorated with information
+        about the current selection"""
+
+        out = []
+        selected_indexes = set(idx.row() for idx in self.selectedIndexes())
+
+        # Find which sites are in the group associated with the current hover
+        if self._current_hover_row == -1:
+            hover_indices = []
+        else:
+
+            n_sites = len(self._sites)
+
+            # Find the base index
+            if self._current_hover_row < n_sites:
+                hover_index = self._current_hover_row
+            else:
+                hover_index = self._implied_site_to_site[self._current_hover_row - n_sites]
+
+            # Create the list of associated sites
+            hover_indices = [hover_index] + [idx + + n_sites for idx in self._site_to_implied_site[hover_index]]
+
+
+        # Create the list of sites
+        for i, (site, implied) in enumerate(self._implicitness_marked_all_sites):
+
+            hover = self._current_hover_row == i
+            selected = i in selected_indexes
+            implied_hover = i in hover_indices
+
+            # TODO: Add extra copies for edges of unit cells here, this will need to account for the extended cell,
+            #       however, it might be better to do this elsewhere
+
+            flags = InteractionFlags(
+                hover=hover,
+                selected=selected,
+                implied=implied,
+                implied_hover=implied_hover)
+
+            # Get the position in the unit cell
+
+            position = self.unit_cell.fractional_to_cartesian(site.ijk)
+            moment = self.unit_cell.fractional_to_cartesian(site.m)
+
+            # Add to the list
+            out.append(DecoratedSite(
+                site=site,
+                position=position,
+                moment=moment,
+                flags=flags
+            ))
+
+        # print("render sites")
+        # for site in out:
+        #     print(site)
+
+        return out
+
 if __name__ == "__main__":
     app = QApplication([])
 
@@ -315,7 +440,6 @@ if __name__ == "__main__":
     site_table.add_site(LatticeSite(1,1,1))
     site_table.add_site(LatticeSite(1,1,2))
     site_table.add_site(LatticeSite(1,2,1))
-    site_table._add_implied_site(LatticeSite(1,2,1))
 
     site_table.show()
 

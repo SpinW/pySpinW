@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy
 
+from pyspinw.gui.decorated import DecoratedSite
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
 from pyspinw.gui.helperwidgets.alternatesitetable import SiteTable
 from pyspinw.gui.symmetry_settings import SymmetrySettings
@@ -45,6 +46,8 @@ class SiteButtons(QWidget):
 class SiteEditor(SpinWDockWidget):
     """ Editor dock window for magnetic sites"""
 
+    graphics_relevant_change = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -70,6 +73,8 @@ class SiteEditor(SpinWDockWidget):
 
         self._symmetry: None
 
+        self.site_table.graphics_relevant_change.connect(self._on_graphics_relevant_change)
+
     @property
     def symmetry(self):
         return self._symmetry
@@ -82,7 +87,11 @@ class SiteEditor(SpinWDockWidget):
         self.update()
 
     def _on_add(self):
-        self.site_table.add_site(LatticeSite(0,0,0,0,0,0,name="New Site"))
+        self.site_table.add_site(LatticeSite(0,0,0,0,0,1,name="New Site"))
 
+    def _on_graphics_relevant_change(self):
+        self.graphics_relevant_change.emit()
 
-
+    @property
+    def sites_for_drawing(self):
+        return self.site_table.sites_for_drawing
