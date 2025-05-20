@@ -11,6 +11,8 @@ from pyspinw.gui.decorated import DecoratedSite, InteractionFlags
 from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.tolerances import tolerances
+
 
 class HtmlHeader(QHeaderView):
     """ Header that can render html """
@@ -49,7 +51,7 @@ class HtmlHeader(QHeaderView):
 
 
 def numeric_entry(x: float, editable: bool=True):
-    """ How are we formatting numbers in the table"""
+    """ Create a table entry for numbers"""
     item = QTableWidgetItem()
     item.setData(Qt.ItemDataRole.DisplayRole, float(x))
     if not editable:
@@ -59,6 +61,7 @@ def numeric_entry(x: float, editable: bool=True):
 _implied_icon = QIcon.fromTheme("folder")  # or use QIcon("path/to/icon.png")
 
 def implied_entry(implied: bool):
+    """ Create a table entry that signifies whether the site is implied or not"""
 
     item = QTableWidgetItem()
 
@@ -70,6 +73,8 @@ def implied_entry(implied: bool):
     return item
 
 def name_entry(name: str, editable: bool = True):
+    """ Create a table entry for names of things """
+
     item = QTableWidgetItem(name)
 
     if not editable:
@@ -114,8 +119,11 @@ class HoverEventFilter(QObject):
 
 
 class SiteTable(QTableWidget):
+    """ Table that shows the lattice sites """
 
     graphics_relevant_change = Signal()
+    magnetic_symmetry_broken = Signal() # Sent when the magnetic symmetry is broken
+    magnetic_symmetry_ok = Signal() # Sent when there has been an update, and the magnetic symmetry is ok
 
     def __init__(self, symmetry: SymmetrySettings=DEFAULT_SYMMETRY, parent=None):
 
@@ -172,27 +180,40 @@ class SiteTable(QTableWidget):
         # Scale the columns
         self.resizeColumnsToContents()
 
+    @property
+    def sites(self) -> list[LatticeSite]:
+        return self._sites
 
+    @sites.setter
+    def sites(self, sites: list[LatticeSite]):
+        self._sites = sites
+        self._update_entries()
 
     def add_site(self, site: LatticeSite):
+        """ Add a site to the table"""
         self._sites.append(site)
         self._update_entries()
 
     def remove_site(self, index):
+        """ Remove a site at a specified index"""
         self._sites.pop(index)
         self._update_entries()
 
     @property
     def symmetry(self):
+        """ Get the current SymmetrySettings object"""
         return self._symmetry
 
     @symmetry.setter
     def symmetry(self, symmetry: SymmetrySettings):
+        """ Set the current SymmetrySettings object"""
         self._symmetry = symmetry
         self._update_entries()
 
 
     def _update_sites(self):
+        """ Update the sites, this will recalculate the implied sites and the arrays that
+        say how they are referenced to each other"""
         implied_sites = []
         implied_site_to_site = []
         site_to_implied_site = []
@@ -214,7 +235,44 @@ class SiteTable(QTableWidget):
         self._implied_site_to_site = implied_site_to_site
         self._site_to_implied_site = site_to_implied_site
 
+    def _problematic_magnetic_site_indices(self):
+        """ Find sites which are duplicates but have opposite spins """
+
+        bad_sites = []
+
+        for i, site in enumerate(self._sites):
+            for j in self._site_to_implied_site[i]:
+                implied_site = self._implied_sites[j]
+                if np.all(np.abs(site.ijk - implied_site.ijk) < tolerances.SAME_SITE_ABS_TOL):
+                    # Same position
+
+                    if np.all(np.abs(site.m + implied_site.m) < tolerances.SAME_SITE_ABS_TOL):
+                        # Opposite moments
+
+                        bad_sites.append(i)
+                        break
+
+        return bad_sites
+
+
+    def _magnetic_symmetry_broken(self) -> bool:
+        """ Check to see if the sites are consistent with the magnetic symmetry
+
+        If the symmetry is broken, we will find there are duplicate sites with opposite spins
+        """
+
+        return len(self._problematic_magnetic_site_indices()) > 0
+
+    def _magnetic_symmetry_check(self):
+        """ This finds out if the symmetry is broken, and sends the appropriate signals"""
+
+        if self._magnetic_symmetry_broken():
+            self.magnetic_symmetry_broken.emit()
+        else:
+            self.magnetic_symmetry_ok.emit()
+
     def _update_entries(self):
+        """ Update the table entries """
         self.blockSignals(True)
 
         self._update_sites()
@@ -277,8 +335,24 @@ class SiteTable(QTableWidget):
         self.resizeColumnsToContents()
         self.blockSignals(False)
 
+        # See if the magnetic symmetry is ok
+        self._magnetic_symmetry_check()
+
         # Main place to call this for actual changes
         self.graphics_relevant_change.emit()
+
+    def magnetic_symmetry_autofix(self):
+        """ Fix problems with magnetic symmetry automatically """
+        bad_site_indices = self._problematic_magnetic_site_indices()
+        new_sites = []
+        for idx, site in enumerate(self._sites):
+            if idx in bad_site_indices:
+                new_sites.append(LatticeSite(site.i, site.j, site.k, 0, 0, 0, name=site.name))
+            else:
+                new_sites.append(site)
+
+        # Setting the sites should update everything relevant
+        self.sites = new_sites
 
     @property
     def unit_cell(self):

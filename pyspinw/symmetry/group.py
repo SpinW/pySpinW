@@ -6,6 +6,8 @@ import spglib
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
+from pyspinw.tolerances import tolerances
+
 
 class SymmetryGroup:
     pass
@@ -30,13 +32,13 @@ class MagneticSpaceGroup(SymmetryGroup):
             candidate = operation(coordinates)
 
             # If its not the input, continue
-            if np.all(np.abs(candidate - coordinates) < 1e-10):
+            if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
                 continue
 
             # Is it one we've already found
             new = True
             for ijkm in new_coordinates:
-                if np.all(np.abs(candidate - ijkm) < 1e-10):
+                if np.all(np.abs(candidate - ijkm) < tolerances.SAME_SITE_ABS_TOL):
                     new = False
                     break
 

@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy
 
+from pyspinw.gui.crystalviewer.actionlabel import ActionLabel
 from pyspinw.gui.decorated import DecoratedSite
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
 from pyspinw.gui.helperwidgets.sitetable import SiteTable
@@ -59,12 +60,20 @@ class SiteAndCouplingEditor(SpinWDockWidget):
         self.setWidget(widget)
 
         self.site_table = SiteTable()
+        self.fix_bad_sites_label = ActionLabel(
+            "The moments on some sites appear to conflict, this is either because "
+            "your symmetry is too high for your system, or because the moments should"
+            "be zero.",
+            action_text="Click to zero bad moments.")
+
         self.site_buttons = SiteButtons()
 
         widget.setLayout(layout)
 
         layout.addWidget(QLabel("Sites"))
+
         layout.addWidget(self.site_table)
+        layout.addWidget(self.fix_bad_sites_label)
         layout.addWidget(self.site_buttons)
 
         layout.addSpacerItem(QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding))
@@ -74,6 +83,10 @@ class SiteAndCouplingEditor(SpinWDockWidget):
         self._symmetry: None
 
         self.site_table.graphics_relevant_change.connect(self._on_graphics_relevant_change)
+        self.site_table.magnetic_symmetry_broken.connect(self._on_magnetic_symmetry_broken)
+        self.site_table.magnetic_symmetry_ok.connect(self._on_magnetic_symmetry_ok)
+
+        self.fix_bad_sites_label.action.connect(self.site_table.magnetic_symmetry_autofix)
 
     @property
     def symmetry(self):
@@ -92,6 +105,13 @@ class SiteAndCouplingEditor(SpinWDockWidget):
     def _on_graphics_relevant_change(self):
         self.graphics_relevant_change.emit()
 
+    def _on_magnetic_symmetry_broken(self):
+        self.fix_bad_sites_label.setVisible(True)
+
+    def _on_magnetic_symmetry_ok(self):
+        self.fix_bad_sites_label.setVisible(False)
+
     @property
     def sites_for_drawing(self):
         return self.site_table.sites_for_drawing
+
