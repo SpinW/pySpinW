@@ -44,6 +44,21 @@ class SiteButtons(QWidget):
     def _on_reify(self):
         self.reify_button.emit()
 
+class CouplingButtons(QWidget):
+    def __init__(self, parent=parent):
+        self.add_button = QPushButton("Add")
+        self.remove_button = QPushButton("Remove")
+
+        self.add_button.clicked.connect(self._on_add)
+        self.remove_button.clicked.connect(self._on_remove)
+
+        layout.addWidget(self.add_button)
+        layout.addWidget(self.remove_button)
+
+        self.setLayout(layout)
+
+
+
 class SiteAndCouplingEditor(SpinWDockWidget):
     """ Editor dock window for magnetic sites"""
 
