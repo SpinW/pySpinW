@@ -18,17 +18,17 @@ class HeisenbergCoupling(Coupling):
 
     """
 
-    def __init__(self, site_1: Identifier, site_2: Identifier, j):
-        super().__init__(site_1, site_2)
+    j: float
 
-        self._j = j
-        self._coupling_matrix = j * np.eye(3)
+    def model_post_init(self, __context):
+        self._coupling_matrix = self.j * np.eye(3)
+
 
 
 class DiagonalCoupling(Coupling):
     """Diagonal coupling, which takes the form
 
-    H_ij = J^x_ij S^x_i S^x_j + J^y_ij S^y_i S^y_j + J^z_ij S^z_i S^z_j
+    H_ij = Jxx_ij S^x_i S^x_j + Jyy_ij S^y_i S^y_j + Jzz_ij S^z_i S^z_j
 
 
     :param site_1: Identifier for S_i
@@ -37,12 +37,13 @@ class DiagonalCoupling(Coupling):
 
     """
 
-    @check_sizes(j=(3,))
-    def __init__(self, site_1: Identifier, site_2: Identifier, j: np.ndarray):
-        super().__init__(site_1, site_2)
+    j_xx: float
+    j_yy: float
+    j_zz: float
 
-        self._j = j
-        self._coupling_matrix = np.diag(j)
+
+    def model_post_init(self, __context):
+        self._coupling_matrix = np.diag([self.j_xx, self.j_yy, self.j_zz])
 
 
 class XYCoupling(Coupling):
@@ -56,10 +57,10 @@ class XYCoupling(Coupling):
 
     """
 
-    def __init__(self, site_1: Identifier, site_2: Identifier, j):
-        super().__init__(site_1, site_2)
-        self._j = j
-        self._coupling_matrix = np.diag([j, j, 0])
+    j: float
+
+    def model_post_init(self, __context):
+        self._coupling_matrix = np.diag([self.j, self.j, 0.0], dtype=float)
 
 
 
@@ -75,11 +76,11 @@ class XXZCoupling(Coupling):
 
     """
 
-    def __init__(self, site_1: Identifier, site_2: Identifier, j_xy, j_z):
-        super().__init__(site_1, site_2)
-        self._j_xy = j_xy
-        self._j_z = j_z
-        self._coupling_matrix = np.diag([j_xy, j_xy, j_z])
+    j_xy: float
+    j_z: float
+
+    def model_post_init(self, __context):
+        self._coupling_matrix = np.diag([self.j_xy, self.j_xy, self.j_z])
 
 
 class IsingCoupling(Coupling):
@@ -93,10 +94,10 @@ class IsingCoupling(Coupling):
 
     """
 
-    def __init__(self, site_1: Identifier, site_2: Identifier, j):
-        super().__init__(site_1, site_2)
-        self._j = j
-        self._coupling_matrix = np.diag([0, 0, j])
+    j_zz: float
+
+    def model_post_init(self, __context):
+        self._coupling_matrix = np.diag([0, 0, self.j_zz])
 
 
 class DMCoupling(Coupling):
@@ -106,13 +107,17 @@ class DMCoupling(Coupling):
 
     :param site_1: Identifier for S_i
     :param site_2: Identifier for S_j
-    :param dm_vector: The vector D above
+    :param d_x: x component of the d vector above
+    :param d_y: x component of the d vector above
+    :param d_z: x component of the d vector above
 
     """
 
-    @check_sizes(d_vector=(3,), force_numpy=True)
-    def __init__(self, site_1: Identifier, site_2: Identifier, dm_vector: np.ndarray):
-        super().__init__(site_1, site_2)
+    d_x: float
+    d_y: float
+    d_z: float
 
-        self._dm_vector = dm_vector
-        self._coupling_matrix = triple_product_matrix(dm_vector)
+
+    def model_post_init(self, __context):
+
+        self._coupling_matrix = triple_product_matrix(np.array([self.d_x, self.d_y, self.d_z]))

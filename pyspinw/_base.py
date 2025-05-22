@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from ase.lattice import BravaisLattice
+from pydantic import BaseModel
 
 
 class MagneticStructure(ABC):
@@ -42,13 +43,13 @@ class Sample(ABC):
 Identifier = str # temporary choice for now
 
 
-class Coupling:
+class Coupling(BaseModel):
     """Coupling between different sites"""
 
-    def __init__(self, site_1: Identifier, site_2: Identifier):
-        self._site_1 = site_1
-        self._site_2 = site_2
-        self._coupling_matrix = None
+    site_1: Identifier
+    site_2: Identifier
+
+    _coupling_matrix: np.ndarray | None = None
 
     @property
     def coupling_matrix(self) -> np.ndarray:

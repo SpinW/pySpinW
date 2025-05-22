@@ -12,6 +12,7 @@ from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
+from pyspinw.util import problematic_sites
 
 
 class HtmlHeader(QHeaderView):
@@ -235,25 +236,6 @@ class SiteTable(QTableWidget):
         self._implied_site_to_site = implied_site_to_site
         self._site_to_implied_site = site_to_implied_site
 
-    def _problematic_magnetic_site_indices(self):
-        """ Find sites which are duplicates but have opposite spins """
-
-        bad_sites = []
-
-        for i, site in enumerate(self._sites):
-            for j in self._site_to_implied_site[i]:
-                implied_site = self._implied_sites[j]
-                if np.all(np.abs(site.ijk - implied_site.ijk) < tolerances.SAME_SITE_ABS_TOL):
-                    # Same position
-
-                    if np.all(np.abs(site.m + implied_site.m) < tolerances.SAME_SITE_ABS_TOL):
-                        # Opposite moments
-
-                        bad_sites.append(i)
-                        break
-
-        return bad_sites
-
 
     def _magnetic_symmetry_broken(self) -> bool:
         """ Check to see if the sites are consistent with the magnetic symmetry
@@ -261,7 +243,7 @@ class SiteTable(QTableWidget):
         If the symmetry is broken, we will find there are duplicate sites with opposite spins
         """
 
-        return len(self._problematic_magnetic_site_indices()) > 0
+        return len(problematic_sites(self._sites, self._implied_sites, self._site_to_implied_site)) > 0
 
     def _magnetic_symmetry_check(self):
         """ This finds out if the symmetry is broken, and sends the appropriate signals"""
@@ -343,7 +325,7 @@ class SiteTable(QTableWidget):
 
     def magnetic_symmetry_autofix(self):
         """ Fix problems with magnetic symmetry automatically """
-        bad_site_indices = self._problematic_magnetic_site_indices()
+        bad_site_indices = problematic_sites(self._sites, self._implied_sites, self._site_to_implied_site)
         new_sites = []
         for idx, site in enumerate(self._sites):
             if idx in bad_site_indices:
