@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import spglib
 
-from pyspinw.site import LatticeSite
+from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
 from pyspinw.tolerances import tolerances
@@ -21,7 +21,7 @@ class MagneticSpaceGroup(SymmetryGroup):
     def __repr__(self):
         return f"SpaceGroup({self.number}, {self.symbol})"
 
-    def duplicates(self, site: LatticeSite):
+    def duplicates(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
 
         coordinates = site.values.reshape(1, -1)
@@ -48,7 +48,7 @@ class MagneticSpaceGroup(SymmetryGroup):
 
         new_sites = []
         for i, ijkm in enumerate(new_coordinates):
-            new_site = LatticeSite.from_coordinates(ijkm.reshape(-1), name=site.name + f" [{i+1}]")
+            new_site = ImpliedLatticeSite.from_coordinates(coordinates=ijkm.reshape(-1), parent_site=site, name=site.name + f" [{i+1}]")
 
             new_sites.append(new_site)
 

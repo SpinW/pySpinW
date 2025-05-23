@@ -55,3 +55,27 @@ class LatticeSite(BaseModel):
             mj=coordinates[4],
             mk=coordinates[5],
             name=name)
+
+class ImpliedLatticeSite(LatticeSite):
+
+    parent_site: LatticeSite
+
+    def __init__(self,
+                 parent_site: LatticeSite,
+                 i: float, j: float, k: float,
+                 mi: float = 0, mj: float = 0, mk: float = 0, name: str | None = None):
+
+        super().__init__(parent_site=parent_site, i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
+
+
+    @staticmethod
+    def from_coordinates(parent_site: LatticeSite, coordinates: np.ndarray, name: str = ""):
+        return ImpliedLatticeSite(
+            parent_site=parent_site,
+            i=coordinates[0],
+            j=coordinates[1],
+            k=coordinates[2],
+            mi=coordinates[3],
+            mj=coordinates[4],
+            mk=coordinates[5],
+            name=name)

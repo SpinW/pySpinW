@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QL
 from pyspinw.gui.crystalviewer.actionlabel import ActionLabel
 from pyspinw.gui.decorated import DecoratedSite
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
-from pyspinw.gui.helperwidgets.sitetable import SiteTable
+from pyspinw.gui.sitetable import SiteTable
 from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 
@@ -22,7 +22,7 @@ class SiteButtons(QWidget):
 
         self.add_button = QPushButton("Add")
         self.remove_button = QPushButton("Remove")
-        self.reify_button = QPushButton("Make Explicit")
+        self.reify_button = QPushButton("Make Inequivalent")
 
         self.add_button.clicked.connect(self._on_add)
         self.remove_button.clicked.connect(self._on_remove)
@@ -45,7 +45,7 @@ class SiteButtons(QWidget):
         self.reify_button.emit()
 
 class CouplingButtons(QWidget):
-    def __init__(self, parent=parent):
+    def __init__(self, parent=None):
         self.add_button = QPushButton("Add")
         self.remove_button = QPushButton("Remove")
 

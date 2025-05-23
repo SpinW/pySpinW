@@ -1,4 +1,5 @@
 """Coupling Terms"""
+from typing import ClassVar
 
 import numpy as np
 
@@ -20,9 +21,11 @@ class HeisenbergCoupling(Coupling):
 
     j: float
 
+    coupling_type: ClassVar[str] = "Heisenberg"
+    parameters: ClassVar[list[str]] = ["j"]
+
     def model_post_init(self, __context):
         self._coupling_matrix = self.j * np.eye(3)
-
 
 
 class DiagonalCoupling(Coupling):
@@ -37,13 +40,16 @@ class DiagonalCoupling(Coupling):
 
     """
 
-    j_xx: float
-    j_yy: float
-    j_zz: float
+    j_x: float
+    j_y: float
+    j_z: float
 
+
+    coupling_type: ClassVar[str] = "Diagonal"
+    parameters: ClassVar[list[str]] = ["j_x", "j_y", "j_z"]
 
     def model_post_init(self, __context):
-        self._coupling_matrix = np.diag([self.j_xx, self.j_yy, self.j_zz])
+        self._coupling_matrix = np.diag([self.j_x, self.j_y, self.j_z])
 
 
 class XYCoupling(Coupling):
@@ -58,6 +64,10 @@ class XYCoupling(Coupling):
     """
 
     j: float
+
+
+    coupling_type: ClassVar[str] = "XY"
+    parameters: ClassVar[list[str]] = ["j"]
 
     def model_post_init(self, __context):
         self._coupling_matrix = np.diag([self.j, self.j, 0.0], dtype=float)
@@ -79,6 +89,9 @@ class XXZCoupling(Coupling):
     j_xy: float
     j_z: float
 
+    coupling_type: ClassVar[str] = "XXZ"
+    parameters: ClassVar[list[str]] = ["j_xy", "j_z"]
+
     def model_post_init(self, __context):
         self._coupling_matrix = np.diag([self.j_xy, self.j_xy, self.j_z])
 
@@ -94,10 +107,16 @@ class IsingCoupling(Coupling):
 
     """
 
-    j_zz: float
+    j_z: float
+
+    coupling_type: ClassVar[str] = "Ising"
+
+    parameters: ClassVar[list[str]] = ["j_z"]
 
     def model_post_init(self, __context):
-        self._coupling_matrix = np.diag([0, 0, self.j_zz])
+        self._coupling_matrix = np.diag([0, 0, self.j_z])
+
+
 
 
 class DMCoupling(Coupling):
@@ -117,7 +136,20 @@ class DMCoupling(Coupling):
     d_y: float
     d_z: float
 
+    coupling_type: ClassVar[str] = "Dzyaloshinskii–Moriya"
+    parameters: ClassVar[list[str]] = ["d_x", "d_y", "d_z"]
 
     def model_post_init(self, __context):
 
         self._coupling_matrix = triple_product_matrix(np.array([self.d_x, self.d_y, self.d_z]))
+
+    @property
+    def parameter_string(self):
+        parts = []
+        for parameter in self.parameters:
+            parts.append(parameter + repr(self.__dict__[parameter]))
+
+        return ", ".join(parts)
+
+
+couplings = [HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling]

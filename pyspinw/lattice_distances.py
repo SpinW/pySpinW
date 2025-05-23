@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 from pyspinw.checks import check_sizes
+from pyspinw.tolerances import tolerances
+
 
 @dataclass
 class InteractionGeometries:
@@ -18,6 +20,12 @@ class InteractionGeometries:
     distances: np.ndarray
     """ Distance to the each point"""
 
+    def expand(self) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        return [(self.cell_indices[i, :],
+                 self.vectors[i, :],
+                 self.distances[i])
+                    for i in range(len(self.distances))]
+
 
 @check_sizes(fractional_coordinates=(3,),
              unit_cell_transform=(3,3))
@@ -25,7 +33,7 @@ def find_relative_positions(
         fractional_coordinates: np.ndarray,
         unit_cell_transform: np.ndarray,
         max_distance: float,
-        tol: float=1e-7,
+        tol: float=tolerances.SAME_SITE_ABS_TOL,
         allow_self=True) -> InteractionGeometries:
     """Find fractional coordinates from translations of the unit cell close to the origin.
 

@@ -7,10 +7,14 @@ This is an abstract outline, the actual implementations are in different files
 # pylint: disable=R0903
 
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 import numpy as np
 from ase.lattice import BravaisLattice
 from pydantic import BaseModel
+
+from pyspinw.gui.cell_offsets import CellOffset
+from pyspinw.site import LatticeSite
 
 
 class MagneticStructure(ABC):
@@ -46,10 +50,18 @@ Identifier = str # temporary choice for now
 class Coupling(BaseModel):
     """Coupling between different sites"""
 
-    site_1: Identifier
-    site_2: Identifier
+    name: str
+
+    site_1: LatticeSite
+    site_2: LatticeSite
+
+    cell_offset: CellOffset
+
+    coupling_type: ClassVar[str] = "Base Coupling"
+    parameters: ClassVar[list[str]] = []
 
     _coupling_matrix: np.ndarray | None = None
+
 
     @property
     def coupling_matrix(self) -> np.ndarray:
@@ -65,6 +77,9 @@ class Coupling(BaseModel):
         else:
             return self._coupling_matrix
 
+    @staticmethod
+    def _similar(other: "Coupling") -> "Coupling":
+        raise NotImplementedError("_similar not implemented")
 
 class Anisotropy:
     """Defines the anisotropy at a given site"""
