@@ -12,7 +12,7 @@ def antiferro_chain():
 
     We use a 2x1x1 supercell to capture the magnetic rotation periodicity.
     """
-    rotations = np.array([np.eye(3), [[-1, 0, 0], [0, 0, -1], [0, 1, 0]]])
+    rotations = np.array([np.eye(3), [[1, 0, 0], [0, 1, 0], [0, 0, -1]]])
     magnitudes = np.array([1.5]*2)
 
     couplings = [
