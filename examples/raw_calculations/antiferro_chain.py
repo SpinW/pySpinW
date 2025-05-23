@@ -1,0 +1,41 @@
+"""Example of an antiferromagnetic chain.
+
+See https://spinw.org/tutorials/02tutorial
+"""
+
+import numpy as np
+
+from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+
+def antiferro_chain():
+    """Antiferromagnetic chain.
+
+    We use a 2x1x1 supercell to capture the magnetic rotation periodicity.
+    """
+    rotations = np.array([np.eye(3), [[-1, 0, 0], [0, 0, -1], [0, 1, 0]]])
+    magnitudes = np.array([1.5]*2)
+
+    couplings = [
+        Coupling(0, 1, -1 * rotations[0] @ rotations[1].T, inter_site_vector=np.array([0, 1, 0])),
+        Coupling(0, 1, -1  *rotations[0] @ rotations[1].T, inter_site_vector=np.array([0, -1, 0])),
+        Coupling(1, 0, -1 * rotations[1] @ rotations[0].T, inter_site_vector = np.array([0, 1, 0])),
+        Coupling(1, 0, -1 * rotations[1] @ rotations[0].T, inter_site_vector = np.array([0, -1, 0])),
+        ]
+
+    q_mags = np.linspace(0, 1, 100).reshape(-1, 1)
+    q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
+
+    return (rotations, magnitudes, q_vectors, couplings)
+
+if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
+
+    structure = antiferro_chain()
+    result = spinwave_calculation(*structure)
+
+    # Note: we get complex data types with real part zero
+
+    plt.plot(np.linspace(0, 1, 100).reshape(-1, 1), result.raw_energies)
+
+    plt.savefig("fig.png")
