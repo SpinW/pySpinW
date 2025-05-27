@@ -8,37 +8,22 @@ import numpy as np
 
 from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
-def sym_coupling(idx1, idx2, rot1, rot2, inter_site_vector):
-    """Create a symmetric coupling."""
-    # the matrix for a coupling is
-    # R_{idx1} @ R_{idx2}^{-1}
-    # and rotation matrices are orthogonal so this is equal to
-    # R_{idx1} @ R_{idx2}^T
-    return (Coupling(idx1, idx2, rot1 @ rot2.T, inter_site_vector),
-            Coupling(idx2, idx1, rot2 @ rot1.T, -inter_site_vector))
-
-def unit_cell_couplings(cell_number: int, rotations):
-    """Create all the couplings within a unit cell."""
-    k = 0.5
-    c = cell_number*3
-    return      [
-                 *sym_coupling(c, c+1, rotations[c], rotations[c+1], k*np.array([ 1,  0, 0])),
-                 *sym_coupling(c, c+1, rotations[c], rotations[c+1], k*np.array([-1,  0, 0])),
-                 *sym_coupling(c, c+2, rotations[c], rotations[c+2], k*np.array([ 1,  1, 0])),
-                 *sym_coupling(c, c+2, rotations[c], rotations[c+2], k*np.array([-1, -1, 0])),
-                 *sym_coupling(c+1, c+2, rotations[c+1], rotations[c+2], k*np.array([ 0,  1, 0])),
-                 *sym_coupling(c+1, c+2, rotations[c+1], rotations[c+2], k*np.array([ 0, -1, 0])),
-                 ]
 
 # define our rotation matrices
 def rotation(theta):
     """Return the rotation matrix for an angle `theta` in the x-z plane."""
-    return np.array([[np.cos(theta), np.sin(theta), 0],
-                    [0, 0, -1],
-                    [np.sin(theta), -np.cos(theta), 0]])
+    return -1 * np.array(
+        [
+            [np.cos(theta), -np.sin(theta), 0],
+            [np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1],
+        ]
+    )
+
 
 def kagome_supercell():
     """A sqrt(3) x sqrt(3) Kagome antiferromagnet supercell lattice."""
+
     # we index the supercell by indexing each unit cell in order: so that the
     # 'central' atom is 0 mod 3, the top-left atom is 1 mod 3, the right is 2 mod 3
     # so we can create the unit cell couplings and then we just need to add
@@ -53,62 +38,96 @@ def kagome_supercell():
     #
     def down():
         # ↙️
-        return rotation(7*np.pi/6)
+        return rotation(np.pi / 6)
+
     def up():
         # ↖
-        return rotation(np.pi/6)
+        return rotation(7 * np.pi / 6)
+
     def right():
         # →
-        return rotation(np.pi/2)
+        return rotation(np.pi / 2)
 
-    rotations = np.array([down(),
-                          right(),
-                          right(),
-                          up(),
-                          down(),
-                          down(),
-                          right(),
-                          up(),
-                          up(),
-                          up(),
-                          down(),
-                          down(),
-                          right(),
-                          up(),
-                          up(),
-                          down(),
-                          right(),
-                          right(),
-                          right(),
-                          up(),
-                          up(),
-                          down(),
-                          right(),
-                          right(),
-                          up(),
-                          down(),
-                          down()
-                          ])
-    magnitudes = np.array([1]*27)  # spin 1
+    rotations = np.array(
+        [
+            down(),
+            right(),
+            right(),
+            up(),
+            down(),
+            down(),
+            right(),
+            up(),
+            up(),
+            up(),
+            down(),
+            down(),
+            right(),
+            up(),
+            up(),
+            down(),
+            right(),
+            right(),
+            right(),
+            up(),
+            up(),
+            down(),
+            right(),
+            right(),
+            up(),
+            down(),
+            down(),
+        ]
+    )
+    magnitudes = np.array([1] * 27)  # spin 1
 
     k = 0.5
 
+    horizontal_pairs = [  # couplings which are parallel to the a-axis
+        (0, 2), (2, 3), (3, 5), (5, 6), (6, 8),  # bottom horizontal line
+        (9, 11), (11, 12), (12, 14), (14, 15), (15, 17),  # middle horizontal line
+        (18, 20), (20, 21), (21, 23), (23, 24), (24, 26),  # top horizontal line
+        (8, 0), (17, 9), (26, 18),  # 'over the edges' from left
+    ]
+
+    vertical_pairs = [  # pairs which are parallel to the b-axis
+        (0, 1), (1, 9), (9, 10), (10, 18), (18, 19),  # leftmost vertical line
+        (3, 4), (4, 12), (12, 13), (13, 21), (21, 22),  # middle vertical line
+        (6, 7), (7, 15), (15, 16), (16, 24), (24, 25),  # rightmost vertical line
+        (19, 0), (22, 3), (25, 6),  # 'over the edges' from bottom
+    ]
+
+    other_pairs = [  # pairs going diagonally up and to the right
+        (1, 11), (11, 13), (13, 23), (23, 25), (8, 1),  # line extending through site 1 (including over edge to 8)
+        (2, 4), (4, 14), (14, 16), (16, 26), (19, 2),  # line extending through site 2 (including over edge to 19)
+        (5, 7), (7, 17), (22, 5),  # line extending through site 5 (including over edge to 22)
+        (10, 20), (20, 22), (17, 10),  # line extending through site 10 (including over edge to 17)
+        (25, 8), (26, 19),  # over edges which aren't otherwise part of a line
+    ]
+
     couplings = []
 
-    for cell in range(0, 8):
-        couplings.extend(unit_cell_couplings(cell, rotations))
+    k = 0.5
+    couplings.extend(Coupling(idx1, idx2, rotations[idx1] @ rotations[idx2].T, k*np.array([1, 0, 0])) for (idx1, idx2) in horizontal_pairs)
+    couplings.extend(Coupling(idx2, idx1, rotations[idx2] @ rotations[idx1].T, k*np.array([-1, 0, 0])) for (idx1, idx2) in horizontal_pairs)
+    couplings.extend(Coupling(idx1, idx2, rotations[idx1] @ rotations[idx2].T, k*np.array([0, 1, 0])) for (idx1, idx2) in vertical_pairs)
+    couplings.extend(Coupling(idx2, idx1, rotations[idx2] @ rotations[idx1].T, k*np.array([0, -1, 0])) for (idx1, idx2) in vertical_pairs)
+    couplings.extend(Coupling(idx1, idx2, rotations[idx1] @ rotations[idx2].T, k*np.array([1, 1, 0])) for (idx1, idx2) in other_pairs)
+    couplings.extend(Coupling(idx2, idx1, rotations[idx2] @ rotations[idx1].T, k*np.array([-1, -1, 0])) for (idx1, idx2) in other_pairs)
 
     n_q = 101
-    q_mags = 0.5*np.linspace(0, 1, n_q).reshape(-1, 1)
+    q_mags = 0.5 * np.linspace(0, 1, n_q).reshape(-1, 1)
 
     # q_vectors = np.concatenate((
     #         q_mags[::-1].reshape(-1, 1) * np.array([1, 0, 1]).reshape(1, -1),
     #         q_mags[1:].reshape(-1, 1) * np.array([0, 0, 1]).reshape(1, -1)
     # ))
-    q_vectors = np.concatenate((
+    q_vectors = np.concatenate(
+        (
             q_mags[::-1].reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1),
-            q_mags[1:].reshape(-1, 1) * np.array([0, 1, 0]).reshape(1, -1)
-    ))
+            q_mags[1:].reshape(-1, 1) * np.array([0, 1, 0]).reshape(1, -1),
+        )
+    )
 
     # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
 
@@ -117,14 +136,14 @@ def kagome_supercell():
     label_indices = [0, 100, 200]
     # label_indices = []
 
-    labels = [str(q_vectors[idx,:]) for idx in label_indices]
+    labels = [str(q_vectors[idx, :]) for idx in label_indices]
 
     structure = (rotations, magnitudes, q_vectors, couplings)
 
     return structure, indices, labels, label_indices
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     structure, indices, labels, label_indices = kagome_supercell()
@@ -132,10 +151,9 @@ if __name__ == "__main__":
 
     energies = [np.sort(energy.real) for energy in energies]
 
-    positive_energies = [energy[energy>0] for energy in energies]
+    positive_energies = [energy[energy > 0] for energy in energies]
     min_energy = min([np.min(energy) for energy in positive_energies])
     translated_energies = [energy - min_energy for energy in positive_energies]
-
 
     # Note: we get complex data types with real part zero
 
