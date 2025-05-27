@@ -60,18 +60,15 @@ def kagome_ferromagnet():
 
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
 
-    result = spinwave_calculation(rotations,
-                                    magnitudes,
-                                    q_vectors,
-                                    couplings)
-
-    return result, indices, labels, label_indices
+    structure = (rotations, magnitudes, q_vectors, couplings)
+    return structure, indices, labels, label_indices
 
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    result, indices, labels, label_indices = kagome_ferromagnet()
+    structure, indices, labels, label_indices = kagome_ferromagnet()
+    result = spinwave_calculation(*structure)
 
     energies = [np.sort(energy.real) for energy in result.raw_energies]
 

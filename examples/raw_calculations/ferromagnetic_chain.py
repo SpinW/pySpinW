@@ -17,18 +17,15 @@ def heisenberg_ferromagnet():
                  Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, -1, 0])),
                  ]
 
-    energies = spinwave_calculation(rotations,
-                                    magnitudes,
-                                    q_vectors,
-                                    couplings)
-
-    return q_mags, energies
+    structure = (rotations, magnitudes, q_vectors, couplings)
+    return structure, q_mags
 
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    q_mags, result = heisenberg_ferromagnet()
+    structure, q_mags = heisenberg_ferromagnet()
+    energies = spinwave_calculation(*structure)
 
     # Note: we get complex data types with real part zero
 
