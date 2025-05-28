@@ -21,7 +21,7 @@ def rotation(theta):
     )
 
 
-def kagome_supercell():
+def kagome_supercell(n_q = 100):
     """A sqrt(3) x sqrt(3) Kagome antiferromagnet supercell lattice."""
 
     # we index the supercell by indexing each unit cell in order: so that the
@@ -115,8 +115,7 @@ def kagome_supercell():
     couplings.extend(Coupling(idx1, idx2, rotations[idx1] @ rotations[idx2].T, k*np.array([1, 1, 0])) for (idx1, idx2) in other_pairs)
     couplings.extend(Coupling(idx2, idx1, rotations[idx2] @ rotations[idx1].T, k*np.array([-1, -1, 0])) for (idx1, idx2) in other_pairs)
 
-    n_q = 101
-    q_mags = 0.5 * np.linspace(0, 1, n_q).reshape(-1, 1)
+    q_mags = 0.5 * np.linspace(0, 1, n_q + 1).reshape(-1, 1)
 
     # q_vectors = np.concatenate((
     #         q_mags[::-1].reshape(-1, 1) * np.array([1, 0, 1]).reshape(1, -1),
@@ -131,6 +130,14 @@ def kagome_supercell():
 
     # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
 
+    return (rotations, magnitudes, q_vectors, couplings)
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    structure = kagome_supercell()
+    q_vectors = structure[2]
+
     indices = np.arange(201)
 
     label_indices = [0, 100, 200]
@@ -138,15 +145,6 @@ def kagome_supercell():
 
     labels = [str(q_vectors[idx, :]) for idx in label_indices]
 
-    structure = (rotations, magnitudes, q_vectors, couplings)
-
-    return structure, indices, labels, label_indices
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    structure, indices, labels, label_indices = kagome_supercell()
     energies = spinwave_calculation(*structure).raw_energies
 
     energies = [np.sort(energy.real) for energy in energies]

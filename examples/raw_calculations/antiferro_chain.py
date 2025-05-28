@@ -7,7 +7,7 @@ import numpy as np
 
 from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
-def antiferro_chain():
+def antiferro_chain(n_q = 100):
     """Antiferromagnetic chain.
 
     We use a 2x1x1 supercell to capture the magnetic rotation periodicity.
@@ -22,7 +22,7 @@ def antiferro_chain():
         Coupling(1, 0, -1 * rotations[1] @ rotations[0].T, inter_site_vector = np.array([0, -1, 0])),
         ]
 
-    q_mags = np.linspace(0, 1, 100).reshape(-1, 1)
+    q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 
     return (rotations, magnitudes, q_vectors, couplings)

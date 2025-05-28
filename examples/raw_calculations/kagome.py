@@ -1,7 +1,7 @@
 import numpy as np
 from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
-def kagome_ferromagnet():
+def kagome_ferromagnet(n_q = 100):
 
     """
     Basic ferromagnet
@@ -39,8 +39,7 @@ def kagome_ferromagnet():
                  ]
 
 
-    n_q = 101
-    q_mags = 0.5*np.linspace(0, 1, n_q).reshape(-1, 1)
+    q_mags = 0.5*np.linspace(0, 1, n_q + 1).reshape(-1, 1)
 
     # q_vectors = np.concatenate((
     #         q_mags[::-1].reshape(-1, 1) * np.array([1, 0, 1]).reshape(1, -1),
@@ -53,6 +52,15 @@ def kagome_ferromagnet():
 
     # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
 
+    return (rotations, magnitudes, q_vectors, couplings)
+
+if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
+
+    structure = kagome_ferromagnet()
+    q_vectors = structure[2]
+
     indices = np.arange(201)
 
     label_indices = [0, 100, 200]
@@ -60,14 +68,6 @@ def kagome_ferromagnet():
 
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
 
-    structure = (rotations, magnitudes, q_vectors, couplings)
-    return structure, indices, labels, label_indices
-
-if __name__ == "__main__":
-
-    import matplotlib.pyplot as plt
-
-    structure, indices, labels, label_indices = kagome_ferromagnet()
     result = spinwave_calculation(*structure)
 
     energies = [np.sort(energy.real) for energy in result.raw_energies]
