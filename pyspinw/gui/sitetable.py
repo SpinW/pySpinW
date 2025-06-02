@@ -126,6 +126,9 @@ class SiteTable(QTableWidget):
     magnetic_symmetry_broken = Signal() # Sent when the magnetic symmetry is broken
     magnetic_symmetry_ok = Signal() # Sent when there has been an update, and the magnetic symmetry is ok
 
+    implied_selected_state_changed = Signal(bool) # Signals whether selection contains a mirror site
+    non_implied_selected_state_changed = Signal(bool) # Signals whether selection is non-empty
+
     def __init__(self, symmetry: SymmetrySettings=DEFAULT_SYMMETRY, parent=None):
 
         super().__init__(parent=parent)
@@ -329,7 +332,7 @@ class SiteTable(QTableWidget):
         new_sites = []
         for idx, site in enumerate(self._sites):
             if idx in bad_site_indices:
-                new_sites.append(LatticeSite(site.i, site.j, site.k, 0, 0, 0, name=site.name))
+                new_sites.append(LatticeSite.create(site.i, site.j, site.k, 0, 0, 0, name=site.name))
             else:
                 new_sites.append(site)
 
@@ -383,7 +386,7 @@ class SiteTable(QTableWidget):
         new_site = None
 
         if col < 7:
-            new_site = LatticeSite(
+            new_site = LatticeSite.create(
                 ijk[0], ijk[1], ijk[2],
                 mijk[0], mijk[1], mijk[2],
                 name = name)
@@ -392,7 +395,7 @@ class SiteTable(QTableWidget):
 
             ijk_from_xyz = self._unit_cell.cartesian_to_fractional(xyz)
 
-            new_site = LatticeSite(
+            new_site = LatticeSite.create(
                 ijk_from_xyz[0], ijk_from_xyz[1], ijk_from_xyz[2],
                 mijk[0], mikj[1], mijk[2],
                 name=name)
@@ -401,7 +404,7 @@ class SiteTable(QTableWidget):
 
             mijk_from_mxyz = self._unit_cell.cartesian_to_fractional(mxyz)
 
-            new_site = LatticeSite(
+            new_site = LatticeSite.create(
                 ijk[0], ijk[1], ijk[2],
                 mijk_from_mxyz[0], mijk_from_mxyz[1], mijk_from_mxyz[2],
                 name=name)
@@ -418,6 +421,19 @@ class SiteTable(QTableWidget):
         self._update_entries()
 
     def _on_select(self):
+        """ Event that happens on selection"""
+
+
+        selected_indexes = set(idx.row() for idx in self.selectedIndexes())
+
+        non_implied_selected = any([index < len(self._sites) for index in selected_indexes])
+        self.non_implied_selected_state_changed.emit(non_implied_selected)
+
+        inequivalent_selected = any([index >= len(self._sites) for index in selected_indexes])
+        self.implied_selected_state_changed.emit(inequivalent_selected)
+
+
+        # Inform graphics dependents
         self.graphics_relevant_change.emit()
 
 

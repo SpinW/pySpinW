@@ -47,6 +47,7 @@ def find_relative_positions(
     :param allow_self: include the original point with no translation (i,j,k = 0,0,0)
     """
     fractional_coordinate_offsets = get_cell_offsets_containing_bounding_box(unit_cell_transform, max_distance)
+
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
 
     cartesian_position = fractional_positions @ unit_cell_transform.T

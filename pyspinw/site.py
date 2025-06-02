@@ -4,6 +4,12 @@ import numpy as np
 
 from pydantic import BaseModel, Field
 
+_id_counter = -1
+def _generate_unique_id():
+    """ Generate a unique ID for each site - there must be a better way of doing this"""
+    global _id_counter
+    _id_counter += 1
+    return _id_counter
 
 class LatticeSite(BaseModel):
     """A spin site within a lattice """
@@ -21,6 +27,7 @@ class LatticeSite(BaseModel):
     _ijk: np.ndarray | None = None
     _m: np.ndarray | None = None
     _values: np.ndarray | None = None
+    _unique_id: int | None = None
 
     @staticmethod
     def create(i: float, j: float, k: float,
@@ -33,6 +40,7 @@ class LatticeSite(BaseModel):
         self._ijk = np.array([self.i, self.j, self.k], dtype=float)
         self._m = np.array([self.mi, self.mj, self.mk], dtype=float)
         self._values = np.concatenate((self._ijk, self._m))
+        self._unique_id = _generate_unique_id()
 
     @property
     def ijk(self):
@@ -56,6 +64,9 @@ class LatticeSite(BaseModel):
             mj=coordinates[4],
             mk=coordinates[5],
             name=name)
+
+    def __hash__(self):
+        return self._unique_id
 
 class ImpliedLatticeSite(LatticeSite):
 

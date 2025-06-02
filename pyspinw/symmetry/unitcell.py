@@ -35,6 +35,11 @@ class RawUnitCell:
         """ Point at centre of cell in cartesian coordinates"""
         return self.fractional_to_cartesian(np.array([[0.5,0.5,0.5]]))[0, :]
 
+    @property
+    def main_diagonal_length(self):
+        """ Length of primary diagonal """
+        return np.sqrt(np.sum(self.fractional_to_cartesian(np.array([[1,1,1]]))[0, :]**2))
+
     def __eq__(self, other: "UnitCell"):
         return np.all(np.abs(self._xyz - other._xyz) < 1e-10)
 

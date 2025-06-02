@@ -17,35 +17,39 @@ def string_entry(value: str, editable: bool = True):
     return item
 
 class CouplingTable(QTableWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, editable=True):
         super().__init__(parent=parent)
 
         self._couplings: list[Coupling] = []
 
         self.setRowCount(0)
-        self.setColumnCount(5)
+        self.setColumnCount(6)
 
         self.setHorizontalHeaderLabels(["Name",
                                         "Site 1",
                                         "Site 2",
-                                        "Supercell"
+                                        "Supercell",
                                         "Type",
                                         "Parameters"])
+
+        self._editable = editable
+
+        
 
 
     def update_entries(self):
 
         self.blockSignals(True)
 
+        self.clear()
         self.setRowCount(len(self._couplings))
-
 
         for i, coupling in enumerate(self._couplings):
 
-            self.setItem(i, 0, string_entry(coupling.name))
+            self.setItem(i, 0, string_entry(coupling.name, editable=self._editable))
             self.setItem(i, 1, string_entry(coupling.site_1.name, editable=False))
             self.setItem(i, 2, string_entry(coupling.site_2.name, editable=False))
-            self.setItem(i, 3, string_entry(str(coupling.cell_offset), editable=False))
+            self.setItem(i, 3, string_entry(str(coupling.cell_offset.as_tuple), editable=False))
             self.setItem(i, 4, string_entry(coupling.coupling_type, editable=False))
             self.setItem(i, 5, string_entry(coupling.parameter_string, editable=False))
 
@@ -56,6 +60,15 @@ class CouplingTable(QTableWidget):
     def add_coupling(self, coupling: Coupling):
         self._couplings.append(coupling)
 
+        self.update_entries()
+
+    @property
+    def couplings(self):
+        return self._couplings
+
+    @couplings.setter
+    def couplings(self, couplings: list[Coupling]):
+        self._couplings = couplings
         self.update_entries()
 
 if __name__ == "__main__":

@@ -59,6 +59,7 @@ class Coupling(BaseModel):
 
     coupling_type: ClassVar[str] = "Base Coupling"
     parameters: ClassVar[list[str]] = []
+    parameter_defaults: ClassVar[list[int]] = []
 
     _coupling_matrix: np.ndarray | None = None
 
@@ -77,9 +78,10 @@ class Coupling(BaseModel):
         else:
             return self._coupling_matrix
 
-    @staticmethod
-    def _similar(other: "Coupling") -> "Coupling":
-        raise NotImplementedError("_similar not implemented")
+    @property
+    def parameter_string(self) -> str:
+        """ String representation of parameters """
+        return ", ".join([f"{parameter}={self.__dict__[parameter]}" for parameter in self.parameters])
 
 class Anisotropy:
     """Defines the anisotropy at a given site"""

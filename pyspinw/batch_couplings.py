@@ -1,10 +1,11 @@
 from collections import defaultdict
 
 import re
+from dataclasses import dataclass
 
 import numpy as np
 
-from lattice_distances import find_relative_positions
+from pyspinw.lattice_distances import find_relative_positions
 from pyspinw.gui.cell_offsets import CellOffset
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -17,6 +18,8 @@ class AbstractCoupling:
     site_1: LatticeSite
     site_2: LatticeSite
     cell_offset: CellOffset
+    distance: float
+    order: int
 
 def approx_equal(v1, v2):
     return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL)
@@ -25,19 +28,25 @@ def approx_equal_direction(v1, v2):
         return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL) or np.all(np.abs(v1 + v2) < tolerances.VECTOR_TOL)
 
 
-def apply_naming_convention(naming_pattern: str, name_1: str, name_2: str, order: int, xyz_direction: np.ndarray, ijk_direction: np.ndarray):
+def apply_naming_convention(naming_pattern: str,
+                            name_1: str,
+                            name_2: str,
+                            type_symbol: str,
+                            order: int,
+                            xyz_direction: np.ndarray):
+
     """Convert a naming string into an actual name
 
     :param naming_pattern: string describing how to name things
     :param name_1: name of the first site - specified with $SITE1$
     :param name_2: name of the second site - specified with $SITE2$
+    :param type_symbol: string that denotes the type of the coupling (e.g. 'J', 'DM')
     :param order: index of the "shell", i.e. an index that increases with distance - use $ORDER$
     :param direction: direction of coupling, use $DIRECTION$ to give a string that denotes this consisely (hopefully)
-    :param ijk_direction: direction in lattice
 
     """
 
-    if "$DIRECTION$" in naming_pattern:
+    if "[direction]" in naming_pattern:
         # Gives xyz labels in preference to ijk
         if approx_equal_direction(xyz_direction, [1,0,0]):
             direction_string = "x"
@@ -45,27 +54,30 @@ def apply_naming_convention(naming_pattern: str, name_1: str, name_2: str, order
             direction_string = "y"
         elif approx_equal_direction(xyz_direction, [0,0,1]):
             direction_string = "z"
-        elif approx_equal_direction(ijk_direction, [1,0,0]):
-            direction_string = "h"
-        elif approx_equal_direction(ijk_direction, [0,1,0]):
-            direction_string = "k"
-        elif approx_equal_direction(ijk_direction, [0,0,1]):
-            direction_string = "l"
         else:
-            normalised = ijk_direction / np.max(ijk_direction)
+            normalised = xyz_direction / np.max(xyz_direction)
             direction_string = f"{normalised[0]:3f},{normalised[1]:3f},{normalised[2]:3f}"
 
-        naming_pattern = re.sub(r"\$DIRECTION\$", direction_string, naming_pattern)
+        naming_pattern = re.sub(r"\[direction]", direction_string, naming_pattern)
 
     # Less complicated substitutions
-    naming_pattern = re.sub(r"\$SITE1\$", name_1, naming_pattern)
-    naming_pattern = re.sub(r"\$SITE2\$", name_2, naming_pattern)
-    naming_pattern = re.sub(r"\$ORDER\$", order, naming_pattern)
+    naming_pattern = re.sub(r"\[site1]", name_1, naming_pattern)
+    naming_pattern = re.sub(r"\[site2]", name_2, naming_pattern)
+    naming_pattern = re.sub(r"\[order]", str(order), naming_pattern)
+    naming_pattern = re.sub(r"\[type]", type_symbol, naming_pattern)
 
     return naming_pattern
 
 
-def batch_couplings(sites: list[LatticeSite], unit_cell: UnitCell, max_distance: float, naming_convention: str):
+
+default_naming_pattern = "[type]_[order]([site1], [site2])"
+
+def batch_couplings(sites: list[LatticeSite],
+                    unit_cell: UnitCell,
+                    max_distance: float,
+                    naming_pattern: str=default_naming_pattern,
+                    type_symbol: str="J"):
+
     """ Find all the couplings within a certain distance
 
     :param sites: List of LatticeSite or ImpliedLatticeSite to find couplings between
@@ -94,7 +106,7 @@ def batch_couplings(sites: list[LatticeSite], unit_cell: UnitCell, max_distance:
 
             positions = find_relative_positions(relative_base_distance, unit_cell._xyz, max_distance=max_distance, allow_self=allow_self)
             pair_data[site_1][site_2] = [(site_1, site_2, vector, cell_offset, distance)
-                                         for vector, cell_offset, distance in positions.expand()]
+                                         for cell_offset, vector, distance in positions.expand()]
 
 
     # Reduce down to unique sites for the purpose of naming and for finding shells
@@ -122,11 +134,56 @@ def batch_couplings(sites: list[LatticeSite], unit_cell: UnitCell, max_distance:
             reduced_pair_data[pair[0]][pair[1]] += pair_data[site_1][site_2]
 
 
+    all_couplings = []
+
     # Find shells and create abstract couplings
     for root_site_1 in reduced_pair_data:
         for root_site_2 in reduced_pair_data[root_site_1]:
             all_links = reduced_pair_data[root_site_1][root_site_2]
 
+            if not all_links:
+                continue
+
             distances = sorted([(i, data[4]) for i, data in enumerate(all_links)], key=lambda x: x[1])
+
+            # Assign indices to distances
+
+            orders = [(distances[0][0], 0)] # Pairs of (index, order)
+
+            if len(distances) > 1:
+                last_distance = distances[0][1]
+                order = 0
+                for index, distance in distances[1:]:
+                    if distance - last_distance > tolerances.COUPLING_ORDER_THRESHOLD:
+                        order += 1
+
+                    orders.append((index, order))
+                    last_distance = distance
+
+            # Create object
+            for link_index, order in orders:
+                site_1, site_2, vector, cell_offset_raw, distance = all_links[link_index]
+
+                site_1_name = root_site_1.name
+                site_2_name = root_site_2.name
+
+                cell_offset = CellOffset(i=cell_offset_raw[0], j=cell_offset_raw[1], k=cell_offset_raw[2])
+
+                name = apply_naming_convention(naming_pattern,
+                                               site_1_name,
+                                               site_2_name,
+                                               type_symbol,
+                                               order,
+                                               vector)
+
+                all_couplings.append(AbstractCoupling(
+                    name = name,
+                    site_1 = site_1,
+                    site_2 = site_2,
+                    cell_offset = cell_offset,
+                    distance = distance,
+                    order = order ))
+
+    return all_couplings
 
 
