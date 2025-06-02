@@ -98,6 +98,11 @@ class CouplingCreator(QWidget):
             for parameter, default in zip(coupling.parameters, coupling.parameter_defaults):
                 field = FloatField(default, slider_bottom=-50, slider_top=50)
 
+                # ARG!!!! The getter is referring to the last field every time, need to handle this differently
+
+                dsghasdkf
+
+
                 try:
                     field_widget.add_parameter(name=parameter,
                                                widget=field,
@@ -152,6 +157,8 @@ class CouplingCreator(QWidget):
 
         parameter_dict = {parameter: self.field_widget.get_value(parameter)
                           for parameter in coupling_type.parameters}
+
+        print(parameter_dict)
 
         kept_couplings = []
         for coupling in abstract_couplings:

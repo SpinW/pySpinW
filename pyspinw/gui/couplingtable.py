@@ -34,7 +34,7 @@ class CouplingTable(QTableWidget):
 
         self._editable = editable
 
-        
+
 
 
     def update_entries(self):
@@ -42,6 +42,14 @@ class CouplingTable(QTableWidget):
         self.blockSignals(True)
 
         self.clear()
+
+        self.setHorizontalHeaderLabels(["Name",
+                                        "Site 1",
+                                        "Site 2",
+                                        "Supercell",
+                                        "Type",
+                                        "Parameters"])
+        
         self.setRowCount(len(self._couplings))
 
         for i, coupling in enumerate(self._couplings):
