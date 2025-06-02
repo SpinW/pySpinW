@@ -62,7 +62,7 @@ class SymmetryWidget(QWidget):
         self.bravais_type_combo.blockSignals(True)
         self.bravais_type_combo.clear()
 
-        names = [bravais.coupling_type for bravais in self.current_lattice_system.bravais_options.bravias]
+        names = [bravais.name for bravais in self.current_lattice_system.bravais_options.bravias]
 
         for name in names:
             self.bravais_type_combo.addItem(name)

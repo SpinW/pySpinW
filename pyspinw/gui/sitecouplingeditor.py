@@ -115,7 +115,7 @@ class SiteAndCouplingEditor(SpinWDockWidget):
         self.update()
 
     def _on_add(self):
-        self.site_table.add_site(LatticeSite(0,0,0,0,0,1,name="New Site"))
+        self.site_table.add_site(LatticeSite.create(0,0,0,0,0,1,name="New Site"))
 
     def _on_graphics_relevant_change(self):
         self.graphics_relevant_change.emit()

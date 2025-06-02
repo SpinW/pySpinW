@@ -22,11 +22,12 @@ class LatticeSite(BaseModel):
     _m: np.ndarray | None = None
     _values: np.ndarray | None = None
 
-    def __init__(self,
-                 i: float, j: float, k: float,
-                 mi: float = 0, mj: float = 0, mk: float = 0, name: str | None = None):
+    @staticmethod
+    def create(i: float, j: float, k: float,
+               mi: float = 0, mj: float = 0, mk: float = 0,
+               name: str | None = None):
 
-        super().__init__(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
+        return LatticeSite(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
 
     def model_post_init(self, __context):
         self._ijk = np.array([self.i, self.j, self.k], dtype=float)
@@ -60,13 +61,13 @@ class ImpliedLatticeSite(LatticeSite):
 
     parent_site: LatticeSite
 
-    def __init__(self,
-                 parent_site: LatticeSite,
-                 i: float, j: float, k: float,
-                 mi: float = 0, mj: float = 0, mk: float = 0, name: str | None = None):
+    @staticmethod
+    def create(parent_site: LatticeSite,
+               i: float, j: float, k: float,
+               mi: float = 0, mj: float = 0, mk: float = 0,
+               name: str | None = None):
 
-        super().__init__(parent_site=parent_site, i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
-
+        return ImpliedLatticeSite(parent_site=parent_site, i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
 
     @staticmethod
     def from_coordinates(parent_site: LatticeSite, coordinates: np.ndarray, name: str = ""):
