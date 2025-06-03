@@ -3,9 +3,43 @@
 [project]
 name = "PySpinW"
 dynamic = ["version"]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "GPLv3"}
+keywords = [
+    "Python",
+    "physics",
+    "magnons",
+    "inelastic neutron scattering"
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "ase",
+    "numpy>=2.0.0",
+    "packaging",
+    "pycifrw",
+    "spglib>2.1.0",
+    "scipy",
+]
 
-[tool.setuptools.dynamic]
-version = {attr = "pyspinw.__version__"}
+[project.urls]
+Homepage = "https://github.com/spinw/pyspinw"
+Repository = "https://github.com/spinw/pyspinw"
+"Bug Tracker" = "https://github.com/spinw/pyspinw/issues"
+
+[build-system]
+build-backend = 'mesonpy'
+requires = ['meson-python',
+            'meson>=1.6',
+            'packaging',
+            'numpy>=2.0.0']
 
 [tool.ruff]
 line-length = 120
