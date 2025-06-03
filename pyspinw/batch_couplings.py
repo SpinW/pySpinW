@@ -99,7 +99,7 @@ def batch_couplings(sites: list[LatticeSite],
     for site_1 in sites:
         for site_2 in sites:
 
-            allow_self = site_1 is not site_2
+            allow_self = site_1 is not site_2 # Flag to include (0,0,0) offset
 
             relative_base_distance = (site_2.ijk - site_1.ijk) % 1.0
 
@@ -148,11 +148,11 @@ def batch_couplings(sites: list[LatticeSite],
 
             # Assign indices to distances
 
-            orders = [(distances[0][0], 0)] # Pairs of (index, order)
+            orders = [(distances[0][0], 1)] # Pairs of (index, order)
 
             if len(distances) > 1:
                 last_distance = distances[0][1]
-                order = 0
+                order = 1
                 for index, distance in distances[1:]:
                     if distance - last_distance > tolerances.COUPLING_ORDER_THRESHOLD:
                         order += 1

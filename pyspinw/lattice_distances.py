@@ -125,8 +125,7 @@ def get_cell_offsets_containing_bounding_box(
     ijk = np.concatenate((
         i.reshape(-1,1),
         j.reshape(-1,1),
-        k.reshape(-1,1)
-    ), axis=1)
+        k.reshape(-1,1)), axis=1)
 
     return ijk
 

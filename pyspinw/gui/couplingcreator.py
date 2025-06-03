@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QApplication, QComboBox
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QApplication, QComboBox, \
+    QSpacerItem, QSizePolicy
 
 from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.calculations.spinwave import Coupling
 from pyspinw.coupling import couplings as coupling_classes
 from pyspinw.coupling import coupling_lookup
-from pyspinw.gui.cell_offsets import CellOffset
 from pyspinw.gui.couplingtable import CouplingTable
 from pyspinw.gui.helperwidgets.couplingtypecombo import CouplingTypeCombo
 from pyspinw.gui.helperwidgets.floatfield import FloatField
@@ -43,7 +43,7 @@ class CouplingCreator(QWidget):
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(field_widget)
-        main_layout.addWidget(self.output_table)
+        main_layout.addWidget(self.output_table, stretch=1)
         main_layout.addWidget(button_widget)
 
         self.setLayout(main_layout)
@@ -57,14 +57,14 @@ class CouplingCreator(QWidget):
                                    change_signal=name_string.textChanged,
                                    display_alias="Formatting")
 
-        min_distance = FloatField(0, bottom=0, slider_top=5*unit_cell.main_diagonal_length)
+        min_distance = FloatField(0, bottom=0, slider_top=3*unit_cell.main_diagonal_length)
         field_widget.add_parameter(name="min_distance",
                                    widget=min_distance,
                                    value_getter=lambda: min_distance.value,
                                    change_signal=min_distance.changed,
                                    display_alias="Min. Distance")
 
-        max_distance = FloatField(int(100*unit_cell.main_diagonal_length)/100, bottom=0, slider_top=5*unit_cell.main_diagonal_length)
+        max_distance = FloatField(int(50*unit_cell.main_diagonal_length)/100, bottom=0, slider_top=3*unit_cell.main_diagonal_length)
         field_widget.add_parameter(name="max_distance",
                                    widget=max_distance,
                                    value_getter=lambda: max_distance.value,
@@ -154,8 +154,6 @@ class CouplingCreator(QWidget):
         parameter_dict = {parameter: self.field_widget.get_value(parameter)
                           for parameter in coupling_type.parameters}
 
-        print(parameter_dict)
-
         kept_couplings = []
         for coupling in abstract_couplings:
             if parameters.max_order is not None and coupling.order > parameters.max_order:
@@ -196,7 +194,7 @@ if __name__ == "__main__":
     app = QApplication([])
 
     sites = [LatticeSite.create(0,0,0,0,0,1, "A"),
-             LatticeSite.create(0.5,0,0,0,0,1, "B")]
+             LatticeSite.create(0.1,0,0,0,0,1, "B")]
 
     unit_cell = UnitCell(1,1,1)
 

@@ -1,3 +1,4 @@
+import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
 
@@ -16,6 +17,11 @@ def string_entry(value: str, editable: bool = True):
 
     return item
 
+def _vector_format(vector: np.ndarray):
+    """ Format a vector for display"""
+    return ", ".join([f"{element:.4g}" for element in vector])
+
+
 class CouplingTable(QTableWidget):
     def __init__(self, parent=None, editable=True):
         super().__init__(parent=parent)
@@ -23,18 +29,23 @@ class CouplingTable(QTableWidget):
         self._couplings: list[Coupling] = []
 
         self.setRowCount(0)
-        self.setColumnCount(6)
+        self.setColumnCount(7)
 
-        self.setHorizontalHeaderLabels(["Name",
-                                        "Site 1",
-                                        "Site 2",
-                                        "Supercell",
-                                        "Type",
-                                        "Parameters"])
+        self.verticalHeader().setVisible(False)
+        self._set_headers()
 
         self._editable = editable
 
 
+    def _set_headers(self):
+
+        self.setHorizontalHeaderLabels(["Name",
+                                        "Type",
+                                        "Site 1",
+                                        "Site 2",
+                                        "Supercell",
+                                        "Lattice Vector",
+                                        "Parameters"])
 
 
     def update_entries(self):
@@ -43,23 +54,18 @@ class CouplingTable(QTableWidget):
 
         self.clear()
 
-        self.setHorizontalHeaderLabels(["Name",
-                                        "Site 1",
-                                        "Site 2",
-                                        "Supercell",
-                                        "Type",
-                                        "Parameters"])
-        
+        self._set_headers()
         self.setRowCount(len(self._couplings))
 
         for i, coupling in enumerate(self._couplings):
 
             self.setItem(i, 0, string_entry(coupling.name, editable=self._editable))
-            self.setItem(i, 1, string_entry(coupling.site_1.name, editable=False))
-            self.setItem(i, 2, string_entry(coupling.site_2.name, editable=False))
-            self.setItem(i, 3, string_entry(str(coupling.cell_offset.as_tuple), editable=False))
-            self.setItem(i, 4, string_entry(coupling.coupling_type, editable=False))
-            self.setItem(i, 5, string_entry(coupling.parameter_string, editable=False))
+            self.setItem(i, 1, string_entry(coupling.coupling_type, editable=False))
+            self.setItem(i, 2, string_entry(coupling.site_1.name, editable=False))
+            self.setItem(i, 3, string_entry(coupling.site_2.name, editable=False))
+            self.setItem(i, 4, string_entry(str(coupling.cell_offset.as_tuple), editable=False))
+            self.setItem(i, 5, string_entry(_vector_format(coupling.lattice_vector), editable=False))
+            self.setItem(i, 6, string_entry(coupling.parameter_string, editable=False))
 
 
         self.resizeColumnsToContents()
