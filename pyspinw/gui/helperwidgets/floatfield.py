@@ -146,6 +146,10 @@ class FloatField(QWidget):
         self._value = value
         self.text_field.setText(str(value))
 
+    def get_value(self):
+        """ Value getter that is not a property (needed to avoid certain reference issues)"""
+        return self._value
+
 if __name__ == "__main__":
 
     app = QApplication([])

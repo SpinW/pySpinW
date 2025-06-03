@@ -81,7 +81,7 @@ class Coupling(BaseModel):
     @property
     def parameter_string(self) -> str:
         """ String representation of parameters """
-        return ", ".join([f"{parameter}={self.__dict__[parameter]}" for parameter in self.parameters])
+        return ", ".join([f"{parameter}={self.__dict__[parameter]:.5g}" for parameter in self.parameters])
 
 class Anisotropy:
     """Defines the anisotropy at a given site"""

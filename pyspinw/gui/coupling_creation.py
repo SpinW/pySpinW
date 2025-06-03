@@ -98,16 +98,12 @@ class CouplingCreator(QWidget):
             for parameter, default in zip(coupling.parameters, coupling.parameter_defaults):
                 field = FloatField(default, slider_bottom=-50, slider_top=50)
 
-                # ARG!!!! The getter is referring to the last field every time, need to handle this differently
-
-                dsghasdkf
-
-
                 try:
                     field_widget.add_parameter(name=parameter,
                                                widget=field,
-                                               value_getter=lambda: field.value,
+                                               value_getter=field.get_value,
                                                change_signal=field.changed)
+
 
                 except ParameterExists: # Very specific error for duplicated keys, we should ignore it in this case
                     pass
