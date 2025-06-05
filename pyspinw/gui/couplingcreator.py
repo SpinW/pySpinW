@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QApplication, QComboBox, \
     QSpacerItem, QSizePolicy, QLabel
 
@@ -23,6 +24,10 @@ class CreationParameters:
     max_order: int | None
 
 class CouplingCreator(QWidget):
+
+    ok_clicked = Signal()
+    cancel_clicked = Signal()
+
     def __init__(self, sites: list[LatticeSite], unit_cell: UnitCell, parent=None):
         super().__init__(parent=parent)
 
@@ -124,7 +129,13 @@ class CouplingCreator(QWidget):
         self.ok_button = QPushButton("OK")
 
         button_layout.addWidget(self.cancel_button)
+        button_layout.addSpacerItem(QSpacerItem(20,20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         button_layout.addWidget(self.ok_button)
+
+        self.cancel_button.clicked.connect(self._on_cancel_clicked)
+        self.ok_button.clicked.connect(self._on_ok_clicked)
+
+        # Set state
 
         self._update_fields()
         self._update()
@@ -155,7 +166,8 @@ class CouplingCreator(QWidget):
             sites=self.sites,
             unit_cell=self.unit_cell,
             max_distance=parameters.max_distance,
-            naming_pattern=parameters.format_string)
+            naming_pattern=parameters.format_string,
+            type_symbol=coupling_type.short_string)
 
         parameter_dict = {parameter: self.field_widget.get_value(parameter)
                           for parameter in coupling_type.parameters}
@@ -194,6 +206,12 @@ class CouplingCreator(QWidget):
         self.couplings = self._calculate_couplings()
         self.output_table.couplings = self.couplings
         self._update_label()
+
+    def _on_ok_clicked(self):
+        self.ok_clicked.emit()
+
+    def _on_cancel_clicked(self):
+        self.cancel_clicked.emit()
 
 
 

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from pyspinw.gui.cell_offsets import CellOffset
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.unitcell import UnitCell
 
 
 class MagneticStructure(ABC):
@@ -88,6 +89,14 @@ class Coupling(BaseModel):
     def lattice_vector(self):
         """ Vector from site 1 to site 2 in lattice coordinates"""
         return self.cell_offset.as_tuple + self.site_2.ijk - self.site_1.ijk
+
+    def vector(self, unit_cell: UnitCell):
+        """ Vector from site 1 to site 2 in cartesian coordinates (requires a unit cell definition)"""
+        return unit_cell.fractional_to_cartesian(self.lattice_vector)
+
+    def distance(self, unit_cell: UnitCell):
+        """ Distance between sites """
+        return np.sqrt(np.sum(self.vector(unit_cell)))
 
 class Anisotropy:
     """Defines the anisotropy at a given site"""

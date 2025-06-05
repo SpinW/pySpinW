@@ -42,7 +42,7 @@ def apply_naming_convention(naming_pattern: str,
     :param name_2: name of the second site - specified with $SITE2$
     :param type_symbol: string that denotes the type of the coupling (e.g. 'J', 'DM')
     :param order: index of the "shell", i.e. an index that increases with distance - use $ORDER$
-    :param direction: direction of coupling, use $DIRECTION$ to give a string that denotes this concisely (hopefully)
+    :param xyz_direction: direction of coupling, use $DIRECTION$ to give a string that denotes this concisely (hopefully)
 
     """
 
@@ -104,7 +104,10 @@ def batch_couplings(sites: list[LatticeSite],
 
     pair_data = defaultdict(dict)
     for site_1_index, site_1 in enumerate(sites):
-        for site_2 in sites[site_1_index:]:
+
+        site_2_start_index = 0 if both_directions else site_1_index
+
+        for site_2 in sites[site_2_start_index:]:
 
             allow_self = site_1 is not site_2 # Flag to include (0,0,0) offset
 
