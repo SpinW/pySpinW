@@ -24,6 +24,7 @@ class HeisenbergCoupling(Coupling):
     coupling_type: ClassVar[str] = "Heisenberg"
     parameters: ClassVar[list[str]] = ["j"]
     parameter_defaults: ClassVar[list[float]] = [1.0]
+    short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
         self._coupling_matrix = -self.j * np.eye(3)
@@ -49,6 +50,7 @@ class DiagonalCoupling(Coupling):
     coupling_type: ClassVar[str] = "Diagonal"
     parameters: ClassVar[list[str]] = ["j_x", "j_y", "j_z"]
     parameter_defaults: ClassVar[list[float]] = [1.0, 1.0, 1.0]
+    short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
         self._coupling_matrix = -np.diag([self.j_x, self.j_y, self.j_z])
@@ -71,6 +73,7 @@ class XYCoupling(Coupling):
     coupling_type: ClassVar[str] = "XY"
     parameters: ClassVar[list[str]] = ["j"]
     parameter_defaults: ClassVar[list[float]] = [1.0]
+    short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
         self._coupling_matrix = -np.diag([self.j, self.j, 0.0], dtype=float)
@@ -95,6 +98,7 @@ class XXZCoupling(Coupling):
     coupling_type: ClassVar[str] = "XXZ"
     parameters: ClassVar[list[str]] = ["j_xy", "j_z"]
     parameter_defaults: ClassVar[list[float]] = [1.0, 1.0]
+    short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
         self._coupling_matrix = -np.diag([self.j_xy, self.j_xy, self.j_z])
@@ -117,6 +121,7 @@ class IsingCoupling(Coupling):
 
     parameters: ClassVar[list[str]] = ["j_z"]
     parameter_defaults: ClassVar[list[float]] = [1.0]
+    short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
         self._coupling_matrix = -np.diag([0, 0, self.j_z])
@@ -144,6 +149,7 @@ class DMCoupling(Coupling):
     coupling_type: ClassVar[str] = "Dzyaloshinskii–Moriya"
     parameters: ClassVar[list[str]] = ["d_x", "d_y", "d_z"]
     parameter_defaults: ClassVar[list[float]] = [1.0, 1.0, 1.0]
+    short_string: ClassVar[str] = "DM"
 
     def model_post_init(self, __context):
 

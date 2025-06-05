@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QApplication, QComboBox, \
-    QSpacerItem, QSizePolicy
+    QSpacerItem, QSizePolicy, QLabel
 
 from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.calculations.spinwave import Coupling
@@ -33,6 +33,9 @@ class CouplingCreator(QWidget):
         # Table for viewing output
         self.output_table = CouplingTable(editable=False)
 
+        # Label for couplings
+        self.coupling_label = QLabel("Couplings (0 found):")
+
         # Overall layout
 
         field_widget = ParameterTable()
@@ -43,6 +46,7 @@ class CouplingCreator(QWidget):
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(field_widget)
+        main_layout.addWidget(self.coupling_label)
         main_layout.addWidget(self.output_table, stretch=1)
         main_layout.addWidget(button_widget)
 
@@ -140,6 +144,8 @@ class CouplingCreator(QWidget):
             max_distance=self.field_widget.get_value("max_distance"),
             max_order=max_order)
 
+    def _update_label(self):
+        self.coupling_label.setText("Couplings (%i found)" % len(self.couplings))
 
     def _calculate_couplings(self) -> list[Coupling]:
         parameters = self._parameters()
@@ -187,6 +193,7 @@ class CouplingCreator(QWidget):
     def _update(self):
         self.couplings = self._calculate_couplings()
         self.output_table.couplings = self.couplings
+        self._update_label()
 
 
 

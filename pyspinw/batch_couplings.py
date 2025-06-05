@@ -47,16 +47,21 @@ def apply_naming_convention(naming_pattern: str,
     """
 
     if "[direction]" in naming_pattern:
-        # Gives xyz labels in preference to ijk
-        if approx_equal_direction(xyz_direction, [1,0,0]):
-            direction_string = "x"
-        elif approx_equal_direction(xyz_direction, [0,1,0]):
-            direction_string = "y"
-        elif approx_equal_direction(xyz_direction, [0,0,1]):
-            direction_string = "z"
+
+        if np.all(np.abs(xyz_direction) < 1e-10):
+            direction_string = ""
+
         else:
-            normalised = xyz_direction / np.max(xyz_direction)
-            direction_string = f"{normalised[0]:3f},{normalised[1]:3f},{normalised[2]:3f}"
+            normalised = xyz_direction / np.max(np.abs(xyz_direction))
+
+            if approx_equal_direction(normalised, [1,0,0]):
+                direction_string = "x"
+            elif approx_equal_direction(normalised, [0,1,0]):
+                direction_string = "y"
+            elif approx_equal_direction(normalised, [0,0,1]):
+                direction_string = "z"
+            else:
+                direction_string = f"[{normalised[0]:.3g},{normalised[1]:.3g},{normalised[2]:.3g}]"
 
         naming_pattern = re.sub(r"\[direction]", direction_string, naming_pattern)
 
@@ -70,13 +75,14 @@ def apply_naming_convention(naming_pattern: str,
 
 
 
-default_naming_pattern = "[type]_[order]([site1], [site2])"
+default_naming_pattern = "[type][order]:[site1]-[site2]" #[type]_[order]([site1], [site2])"
 
 def batch_couplings(sites: list[LatticeSite],
                     unit_cell: UnitCell,
                     max_distance: float,
                     naming_pattern: str=default_naming_pattern,
-                    type_symbol: str="J"):
+                    type_symbol: str="J",
+                    both_directions: bool=False):
 
     """ Find all the couplings within a certain distance
 
@@ -84,9 +90,10 @@ def batch_couplings(sites: list[LatticeSite],
     :param unit_cell: Unit cell, needed for working out cartesian distances
     :param max_distance: Maximum distance to get couplings for
     :param naming_convention: Formatting string for the naming, see `apply_naming_convention` for details
+    :param both_directions: Couplings in both directions
 
 
-    Most of the work here is about giving it a sensible name
+    Most of the work here is about constraining by order and giving it a sensible name
     """
 
 
@@ -96,16 +103,18 @@ def batch_couplings(sites: list[LatticeSite],
     # Get all the distances we'll need
 
     pair_data = defaultdict(dict)
-    for site_1 in sites:
-        for site_2 in sites:
+    for site_1_index, site_1 in enumerate(sites):
+        for site_2 in sites[site_1_index:]:
 
             allow_self = site_1 is not site_2 # Flag to include (0,0,0) offset
 
-            relative_base_distance = (site_2.ijk - site_1.ijk) % 1.0
+            relative_position = site_2.ijk - site_1.ijk
+            same_cell_relative_position = (site_2.ijk - site_1.ijk) % 1.0
+            cell_correction = np.array(relative_position - same_cell_relative_position, dtype=float)
 
 
-            positions = find_relative_positions(relative_base_distance, unit_cell._xyz, max_distance=max_distance, allow_self=allow_self)
-            pair_data[site_1][site_2] = [(site_1, site_2, vector, cell_offset, distance)
+            positions = find_relative_positions(same_cell_relative_position, unit_cell._xyz, max_distance=max_distance, allow_self=allow_self)
+            pair_data[site_1][site_2] = [(site_1, site_2, vector, cell_offset - cell_correction, distance)
                                          for cell_offset, vector, distance in positions.expand()]
 
 
@@ -164,8 +173,16 @@ def batch_couplings(sites: list[LatticeSite],
             for link_index, order in orders:
                 site_1, site_2, vector, cell_offset_raw, distance = all_links[link_index]
 
-                site_1_name = root_site_1.name
-                site_2_name = root_site_2.name
+                if isinstance(site_1, ImpliedLatticeSite):
+                    site_1_name = site_1.parent_site.name
+                else:
+                    site_1_name = site_1.name
+
+                if isinstance(site_2, ImpliedLatticeSite):
+                    site_2_name = site_2.parent_site.name
+                else:
+                    site_2_name = site_2.name
+
 
                 cell_offset = CellOffset(i=cell_offset_raw[0], j=cell_offset_raw[1], k=cell_offset_raw[2])
 
@@ -184,6 +201,7 @@ def batch_couplings(sites: list[LatticeSite],
                     distance = distance,
                     order = order ))
 
-    return all_couplings
+    # Return sorted list by distance
+    return sorted(all_couplings, key=lambda coupling: coupling.distance)
 
 

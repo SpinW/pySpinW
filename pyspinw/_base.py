@@ -60,6 +60,7 @@ class Coupling(BaseModel):
     coupling_type: ClassVar[str] = "Base Coupling"
     parameters: ClassVar[list[str]] = []
     parameter_defaults: ClassVar[list[int]] = []
+    short_string: ClassVar[str] = "X"
 
     _coupling_matrix: np.ndarray | None = None
 
