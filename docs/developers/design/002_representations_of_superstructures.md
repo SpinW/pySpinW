@@ -21,8 +21,11 @@ or we could, if it is preferable, write it in purely real terms as
 
 $$= Re \{ (1, 0, 0) \exp (2\pi i x / 5) \} + Im \{ (0, 1, 0) \exp (2\pi i x / 5) \} = (1,0,0) \cos (2\pi x / 5) + (0,1,0) \sin (2\pi x / 5) $$
 
-There are some details to consider here, specifically, the magnitude of the calculated moment. In our example, we have
+There are some details to consider here, specifically, the magnitude of the calculated moment. In our example, we have a moment that is constant
 
-$$\sqrt{m_x^2 + m_y^2 + m_z^2} = \sqrt{ 1^2 \cdot \cos^2(2\pi x / 5) + 1^2 \cdot \sin^2(2\pi x / 5) + 0} = 1$$
+$$\sqrt{m_x^2 + m_y^2 + m_z^2} = \sqrt{\cos^2(2\pi x / 5) + \sin^2(2\pi x / 5) + 0} = 1$$
+
+However, this is not always the case, it could change in magnitude, for example, if it were the case that $$\phi = (1,0,0)$$, then the moment would be
+smaller for $$x=1$$ than $$x=0$$.
 
 There is a different way that we could possibly write the transformation
