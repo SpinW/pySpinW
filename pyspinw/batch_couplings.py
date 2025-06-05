@@ -42,7 +42,7 @@ def apply_naming_convention(naming_pattern: str,
     :param name_2: name of the second site - specified with $SITE2$
     :param type_symbol: string that denotes the type of the coupling (e.g. 'J', 'DM')
     :param order: index of the "shell", i.e. an index that increases with distance - use $ORDER$
-    :param direction: direction of coupling, use $DIRECTION$ to give a string that denotes this consisely (hopefully)
+    :param direction: direction of coupling, use $DIRECTION$ to give a string that denotes this concisely (hopefully)
 
     """
 
