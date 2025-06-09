@@ -3,6 +3,10 @@ use num_complex::Complex;
 
 type C64 = Complex<f64>;
 
+// This algorithm is a modified copy of https://github.com/dimforge/nalgebra/pull/1515
+// and when that pull request is merged, should be deleted and replaced with a call to
+// `ldl` from the nalgebra library.
+
 /// Computes the LDL^T factorization.
 ///
 /// The input matrix `p` is assumed to be Hermitian and this decomposition will only read

@@ -83,6 +83,7 @@ fn _calc_spinwave(
 ) -> Vec<Vec<C64>> {
     let n_sites = rotations.len();
 
+    // decompose rotation matrices
     // in the notation of Petit (2011)
     // eta[i] is the direction of the i'th moment in Cartesian coordinates
     let z: Vec<Vector3<C64>> = zip(
@@ -91,7 +92,7 @@ fn _calc_spinwave(
     )
     .map(|(r1, r2)| r1 + (r2 * J))
     .collect();
-    let eta = _get_rotation_component(&rotations, 2);
+    let etas = _get_rotation_component(&rotations, 2);
 
     // make spin coefficients array
     // so spin_coefficients[i, j] = sqrt(S_i S_j) / 2
@@ -107,13 +108,13 @@ fn _calc_spinwave(
     // where M is the coupling matrix and S_i is the i'th spin
     // and we factor the l-dependent part out into `sites_term`
     // to avoid recalculating it for every coupling
-    let sites_term: Vector3<C64> = zip(magnitudes, eta.clone())
-        .map(|(m, e)| e * Complex::from(m))
+    let sites_term: Vector3<C64> = zip(magnitudes, etas.clone())
+        .map(|(magnitude, eta)| eta * Complex::from(magnitude))
         .sum::<Vector3<C64>>();
     let mut C = DMatrix::<C64>::zeros(n_sites, n_sites);
     for c in &couplings {
         *C.index_mut((c.index2, c.index2)) +=
-            (eta[c.index2].transpose() * c.matrix * sites_term).into_scalar();
+            (etas[c.index2].transpose() * c.matrix * sites_term).into_scalar();
     }
 
     q_vectors
@@ -154,14 +155,10 @@ fn _spinwave_single_q(
     let hamiltonian: DMatrix<C64> = stack![ A_minus_C, B; 
                                             B.adjoint(), A_conj_minus_C];
 
-    // try to take square root of Hamiltonian with Cholesky; if it fails, use LDL
+    // take square root of Hamiltonian using the LDL decomposition 
     let sqrt_hamiltonian = {
         let (l, d) = ldl(hamiltonian);
         l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
-        //match hamiltonian.cholesky() {
-        //  Some(m) => m.l(),
-        //None => panic!(), // hamiltonian.ldl().unwrap().l
-        //}
     };
 
     // 'shc' is "square root of Hamiltonian with commutation"
@@ -179,13 +176,14 @@ fn _spinwave_single_q(
     let mut negative_half = shc.view_mut((0, n_sites), (2 * n_sites, n_sites));
     negative_half *= Complex::from(-1.);
 
+    // calculate eigenvalues (energies) of the Hamiltonian and return
     if let Some(v) = (shc.adjoint() * sqrt_hamiltonian).eigenvalues() {
         v.data.into()
     } else {
-        panic!()
+        panic!("Could not calculate eigenvalues of the Hamiltonian.")
     }
 }
-/// Get the component of the rotation matrix for the axis indexed by `index`.
+/// Get the components of the rotation matrices for the axis indexed by `index`.
 fn _get_rotation_component(rotations: &Vec<Matrix3<C64>>, index: usize) -> Vec<Vector3<C64>> {
     rotations
         .par_iter()
