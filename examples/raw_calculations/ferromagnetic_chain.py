@@ -1,5 +1,5 @@
 import numpy as np
-from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+from pyspinw.rust import spinwave_calculation, Coupling
 
 def heisenberg_ferromagnet():
 
@@ -11,10 +11,10 @@ def heisenberg_ferromagnet():
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 
     # Single site
-    rotations = np.eye(3).reshape(1, 3, 3)
+    rotations = [np.eye(3, dtype=complex, order='F')]
     magnitudes = np.array([1.5])  # spin 3/2
-    couplings = [Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, 1, 0])),
-                 Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, -1, 0])),
+    couplings = [Coupling(0, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=np.array([0., 1., 0.])),
+                 Coupling(0, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=np.array([0., -1., 0.])),
                  ]
 
     energies = spinwave_calculation(rotations,
@@ -32,6 +32,6 @@ if __name__ == "__main__":
 
     # Note: we get complex data types with real part zero
 
-    plt.plot(q_mags, result.raw_energies)
+    plt.plot(q_mags, result)
 
     plt.show()
