@@ -1,13 +1,15 @@
 import sys
+from dataclasses import dataclass
 
 import numpy as np
 
 from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QEvent, QObject
 from PySide6.QtGui import QTextDocument, QFontMetrics, QDoubleValidator, QIcon
 from PySide6.QtWidgets import QTableWidget, QApplication, QHeaderView, QStyleOptionHeader, QStyle, QStyleOptionViewItem, \
-    QTableWidgetItem, QAbstractItemView, QStyledItemDelegate, QLineEdit
+    QTableWidgetItem, QAbstractItemView, QStyledItemDelegate, QLineEdit, QWidget, QCheckBox, QHBoxLayout
 
 from pyspinw.gui.decorated import DecoratedSite, InteractionFlags
+from pyspinw.gui.helperwidgets.misc import QRightLabel
 from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -117,6 +119,61 @@ class HoverEventFilter(QObject):
                 self.table._on_hover(-1)
 
         return super().eventFilter(source, event)
+
+@dataclass
+class SiteTableOptions:
+    """ Table display options"""
+    nonmagnetic: bool = True
+    independent: bool = True
+    implied: bool = True
+    supercell: bool = True
+
+class SiteTableViewOptions(QWidget):
+    """ Widget to choose what is displayed on the table"""
+
+    options_changed = Signal()
+
+    def __init__(self, parent, options=SiteTableOptions()):
+        super().__init__(parent)
+
+        layout = QHBoxLayout()
+
+        layout.addWidget(QRightLabel("Show:"))
+
+        self.nonmagnetic = QCheckBox("Non-magnetic")
+        self.nonmagnetic.setChecked(options.nonmagnetic)
+        self.nonmagnetic.checkStateChanged.connect(self._on_checked)
+        layout.addWidget(self.nonmagnetic)
+
+        self.independent = QCheckBox("Independent")
+        self.independent.setChecked(options.independent)
+        self.independent.checkStateChanged.connect(self._on_checked)
+        layout.addWidget(self.independent)
+
+        self.implied = QCheckBox("Implied")
+        self.implied.setChecked(options.implied)
+        self.implied.checkStateChanged.connect(self._on_checked)
+        layout.addWidget(self.implied)
+
+        self.supercell = QCheckBox("Supercell")
+        self.supercell.setChecked(options.supercell)
+        self.supercell.checkStateChanged.connect(self._on_checked)
+        layout.addWidget(self.supercell)
+
+
+    @property
+    def options(self):
+        """ Currently selected view options"""
+        return SiteTableOptions(
+            nonmagnetic=self.nonmagnetic.isChecked(),
+            independent=self.independent.isChecked(),
+            implied=self.implied.isChecked(),
+            supercell=self.supercell.isChecked())
+
+    def _on_checked(self):
+        """Called when check boxes are checked"""
+        self.options_changed.emit()
+        
 
 
 class SiteTable(QTableWidget):

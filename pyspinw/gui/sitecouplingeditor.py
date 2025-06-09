@@ -71,8 +71,6 @@ class CouplingButtons(QWidget):
     def _on_remove(self):
         """ Remove button pressed"""
 
-
-
 class SiteAndCouplingEditor(SpinWDockWidget):
     """ Editor dock window for magnetic sites"""
 
