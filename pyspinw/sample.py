@@ -13,9 +13,9 @@ class Sample(ABC):
         self.hamiltonian = hamiltonian
 
     @abstractmethod
-    def generate_q(self, n_q: int):
+    def generate_q(self, input_q: list[np.ndarray], n_q: int, resolution, field):
         """Generate a sample of q-vectors for a given magnetic field and resolution."""
-
+        raise NotImplementedError
 
 class SingleCrystal(Sample):
     """Specifies a single crystal sample"""
