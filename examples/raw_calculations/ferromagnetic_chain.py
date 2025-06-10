@@ -1,5 +1,8 @@
 import numpy as np
-from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+try:
+    from pyspinw.rust import spinwave_calculation, Coupling
+except ModuleNotFoundError:
+    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
 def heisenberg_ferromagnet(n_q = 100):
     """
@@ -10,11 +13,10 @@ def heisenberg_ferromagnet(n_q = 100):
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 
     # Single site
-    rotations = np.eye(3).reshape(1, 3, 3)
+    rotations = np.array([np.eye(3, dtype=complex, order='F')])
     magnitudes = np.array([1.0])  # spin-1
-    couplings = [Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, 1, 0])),
-                 Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, -1, 0])),
-                 ]
+    couplings = [Coupling(0, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=np.array([0., 1., 0.])),
+                 Coupling(0, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=np.array([0., -1., 0.])), ]
 
     return (rotations, magnitudes, q_vectors, couplings)
 
