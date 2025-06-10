@@ -22,3 +22,10 @@ class CellOffset(BaseModel):
     def vector(self):
         return self._vector
 
+    def position_in_supercell(self, supercell_size: tuple[int, int, int]):
+        si, sj, sk = supercell_size
+
+        return CellOffset(
+            i=self.i % si,
+            j=self.j % sj,
+            k=self.k % sk)

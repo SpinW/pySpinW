@@ -173,7 +173,7 @@ class SiteTableViewOptions(QWidget):
     def _on_checked(self):
         """Called when check boxes are checked"""
         self.options_changed.emit()
-        
+
 
 
 class SiteTable(QTableWidget):
