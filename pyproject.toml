@@ -1,8 +1,20 @@
-# TODO: Fill this out fully
+[build-system]
+requires = ["maturin>=1.3,<2.0"]
+build-backend = "maturin"
 
 [project]
-name = "PySpinW"
+name = "pySpinW"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
 dynamic = ["version"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "pyspinw.rust"
 
 [tool.setuptools.dynamic]
 version = {attr = "pyspinw.__version__"}
