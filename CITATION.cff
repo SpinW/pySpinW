@@ -24,7 +24,7 @@ authors:
     given-names: "Lucas"
     orcid: "https://orcid.org/0000-0002-0149-3287"
   - family-names: "Room"
-    given-names: "Alex"
+    given-names: "Alex H."
     orcid: "https://orcid.org/0000-0002-5314-2331"
 title: "pySpinW"
 version: "0.0.1"
