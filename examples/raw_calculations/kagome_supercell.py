@@ -6,6 +6,7 @@ This is the magnet in MATLAB SpinW tutorial 8:
 
 import numpy as np
 
+#from pyspinw.rust import spinwave_calculation, Coupling
 from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
 
@@ -17,7 +18,8 @@ def rotation(theta):
             [np.cos(theta), 0, np.sin(theta)],
             [np.sin(theta), 0, -np.cos(theta)],
             [0, 1, 0],
-        ]
+        ],
+        dtype=complex, order='F',
     )
 
 
@@ -49,8 +51,7 @@ def kagome_supercell(n_q = 100):
         # →
         return rotation(np.pi / 2)
 
-    rotations = np.array(
-        [
+    rotations = [
             up(),    # Cell 0, (0.5, 0)
             up(),    # Cell 0, (0, 0.5)
             down(),  # Cell 0, (0.5, 0.5)
@@ -79,7 +80,6 @@ def kagome_supercell(n_q = 100):
             right(),
             up(),
         ]
-    )
     magnitudes = np.array([1] * 27)  # spin 1
 
     # The inter_site_vector is actually the vector between unit cells (see eq 10 and eq 14 in Toth+Lake)
@@ -104,12 +104,13 @@ def kagome_supercell(n_q = 100):
 
     couplings = []
 
-    couplings.extend(Coupling(idx1, idx2, np.eye(3), np.array([1, 0, 0])) for (idx1, idx2) in horizontal_pairs)
-    couplings.extend(Coupling(idx2, idx1, np.eye(3), np.array([-1, 0, 0])) for (idx1, idx2) in horizontal_pairs)
-    couplings.extend(Coupling(idx1, idx2, np.eye(3), np.array([0, 1, 0])) for (idx1, idx2) in vertical_pairs)
-    couplings.extend(Coupling(idx2, idx1, np.eye(3), np.array([0, -1, 0])) for (idx1, idx2) in vertical_pairs)
-    couplings.extend(Coupling(idx1, idx2, np.eye(3), np.array([0, 0, 0])) for (idx1, idx2) in other_pairs)
-    couplings.extend(Coupling(idx2, idx1, np.eye(3), np.array([0, 0, 0])) for (idx1, idx2) in other_pairs)
+    rskw = {'dtype':complex, 'order':'F'}
+    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rskw), np.array([1., 0, 0])) for (idx1, idx2) in horizontal_pairs)
+    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rskw), np.array([-1., 0, 0])) for (idx1, idx2) in horizontal_pairs)
+    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rskw), np.array([0., 1, 0])) for (idx1, idx2) in vertical_pairs)
+    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rskw), np.array([0., -1, 0])) for (idx1, idx2) in vertical_pairs)
+    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rskw), np.array([0., 0, 0])) for (idx1, idx2) in other_pairs)
+    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rskw), np.array([0., 0, 0])) for (idx1, idx2) in other_pairs)
 
     q_mags = 0.5 * np.linspace(0, 1, n_q + 1).reshape(-1, 1)
 
@@ -141,7 +142,7 @@ if __name__ == "__main__":
 
     labels = [str(q_vectors[idx, :]) for idx in label_indices]
 
-    energies = spinwave_calculation(*structure).raw_energies
+    energies = spinwave_calculation(*structure)
 
     energies = [np.sort(energy.real) for energy in energies]
 

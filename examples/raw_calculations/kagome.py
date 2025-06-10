@@ -11,7 +11,7 @@ def kagome_ferromagnet(n_q = 100):
     """
 
     # Three sites, otherwise identical
-    rotations = np.array([np.eye(3, dtype=complex, order='F') for _ in range(3)])
+    rotations = [np.eye(3, dtype=complex, order='F') for _ in range(3)]
     magnitudes = np.array([1.0]*3)  # spin-1
 
     # Each site coupled to two of each of the others, so there are 6 couplings,
@@ -54,28 +54,22 @@ def kagome_ferromagnet(n_q = 100):
     ))
 
     # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
+    return rotations, magnitudes, q_vectors, couplings
 
-    indices = np.arange(201)
-
-    label_indices = [0, 100, 200]
-    # label_indices = []
-
-    labels = [str(q_vectors[idx,:]) for idx in label_indices]
-
-    result = spinwave_calculation(rotations,
-                                    magnitudes,
-                                    q_vectors,
-                                    couplings)
-
-    return result, indices, labels, label_indices
 
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    result, indices, labels, label_indices = kagome_ferromagnet()
+    indices = np.arange(201)
 
-    plt.plot(indices, result.raw_energies)
+    label_indices = [0, 100, 200]
+
+    rotations, magnitudes, q_vectors, couplings = kagome_ferromagnet(100)
+    labels = [str(q_vectors[idx,:]) for idx in label_indices]
+    energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
+
+    plt.plot(indices, np.real(energies))
     # plt.plot(indices, [method.value for method in result.method])
     plt.xticks(label_indices, labels)
 

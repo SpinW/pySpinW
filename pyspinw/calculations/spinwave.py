@@ -36,10 +36,9 @@ class SpinwaveResult:
     method: list[CalculationMethod]
 
 
-@check_sizes(rotations=('n_sites',3,3),
-             magnitudes=('n_sites',),
+@check_sizes(magnitudes=('n_sites',),
              q_vectors=('n_q', 3))
-def spinwave_calculation(rotations: np.ndarray,
+def spinwave_calculation(rotations: list[np.ndarray],
                          magnitudes: np.ndarray,
                          q_vectors: np.ndarray,
                          couplings: list[Coupling]):
@@ -48,6 +47,7 @@ def spinwave_calculation(rotations: np.ndarray,
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
 
     """
+    rotations = np.array(rotations)
     n_sites = rotations.shape[0]
 
     z = rotations[:,:,0] + 1j*rotations[:,:,1] # n-by-3, complex
@@ -78,10 +78,7 @@ def spinwave_calculation(rotations: np.ndarray,
 
             A[i, j] += z[i, :] @ coupling.matrix @ z_conj[j, :] * phase_factor
             B[i, j] += z[i, :] @ coupling.matrix @ z[j, :] * phase_factor
-
-
-            for l in range(n_sites):
-                C[j, j] += spin_coefficients[l,l] * eta[j, :].T @ coupling.matrix @ eta[l, :]
+            C[j, j] += spin_coefficients[j,j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
 
         A *= spin_coefficients
         B *= spin_coefficients
@@ -115,9 +112,9 @@ def spinwave_calculation(rotations: np.ndarray,
             sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
 
             sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
-            sqrt_hamiltonian_with_commutation[:, n_sites:] *= -1
+            sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # C*K
 
-            to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
+            to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
 
             methods.append(CalculationMethod.CHOLESKY)
 
@@ -131,9 +128,9 @@ def spinwave_calculation(rotations: np.ndarray,
             # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
 
             sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
-            sqrt_hamiltonian_with_commutation[:, n_sites:] *= -1
+            sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1
 
-            to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
+            to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
 
             methods.append(CalculationMethod.LDL)
 
@@ -143,7 +140,5 @@ def spinwave_calculation(rotations: np.ndarray,
 
     # pylint: enable=C0103
 
-    return SpinwaveResult(
-                q_vectors=q_vectors,
-                raw_energies=energies,
-                method=methods)
+    #return SpinwaveResult( q_vectors=q_vectors, raw_energies=energies, method=methods)
+    return energies

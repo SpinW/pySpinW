@@ -1,4 +1,5 @@
 import numpy as np
+#from pyspinw.rust import spinwave_calculation, Coupling
 from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
 # define our rotation matrices
@@ -24,7 +25,8 @@ def rotation(theta):
             [np.cos(theta), 0, np.sin(theta)],
             [np.sin(theta), 0, -np.cos(theta)],
             [0, 1, 0],
-        ]
+        ],
+        dtype=complex, order='F',
     )
 
 def kagome_antiferromagnet(n_q = 100):
@@ -33,53 +35,53 @@ def kagome_antiferromagnet(n_q = 100):
     """
 
     # Three sites, otherwise identical
-    rotations = np.array([
+    rotations = [
         rotation(0),
         rotation(2 * np.pi / 3),
         rotation(-2 * np.pi / 3)
-    ])
+    ]
     magnitudes = np.array([1.0]*3)  # spin-1
 
     # Do the J1 (nearest neighbour) couplings - using table from Matlab Tutorial 7
     # Run the example until the end and then run:
     # >> AFkagome.table('bond',1:2)
     # And use the values in idx1, idx2, and dl (idx1, idx2 indexed from 1 not 0)
-    J1mat = np.eye(3) * 1.0
+    J1mat = np.eye(3, dtype=complex, order='F') * 1.0
     couplings = [
-        Coupling(2, 0, J1mat, [0, 1, 0]),
-        Coupling(0, 1, J1mat, [0, -1, 0]),
-        Coupling(1, 2, J1mat, [0, 0, 0]),
-        Coupling(2, 0, J1mat, [0, 0, 0]),
-        Coupling(0, 1, J1mat, [1, 0, 0]),
-        Coupling(1, 2, J1mat, [-1, 0, 0]),
+        Coupling(2, 0, J1mat, np.array([0., 1, 0])),
+        Coupling(0, 1, J1mat, np.array([0., -1, 0])),
+        Coupling(1, 2, J1mat, np.array([0., 0, 0])),
+        Coupling(2, 0, J1mat, np.array([0., 0, 0])),
+        Coupling(0, 1, J1mat, np.array([1., 0, 0])),
+        Coupling(1, 2, J1mat, np.array([-1., 0, 0])),
     ]
     # Also need the conjugate coupling
     couplings.extend([
-        Coupling(0, 2, J1mat, [0, -1, 0]),
-        Coupling(1, 0, J1mat, [0, 1, 0]),
-        Coupling(2, 1, J1mat, [0, 0, 0]),
-        Coupling(0, 2, J1mat, [0, 0, 0]),
-        Coupling(1, 0, J1mat, [-1, 0, 0]),
-        Coupling(2, 1, J1mat, [1, 0, 0]),
+        Coupling(0, 2, J1mat, np.array([0., -1, 0])),
+        Coupling(1, 0, J1mat, np.array([0., 1, 0])),
+        Coupling(2, 1, J1mat, np.array([0., 0, 0])),
+        Coupling(0, 2, J1mat, np.array([0., 0, 0])),
+        Coupling(1, 0, J1mat, np.array([-1., 0, 0])),
+        Coupling(2, 1, J1mat, np.array([1., 0, 0])),
     ])
 
     # Do the J2 (next-nearest-neigbour) couplings
-    J2mat = np.eye(3) * 0.11
+    J2mat = np.eye(3, dtype=complex, order='F') * 0.11
     couplings.extend([
-        Coupling(0, 1, J2mat, [1, -1, 0]),
-        Coupling(1, 2, J2mat, [0, 1, 0]),
-        Coupling(2, 0, J2mat, [-1, 0, 0]),
-        Coupling(0, 1, J2mat, [0, 0, 0]),
-        Coupling(1, 2, J2mat, [-1, -1, 0]),
-        Coupling(2, 0, J2mat, [1, 1, 0]),
+        Coupling(0, 1, J2mat, np.array([1., -1, 0])),
+        Coupling(1, 2, J2mat, np.array([0., 1, 0])),
+        Coupling(2, 0, J2mat, np.array([-1., 0, 0])),
+        Coupling(0, 1, J2mat, np.array([0., 0, 0])),
+        Coupling(1, 2, J2mat, np.array([-1., -1, 0])),
+        Coupling(2, 0, J2mat, np.array([1., 1, 0])),
     ])
     couplings.extend([
-        Coupling(1, 0, J2mat, [-1, 1, 0]),
-        Coupling(2, 1, J2mat, [0, -1, 0]),
-        Coupling(0, 2, J2mat, [1, 0, 0]),
-        Coupling(1, 0, J2mat, [0, 0, 0]),
-        Coupling(2, 1, J2mat, [1, 1, 0]),
-        Coupling(0, 2, J2mat, [-1, -1, 0]),
+        Coupling(1, 0, J2mat, np.array([-1., 1, 0])),
+        Coupling(2, 1, J2mat, np.array([0., -1, 0])),
+        Coupling(0, 2, J2mat, np.array([1., 0, 0])),
+        Coupling(1, 0, J2mat, np.array([0., 0, 0])),
+        Coupling(2, 1, J2mat, np.array([1., 1, 0])),
+        Coupling(0, 2, J2mat, np.array([-1., -1, 0])),
     ])
 
     q_mags = 0.5*np.linspace(0, 1, n_q + 1).reshape(-1, 1)
@@ -105,10 +107,10 @@ if __name__ == "__main__":
 
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
 
-    result = spinwave_calculation(*structure)
+    energies = spinwave_calculation(*structure)
 
     # Ignore imaginary energies (we shouldn't get any here...)
-    energies = [np.sort(energy.real) for energy in result.raw_energies]
+    energies = [np.sort(energy.real) for energy in energies]
 
     positive_energies = [energy[energy>0] for energy in energies]
 
