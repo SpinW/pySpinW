@@ -11,7 +11,7 @@ def heisenberg_ferromagnet(n_q = 100):
 
     # Single site
     rotations = np.eye(3).reshape(1, 3, 3)
-    magnitudes = np.array([1.5])  # spin 3/2
+    magnitudes = np.array([1.0])  # spin-1
     couplings = [Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, 1, 0])),
                  Coupling(0, 0, np.eye(3), inter_site_vector=np.array([0, -1, 0])),
                  ]
@@ -22,12 +22,14 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    structure = heisenberg_ferromagnet()
-    q_mags = np.linspace(0, 1, len(q_vectors))
+    n_q = 100
+    structure = heisenberg_ferromagnet(n_q)
+    q_mags = np.linspace(0, 1, n_q)
     energies = spinwave_calculation(*structure)
 
     # Note: we get complex data types with real part zero
 
-    plt.plot(q_mags, result.raw_energies)
+    plt.plot(q_mags, energies.raw_energies)
 
+    # Compare with tutorial 1, 3rd last figure (https://spinw.org/tutorial1_05.png)
     plt.show()
