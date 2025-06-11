@@ -1,9 +1,7 @@
-# TODO: Fill this out fully
-
 [project]
-name = "PySpinW"
-dynamic = ["version"]
+name = "pySpinW"
 requires-python = ">=3.10"
+dynamic = ["version"]
 readme = "README.md"
 license = {text = "GPLv3"}
 keywords = [
@@ -17,7 +15,10 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
@@ -29,17 +30,23 @@ dependencies = [
     "scipy",
 ]
 
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "pyspinw.rust"
+
+[tool.setuptools.dynamic]
+version = {attr = "pyspinw.__version__"}
+
 [project.urls]
 Homepage = "https://github.com/spinw/pyspinw"
 Repository = "https://github.com/spinw/pyspinw"
 "Bug Tracker" = "https://github.com/spinw/pyspinw/issues"
 
 [build-system]
-build-backend = 'mesonpy'
-requires = ['meson-python',
-            'meson>=1.6',
-            'packaging',
-            'numpy>=2.0.0']
+requires = ["maturin>=1.3,<2.0",
+            "packaging",
+            "numpy>=2.0.0"]
+build-backend = "maturin"
 
 [tool.ruff]
 line-length = 120
