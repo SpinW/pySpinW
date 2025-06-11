@@ -13,6 +13,7 @@ The two most popular systems compatible with the `pyproject.toml` format are:
 
 The advantage of `meson` is that it is itself implemented in Python, has
 extensive support for building Python modules, and also natively supports rust.
+The disadvantage is that it requires a relatively large amount of boilerplate code.
 
 CMake is a general build system but doesn't natively support build rust projects -
 rather there are [extensions](https://github.com/val-ms/cmake-rust-demo)
@@ -21,13 +22,13 @@ CMake does have extensive support for C/C++.
 
 Alternatively we can use a Python build system which directly wraps `cargo` like `maturin`.
 However, this would mean we cannot build C/C++ project unless we change the build system.
-
-On the other hand, `meson` directly supports build both rust and C++ modules.
+`maturin` in particular is very easy to use, and requires very little boilerplate.
 
 ## Decision
 
-We will use `meson` as our build system because it: is implemented in Python and
-directly supports building both C/C++ and rust extension modules.
+We will use `maturin` as our build system because we have already decided to use
+Rust for the compiled module, and `maturin` is both very easy to use and directly supports
+building Rust modules for Python.
 
 ## Status
 
@@ -35,7 +36,5 @@ Accepted
 
 ## Advantages
 
-* Implemented in Python
-* Directly supports building C/C++ extension modules
+* Easy to use and requires very little boilerplate
 * Directly supports building rust extension modules
-
