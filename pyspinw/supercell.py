@@ -3,7 +3,7 @@ from math import lcm
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator, model_validator
 
 from pyspinw.tolerances import tolerances
 from pyspinw.gui.cell_offsets import CellOffset
@@ -64,10 +64,9 @@ class IncommensuratePropagationVector(PropagationVector):
     j: float
     k: float
 
-class Supercell(BaseModel):
+class CommensurateSupercell(BaseModel):
 
-    commensurate_propagation_vectors: list[CommensuratePropagationVector]
-    incommensurate_propagation_vector: IncommensuratePropagationVector | None = None
+    propagation_vectors: list[CommensuratePropagationVector]
 
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         """ Get the moment at a given cell location"""
@@ -78,20 +77,29 @@ class Supercell(BaseModel):
         if self.incommensurate_propagation_vector is not None:
             return None
 
-        i = lcm(*[vector.i.denominator for vector in self.commensurate_propagation_vectors])
-        j = lcm(*[vector.j.denominator for vector in self.commensurate_propagation_vectors])
-        k = lcm(*[vector.k.denominator for vector in self.commensurate_propagation_vectors])
+        i = lcm(*[vector.i.denominator for vector in self.propagation_vectors])
+        j = lcm(*[vector.j.denominator for vector in self.propagation_vectors])
+        k = lcm(*[vector.k.denominator for vector in self.propagation_vectors])
 
         return i, j, k
 
     def summation_form(self, moment) -> "SummationSupercell":
         raise NotImplementedError("summation_form not implemented in base class")
 
-class SummationSupercell(Supercell):
+class SummationSupercell(CommensurateSupercell):
     """ Supercell with moments defined by
 
     m = sum(m_j exp(2 pi i r.k_j)).real
     """
+
+    moments: list[np.ndarray] # TODO: not good for serialisation
+
+    @model_validator(mode="after")
+    def check_lengths(self):
+        if len(self.moments) != len(self.propagation_vectors):
+            raise ValueError('the lists: moments and propagation_vector must have the same length')
+        return self
+
 
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         return np.sum(component.evaluate(cell_offset) for component in self.components).real
@@ -99,7 +107,7 @@ class SummationSupercell(Supercell):
     def summation_form(self, moment) -> "SummationSupercell":
         return self
 
-class TransformationSupercell(Supercell):
+class TransformationSupercell(CommensurateSupercell):
     """ Supercell with moments defined by the following equation:
 
     m = prod(M_i^{r.k}) m0
@@ -108,6 +116,14 @@ class TransformationSupercell(Supercell):
     """
 
     transforms: list[np.ndarray] # TODO: Not good for serialisation
+
+    @model_validator(mode="after")
+    def check_lengths(self):
+        if len(self.transforms) != len(self.propagation_vectors):
+            raise ValueError('the lists: transforms and propagation_vectors must have the same length')
+        return self
+
+
 
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
 
@@ -133,6 +149,3 @@ class TransformationSupercell(Supercell):
         """ Convert to summation form """
 
         # TODO
-
-class HelicalSupercell(Supercell):
-    pass
