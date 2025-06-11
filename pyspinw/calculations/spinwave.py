@@ -39,10 +39,9 @@ class SpinwaveResult:
     method: list[CalculationMethod]
 
 
-@check_sizes(rotations=('n_sites',3,3),
-             magnitudes=('n_sites',),
+@check_sizes(magnitudes=('n_sites',),
              q_vectors=('n_q', 3))
-def spinwave_calculation(rotations: np.ndarray,
+def spinwave_calculation(rotations: list[np.ndarray],
                          magnitudes: np.ndarray,
                          q_vectors: np.ndarray,
                          couplings: list[Coupling]):
@@ -51,6 +50,7 @@ def spinwave_calculation(rotations: np.ndarray,
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
 
     """
+    rotations = np.array(rotations)
     n_sites = rotations.shape[0]
 
     z = rotations[:,:,0] + 1j*rotations[:,:,1] # n-by-3, complex
@@ -62,10 +62,10 @@ def spinwave_calculation(rotations: np.ndarray,
 
     # calculate the C matrix for h(q), which is q-independent
     C = np.zeros((n_sites, n_sites), dtype=complex)
-    sites_term = np.vecdot(magnitudes, eta, axis=0)
     for coupling in couplings:
-        j = coupling.index2
-        C[j, j] += eta[j, :].T @ coupling.matrix @ sites_term
+        i, j = (coupling.index1, coupling.index2)
+        C[j, j] += spin_coefficients[j,j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
+    C *= 2
 
     if PARALLEL:
         with ProcessPoolExecutor() as executor:
@@ -76,10 +76,8 @@ def spinwave_calculation(rotations: np.ndarray,
     else:
         energies = [_calc_single_q(q, C, n_sites, z, spin_coefficients, couplings) for q in q_vectors]
 
-    return SpinwaveResult(
-                q_vectors=q_vectors,
-                raw_energies=energies,
-                method=[])
+    #return SpinwaveResult( q_vectors=q_vectors, raw_energies=energies, method=[])
+    return energies
 
 
 def _calc_single_q(q: float,
@@ -91,6 +89,7 @@ def _calc_single_q(q: float,
     """Calculate the energies for the 'Hamiltonian' h(q) for a single q-value."""
     A = np.zeros((n_sites, n_sites), dtype=complex)
     B = np.zeros((n_sites, n_sites), dtype=complex)
+    z_conj = z.conj()
 
     # Add the terms up to the total spin coefficient
     for coupling in couplings:
@@ -100,7 +99,7 @@ def _calc_single_q(q: float,
         i = coupling.index1
         j = coupling.index2
 
-        A[i, j] += z[i, :] @ coupling.matrix @ z.conj()[j, :] * phase_factor
+        A[i, j] += z[i, :] @ coupling.matrix @ z_conj[j, :] * phase_factor
         B[i, j] += z[i, :] @ coupling.matrix @ z[j, :] * phase_factor
 
     A *= spin_coefficients
@@ -144,9 +143,9 @@ def _calc_single_q(q: float,
 
 
     sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
-    sqrt_hamiltonian_with_commutation[:, n_sites:] *= -1
+    sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
 
-    to_diagonalise = np.conj(sqrt_hamiltonian_with_commutation).T @ sqrt_hamiltonian
+    to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
 
     return np.linalg.eigvals(to_diagonalise)
 
