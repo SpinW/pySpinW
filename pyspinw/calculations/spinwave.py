@@ -101,29 +101,29 @@ def _calc_q_chunks(q_vectors: np.ndarray,
         A = np.zeros((n_sites, n_sites), dtype=complex)
         B = np.zeros((n_sites, n_sites), dtype=complex)
         z_conj = z.conj()
-    
+
         # Add the terms up to the total spin coefficient
         for coupling in couplings:
-    
+
             phase_factor = np.exp((2j*np.pi)*np.dot(q, coupling.inter_site_vector))
-    
+
             i = coupling.index1
             j = coupling.index2
-    
+
             A[i, j] += z[i, :] @ coupling.matrix @ z_conj[j, :] * phase_factor
             B[i, j] += z[i, :] @ coupling.matrix @ z[j, :] * phase_factor
-    
+
         A *= spin_coefficients
         B *= spin_coefficients
         #
         # print("A", A)
         # print("B", B)
         # print("C", C)
-    
-    
+
+
         # hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
         hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
-    
+
         #
         # We need to enforce the bosonic commutation properties, we do this
         # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
@@ -138,26 +138,26 @@ def _calc_q_chunks(q_vectors: np.ndarray,
         # of the decomposition
         #
         # We can also do this via an LDL decomposition, but the method is very slightly different
-    
-    
+
+
         try:
             sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
             method = CalculationMethod.CHOLESKY
-    
+
         except np.linalg.LinAlgError: # Catch postive definiteness errors
             # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
             l, d, _ = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
             sqrt_hamiltonian = l @ np.sqrt(d)
-    
+
             # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
             method = CalculationMethod.LDL
-    
-    
+
+
         sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
         sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
-    
+
         to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
-    
+
         energies.append(np.linalg.eigvals(to_diagonalise))
 
     return energies
