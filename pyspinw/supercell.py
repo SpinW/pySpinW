@@ -3,7 +3,7 @@ from math import lcm
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel, root_validator, model_validator
+from pydantic import BaseModel, root_validator, model_validator, field_validator
 
 from pyspinw.tolerances import tolerances
 from pyspinw.gui.cell_offsets import CellOffset
@@ -68,14 +68,20 @@ class CommensurateSupercell(BaseModel):
 
     propagation_vectors: list[CommensuratePropagationVector]
 
+
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "json_encoders": {
+            np.ndarray: lambda v: v.tolist()
+        }
+    }
+
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         """ Get the moment at a given cell location"""
         raise NotImplementedError("evaluate not implemented in base class")
 
     def minimal_supercell(self) -> tuple[int, int, int] | None:
         """ Get the smallest possible supercell"""
-        if self.incommensurate_propagation_vector is not None:
-            return None
 
         i = lcm(*[vector.i.denominator for vector in self.propagation_vectors])
         j = lcm(*[vector.j.denominator for vector in self.propagation_vectors])
@@ -93,6 +99,16 @@ class SummationSupercell(CommensurateSupercell):
     """
 
     moments: list[np.ndarray] # TODO: not good for serialisation
+
+    @field_validator("moments")
+    def check_numpy_array(cls, list_of_arrays):
+        for moment in list_of_arrays:
+            if not isinstance(moment, np.ndarray):
+                raise TypeError("moments must contain numpy ndarrays")
+            if moment.shape != (3,):
+                raise ValueError("moments must be of shape (3,)")
+
+        return list_of_arrays
 
     @model_validator(mode="after")
     def check_lengths(self):
@@ -115,7 +131,17 @@ class TransformationSupercell(CommensurateSupercell):
     where m0 is the existing moment at a given site
     """
 
-    transforms: list[np.ndarray] # TODO: Not good for serialisation
+    transforms: list[np.ndarray]
+
+    @field_validator("transforms")
+    def check_numpy_array(cls, list_of_arrays):
+        for moment in list_of_arrays:
+            if not isinstance(moment, np.ndarray):
+                raise TypeError("transforms must contain numpy ndarrays")
+            if moment.shape != (3,3):
+                raise ValueError("transforms must be of shape (3,3)")
+
+        return list_of_arrays
 
     @model_validator(mode="after")
     def check_lengths(self):
@@ -136,10 +162,10 @@ class TransformationSupercell(CommensurateSupercell):
         # Check they're really integers
         for power, int_power in zip(powers, int_powers):
             if abs(power - int_power) > tolerances.IS_INTEGER_TOL:
-                raise ValueError("Supercell k.r has non-integer values")
+                raise ValueError(f"Supercell k.r has non-integer values ({power})")
 
         # TODO: Certainly better performing ways of doing this
-        for matrix, power in zip(self.transforms, power):
+        for matrix, power in zip(self.transforms, int_powers):
             for i in range(power):
                 moment = moment @ matrix
 

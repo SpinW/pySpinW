@@ -12,7 +12,7 @@ from pyspinw.gui.couplingtable import CouplingTable
 from pyspinw.gui.helperwidgets.couplingtypecombo import CouplingTypeCombo
 from pyspinw.gui.helperwidgets.floatfield import FloatField
 from pyspinw.gui.helperwidgets.parametertable import ParameterTable, ParameterExists
-from pyspinw.site import LatticeSite
+from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
 @dataclass
@@ -219,7 +219,13 @@ if __name__ == "__main__":
     app = QApplication([])
 
     sites = [LatticeSite.create(0,0,0,0,0,1, "A"),
-             LatticeSite.create(0.1,0,0,0,0,1, "B")]
+             #LatticeSite.create(0.1,0,0,0,0,1, "B")]
+             ]
+
+    sites.append(
+             ImpliedLatticeSite.create(sites[0], 0.7,0,0,0,0,1, "A other"))
+
+
 
     unit_cell = UnitCell(1,1,1)
 

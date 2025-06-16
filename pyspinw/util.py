@@ -54,6 +54,5 @@ def problematic_sites(sites: list[LatticeSite], implied_sites: list[LatticeSite]
 
     return bad_sites
 
-
 if __name__ == "__main__":
     demo_triple_product_matrix()
