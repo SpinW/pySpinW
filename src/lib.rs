@@ -103,19 +103,10 @@ fn _calc_spinwave(
     let spin_coefficients = (root_mags.clone() * root_mags.transpose()).transpose();
 
     // create matrix C of Hamiltonian which is q-independent
-    //
-    // C_jj is the sum of eta_j^T * M * S_l eta_l over l
-    // where M is the coupling matrix and S_i is the i'th spin
-    // and we factor the l-dependent part out into `sites_term`
-    // to avoid recalculating it for every coupling
-    //let sites_term: Vector3<C64> = zip(magnitudes, etas.clone())
-    //    .map(|(magnitude, eta)| eta * Complex::from(magnitude))
-    //    .sum::<Vector3<C64>>();
     let mut C = DMatrix::<C64>::zeros(n_sites, n_sites);
     for c in &couplings {
-        *C.index_mut((c.index2, c.index2)) +=
-          //(etas[c.index2].transpose() * c.matrix * sites_term).into_scalar();
-            spin_coefficients[(c.index2, c.index2)] * (etas[c.index1].transpose() * c.matrix * etas[c.index2]).into_scalar();
+        C[(c.index2, c.index2)] += spin_coefficients[(c.index2, c.index2)]
+            * (etas[c.index1].transpose() * c.matrix * etas[c.index2]).into_scalar();
     }
     C *= Complex::from(2.);
 
@@ -157,7 +148,7 @@ fn _spinwave_single_q(
     let hamiltonian: DMatrix<C64> = stack![ A_minus_C, B; 
                                             B.adjoint(), A_conj_minus_C];
 
-    // take square root of Hamiltonian using the LDL decomposition 
+    // take square root of Hamiltonian using the LDL decomposition
     let sqrt_hamiltonian = {
         let (l, d) = ldl(hamiltonian);
         l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
@@ -173,7 +164,7 @@ fn _spinwave_single_q(
     //     M = K^dagger g K
     //
     // where g is a diagonal matrix of length 2n, with the first n entries being 1, and the
-    // remaining entries being -1. 
+    // remaining entries being -1.
     // We do this by just multiplying the >n_sites rows of shc to get g*K
     let mut shc: DMatrix<C64> = sqrt_hamiltonian.clone();
     //let mut negative_half = shc.view_mut((0, n_sites), (2 * n_sites, n_sites));
@@ -191,7 +182,7 @@ fn _spinwave_single_q(
 fn _get_rotation_component(rotations: &Vec<Matrix3<C64>>, index: usize) -> Vec<Vector3<C64>> {
     rotations
         .par_iter()
-        .map(|r| r.row(index).transpose())
+        .map(|r| r.column(index).into_owned())
         .collect()
 }
 
