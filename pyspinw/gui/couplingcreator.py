@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QApplication, QComboBox, \
-    QSpacerItem, QSizePolicy, QLabel
+    QSpacerItem, QSizePolicy, QLabel, QDialog
 
 from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.calculations.spinwave import Coupling
@@ -33,7 +33,7 @@ class CouplingCreator(QWidget):
 
         self.sites = sites
         self.unit_cell = unit_cell
-        self.couplings = None
+        self.couplings = []
 
         # Table for viewing output
         self.output_table = CouplingTable(editable=False)
@@ -213,7 +213,50 @@ class CouplingCreator(QWidget):
     def _on_cancel_clicked(self):
         self.cancel_clicked.emit()
 
+    def set_input(self, sites: list[LatticeSite], unit_cell: UnitCell):
+        self.sites = sites
+        self.unit_cell = unit_cell
 
+        self._update_fields()
+        self._update()
+
+
+class CouplingCreatorWindow(QDialog):
+
+    couplings_accepted = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Batch Couplings")
+        self.setModal(True)
+
+        self.couplings = []
+
+        self.main_widget = CouplingCreator([], UnitCell(1,1,1))
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.main_widget)
+        self.setLayout(layout)
+
+        self.main_widget.cancel_clicked.connect(self._cancel_clicked)
+        self.main_widget.ok_clicked.connect(self._ok_clicked)
+
+    def closeEvent(self, event):
+        event.ignore()  # Ignore the close event
+        self.hide()     # Hide instead of closing
+
+    def show_creator(self, sites: list[LatticeSite], unit_cell: UnitCell):
+        self.main_widget.set_input(sites, unit_cell)
+        self.show()
+
+    def _cancel_clicked(self):
+        self.hide()
+
+    def _ok_clicked(self):
+        self.hide()
+        self.couplings = self.main_widget.couplings
+        self.couplings_accepted.emit()
 
 if __name__ == "__main__":
     app = QApplication([])

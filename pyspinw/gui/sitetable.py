@@ -190,7 +190,7 @@ class SiteTable(QTableWidget):
 
         super().__init__(parent=parent)
 
-        self._symmetry =symmetry
+        self._symmetry = symmetry
 
         # Data for the sites, the implied sites, and references both ways for linking them
         self._sites: list[LatticeSite] = []
@@ -498,6 +498,23 @@ class SiteTable(QTableWidget):
     def _implicitness_marked_all_sites(self) -> list[LatticeSite, bool]:
         return [(site, False) for site in self._sites] + \
                 [(site, True) for site in self._implied_sites]
+
+    @property
+    def selected_sites(self) -> list[LatticeSite]:
+        """ Current selections """
+
+        selected_indexes = sorted(list(set(idx.row() for idx in self.selectedIndexes())))
+
+        sites = []
+        n_real = len(self._sites)
+        for index in selected_indexes:
+            if index < n_real:
+                sites.append(self._sites[index])
+            else:
+                sites.append(self._implied_sites[index - n_real])
+
+        return sites
+
 
     @property
     def sites_for_drawing(self) -> list[DecoratedSite]:

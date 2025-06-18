@@ -2,11 +2,11 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy
 
 from pyspinw.gui.couplingtable import CouplingTable
+from pyspinw.gui.couplingcreator import CouplingCreatorWindow
 from pyspinw.gui.crystalviewer.actionlabel import ActionLabel
-from pyspinw.gui.decorated import DecoratedSite
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
 from pyspinw.gui.sitetable import SiteTable
-from pyspinw.gui.symmetry_settings import SymmetrySettings
+from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 
 
@@ -49,6 +49,10 @@ class SiteButtons(QWidget):
         self.reify.emit()
 
 class CouplingButtons(QWidget):
+
+    add_clicked = Signal()
+    remove_clicked = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -67,9 +71,11 @@ class CouplingButtons(QWidget):
 
     def _on_add(self):
         """ Add button pressed"""
+        self.add_clicked.emit()
 
     def _on_remove(self):
         """ Remove button pressed"""
+        self.remove_clicked.emit()
 
 class SiteAndCouplingEditor(SpinWDockWidget):
     """ Editor dock window for magnetic sites"""
@@ -79,7 +85,7 @@ class SiteAndCouplingEditor(SpinWDockWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-        self._symmetry: None
+        self._symmetry = DEFAULT_SYMMETRY
 
 
         self.setWindowTitle("Sites")
@@ -89,7 +95,9 @@ class SiteAndCouplingEditor(SpinWDockWidget):
 
         self.setWidget(widget)
 
-        self.site_table = SiteTable()
+        self.coupling_window = CouplingCreatorWindow()
+
+        self.site_table = SiteTable(symmetry=self._symmetry)
         self.fix_bad_sites_label = ActionLabel(
             "The moments on some sites appear to conflict, this is either because "
             "your symmetry is too high for your system, or because the moments should"
@@ -133,6 +141,8 @@ class SiteAndCouplingEditor(SpinWDockWidget):
         self.fix_bad_sites_label.action.connect(self.site_table.magnetic_symmetry_autofix)
 
         # Coupling connections
+        self.coupling_buttons.add_clicked.connect(self._on_add_coupling_clicked)
+        self.coupling_window.couplings_accepted.connect(self._on_new_couplings_accepted)
 
     @property
     def symmetry(self):
@@ -167,3 +177,8 @@ class SiteAndCouplingEditor(SpinWDockWidget):
     def sites_for_drawing(self):
         return self.site_table.sites_for_drawing
 
+    def _on_add_coupling_clicked(self):
+        self.coupling_window.show_creator(self.site_table.selected_sites, self.symmetry.unit_cell)
+
+    def _on_new_couplings_accepted(self):
+        self.coupling_table.add_couplings(self.coupling_window.couplings)

@@ -76,6 +76,11 @@ class CouplingTable(QTableWidget):
 
         self.update_entries()
 
+    def add_couplings(self, couplings: list[Coupling]):
+        self._couplings += couplings
+
+        self.update_entries()
+
     @property
     def couplings(self):
         return self._couplings
