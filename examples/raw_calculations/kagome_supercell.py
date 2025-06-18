@@ -3,11 +3,12 @@
 This is the magnet in MATLAB SpinW tutorial 8:
     https://spinw.org/tutorials/08tutorial
 """
-
 import numpy as np
 
-#from pyspinw.rust import spinwave_calculation, Coupling
-from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+try:
+    from pyspinw.rust import spinwave_calculation, Coupling
+except ModuleNotFoundError:
+    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
 
 # define our rotation matrices

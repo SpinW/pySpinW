@@ -2,7 +2,6 @@
 
 See https://spinw.org/tutorials/02tutorial
 """
-
 import numpy as np
 
 try:

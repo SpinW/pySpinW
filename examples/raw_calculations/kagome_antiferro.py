@@ -1,11 +1,19 @@
+"""Kagome antiferromagnet example.
+
+See https://spinw.org/tutorials/07tutorial.
+"""
 import numpy as np
-#from pyspinw.rust import spinwave_calculation, Coupling
-from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+
+try:
+    from pyspinw.rust import spinwave_calculation, Coupling
+except ModuleNotFoundError:
+    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
 # define our rotation matrices
 def rotation(theta):
-    """
-    returns a matrix whose columns are [e1==real(zed) e2==imag(zed) e3=eta]
+    """Calculates the rotation matrix for a given x-y plane angle theta.
+
+    Returns a matrix whose columns are [e1==real(zed) e2==imag(zed) e3=eta]
     which serves to rotate spins into FM alignment according to
     Toth and Lake JPCM 27 16602 (2016), for a spin in the x-y plane rotated
     at an angle theta to the x-axis.
@@ -30,10 +38,7 @@ def rotation(theta):
     )
 
 def kagome_antiferromagnet(n_q = 100):
-    """
-    Kagome anti-ferromagnet like in tutorial 7
-    """
-
+    """Kagome anti-ferromagnet like in tutorial 7."""
     # Three sites, otherwise identical
     rotations = [
         rotation(0),

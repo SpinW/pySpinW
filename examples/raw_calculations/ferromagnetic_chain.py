@@ -1,14 +1,16 @@
+"""Basic Heisenberg ferromagnetic chain example.
+
+See https://spinw.org/tutorials/01tutorial
+"""
 import numpy as np
-#try:
-#    from pyspinw.rust import spinwave_calculation, Coupling
-#except ModuleNotFoundError:
-from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+
+try:
+    from pyspinw.rust import Coupling, spinwave_calculation
+except ModuleNotFoundError:
+    from pyspinw.calculations.spinwave import Coupling, spinwave_calculation
 
 def heisenberg_ferromagnet(n_q = 100):
-    """
-    Basic ferromagnet
-    """
-
+    """Basic ferromagnet."""
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 

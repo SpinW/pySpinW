@@ -1,15 +1,16 @@
+"""Kagome ferromagnet example.
+
+See https://spinw.org/tutorials/05tutorial.
+"""
 import numpy as np
+
 try:
     from pyspinw.rust import spinwave_calculation, Coupling
 except ModuleNotFoundError:
     from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
 
 def kagome_ferromagnet(n_q = 100):
-
-    """
-    Basic ferromagnet
-    """
-
+    """Basic ferromagnet on a kagome lattice."""
     # Three sites, otherwise identical
     rotations = [np.eye(3, dtype=complex, order='F') for _ in range(3)]
     magnitudes = np.array([1.0]*3)  # spin-1
