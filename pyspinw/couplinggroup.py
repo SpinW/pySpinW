@@ -1,6 +1,7 @@
 import numpy as np
 
 from pyspinw._base import Coupling
+from pyspinw.batch_couplings import batch_couplings
 from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -47,26 +48,30 @@ class CouplingGroup():
     def __init__(self,
                  name: str,
                  site_list_indices: list[int],
-                 max_distance: float,
                  min_distance: float,
+                 max_distance: float,
                  naming_pattern: str,
                  coupling_type: type[Coupling],
                  parameters: dict,
                  direction_filter: DirectionalityFilter):
 
+        self.name = name
+        self.min_distance = min_distance
+        self.max_distance = max_distance
+        self.naming_pattern = naming_pattern
+        self.coupling_type = coupling_type
+        self.parameters = parameters
+        self.direction_filter = direction_filter
 
 
     def couplings(self, sites: list[LatticeSite], unit_cell: UnitCell):
 
-        parameters = self._parameters()
-        coupling_type = self._current_type()
-
         abstract_couplings = batch_couplings(
             sites=self.sites,
             unit_cell=self.unit_cell,
-            max_distance=parameters.max_distance,
-            naming_pattern=parameters.format_string,
-            type_symbol=coupling_type.short_string)
+            max_distance=self.max_distance,
+            naming_pattern=self.format_string,
+            type_symbol=self.short_string)
 
         parameter_dict = {parameter: self.field_widget.get_value(parameter)
                           for parameter in coupling_type.parameters}
@@ -97,3 +102,5 @@ class SetName(AbstractCouplingGroup):
 class Remove(AbstractCouplingGroup):
     def __init__(self, parent: AbstractCouplingGroup, *indices: int):
         self.parent = parent
+
+        
