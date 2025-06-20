@@ -309,7 +309,7 @@ Finally `accumarray` is used to construct the square matrix and the diagonal sub
 
 As an alternative to the vectorized Matlab code, there is an independent implementation of the formulism in Toth & Lake in the
 [takin](https://arxiv.org/pdf/1903.02632) code which
-[uses a loop over the sites of the unit cell](https://github.com/ILLGrenoble/takin/blob/master/tlibs2/libs/magdyn/hamilton.h#L175-L264)
+[uses a loop over the sites of the unit cell](https://github.com/ILLGrenoble/magpie/blob/master/tlibs2/libs/magdyn/hamilton.h#L175-L264)
 which is more transparent with respects to the equations in the paper.
 
 <!--
