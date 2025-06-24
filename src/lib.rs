@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use std::{iter::zip, ops::Sub};
 
-use nalgebra::{stack, Const, DMatrix, DMatrixView, DVector, Dyn, Matrix3, Vector3};
+use nalgebra::{stack, Const, Cholesky, DMatrix, DMatrixView, DVector, Dyn, Matrix3, Vector3};
 use num_complex::Complex;
 use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray2, ToPyArray};
 use pyo3::prelude::*;
@@ -150,8 +150,14 @@ fn _spinwave_single_q(
 
     // take square root of Hamiltonian using the LDL decomposition
     let sqrt_hamiltonian = {
+    if let Some(chol) = Cholesky::new(hamiltonian.clone()) {
+        chol.l()
+    }
+    else { 
         let (l, d) = ldl(hamiltonian);
+        println!("{}", d);
         l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
+    }
     };
 
     // 'shc' is "square root of Hamiltonian with commutation"
@@ -167,7 +173,6 @@ fn _spinwave_single_q(
     // remaining entries being -1.
     // We do this by just multiplying the >n_sites rows of shc to get g*K
     let mut shc: DMatrix<C64> = sqrt_hamiltonian.clone();
-    //let mut negative_half = shc.view_mut((0, n_sites), (2 * n_sites, n_sites));
     let mut negative_half = shc.view_mut((n_sites, 0), (n_sites, 2 * n_sites));
     negative_half *= Complex::from(-1.);
 
