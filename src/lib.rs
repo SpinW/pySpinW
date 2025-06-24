@@ -155,7 +155,6 @@ fn _spinwave_single_q(
     }
     else { 
         let (l, d) = ldl(hamiltonian);
-        println!("{}", d);
         l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
     }
     };
