@@ -15,11 +15,56 @@ class MutableStructure:
                  coupling_groups: list[CouplingGroup],
                  symmetry: SymmetrySettings):
 
-        self.sites = sites
-        self.coupling_groups
+        self._sites = sites
+        self._coupling_groups = coupling_groups
+        self.symmetry = symmetry
 
-    def update_symmmetry_sites(self):
+
+        self._implied_sites = []
+        self._implied_site_to_site = []
+        self._site_to_implied_site = []
+
+        self._update_symmmetry_sites()
+
+    @property
+    def sites(self):
         pass
+
+    def _update_symmmetry_sites(self):
+        """ Update the sites, this will recalculate the implied sites and the arrays that
+                say how they are referenced to each other"""
+        implied_sites = []
+        implied_site_to_site = []
+        site_to_implied_site = []
+
+        count = 0
+        for site_index, site in enumerate(self._sites):
+            extra_sites = self.symmetry.magnetic_group.duplicates(site)
+
+            end_count = count + len(extra_sites)
+
+            implied_sites += extra_sites
+            implied_site_to_site += [site_index for _ in extra_sites]
+
+            site_to_implied_site.append([i for i in range(count, end_count)])
+
+            count = end_count
+
+        self._implied_sites = implied_sites
+        self._implied_site_to_site = implied_site_to_site
+        self._site_to_implied_site = site_to_implied_site
+
+    def check_symmetry(self):
+        pass
+
+    def propose_symmetry(self):
+        pass
+
+    def with_different_symmetry(self):
+        pass
+
+    def _make_real(self, implied_site_index):
+        """ Take an implied site and turn it into a real site"""
 
     def remove_site(self):
 
@@ -35,4 +80,3 @@ class MutableStructure:
         pass
 
 
-    
