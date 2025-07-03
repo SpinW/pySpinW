@@ -1,3 +1,5 @@
+""" TODO: WIP """
+
 from pyspinw.couplinggroup import CouplingGroup
 from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
@@ -27,11 +29,12 @@ class MutableStructure:
 
     @property
     def sites(self):
-        pass
+        """ Getter for sites """
 
     def _update_symmmetry_sites(self):
-        """ Update the sites, this will recalculate the implied sites and the arrays that
-        say how they are referenced to each other
+        """ Update the sites
+
+        This will recalculate the implied sites and the arrays that say how they are referenced to each other
         """
         implied_sites = []
         implied_site_to_site = []
@@ -55,28 +58,24 @@ class MutableStructure:
         self._site_to_implied_site = site_to_implied_site
 
     def check_symmetry(self):
-        pass
+        """ Check the symmetry of this system and the system definition are consitent """
 
     def propose_symmetry(self):
-        pass
-
-    def with_different_symmetry(self):
-        pass
+        """ Propose symmetries that would be a good choice for this system """
 
     def _make_real(self, implied_site_index):
         """ Take an implied site and turn it into a real site"""
 
     def remove_site(self):
-
+        """ Remove a site from the definition"""
 
         # Work out what couplings need to change / disappear
 
         # Remove site and update
 
-        pass
 
 
     def remove_coupling_group(self):
-        pass
+        """ Remove a coupling group from the system definition """
 
 
