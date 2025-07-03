@@ -33,13 +33,11 @@ class LatticeSite(BaseModel):
     def create(i: float, j: float, k: float,
                mi: float = 0, mj: float = 0, mk: float = 0,
                name: str | None = None):
-
         """ Create without annoying pydantic keyword only constraint """
         return LatticeSite(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
 
     def model_post_init(self, __context):
         """pydantic: after init"""
-
         self._ijk = np.array([self.i, self.j, self.k], dtype=float)
         self._m = np.array([self.mi, self.mj, self.mk], dtype=float)
         self._values = np.concatenate((self._ijk, self._m))
@@ -76,6 +74,7 @@ class LatticeSite(BaseModel):
         return self._unique_id
 
 class ImpliedLatticeSite(LatticeSite):
+    """ Lattice site that is implied by symmetry by a specified site"""
 
     parent_site: LatticeSite
 
@@ -84,11 +83,12 @@ class ImpliedLatticeSite(LatticeSite):
                i: float, j: float, k: float,
                mi: float = 0, mj: float = 0, mk: float = 0,
                name: str | None = None):
-
+        """ Create using ordered arguments"""
         return ImpliedLatticeSite(parent_site=parent_site, i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
 
     @staticmethod
     def from_coordinates(parent_site: LatticeSite, coordinates: np.ndarray, name: str = ""):
+        """ Create ImpliedLatticeSite from coordinates"""
         return ImpliedLatticeSite(
             parent_site=parent_site,
             i=coordinates[0],
