@@ -1,3 +1,5 @@
+""" Operations are the members of space groups and magnetic space groups"""
+
 from fractions import Fraction
 
 import numpy as np

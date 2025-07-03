@@ -1,3 +1,5 @@
+""" For reading and interpreting magnetic space group data """
+
 from dataclasses import dataclass
 
 from importlib import resources

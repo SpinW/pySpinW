@@ -1,3 +1,5 @@
+""" Space groups and magnetic space groups"""
+
 from collections import defaultdict
 
 import numpy as np
@@ -10,15 +12,18 @@ from pyspinw.tolerances import tolerances
 
 
 class SymmetryGroup:
-    pass
+    """Base class for the different kinds of groups """
 
 class MagneticSpaceGroup(SymmetryGroup):
+    """ Representation of a magnetic space group"""
+
     def __init__(self, number: int, symbol: str, operations: list[MagneticOperation]):
         self.number = number
         self.symbol = symbol
         self.operations = operations
 
     def __repr__(self):
+        """repr"""
         return f"SpaceGroup({self.number}, {self.symbol})"
 
     def duplicates(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
@@ -47,7 +52,10 @@ class MagneticSpaceGroup(SymmetryGroup):
 
         new_sites = []
         for i, ijkm in enumerate(new_coordinates):
-            new_site = ImpliedLatticeSite.from_coordinates(coordinates=ijkm.reshape(-1), parent_site=site, name=site.name + f" [{i+1}]")
+            new_site = ImpliedLatticeSite.from_coordinates(
+                coordinates=ijkm.reshape(-1),
+                parent_site=site,
+                name=site.name + f" [{i+1}]")
 
             new_sites.append(new_site)
 
@@ -56,6 +64,8 @@ class MagneticSpaceGroup(SymmetryGroup):
 
 
 class SpaceGroup(SymmetryGroup):
+    """ Representation of a spacegroup"""
+
     def __init__(self, number, international_symbol, operations, magnetic_variants: list[MagneticSpaceGroup]):
         self.number = number
         self.symbol = international_symbol
@@ -63,6 +73,7 @@ class SpaceGroup(SymmetryGroup):
         self.magnetic_variants = magnetic_variants
 
     def __repr__(self):
+        """repr"""
         return f"SpaceGroup({self.number}, {self.symbol})"
 
 
