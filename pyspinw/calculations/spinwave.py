@@ -152,7 +152,6 @@ def _calc_q_chunks(q_vectors: np.ndarray,
             # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
             method = CalculationMethod.LDL
 
-
         sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
         sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
 
