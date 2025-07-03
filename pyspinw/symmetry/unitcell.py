@@ -1,3 +1,5 @@
+""" Unit cells"""
+
 import numpy as np
 
 from pyspinw.checks import check_sizes
@@ -40,6 +42,7 @@ class RawUnitCell:
         return np.sqrt(np.sum(self.fractional_to_cartesian(np.array([[1,1,1]]))[0, :]**2))
 
     def __eq__(self, other: "UnitCell"):
+        """Equality (approximate)"""
         return np.all(np.abs(self._xyz - other._xyz) < 1e-10)
 
 
@@ -55,9 +58,7 @@ class UnitCell(RawUnitCell):
                  gamma: float = 90,
                  ab_normal: tuple[float, float, float]=(0,0,1),
                  direction: tuple[float, float, float] | None=None):
-        """See `ase.geometry.cell.cellpar_to_cell` for details of parameters
-
-        """
+        """See `ase.geometry.cell.cellpar_to_cell` for details of parameters"""
         self.a = a
         self.b = b
         self.c = c
@@ -85,7 +86,11 @@ class UnitCell(RawUnitCell):
                 ab_normal: tuple[float, float, float] | None = None,
                 direction: tuple[float, float, float] | None = None,
                 replace_direction=False):
+        """ Create a new unit cell with updated parameters
 
+        :returns: a new unit cell
+
+        """
         a = self.a if a is None else a
         b = self.b if b is None else b
         c = self.c if c is None else c
@@ -103,4 +108,5 @@ class UnitCell(RawUnitCell):
 
 
     def __repr__(self):
+        """repr implementation"""
         return f"UnitCell({self.a}, {self.b}, {self.c} | {self.alpha}, {self.beta}, {self.gamma})"

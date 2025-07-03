@@ -1,3 +1,5 @@
+"""Data for working with tolerances"""
+
 from dataclasses import dataclass
 
 

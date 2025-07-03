@@ -1,3 +1,8 @@
+""" Lattice systems
+
+Classes and data for working with lattice systems
+"""
+
 from abc import ABC, abstractproperty, abstractmethod
 from dataclasses import dataclass
 from typing import Callable
@@ -51,6 +56,7 @@ class BravaisOptions:
         return out
 
 class LatticeSystem(ABC):
+    """ Base class for the various lattice systems """
 
     name: str = ""
     letter: str = ""
@@ -82,6 +88,8 @@ class LatticeSystem(ABC):
 
 
 class Triclinic(LatticeSystem):
+    """ Triclinic lattice system """
+
     name = "Triclinic"
     letter = "a"
 
@@ -96,18 +104,23 @@ class Triclinic(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters()
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions()
 
 
 
 class Monoclinic(LatticeSystem):
+    """ Monoclinic lattice system """
+
     name = "Monoclinic"
     letter = "m"
 
@@ -120,17 +133,22 @@ class Monoclinic(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters(alpha=False, gamma=False)
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell.updated(alpha=90, beta=90)
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(base_centered=True)
 
 
 class Orthorhombic(LatticeSystem):
+    """ Orthorhombic lattice system """
+
     name = "Orthorhombic"
     letter = "o"
 
@@ -143,13 +161,16 @@ class Orthorhombic(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters(alpha=False, beta=False, gamma=False)
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell.updated(alpha=90, beta=90, gamma=90)
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(
             base_centered=True,
             body_centered=True,
@@ -157,6 +178,8 @@ class Orthorhombic(LatticeSystem):
 
 
 class Tetragonal(LatticeSystem):
+    """ Tetragonal lattice system"""
+
     name = "Tetragonal"
     letter = "t"
 
@@ -166,9 +189,11 @@ class Tetragonal(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, alpha=False, beta=False, gamma=False)
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell.updated(
             b = unit_cell.a,
             alpha=90,
@@ -177,10 +202,13 @@ class Tetragonal(LatticeSystem):
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(body_centered=True)
 
 
 class Rhombohedral(LatticeSystem):
+    """ Rhombohedral lattice system """
+
     name = "Rhombohedral"
     letter = "h"
 
@@ -191,9 +219,11 @@ class Rhombohedral(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, c=False, beta=False, gamma=False)
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell.updated(
             b = unit_cell.a,
             c = unit_cell.a,
@@ -202,10 +232,13 @@ class Rhombohedral(LatticeSystem):
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(primitive=False, rhombohedral=True)
 
 
 class Hexagonal(LatticeSystem):
+    """ Hexagonal lattice system """
+
     name = "Hexagonal"
     letter = "h"
 
@@ -215,9 +248,11 @@ class Hexagonal(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, alpha=False, beta=False, gamma=False)
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell.updated(
             b = unit_cell.a,
             alpha=90,
@@ -226,18 +261,23 @@ class Hexagonal(LatticeSystem):
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions()
 
 
 class Cubic(LatticeSystem):
+    """ Cubic lattice system"""
+
     name = "Cubic"
     letter = "c"
 
     @property
     def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, c=False, alpha=False, beta=False, gamma=False)
 
     def constrain(self, unit_cell: UnitCell):
+        """ Constrain the unit cell for this system """
         return unit_cell.updated(
             b = unit_cell.a,
             c = unit_cell.a,
@@ -247,6 +287,7 @@ class Cubic(LatticeSystem):
 
     @property
     def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(body_centered=True, face_centered=True)
 
 # All the possible systems
