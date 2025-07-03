@@ -43,9 +43,7 @@ class ParameterTable(QWidget):
                       change_signal: Signal,
                       units: str | None = None,
                       display_alias: str | None = None):
-
-        """
-        Add a parameter to the grid
+        """Add a parameter to the grid
 
         :param name: Name to use for this parameter
         :param widget: Widget to put in the table
@@ -55,7 +53,6 @@ class ParameterTable(QWidget):
         :param units: units for unit field
         :param display_alias: Name to show instead of the parameter name
         """
-
         if name in self._name_row_lookup:
             raise ParameterExists(f"Parameter {name} already exists")
 
@@ -75,7 +72,6 @@ class ParameterTable(QWidget):
 
     def _set_row_visible(self, row_index, visible_state):
         """ Show or hide a row, pretty messy (hence having a dedicated class to handle all this)"""
-
         if visible_state:
 
             # Use current height if it exists

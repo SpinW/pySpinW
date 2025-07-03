@@ -54,7 +54,6 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
 @check_sizes(axis=(3,), force_numpy=True)
 def angle_axis_rotation_matrix(angle_rad, axis: np.ndarray):
     """ Get a matrix for rotation by `angle_rad` radians around the axis `axis`"""
-
     mag = np.sqrt(np.sum(axis**2))
 
     if mag < tolerances.IS_ZERO_TOL:

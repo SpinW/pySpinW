@@ -18,7 +18,6 @@ def transform_tests():
     3) As above but rotations by 45 degrees in around axis in the same dimension as the translation
 
     """
-
     import os
 
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "1"

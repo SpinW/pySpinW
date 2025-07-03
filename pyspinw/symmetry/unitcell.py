@@ -9,6 +9,7 @@ class BadCellDefinition(Exception):
 
 class RawUnitCell:
     """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""
+
     def __init__(self, xyz):
         self._xyz = xyz
 
@@ -21,13 +22,11 @@ class RawUnitCell:
     # @check_sizes(points=(-1, 3))
     def fractional_to_cartesian(self, points: np.ndarray):
         """ Convert a list of points  from the fractional (ijk) type to cartesian (xyz) """
-
         return points @ self._xyz
 
     # @check_sizes(points=(-1, 3))
     def cartesian_to_fractional(self, points: np.ndarray):
         """ Convert a list of points from cartesian (xyz) to  fractional (ijk) """
-
         return points @ self._xyz_inv
 
     @property
@@ -56,13 +55,9 @@ class UnitCell(RawUnitCell):
                  gamma: float = 90,
                  ab_normal: tuple[float, float, float]=(0,0,1),
                  direction: tuple[float, float, float] | None=None):
+        """See `ase.geometry.cell.cellpar_to_cell` for details of parameters
 
         """
-
-        See `ase.geometry.cell.cellpar_to_cell` for details of parameters
-
-        """
-
         self.a = a
         self.b = b
         self.c = c

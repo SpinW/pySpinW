@@ -14,6 +14,7 @@ logger = logging.getLogger("GL.Color")
 
 class ColorSpecificationMethod(Enum):
     """ Specifies how to colour an object"""
+
     UNIFORM = 1         # Whole object a single colour
     BY_COMPONENT = 2    # Each mesh or edge within the object a single colour
     BY_VERTEX = 3       # Vertex colouring for the whole object
@@ -21,6 +22,7 @@ class ColorSpecificationMethod(Enum):
 @dataclass
 class ColorSpecification:
     """ Specification of how to colour an object, and the data needed to do so"""
+
     method: ColorSpecificationMethod
     data: np.ndarray
 

@@ -5,6 +5,7 @@ from importlib import resources
 @dataclass
 class MSGSymbols:
     """ Object to hold the different kinds of symbols together"""
+
     number: int
     uni: str
     bns: str

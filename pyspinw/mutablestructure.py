@@ -9,7 +9,6 @@ class MutableStructure:
     A structure like this is important for synchronising the list of sites with the
     """
 
-
     def __init__(self,
                  sites: list[LatticeSite],
                  coupling_groups: list[CouplingGroup],
@@ -32,7 +31,8 @@ class MutableStructure:
 
     def _update_symmmetry_sites(self):
         """ Update the sites, this will recalculate the implied sites and the arrays that
-                say how they are referenced to each other"""
+        say how they are referenced to each other
+        """
         implied_sites = []
         implied_site_to_site = []
         site_to_implied_site = []

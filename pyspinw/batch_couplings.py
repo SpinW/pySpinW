@@ -34,7 +34,6 @@ def apply_naming_convention(naming_pattern: str,
                             type_symbol: str,
                             order: int,
                             xyz_direction: np.ndarray):
-
     """Convert a naming string into an actual name
 
     :param naming_pattern: string describing how to name things
@@ -45,7 +44,6 @@ def apply_naming_convention(naming_pattern: str,
     :param xyz_direction: direction of coupling, use $DIRECTION$ to give a string that denotes this concisely (hopefully)
 
     """
-
     if "[direction]" in naming_pattern:
 
         if np.all(np.abs(xyz_direction) < 1e-10):
@@ -83,7 +81,6 @@ def batch_couplings(sites: list[LatticeSite],
                     naming_pattern: str=default_naming_pattern,
                     type_symbol: str="J",
                     both_directions: bool=False):
-
     """ Find all the couplings within a certain distance
 
     :param sites: List of LatticeSite or ImpliedLatticeSite to find couplings between
@@ -95,8 +92,6 @@ def batch_couplings(sites: list[LatticeSite],
 
     Most of the work here is about constraining by order and giving it a sensible name
     """
-
-
     unique_sites = set([site.parent_site if isinstance(site, ImpliedLatticeSite) else site for site in sites])
     unique_index = {site: index for index, site in enumerate(unique_sites)}
 

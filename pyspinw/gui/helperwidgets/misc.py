@@ -4,12 +4,14 @@ from PySide6.QtWidgets import QLabel, QWidget, QSlider, QVBoxLayout
 
 class QRightLabel(QLabel):
     """ Right aligned label"""
+
     def __init__(self, text: str):
         super().__init__(text)
         self.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
 class QLeftLabel(QLabel):
     """ Right aligned label"""
+
     def __init__(self, text: str):
         super().__init__(text)
         self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)

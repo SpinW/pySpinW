@@ -20,7 +20,6 @@ class FloatField(QWidget):
                  slider_bottom: float | None = None,
                  slider_top: float | None = None,
                  parent=None):
-
         """Floating point field wrapper
 
         :param value: initial value
@@ -105,7 +104,6 @@ class FloatField(QWidget):
 
     def _on_slider_changed(self):
         """ Event when the slider is changed """
-
         self._value = self.slider.value
         self.text_field.blockSignals(True)
         self.text_field.setText(f"{self._value:.6g}")
@@ -116,7 +114,6 @@ class FloatField(QWidget):
 
     def _on_text_changed(self):
         """Event when text is changed"""
-
         try:
             potential_value = float(self.text_field.text())
 

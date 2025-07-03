@@ -11,8 +11,7 @@ from pyspinw.gui.crystalviewer.GL.renderable import Renderable
 logger = logging.getLogger("GL.transforms")
 
 class SceneGraphNode(Renderable):
-    """
-    General transform - also doubles as a scene graph node
+    """General transform - also doubles as a scene graph node
 
     For the sake of speed, the transformation matrix shape is not checked.
     It should be a 4x4 transformation matrix
@@ -75,8 +74,7 @@ class Rotation(SceneGraphNode):
 
 
     def __init__(self, angle, x, y, z, *children: Renderable):
-        """
-        Rotate the children of this node
+        """Rotate the children of this node
 
         :param angle: angle of rotation in degrees
         :param axis: axis for rotation
@@ -95,8 +93,7 @@ class Translation(SceneGraphNode):
 
 
     def __init__(self, x: float, y: float, z: float, *children: Renderable):
-        """
-        Translate the children of this node
+        """Translate the children of this node
 
         :param x: x translation
         :param y: y translation
@@ -114,14 +111,12 @@ class Translation(SceneGraphNode):
 class Scaling(SceneGraphNode):
 
     def __init__(self, x: float, y: float, z: float, *children: Renderable):
-        """
-        Scale the children of this node
+        """Scale the children of this node
 
         :param x: x scale
         :param y: y scale
         :param z: z scale
         """
-
         super().__init__(*children)
         self.x = x
         self.y = y
@@ -133,14 +128,11 @@ class Scaling(SceneGraphNode):
 class MatrixTransform(SceneGraphNode):
 
     def __init__(self, matrix: np.ndarray, *children: Renderable):
-        """
-
-        Apply a 4x4 transformation matrix to the children of this node
+        """Apply a 4x4 transformation matrix to the children of this node
 
         :param matrix: a 4x4 transformation matrix
 
         """
-
         super().__init__(*children)
 
         self.matrix = matrix

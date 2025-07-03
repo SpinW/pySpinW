@@ -48,9 +48,7 @@ class SpaceOperation(BaseModel):
     @staticmethod
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray) -> \
                     tuple[PointOperationType, TranslationType]:
-
         """ Method that converts numpy float data into ints/fractions """
-
         point_operation = tuple(tuple(int(point_operation[i,j]) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(float(translation[i])).limit_denominator() for i in range(3))
 
@@ -60,7 +58,6 @@ class SpaceOperation(BaseModel):
     @property
     def text_form(self) -> str:
         """ Represent this operation as a triple of equations in xyz"""
-
         strings = []
         for i in range(3):
             string = ""
@@ -91,7 +88,6 @@ class SpaceOperation(BaseModel):
 
     def and_then(self, other: "MagneticOperation"):
         """ Composition of operations """
-
         # Notationally, it is common in group theory to use implicit
         #  multiplication for left composition, and dot for right composition elsewhere.
         # This means would be ambiguous to use __mul__ in this case. and_then makes
@@ -141,7 +137,6 @@ class SpaceOperation(BaseModel):
 
     def __call__(self, points: ArrayLike) -> np.ndarray:
         """ Apply this operation to a list of points """
-
         point_operation = np.array(self.point_operation, dtype=float)
         translation = np.array([float(f) for f in self.translation]).reshape(-1, 1)
 
@@ -203,9 +198,7 @@ class MagneticOperation(BaseModel):
     @staticmethod
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray, time_reversal: np.ndarray) -> \
                     tuple[PointOperationType, TranslationType, int]:
-
         """ Method that converts numpy float data into ints/fractions """
-
         point_operation = tuple(tuple(int(point_operation[i,j]) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(float(translation[i])).limit_denominator() for i in range(3))
         time_reversal = int(time_reversal)
@@ -216,7 +209,6 @@ class MagneticOperation(BaseModel):
     @property
     def text_form(self) -> str:
         """ Represent this generator as a triple of equations in xyz"""
-
         strings = []
         for i in range(3):
             string = ""
@@ -250,7 +242,6 @@ class MagneticOperation(BaseModel):
 
     def and_then(self, other: "MagneticOperation"):
         """ Composition of operations """
-
         # Notationally, it is common in group theory to use implicit
         #  multiplication for left composition, and dot for right composition elsewhere.
         # This means would be ambiguous to use __mul__ in this case. and_then makes
@@ -304,7 +295,6 @@ class MagneticOperation(BaseModel):
 
     def __call__(self, points_and_momenta: ArrayLike) -> np.ndarray:
         """ Apply operation to points and momenta """
-
         points = points_and_momenta[:, :3]
         momenta = points_and_momenta[:, 3:]
 

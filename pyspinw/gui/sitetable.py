@@ -43,7 +43,6 @@ class HtmlHeader(QHeaderView):
 
     def sectionSizeFromContents(self, logicalIndex):
         """ Needed for the header to be resized"""
-
         # Return width required by HTML text
         doc = QTextDocument()
         html = self.model().headerData(logicalIndex, self.orientation(), Qt.DisplayRole)
@@ -65,7 +64,6 @@ _implied_icon = QIcon.fromTheme("folder")  # or use QIcon("path/to/icon.png")
 
 def implied_entry(implied: bool):
     """ Create a table entry that signifies whether the site is implied or not"""
-
     item = QTableWidgetItem()
 
     if implied:
@@ -77,7 +75,6 @@ def implied_entry(implied: bool):
 
 def name_entry(name: str, editable: bool = True):
     """ Create a table entry for names of things """
-
     item = QTableWidgetItem(name)
 
     if not editable:
@@ -123,6 +120,7 @@ class HoverEventFilter(QObject):
 @dataclass
 class SiteTableOptions:
     """ Table display options"""
+
     nonmagnetic: bool = True
     independent: bool = True
     implied: bool = True
@@ -274,7 +272,8 @@ class SiteTable(QTableWidget):
 
     def _update_sites(self):
         """ Update the sites, this will recalculate the implied sites and the arrays that
-        say how they are referenced to each other"""
+        say how they are referenced to each other
+        """
         implied_sites = []
         implied_site_to_site = []
         site_to_implied_site = []
@@ -302,12 +301,10 @@ class SiteTable(QTableWidget):
 
         If the symmetry is broken, we will find there are duplicate sites with opposite spins
         """
-
         return len(problematic_sites(self._sites, self._implied_sites, self._site_to_implied_site)) > 0
 
     def _magnetic_symmetry_check(self):
         """ This finds out if the symmetry is broken, and sends the appropriate signals"""
-
         if self._magnetic_symmetry_broken():
             self.magnetic_symmetry_broken.emit()
         else:
@@ -479,8 +476,6 @@ class SiteTable(QTableWidget):
 
     def _on_select(self):
         """ Event that happens on selection"""
-
-
         selected_indexes = set(idx.row() for idx in self.selectedIndexes())
 
         non_implied_selected = any([index < len(self._sites) for index in selected_indexes])
@@ -502,7 +497,6 @@ class SiteTable(QTableWidget):
     @property
     def selected_sites(self) -> list[LatticeSite]:
         """ Current selections """
-
         selected_indexes = sorted(list(set(idx.row() for idx in self.selectedIndexes())))
 
         sites = []
@@ -519,8 +513,8 @@ class SiteTable(QTableWidget):
     @property
     def sites_for_drawing(self) -> list[DecoratedSite]:
         """ List of sites that will get sent to the graphics, these are decorated with information
-        about the current selection"""
-
+        about the current selection
+        """
         out = []
         selected_indexes = set(idx.row() for idx in self.selectedIndexes())
 

@@ -9,6 +9,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 @dataclass
 class FreeParameters:
     """ Which parameters of the unit cell are free to vary """
+
     a: bool = True
     b: bool = True
     c: bool = True
@@ -20,6 +21,7 @@ class FreeParameters:
 @dataclass
 class BravaisOptions:
     """ Types of Bravias lattices available """
+
     primitive: bool = True
     base_centered: bool = False
     body_centered: bool = False
@@ -263,7 +265,6 @@ lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_s
 
 def find_unit_cell_type(unit_cell: UnitCell) -> list[LatticeSystem]:
     """ Find the lattice system for a unit cell, it should be a length zero or one list, but it might not be """
-
     # get potential lattice systems
     potential_systems = [system for system in lattice_systems if system.constrain(unit_cell) == unit_cell]
 

@@ -12,8 +12,6 @@ ico_ring_r = np.sqrt(4/5)
 class Icosahedron(FullModel):
     """ Icosahedron centred at 0,0,0"""
 
-
-
     ico_vertices = \
         [(0.0, 0.0, 1.0)] + \
         [(ico_ring_r * np.cos(angle), ico_ring_r * np.sin(angle), ico_ring_h) for angle in 2*np.pi*np.arange(5)/5] + \

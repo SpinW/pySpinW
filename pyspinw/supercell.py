@@ -28,7 +28,6 @@ class PropagationVector(BaseModel):
 
 def _coerce_numeric_input(value: Fraction | float, max_denom=1000_000):
     """ Convert floats or fractions into the form needed for a propagation vector"""
-
     if not isinstance(value, Fraction):
         value = Fraction(value).limit_denominator(max_denominator=max_denom)
 
@@ -82,7 +81,6 @@ class CommensurateSupercell(BaseModel):
 
     def minimal_supercell(self) -> tuple[int, int, int] | None:
         """ Get the smallest possible supercell"""
-
         i = lcm(*[vector.i.denominator for vector in self.propagation_vectors])
         j = lcm(*[vector.j.denominator for vector in self.propagation_vectors])
         k = lcm(*[vector.k.denominator for vector in self.propagation_vectors])

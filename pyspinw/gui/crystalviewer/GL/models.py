@@ -1,6 +1,5 @@
 
-"""
-3D Model classes
+"""3D Model classes
 """
 
 
@@ -39,6 +38,7 @@ class ModelBase(Renderable):
 
 class SolidModel(ModelBase):
     """ Base class for the solid models"""
+
     def __init__(self,
                  vertices: VertexData,
                  triangle_meshes: Sequence[TriangleMeshData]):
@@ -65,11 +65,7 @@ class SolidVertexModel(SolidModel):
                  vertices: VertexData,
                  triangle_meshes: Sequence[TriangleMeshData],
                  colors: Optional[ColorSpecification]):
-
-        """
-
-
-        :vertices: Sequence[Tuple[float, float, float]], vertices of the model
+        """:vertices: Sequence[Tuple[float, float, float]], vertices of the model
         :triangle_meshes: Sequence[Sequence[Tuple[int, int, int]]], sequence of triangle
                           meshes indices making up the shape
         :colors: Optional[Union[Sequence[Color], Color]], single color for shape, or array with a colour for
@@ -77,7 +73,6 @@ class SolidVertexModel(SolidModel):
         :color_by_mesh: bool = False, Colour in each mesh with a colour specified by colours
 
         """
-
         super().__init__(vertices, triangle_meshes)
 
         self.colors = colors
@@ -133,15 +128,12 @@ class WireModel(ModelBase):
                  vertices: VertexData,
                  edges: EdgeData,
                  edge_colors: Optional[ColorSpecification]):
-
         """ Wireframe Model
 
         :vertices: Sequence[Tuple[float, float, float]], vertices of the model
         :edges: Sequence[Tuple[int, int]], indices of the points making up the edges
         :edge_colors: Optional[Union[Sequence[Color], Color]], color of the individual edges or a single color for them all
         """
-
-
         super().__init__(vertices)
 
         self.wireframe_render_enabled = edge_colors is not None
@@ -188,6 +180,7 @@ class FullModel(SolidVertexModel, WireModel):
 
     See SolidVertexModel and WireModel
     """
+
     def __init__(self,
                  vertices: VertexData,
                  edges: EdgeData,

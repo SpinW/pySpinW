@@ -5,6 +5,7 @@ from pyspinw.coupling import couplings
 
 class CouplingTypeCombo(QComboBox):
     """ Combo box for coupling types """
+
     def __init__(self, coupling_type: str, parent=None):
         super().__init__(parent)
 

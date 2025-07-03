@@ -42,9 +42,7 @@ class Surface(FullModel):
                  colormap: str= ColorMap._default_colormap,
                  c_range: Tuple[float, float] = (0, 1),
                  edge_skip: int=1):
-
         """ Surface plot
-
 
         :param x_values: 1D array of x values
         :param y_values: 1D array of y values
@@ -53,8 +51,6 @@ class Surface(FullModel):
         :param c_range: min and max values for the color map to span
         :param edge_skip: skip every `edge_skip` index when drawing wireframe
         """
-
-
         self.x_data, self.y_data = np.meshgrid(x_values, y_values)
         self.z_data = z_data
 
@@ -84,9 +80,7 @@ class Surface(FullModel):
 
 
     def set_z_data(self, z_data):
-
         "Set the z data on this surface plot"
-
         self.z_data = z_data
         self.z_flat = z_data.flatten()
 

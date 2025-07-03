@@ -9,7 +9,6 @@ from pyspinw.site import LatticeSite
 
 def string_entry(value: str, editable: bool = True):
     """ Create a table entry for names of things """
-
     item = QTableWidgetItem(value)
 
     if not editable:

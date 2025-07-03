@@ -66,10 +66,8 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
 
 
     def paintGL(self):
+        """Paint the GL viewport
         """
-        Paint the GL viewport
-        """
-
         glViewport(*self.default_viewport())
         self.set_projection()
 

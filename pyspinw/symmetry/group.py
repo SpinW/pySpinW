@@ -23,7 +23,6 @@ class MagneticSpaceGroup(SymmetryGroup):
 
     def duplicates(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
-
         coordinates = site.values.reshape(1, -1)
 
         new_coordinates = []
@@ -69,7 +68,6 @@ class SpaceGroup(SymmetryGroup):
 
 def _load_spg_group_data():
     """ Does the loading, kept in function so temporary data is disposed"""
-
     # This will be used to look up the Bravais lattice definition
 
     spacegroup_number_to_lattice_system = \

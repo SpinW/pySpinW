@@ -26,7 +26,6 @@ class Sphere(FullModel):
 
     @staticmethod
     def sphere_edges(n_horizontal, n_segments, grid_gap):
-
         """ Helper function: Edges of the UV sphere primitive"""
         edges = []
 
@@ -70,10 +69,7 @@ class Sphere(FullModel):
                  grid_gap: int = 1,
                  colors: Optional[ColorSpecification]=None,
                  edge_colors: Optional[ColorSpecification]=None):
-
-        """
-
-        UV Sphere Primitive
+        """UV Sphere Primitive
 
         :param n_horizontal: Number of horizontal bands
         :param n_segments: Number of segments (angular)

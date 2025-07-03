@@ -103,4 +103,3 @@ class Remove(AbstractCouplingGroup):
     def __init__(self, parent: AbstractCouplingGroup, *indices: int):
         self.parent = parent
 
-        
