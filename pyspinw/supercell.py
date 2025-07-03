@@ -1,3 +1,5 @@
+""" Supercell representations"""
+
 from fractions import Fraction
 from math import lcm
 from typing import Any
@@ -9,6 +11,8 @@ from pyspinw.tolerances import tolerances
 from pyspinw.gui.cell_offsets import CellOffset
 
 class PropagationVector(BaseModel):
+    """ Propagation vector"""
+
     i: Fraction | float
     j: Fraction | float
     k: Fraction | float
@@ -17,12 +21,15 @@ class PropagationVector(BaseModel):
 
     @property
     def vector(self):
+        """ As a numpy vector"""
         return self._vector
 
     def dot(self, cell_offset: CellOffset):
+        """ Dot product with a cell offset"""
         return np.dot(self.vector, cell_offset.vector)
 
     def model_post_init(self, context: Any, /) -> None:
+        """ pydantic: after init"""
         self._vector = np.array([self.i, self.j, self.k], dtype=float)
 
 
@@ -49,6 +56,7 @@ class CommensuratePropagationVector(PropagationVector):
 
 
     def model_post_init(self, context: Any, /) -> None:
+        """pydantic: after init"""
         self._vector = np.array([self.i, self.j, self.k], dtype=float)
 
     def __init__(self, i: Fraction | float, j: Fraction | float, k: Fraction | float):
@@ -64,6 +72,7 @@ class IncommensuratePropagationVector(PropagationVector):
     k: float
 
 class CommensurateSupercell(BaseModel):
+    """ Base class for a commensurate supercell"""
 
     propagation_vectors: list[CommensuratePropagationVector]
 
@@ -88,6 +97,7 @@ class CommensurateSupercell(BaseModel):
         return i, j, k
 
     def summation_form(self, moment) -> "SummationSupercell":
+        """Get a summation type supercell"""
         raise NotImplementedError("summation_form not implemented in base class")
 
 class SummationSupercell(CommensurateSupercell):
@@ -100,6 +110,7 @@ class SummationSupercell(CommensurateSupercell):
 
     @field_validator("moments")
     def check_numpy_array(cls, list_of_arrays):
+        """pydantic: check numpy array types"""
         for moment in list_of_arrays:
             if not isinstance(moment, np.ndarray):
                 raise TypeError("moments must contain numpy ndarrays")
@@ -110,15 +121,18 @@ class SummationSupercell(CommensurateSupercell):
 
     @model_validator(mode="after")
     def check_lengths(self):
+        """pydanic: check consistency of list data lengths"""
         if len(self.moments) != len(self.propagation_vectors):
             raise ValueError('the lists: moments and propagation_vector must have the same length')
         return self
 
 
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
+        """ Calculate moment at a given cell offset"""
         return np.sum(component.evaluate(cell_offset) for component in self.components).real
 
     def summation_form(self, moment) -> "SummationSupercell":
+        """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
 
 class TransformationSupercell(CommensurateSupercell):
@@ -133,6 +147,7 @@ class TransformationSupercell(CommensurateSupercell):
 
     @field_validator("transforms")
     def check_numpy_array(cls, list_of_arrays):
+        """pydantic: validator for numpy array list"""
         for moment in list_of_arrays:
             if not isinstance(moment, np.ndarray):
                 raise TypeError("transforms must contain numpy ndarrays")
@@ -143,6 +158,7 @@ class TransformationSupercell(CommensurateSupercell):
 
     @model_validator(mode="after")
     def check_lengths(self):
+        """pydantic: checks sizes"""
         if len(self.transforms) != len(self.propagation_vectors):
             raise ValueError('the lists: transforms and propagation_vectors must have the same length')
         return self
@@ -150,7 +166,7 @@ class TransformationSupercell(CommensurateSupercell):
 
 
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
-
+        """ Get the moment at a given cell offset"""
         # Get the values of k.r, reduce to unit cell though, which will make sure we have integer powers
         powers = [propagation_vector.dot(cell_offset.position_in_supercell(self.minimal_supercell()))
                   for propagation_vector in self.propagation_vectors]
