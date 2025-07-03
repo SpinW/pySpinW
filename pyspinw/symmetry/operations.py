@@ -18,6 +18,7 @@ class SpaceOperation(BaseModel):
 
     @field_validator("point_operation")
     def validate_point_operation(cls, value: PointOperationType):
+        """Validate data in the point_operation field"""
         if len(value) != 3:
             raise ValueError("Rotation must have 3 rows")
 
@@ -74,7 +75,8 @@ class SpaceOperation(BaseModel):
                         string += "-" + symbol if first else " - " + symbol
                         first = False
                     case _:
-                        raise ValueError(f"Magnetic space group rotation matrices should only contain -1, 0 or 1, got {self.rotation[i, j]}")
+                        raise ValueError(f"Magnetic space group rotation matrices should only contain "
+                                         f"-1, 0 or 1, got {self.rotation[i, j]}")
 
             if self.translation[i] < 0:
                 string += f" - {-self.translation[i]}"
@@ -116,6 +118,7 @@ class SpaceOperation(BaseModel):
 
     @field_validator("translation")
     def validate_translation(cls, value):
+        """ Validator for translation component"""
         if len(value) != 3:
             raise ValueError("Translation must have 3 values")
 
@@ -127,7 +130,7 @@ class SpaceOperation(BaseModel):
 
     @staticmethod
     def from_numpy(point_operation: np.ndarray, translation: np.ndarray, name: str | None = None) -> "SpaceOperation":
-
+        """Create from a description in terms of numpy float array"""
         point_operation, translation = \
             SpaceOperation._from_numpy(point_operation, translation)
 
@@ -162,12 +165,14 @@ class MagneticOperation(BaseModel):
 
     @field_validator("time_reversal")
     def validate_time_reversal(cls, value: int):
+        """ Validate time reversal field"""
         if value not in (1, -1):
             raise ValueError("Time inversion must be either 1 or -1.")
         return value
 
     @field_validator("point_operation")
     def validate_point_operation(cls, value: PointOperationType):
+        """ Validate point operation field"""
         if len(value) != 3:
             raise ValueError("Rotation must have 3 rows")
 
@@ -225,7 +230,8 @@ class MagneticOperation(BaseModel):
                         string += "-" + symbol if first else " - " + symbol
                         first = False
                     case _:
-                        raise ValueError(f"Magnetic space group rotation matrices should only contain -1, 0 or 1, got {self.rotation[i, j]}")
+                        raise ValueError(f"Magnetic space group rotation matrices should only contain "
+                                         f"-1, 0 or 1, got {self.rotation[i, j]}")
 
             if self.translation[i] < 0:
                 string += f" - {-self.translation[i]}"
@@ -272,6 +278,7 @@ class MagneticOperation(BaseModel):
 
     @field_validator("translation")
     def validate_translation(cls, value):
+        """ Validate translation field"""
         if len(value) != 3:
             raise ValueError("Translation must have 3 values")
 
@@ -284,7 +291,7 @@ class MagneticOperation(BaseModel):
     @staticmethod
     def from_numpy(point_operation: np.ndarray, translation: np.ndarray,
                    time_reversal: np.ndarray, name: str | None = None) -> "MagneticOperation":
-
+        """ Create magnetic operation from data as numpy arrays"""
         point_operation, translation, time_reversal = \
             MagneticOperation._from_numpy(point_operation, translation, time_reversal)
 
