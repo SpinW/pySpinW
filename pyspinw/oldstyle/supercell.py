@@ -1,3 +1,5 @@
+""" WIP """
+
 import numpy as np
 
 from pyspinw.basis import angle_axis_rotation_matrix
@@ -11,7 +13,7 @@ def rotation_supercell(k: np.ndarray,
                        axis: np.ndarray | None =None,
                        initial_moment: np.ndarray | None = None,
                        orthogonal: bool=False) -> CommensurateSupercell:
-
+    """ Create a rotation based supercell WIP"""
     # Make sure k is a numpy array
     k = np.array(k)
 
@@ -40,6 +42,7 @@ def rotation_supercell(k: np.ndarray,
 
 
 def demo_rotation_supercell():
+    """ Show an example of the supercell creation """
     import matplotlib.pyplot as plt
 
     m = np.array([1,0,0])
