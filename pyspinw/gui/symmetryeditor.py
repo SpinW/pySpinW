@@ -48,7 +48,7 @@ class SymmetryEditor(SpinWDockWidget):
 
     def _on_crystal_system_changed(self):
         """ Called when the crystal system is changed, updates the visible boxes"""
-        self.unit_cell_widget.crystal_system = self.symmetry_widget.current_lattice_system
+        self.unit_cell_widget.lattice_system = self.symmetry_widget.current_lattice_system
 
         # We don't need to trigger the change event, but maybe we will need to
         # self.symmetry_changed.emit()

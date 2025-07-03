@@ -21,6 +21,7 @@ class InteractionGeometries:
     """ Distance to the each point"""
 
     def expand(self) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        """ Create a list of tuples from the data in this object"""
         return [(self.cell_indices[i, :],
                  self.vectors[i, :],
                  self.distances[i])

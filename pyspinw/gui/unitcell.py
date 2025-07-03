@@ -1,3 +1,5 @@
+""" GUI components for unit cells"""
+
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QWidget, QGridLayout, QLabel, QVBoxLayout
 
@@ -8,6 +10,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 
 class UnitCellWidget(QWidget):
+    """ Unit cell editing widget"""
 
     unit_cell_changed = Signal(UnitCell)
     auto_update_lattice_system_request = Signal(LatticeSystem)
@@ -88,14 +91,15 @@ class UnitCellWidget(QWidget):
         self._on_cell_or_system_changed()
 
     @property
-    def crystal_system(self) -> LatticeSystem:
+    def lattice_system(self) -> LatticeSystem:
+        """ Get the current lattice system"""
         return self._crystal_system
 
-    @crystal_system.setter
-    def crystal_system(self, crystal_system: LatticeSystem):
-        self._crystal_system = crystal_system
+    @lattice_system.setter
+    def lattice_system(self, lattice_system: LatticeSystem):
+        self._crystal_system = lattice_system
 
-        free_parameters = crystal_system.free_parameters
+        free_parameters = lattice_system.free_parameters
 
         self._set_grid_row_visible(0, free_parameters.a)
         self._set_grid_row_visible(1, free_parameters.b)
@@ -108,6 +112,7 @@ class UnitCellWidget(QWidget):
 
     @property
     def current_unit_cell(self) -> UnitCell:
+        """ Getter for the current unit cell"""
         return self._current_unit_cell
 
     def _set_grid_row_visible(self, row: int, value: bool):
@@ -118,7 +123,7 @@ class UnitCellWidget(QWidget):
 
     def _on_cell_or_system_changed(self):
         """ Called when any element of the unit cell is changed"""
-        self._current_unit_cell = self.crystal_system.constrain(
+        self._current_unit_cell = self.lattice_system.constrain(
                                     UnitCell(
                                         self.a.value,
                                         self.b.value,
@@ -127,7 +132,7 @@ class UnitCellWidget(QWidget):
                                         self.beta.value,
                                         self.gamma.value))
 
-        self.message_label.setText(UnitCellWidget._validity_message(self.crystal_system, self._current_unit_cell))
+        self.message_label.setText(UnitCellWidget._validity_message(self.lattice_system, self._current_unit_cell))
 
         self.unit_cell_changed.emit(self.current_unit_cell)
 
@@ -158,7 +163,8 @@ class UnitCellWidget(QWidget):
 
             else:
 
-                message = f"Cell parameters have higher symmetry than {suggested_type.name}, expected {constraint_string}."
+                message = (f"Cell parameters have higher symmetry than {suggested_type.name}, "
+                           f"expected {constraint_string}.")
 
                 if len(actual_cell) == 1:
                     message += f'It looks like {actual_cell[0].name}. '
