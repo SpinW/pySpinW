@@ -1,3 +1,9 @@
+""" Groups of couplings, a neater way of representing multiple, similar couplings
+
+TODO: Currently broken - WIP
+
+"""
+
 import numpy as np
 
 from pyspinw._base import Coupling
@@ -8,21 +14,28 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 
 class AbstractCouplingGroup:
-
+    """ Base class for coupling groups"""
 
     def couplings(self, sites: list[LatticeSite], symmetry: SymmetrySettings):
+        """ Get the couplings defined by this groups given the sites and symmetry provided """
         raise NotImplementedError("couplings not available in base class")
 
 class DirectionalityFilter:
-    def accept(self, vector: np.ndarray):
-        raise NotImplementedError("__call__ not implemented in base class")
+    """ Base class for filtering couplings by direction"""
+
+    def accept(self, vector: np.ndarray) -> bool:
+        """ return True if in an allowed direction"""
+        raise NotImplementedError("accept() not implemented in base class")
 
 class InDirectionFilter(DirectionalityFilter):
+    """ Selects vectors in a given direction """
+
     def __init__(self, direction: np.ndarray, max_dev_angle_deg: float):
         self.direction = direction / np.sqrt(np.sum(direction**2))
         self.in_direction_dev_num = np.cos((np.pi/180) * max_dev_angle_deg)
 
     def accept(self, vector):
+        """ DirectionalityFilter implementation: return True if in a similar direction"""
         sq_mag = np.sum(vector**2)
         if sq_mag == 0:
             return False
@@ -30,11 +43,14 @@ class InDirectionFilter(DirectionalityFilter):
             return np.dot(self.direction, vector) / np.sqrt(sq_mag) > self.in_direction_dev_num
 
 class InPlaneFilter(DirectionalityFilter):
+    """ Selects vectors in a given plane (specified by normal)"""
+
     def __init__(self, direction: np.ndarray, max_dev_angle_deg: float):
         self.direction = direction / np.sqrt(np.sum(direction**2))
         self.in_plane_dev_num = np.sin((np.pi/180) * max_dev_angle_deg)
 
     def accept(self, vector):
+        """ DirectionalityFilter implementation: return True if in the plane normal to provided vector"""
         sq_mag = np.sum(vector ** 2)
         if sq_mag == 0:
             return False
@@ -65,7 +81,7 @@ class CouplingGroup():
 
 
     def couplings(self, sites: list[LatticeSite], unit_cell: UnitCell):
-
+        """ Get the couplings defined by this groups given the sites and symmetry provided """
         abstract_couplings = batch_couplings(
             sites=self.sites,
             unit_cell=self.unit_cell,
@@ -92,14 +108,25 @@ class CouplingGroup():
         return kept_couplings
 
 class SetCouplingTypeAndParameters(AbstractCouplingGroup):
-    def __init__(self, parent: AbstractCouplingGroup, indices: list[int] | None, coupling_type: str | None = None, parameters: dict = {}):
+    """ Post creation operation - set parameter"""
+
+    def __init__(self,
+                 parent: AbstractCouplingGroup,
+                 indices: list[int] | None,
+                 coupling_type: str | None = None,
+                 parameters: dict = {}):
+
         self.parent = parent
 
 class SetName(AbstractCouplingGroup):
+    """ Post creation operation - set the name"""
+
     def __init__(self, parent: AbstractCouplingGroup, *index_name_pairs: tuple[int, str]):
         self.parent = parent
 
 class Remove(AbstractCouplingGroup):
+    """ Post creation operation - remove a specific coupling"""
+
     def __init__(self, parent: AbstractCouplingGroup, *indices: int):
         self.parent = parent
 
