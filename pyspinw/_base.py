@@ -56,7 +56,7 @@ class Coupling(BaseModel):
     site_1: LatticeSite
     site_2: LatticeSite
 
-    cell_offset: CellOffset
+    cell_offset: CellOffset = CellOffset(i=0,j=0,k=0)
 
     coupling_type: ClassVar[str] = "Base Coupling"
     parameters: ClassVar[list[str]] = []
