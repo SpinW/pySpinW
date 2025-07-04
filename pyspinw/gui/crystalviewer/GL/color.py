@@ -1,4 +1,6 @@
-from typing import Sequence, Union
+"Helper classes for dealing with colours"
+
+from typing import Sequence
 
 import logging
 import numpy as np
@@ -7,8 +9,6 @@ from enum import Enum
 from dataclasses import dataclass
 
 from OpenGL.GL import glColor4f
-
-"Helper classes for dealing with colours"
 
 logger = logging.getLogger("GL.Color")
 
@@ -34,21 +34,21 @@ def uniform_coloring(r, g, b, alpha=1.0):
         data=np.array([r, g, b, alpha]))
 
 
-def edge_coloring(data: Sequence[Union[Sequence[float], np.ndarray]]) -> ColorSpecification:
+def edge_coloring(data: Sequence[Sequence[float] | np.ndarray]) -> ColorSpecification:
     """ Create a ColorSpecification for colouring each edge within an object a single colour"""
     return _component_coloring(data)
 
 
-def mesh_coloring(data: Sequence[Union[Sequence[float], np.ndarray]]) -> ColorSpecification:
+def mesh_coloring(data: Sequence[Sequence[float] | np.ndarray]) -> ColorSpecification:
     """ Create a ColorSpecification for colouring each mesh within an object a single colour"""
     return _component_coloring(data)
 
 
-def _component_coloring(data: Sequence[Union[Sequence[float], np.ndarray]]) -> ColorSpecification:
+def _component_coloring(data: Sequence[Sequence[float] | np.ndarray]) -> ColorSpecification:
     """ Create a ColorSpecification for colouring each mesh/edge within an object a single colour"""
     try:
         data = np.array(data)
-    except:
+    except Exception:
         raise ValueError("Colour data should be all n-by-3 or n-by-4")
 
     if data.shape[1] == 3:
@@ -65,7 +65,7 @@ def vertex_coloring(data: np.ndarray) -> ColorSpecification:
     """ Create a ColorSpecification for using vertex colouring"""
     try:
         data = np.array(data)
-    except:
+    except Exception:
         raise ValueError("Colour data should be all n-by-3 or n-by-4")
 
     if data.shape[1] == 3:
@@ -79,10 +79,10 @@ def vertex_coloring(data: np.ndarray) -> ColorSpecification:
 
 
 class ColorMap():
+    """ Utility class for colormaps, principally used for mapping data in Surface"""
 
     _default_colormap = 'rainbow'
     def __init__(self, colormap_name=_default_colormap, min_value=0.0, max_value=1.0):
-        """ Utility class for colormaps, principally used for mapping data in Surface"""
         try:
             self.colormap = mpl.colormaps[colormap_name]
         except KeyError:
