@@ -16,6 +16,7 @@ from pyspinw.gui.crystalviewer.GL.sphere import Sphere
 
 
 def mesh_example():
+    """ Example mesh"""
     x = np.linspace(-1, 1, 101)
     y = np.linspace(-1, 1, 101)
     x_grid, y_grid = np.meshgrid(x, y)

@@ -44,7 +44,8 @@ def transform_tests():
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                component = Translation(-2 * (i-1), -2 * (j-1), -2 * (k-1), Scaling(2 ** (i - 1), 2 ** (j - 1), 2 ** (k - 1), cube))
+                component = Translation(-2 * (i-1), -2 * (j-1), -2 * (k-1),
+                                        Scaling(2 ** (i - 1), 2 ** (j - 1), 2 ** (k - 1), cube))
                 scaling_components.append(component)
 
     scaling_test = Scaling(0.5, 0.5, 0.5, *scaling_components)

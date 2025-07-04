@@ -1,4 +1,4 @@
-from typing import Callable
+"""ActionLabel - a label with a link, for consistent look and feel"""
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QLabel
