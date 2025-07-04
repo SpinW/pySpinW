@@ -32,6 +32,7 @@ class UnitCellGraphics(WireModel):
 
     @property
     def cell(self):
+        """ Get the current unit cell"""
         return self._cell
 
     @cell.setter

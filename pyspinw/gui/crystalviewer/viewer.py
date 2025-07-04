@@ -1,3 +1,5 @@
+""" Main rendering area"""
+
 from typing import Callable
 
 import numpy as np
@@ -12,6 +14,8 @@ from pyspinw.gui.decorated import DecoratedSite
 from pyspinw.symmetry.unitcell import UnitCell
 
 class CrystalViewer(Scene):
+    """ Main rendering area"""
+
     def __init__(self,
                  parent=None,
                  on_key: Callable[[int], None] = lambda x: None):
@@ -38,10 +42,12 @@ class CrystalViewer(Scene):
 
     @property
     def unit_cell(self) -> UnitCell | None:
+        """ Get the current unit cell"""
         return self.unit_cell
 
     @unit_cell.setter
     def unit_cell(self, unit_cell: UnitCell | None):
+        """ Set the unit cell """
         self._unit_cell = unit_cell
 
         if unit_cell is None:
@@ -56,10 +62,12 @@ class CrystalViewer(Scene):
 
     @property
     def sites(self) -> list[DecoratedSite]:
-        pass
+        """ Get the current site graphics"""
+        return self._site_graphics.sites
 
     @sites.setter
     def sites(self, sites: list[DecoratedSite]):
+        """ Set the site graphics"""
         self._site_graphics.sites = sites
 
 def main():
