@@ -1,3 +1,5 @@
+""" A table for editing different kinds of parameters, it can change dynamically"""
+
 from collections import defaultdict
 from typing import Callable, Any
 
@@ -7,7 +9,7 @@ from PySide6.QtWidgets import QWidget, QGridLayout
 from pyspinw.gui.helperwidgets.misc import QRightLabel, QLeftLabel
 
 class ParameterExists(Exception):
-    pass
+    """ Exception thrown when trying to display two parameters with the same name"""
 
 class ParameterTable(QWidget):
     """ A dynamic table for showing different kinds of parameters in a nice grid"""
@@ -111,6 +113,10 @@ class ParameterTable(QWidget):
 
 
     def get_value(self, parameter_name: str):
+        """ Get the value of a given parameter
+
+        Note that this is not typed as different parameters can have different kinds of values
+        """
         return self._name_value_functions[parameter_name]()
 
     def _on_change(self):
