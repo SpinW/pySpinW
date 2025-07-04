@@ -1,4 +1,4 @@
-from typing import Optional
+""" Icosahedron primitive"""
 
 import numpy as np
 
@@ -14,8 +14,10 @@ class Icosahedron(FullModel):
 
     ico_vertices = \
         [(0.0, 0.0, 1.0)] + \
-        [(ico_ring_r * np.cos(angle), ico_ring_r * np.sin(angle), ico_ring_h) for angle in 2*np.pi*np.arange(5)/5] + \
-        [(ico_ring_r * np.cos(angle), ico_ring_r * np.sin(angle), -ico_ring_h) for angle in 2*np.pi*(np.arange(5)+0.5)/5] + \
+        [(ico_ring_r * np.cos(angle), ico_ring_r * np.sin(angle), ico_ring_h)
+           for angle in 2*np.pi*np.arange(5)/5] + \
+        [(ico_ring_r * np.cos(angle), ico_ring_r * np.sin(angle), -ico_ring_h)
+           for angle in 2*np.pi*(np.arange(5)+0.5)/5] + \
         [(0.0, 0.0, -1.0)]
 
     ico_edges = [
@@ -75,8 +77,8 @@ class Icosahedron(FullModel):
     ]]
 
     def __init__(self,
-                 colors: Optional[ColorSpecification]=None,
-                 edge_colors: Optional[ColorSpecification]=None):
+                 colors: ColorSpecification | None=None,
+                 edge_colors: ColorSpecification | None=None):
 
         super().__init__(
             vertices=Icosahedron.ico_vertices,
