@@ -1,9 +1,7 @@
-
-"""3D Model classes
-"""
+""" 3D Model classes """
 
 
-from typing import Sequence, Tuple, Union, Optional
+from typing import Sequence
 
 import numpy as np
 
@@ -12,9 +10,9 @@ from OpenGL.GL import *
 from pyspinw.gui.crystalviewer.GL.renderable import Renderable
 from pyspinw.gui.crystalviewer.GL.color import ColorSpecification, ColorSpecificationMethod
 
-VertexData = Union[Sequence[Tuple[float, float, float]], np.ndarray]
-EdgeData = Union[Sequence[Tuple[int, int]], np.ndarray]
-TriangleMeshData = Union[Sequence[Tuple[int, int, int]], np.ndarray]
+VertexData = Sequence[tuple[float, float, float]] | np.ndarray
+EdgeData = Sequence[tuple[int, int]] | np.ndarray
+TriangleMeshData = Sequence[tuple[int, int, int]] | np.ndarray
 
 
 class ModelBase(Renderable):
@@ -27,10 +25,12 @@ class ModelBase(Renderable):
     # Vertices set and got as sequences of tuples, but a list of
     @property
     def vertices(self):
+        """ Get the vertex data"""
         return self._vertices
 
     @vertices.setter
     def vertices(self, new_vertices: VertexData):
+        """ Set the vertex data"""
         self._vertices = new_vertices
         self._vertex_array = np.array(new_vertices, dtype=float)
 
@@ -52,26 +52,30 @@ class SolidModel(ModelBase):
 
     @property
     def triangle_meshes(self) -> Sequence[TriangleMeshData]:
+        """ Get the triangle mesh data"""
         return self._triangle_meshes
 
     @triangle_meshes.setter
     def triangle_meshes(self, new_triangle_meshes: Sequence[TriangleMeshData]):
+        """ Set the triangle mesh data"""
         self._triangle_meshes = new_triangle_meshes
         self._triangle_mesh_arrays = [np.array(x) for x in new_triangle_meshes]
 
 
 class SolidVertexModel(SolidModel):
+    """ Solid model"""
+
     def __init__(self,
                  vertices: VertexData,
                  triangle_meshes: Sequence[TriangleMeshData],
-                 colors: Optional[ColorSpecification]):
-        """:vertices: Sequence[Tuple[float, float, float]], vertices of the model
-        :triangle_meshes: Sequence[Sequence[Tuple[int, int, int]]], sequence of triangle
-                          meshes indices making up the shape
-        :colors: Optional[Union[Sequence[Color], Color]], single color for shape, or array with a colour for
+                 colors: ColorSpecification | None):
+        """ Solid model
+
+        :vertices: vertices of the model
+        :triangle_meshes: sequence of triangle meshes indices making up the shape
+        :colors: single color for shape, or array with a colour for
                  each mesh or vertex (color_by_mesh selects which of these it is)
         :color_by_mesh: bool = False, Colour in each mesh with a colour specified by colours
-
         """
         super().__init__(vertices, triangle_meshes)
 
@@ -81,6 +85,7 @@ class SolidVertexModel(SolidModel):
 
 
     def render_solid(self):
+        """Renderable implementation: render the solid based on model data"""
         if self.solid_render_enabled:
 
             if self.colors.method == ColorSpecificationMethod.UNIFORM:
@@ -123,16 +128,17 @@ class SolidVertexModel(SolidModel):
 
 
 class WireModel(ModelBase):
+    """ Wireframe Model """
 
     def __init__(self,
                  vertices: VertexData,
                  edges: EdgeData,
-                 edge_colors: Optional[ColorSpecification]):
-        """ Wireframe Model
+                 edge_colors: ColorSpecification | None):
+        """ Wireframe model
 
-        :vertices: Sequence[Tuple[float, float, float]], vertices of the model
-        :edges: Sequence[Tuple[int, int]], indices of the points making up the edges
-        :edge_colors: Optional[Union[Sequence[Color], Color]], color of the individual edges or a single color for them all
+        :vertices: vertices of the model
+        :edges: indices of the points making up the edges
+        :edge_colors: color of the individual edges or a single color for them all
         """
         super().__init__(vertices)
 
@@ -141,6 +147,7 @@ class WireModel(ModelBase):
         self.edge_colors = edge_colors
 
     def render_wireframe(self):
+        """Renderable implementation: render the wireframe based on model data"""
         if self.wireframe_render_enabled:
             vertices = self.vertices
             colors = self.edge_colors
@@ -185,8 +192,8 @@ class FullModel(SolidVertexModel, WireModel):
                  vertices: VertexData,
                  edges: EdgeData,
                  triangle_meshes: Sequence[TriangleMeshData],
-                 edge_colors: Optional[ColorSpecification],
-                 colors: Optional[ColorSpecification]):
+                 edge_colors: ColorSpecification | None,
+                 colors: ColorSpecification | None):
 
         SolidVertexModel.__init__(self,
                                   vertices=vertices,
