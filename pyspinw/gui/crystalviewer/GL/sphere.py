@@ -1,4 +1,4 @@
-from typing import Optional
+""" Sphere primative """
 
 import numpy as np
 
@@ -7,6 +7,8 @@ from pyspinw.gui.crystalviewer.GL.color import ColorSpecification
 
 
 class Sphere(FullModel):
+    """ Sphere primitive"""
+
     @staticmethod
     def sphere_vertices(n_horizontal, n_segments):
         """ Helper function: Vertices of the UV sphere primitive"""
@@ -54,12 +56,23 @@ class Sphere(FullModel):
         # Mid bands
         for i in range(n_horizontal-1):
             for j in range(n_segments):
-                triangles.append((i*n_segments + j + 1, (i+1)*n_segments + (j+1)%n_segments + 1, (i+1)*n_segments + j+1))
-                triangles.append(((i+1)*n_segments + (j+1)%n_segments + 1, i*n_segments + j + 1, i*n_segments + (j+1)%n_segments + 1))
+
+                triangles.append(
+                    (i*n_segments + j + 1,
+                     (i+1)*n_segments + (j+1)%n_segments + 1,
+                     (i+1)*n_segments + j+1))
+
+                triangles.append(
+                    ((i+1)*n_segments + (j+1)%n_segments + 1,
+                     i*n_segments + j + 1,
+                     i*n_segments + (j+1)%n_segments + 1))
 
         # Bottom cap
         for j in range(n_segments):
-            triangles.append(((n_horizontal-1)*n_segments + j + 1, (n_horizontal-1)*n_segments + (j + 1) % n_segments + 1, last_index))
+            triangles.append(
+                ((n_horizontal-1)*n_segments + j + 1,
+                 (n_horizontal-1)*n_segments + (j + 1) % n_segments + 1,
+                 last_index))
 
         return [triangles]
 
@@ -67,8 +80,8 @@ class Sphere(FullModel):
                  n_horizontal: int = 21,
                  n_segments: int = 28,
                  grid_gap: int = 1,
-                 colors: Optional[ColorSpecification]=None,
-                 edge_colors: Optional[ColorSpecification]=None):
+                 colors: ColorSpecification | None =None,
+                 edge_colors: ColorSpecification | None=None):
         """UV Sphere Primitive
 
         :param n_horizontal: Number of horizontal bands

@@ -1,3 +1,5 @@
+""" Surface rendering """
+
 from typing import Tuple
 
 import logging
@@ -9,7 +11,7 @@ from pyspinw.gui.crystalviewer.GL.color import ColorMap, uniform_coloring
 logger = logging.getLogger("GL.Surface")
 
 class Surface(FullModel):
-
+    """ Surface "plot" """
 
     @staticmethod
     def calculate_edge_indices(nx, ny, gap=1):
