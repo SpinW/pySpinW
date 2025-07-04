@@ -1,4 +1,4 @@
-from typing import Optional
+""" Cube primitive """
 
 from pyspinw.gui.crystalviewer.GL.models import FullModel
 from pyspinw.gui.crystalviewer.GL.color import ColorSpecification
@@ -49,8 +49,8 @@ class Cube(FullModel):
     ]
 
     def __init__(self,
-                 colors: Optional[ColorSpecification]=None,
-                 edge_colors: Optional[ColorSpecification]=None):
+                 colors: ColorSpecification | None=None,
+                 edge_colors: ColorSpecification | None=None):
 
         super().__init__(
             vertices=Cube.cube_vertices,
