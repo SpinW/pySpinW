@@ -1,3 +1,5 @@
+""" Functions and classes for automatically creating multiple couplings"""
+
 from collections import defaultdict
 
 import re
@@ -14,6 +16,8 @@ from pyspinw.tolerances import tolerances
 
 @dataclass
 class AbstractCoupling:
+    """ Used to internally represent some coupling properties, and some properties that are only needed internally"""
+
     name: str
     site_1: LatticeSite
     site_2: LatticeSite
@@ -22,10 +26,12 @@ class AbstractCoupling:
     order: int
 
 def approx_equal(v1, v2):
+    """ Are two vectors approximately the same (within tolerance)"""
     return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL)
 
 def approx_equal_direction(v1, v2):
-        return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL) or np.all(np.abs(v1 + v2) < tolerances.VECTOR_TOL)
+    "Are two vectors in the same direction (within tolerance)"
+    return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL) or np.all(np.abs(v1 + v2) < tolerances.VECTOR_TOL)
 
 
 def apply_naming_convention(naming_pattern: str,
@@ -41,7 +47,8 @@ def apply_naming_convention(naming_pattern: str,
     :param name_2: name of the second site - specified with $SITE2$
     :param type_symbol: string that denotes the type of the coupling (e.g. 'J', 'DM')
     :param order: index of the "shell", i.e. an index that increases with distance - use $ORDER$
-    :param xyz_direction: direction of coupling, use $DIRECTION$ to give a string that denotes this concisely (hopefully)
+    :param xyz_direction: direction of coupling, use $DIRECTION$ to give a string that denotes
+                           this concisely (hopefully)
 
     """
     if "[direction]" in naming_pattern:
@@ -111,7 +118,12 @@ def batch_couplings(sites: list[LatticeSite],
             cell_correction = np.array(relative_position - same_cell_relative_position, dtype=float)
 
 
-            positions = find_relative_positions(same_cell_relative_position, unit_cell._xyz, max_distance=max_distance, allow_self=allow_self)
+            positions = find_relative_positions(
+                same_cell_relative_position,
+                unit_cell._xyz,
+                max_distance=max_distance,
+                allow_self=allow_self)
+
             pair_data[site_1][site_2] = [(site_1, site_2, vector, cell_offset - cell_correction, distance)
                                          for cell_offset, vector, distance in positions.expand()]
 

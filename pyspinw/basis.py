@@ -86,6 +86,7 @@ def demo_find_aligned_basis():
     print(e3)
 
 def demo_angle_axis_rotation_matrix():
+    """ Show some plots demonstrating the angle-axis rotations"""
     import matplotlib.pyplot as plt
 
     v = np.array([1,0,0])
