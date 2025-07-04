@@ -1,3 +1,5 @@
+""" FloatField class """
+
 import sys
 
 from PySide6.QtGui import QDoubleValidator
@@ -8,6 +10,7 @@ from pyspinw.gui.helperwidgets.misc import FloatSlider
 
 
 class FloatField(QWidget):
+    """ Class for displaying and editing float fields"""
 
     changed = Signal(float)
 
@@ -131,6 +134,7 @@ class FloatField(QWidget):
         self.changed.emit(self.value)
 
     def toggle_slider(self):
+        """ Show/hide slider"""
         self.slider.setVisible(not self.slider.isVisible())
 
     @property
