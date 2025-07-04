@@ -27,6 +27,7 @@ class HeisenbergCoupling(Coupling):
     short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
+        """pydantic: after init"""
         self._coupling_matrix = -self.j * np.eye(3)
 
 
@@ -53,6 +54,7 @@ class DiagonalCoupling(Coupling):
     short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
+        """pydantic: after init"""
         self._coupling_matrix = -np.diag([self.j_x, self.j_y, self.j_z])
 
 
@@ -76,6 +78,7 @@ class XYCoupling(Coupling):
     short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
+        """pydantic: after init"""
         self._coupling_matrix = -np.diag([self.j, self.j, 0.0], dtype=float)
 
 
@@ -101,6 +104,7 @@ class XXZCoupling(Coupling):
     short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
+        """pydantic: after init"""
         self._coupling_matrix = -np.diag([self.j_xy, self.j_xy, self.j_z])
 
 
@@ -124,6 +128,7 @@ class IsingCoupling(Coupling):
     short_string: ClassVar[str] = "J"
 
     def model_post_init(self, __context):
+        """pydantic: after init"""
         self._coupling_matrix = -np.diag([0, 0, self.j_z])
 
 
@@ -152,11 +157,12 @@ class DMCoupling(Coupling):
     short_string: ClassVar[str] = "DM"
 
     def model_post_init(self, __context):
-
+        """pydantic: after init"""
         self._coupling_matrix = triple_product_matrix(np.array([self.d_x, self.d_y, self.d_z]))
 
     @property
     def parameter_string(self):
+        """Override base class: Get the parameters as a string """
         parts = []
         for parameter in self.parameters:
             parts.append(parameter + repr(self.__dict__[parameter]))
