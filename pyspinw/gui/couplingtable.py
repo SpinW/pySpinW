@@ -1,3 +1,5 @@
+""" Table to display couplings """
+
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
@@ -22,6 +24,8 @@ def _vector_format(vector: np.ndarray):
 
 
 class CouplingTable(QTableWidget):
+    """ Table of couplings """
+
     def __init__(self, parent=None, editable=True):
         super().__init__(parent=parent)
 
@@ -48,7 +52,7 @@ class CouplingTable(QTableWidget):
 
 
     def update_entries(self):
-
+        """ Update the table entries (view) """
         self.blockSignals(True)
 
         self.clear()
@@ -71,21 +75,25 @@ class CouplingTable(QTableWidget):
         self.blockSignals(False)
 
     def add_coupling(self, coupling: Coupling):
+        """ Add a coupling to the table"""
         self._couplings.append(coupling)
 
         self.update_entries()
 
     def add_couplings(self, couplings: list[Coupling]):
+        """ Add a list of couplings to the table """
         self._couplings += couplings
 
         self.update_entries()
 
     @property
     def couplings(self):
+        """ Get current couplings"""
         return self._couplings
 
     @couplings.setter
     def couplings(self, couplings: list[Coupling]):
+        """ Set the current couplings"""
         self._couplings = couplings
         self.update_entries()
 
