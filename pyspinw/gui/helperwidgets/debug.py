@@ -1,3 +1,5 @@
+""" Debugging tools"""
+
 from PySide6.QtWidgets import QWidget
 
 

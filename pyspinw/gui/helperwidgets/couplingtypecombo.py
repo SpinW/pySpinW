@@ -1,3 +1,5 @@
+""" Combo box for coupling"""
+
 from PySide6.QtWidgets import QComboBox
 
 from pyspinw.coupling import couplings
