@@ -1,3 +1,8 @@
+""" Creation of couplings
+
+TODO: Refactor into coupling group
+"""
+
 from dataclasses import dataclass
 
 from PySide6.QtCore import Signal
@@ -17,6 +22,11 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 @dataclass
 class CreationParameters:
+    """ Parameters used in creation
+
+    TODO: This should live in coupling groups eventually
+    """
+
     format_string: str
     coupling_type: type[Coupling]
     min_distance: float
@@ -24,6 +34,7 @@ class CreationParameters:
     max_order: int | None
 
 class CouplingCreator(QWidget):
+    """ Create couplings main widget """
 
     ok_clicked = Signal()
     cancel_clicked = Signal()
@@ -73,7 +84,10 @@ class CouplingCreator(QWidget):
                                    change_signal=min_distance.changed,
                                    display_alias="Min. Distance")
 
-        max_distance = FloatField(int(50*unit_cell.main_diagonal_length)/100, bottom=0, slider_top=3*unit_cell.main_diagonal_length)
+        max_distance = FloatField(int(50*unit_cell.main_diagonal_length)/100,
+                                  bottom=0,
+                                  slider_top=3*unit_cell.main_diagonal_length)
+
         field_widget.add_parameter(name="max_distance",
                                    widget=max_distance,
                                    value_getter=lambda: max_distance.value,
@@ -214,6 +228,7 @@ class CouplingCreator(QWidget):
         self.cancel_clicked.emit()
 
     def set_input(self, sites: list[LatticeSite], unit_cell: UnitCell):
+        """ Set the sites and cell used for calculating and creating the couplings """
         self.sites = sites
         self.unit_cell = unit_cell
 
@@ -222,6 +237,7 @@ class CouplingCreator(QWidget):
 
 
 class CouplingCreatorWindow(QDialog):
+    """ Coupling creation dialog window """
 
     couplings_accepted = Signal()
 
@@ -243,10 +259,12 @@ class CouplingCreatorWindow(QDialog):
         self.main_widget.ok_clicked.connect(self._ok_clicked)
 
     def closeEvent(self, event):
+        """ Qt override: hide window, don't close"""
         event.ignore()  # Ignore the close event
         self.hide()     # Hide instead of closing
 
     def show_creator(self, sites: list[LatticeSite], unit_cell: UnitCell):
+        """ Show this window"""
         self.main_widget.set_input(sites, unit_cell)
         self.show()
 
