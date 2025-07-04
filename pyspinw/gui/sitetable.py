@@ -1,11 +1,11 @@
-import sys
+""" Table to display sites """
 from dataclasses import dataclass
 
 import numpy as np
 
-from PySide6.QtCore import Qt, QModelIndex, QSize, Signal, QEvent, QObject
-from PySide6.QtGui import QTextDocument, QFontMetrics, QDoubleValidator, QIcon
-from PySide6.QtWidgets import QTableWidget, QApplication, QHeaderView, QStyleOptionHeader, QStyle, QStyleOptionViewItem, \
+from PySide6.QtCore import Qt, QSize, Signal, QEvent, QObject
+from PySide6.QtGui import QTextDocument, QDoubleValidator, QIcon
+from PySide6.QtWidgets import QTableWidget, QApplication, QHeaderView, QStyleOptionHeader, QStyle, \
     QTableWidgetItem, QAbstractItemView, QStyledItemDelegate, QLineEdit, QWidget, QCheckBox, QHBoxLayout
 
 from pyspinw.gui.decorated import DecoratedSite, InteractionFlags
@@ -13,7 +13,6 @@ from pyspinw.gui.helperwidgets.misc import QRightLabel
 from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.tolerances import tolerances
 from pyspinw.util import problematic_sites
 
 
@@ -21,6 +20,7 @@ class HtmlHeader(QHeaderView):
     """ Header that can render html """
 
     def paintSection(self, painter, rect, logicalIndex):
+        """ Override of Qt painting method"""
         painter.save()
 
         # Draw background and borders
@@ -86,7 +86,7 @@ class FloatValidatorDelegate(QStyledItemDelegate):
     """ Provides QLineEdits with float validators """
 
     def createEditor(self, parent, option, index):
-
+        """ Create an editor widget with a validator"""
         if not index.isValid():
             return None
 
@@ -241,10 +241,12 @@ class SiteTable(QTableWidget):
 
     @property
     def sites(self) -> list[LatticeSite]:
+        """ Get list of current independent sites """
         return self._sites
 
     @sites.setter
     def sites(self, sites: list[LatticeSite]):
+        """ Set the independent sites"""
         self._sites = sites
         self._update_entries()
 
@@ -271,7 +273,9 @@ class SiteTable(QTableWidget):
 
 
     def _update_sites(self):
-        """ Update the sites, this will recalculate the implied sites and the arrays that
+        """ Update the implied sites from the current sites
+
+        This will recalculate the implied sites and the arrays that
         say how they are referenced to each other
         """
         implied_sites = []
@@ -395,10 +399,12 @@ class SiteTable(QTableWidget):
 
     @property
     def unit_cell(self):
+        """ Get the current unit cell"""
         return self._symmetry.unit_cell
 
     @unit_cell.setter
     def unit_cell(self, unit_cell):
+        """ Set the current unit cell"""
         raise Exception("Can't set the unit cell like this, use .symmetry with a SymmetrySettings object")
 
     def _on_hover(self, row: int):
@@ -451,7 +457,7 @@ class SiteTable(QTableWidget):
 
             new_site = LatticeSite.create(
                 ijk_from_xyz[0], ijk_from_xyz[1], ijk_from_xyz[2],
-                mijk[0], mikj[1], mijk[2],
+                mijk[0], mijk[1], mijk[2],
                 name=name)
 
         elif 10 <= col < 13:
@@ -512,8 +518,9 @@ class SiteTable(QTableWidget):
 
     @property
     def sites_for_drawing(self) -> list[DecoratedSite]:
-        """ List of sites that will get sent to the graphics, these are decorated with information
-        about the current selection
+        """ List of sites that will get sent to the graphics
+
+        These objects are decorated with information about the current selection
         """
         out = []
         selected_indexes = set(idx.row() for idx in self.selectedIndexes())
