@@ -1,3 +1,5 @@
+""" Entrypoint and main window class for the GUI"""
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QApplication
 
@@ -8,6 +10,8 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 
 class MainWindow(QMainWindow):
+    """ Main window """
+
     def __init__(self):
         super().__init__()
 
