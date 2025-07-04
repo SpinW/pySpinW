@@ -1,3 +1,5 @@
+""" GUI Classes for sites and couplings """
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy
 
@@ -11,6 +13,7 @@ from pyspinw.site import LatticeSite
 
 
 class SiteButtons(QWidget):
+    """ Sub-widget with buttons for controlling the sites """
 
     add = Signal()
     remove = Signal()
@@ -49,6 +52,7 @@ class SiteButtons(QWidget):
         self.reify.emit()
 
 class CouplingButtons(QWidget):
+    """ Sub-widget with control buttons for the coupling editor"""
 
     add_clicked = Signal()
     remove_clicked = Signal()
@@ -146,10 +150,12 @@ class SiteAndCouplingEditor(SpinWDockWidget):
 
     @property
     def symmetry(self):
+        """ Get the current symmetry being used"""
         return self._symmetry
 
     @symmetry.setter
     def symmetry(self, symmetry: SymmetrySettings):
+        """ Set the symmetry"""
         self._symmetry = symmetry
         self.site_table.symmetry = symmetry
 
@@ -175,6 +181,7 @@ class SiteAndCouplingEditor(SpinWDockWidget):
 
     @property
     def sites_for_drawing(self):
+        """ Get site information needed byb the graphics part"""
         return self.site_table.sites_for_drawing
 
     def _on_add_coupling_clicked(self):
