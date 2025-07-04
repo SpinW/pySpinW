@@ -1,3 +1,5 @@
+""" Graphics for arrows """
+
 from pyspinw.gui.crystalviewer.GL.color import ColorSpecification
 from pyspinw.gui.crystalviewer.GL.cone import Cone
 from pyspinw.gui.crystalviewer.GL.cylinder import Cylinder
@@ -6,6 +8,8 @@ from pyspinw.gui.crystalviewer.GL.transforms import Translation, Scaling
 
 
 class ArrowGraphics(Renderable):
+    """ An arrow """
+
     def __init__(self,
                  color: ColorSpecification,
                  length: float = 1.0,
@@ -21,4 +25,5 @@ class ArrowGraphics(Renderable):
                                  Scaling(cylinder_width_scale, cylinder_width_scale, 1, Cylinder(colors=color)))
 
     def render_solid(self):
+        """Renderable: render the current solid graphics"""
         self.tree.render_solid()

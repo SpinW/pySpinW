@@ -11,7 +11,7 @@ from pyspinw.gui.decorated import DecoratedSite
 
 
 class SiteGraphics(Renderable):
-
+    """ Renderable object representing lattice sites"""
 
     # Not selected or hover, red for now
     base_arrow = ArrowGraphics(uniform_coloring(1.0, 0.0, 0.0))
@@ -46,11 +46,13 @@ class SiteGraphics(Renderable):
         self.graphics_objects = []
 
     @property
-    def sites(self):
+    def sites(self) -> list[DecoratedSite]:
+        """ Get the current (decorated) sites"""
         return self._sites
 
     @sites.setter
     def sites(self, sites: list[DecoratedSite]):
+        """ Set the sites to display """
         self._sites = sites
         self._update_site_graphics()
 
@@ -74,17 +76,22 @@ class SiteGraphics(Renderable):
 
     @property
     def scaling(self):
+        """ Get the current arrow scaling"""
         return self._scaling
 
     @scaling.setter
     def scaling(self, scaling: float):
+        """ Set the arrow scaling"""
         self._scaling = scaling
         self._update_site_graphics()
 
 
     def render_solid(self):
+        """Renderable: how to render as a solid"""
         for graphics in self.graphics_objects:
             graphics.render_solid()
 
     def render_wireframe(self):
+        """Renderable: how to render as a wireframe - does nothing right now"""
         return
+
