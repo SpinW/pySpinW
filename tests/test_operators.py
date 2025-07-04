@@ -3,7 +3,7 @@ import pytest
 
 import spglib
 
-from msgmodels.operations import MagneticOperation
+from pyspinw.symmetry.operations import MagneticOperation
 
 r_z = np.array([
     [0, -1,  0],
