@@ -1,3 +1,5 @@
+""" Transformations of objects """
+
 import logging
 from typing import List
 
@@ -32,6 +34,7 @@ class SceneGraphNode(Renderable):
         """ GL operations needed to apply any transformations associated with this node """
 
     def render_solid(self):
+        """Renderable: solid rendering implementation"""
         if self.solid_render_enabled:
 
             # Apply transform
@@ -40,7 +43,8 @@ class SceneGraphNode(Renderable):
 
             # Check stack
             if glGetIntegerv(GL_MODELVIEW_STACK_DEPTH) >= 16:
-                logger.info("GL Stack size utilisation {glGetIntegerv(GL_MODELVIEW_STACK_DEPTH))}, the limit could be as low as is 16")
+                logger.info(f"GL Stack size utilisation {glGetIntegerv(GL_MODELVIEW_STACK_DEPTH)}" +
+                            "the limit could be as low as 16 on some machines")
 
             # Render children
             for child in self.children:
@@ -51,7 +55,7 @@ class SceneGraphNode(Renderable):
 
 
     def render_wireframe(self):
-
+        """Renderable: wireframe rendering implementation"""
         if self.wireframe_render_enabled:
             # Apply transform
             glPushMatrix()
@@ -59,7 +63,8 @@ class SceneGraphNode(Renderable):
 
             # Check stack
             if glGetIntegerv(GL_MODELVIEW_STACK_DEPTH) >= 16:
-                logger.info("GL Stack size utilisation {glGetIntegerv(GL_MODELVIEW_STACK_DEPTH))}, the limit could be as low as is 16")
+                logger.info(f"GL Stack size utilisation {glGetIntegerv(GL_MODELVIEW_STACK_DEPTH)}, "
+                            "the limit could be as low as 16 on some machines")
 
 
             # Render children
@@ -71,7 +76,7 @@ class SceneGraphNode(Renderable):
 
 
 class Rotation(SceneGraphNode):
-
+    """ Rotation of a renderable object"""
 
     def __init__(self, angle, x, y, z, *children: Renderable):
         """Rotate the children of this node
@@ -86,11 +91,12 @@ class Rotation(SceneGraphNode):
         self.z = z
 
     def apply(self):
+        """Transform implementation: gl operation that can be popped"""
         glRotate(self.angle, self.x, self.y, self.z)
 
 
 class Translation(SceneGraphNode):
-
+    """ Translation of a renderable object"""
 
     def __init__(self, x: float, y: float, z: float, *children: Renderable):
         """Translate the children of this node
@@ -105,10 +111,12 @@ class Translation(SceneGraphNode):
         self.z = z
 
     def apply(self):
+        """Transform implementation: gl operation that can be popped"""
         glTranslate(self.x, self.y, self.z)
 
 
 class Scaling(SceneGraphNode):
+    """ Scaling of a renderable object"""
 
     def __init__(self, x: float, y: float, z: float, *children: Renderable):
         """Scale the children of this node
@@ -123,9 +131,11 @@ class Scaling(SceneGraphNode):
         self.z = z
 
     def apply(self):
+        """Transform implementation: gl operation that can be popped"""
         glScale(self.x, self.y, self.z)
 
 class MatrixTransform(SceneGraphNode):
+    """ General matrix transform of a renderable object"""
 
     def __init__(self, matrix: np.ndarray, *children: Renderable):
         """Apply a 4x4 transformation matrix to the children of this node
@@ -138,4 +148,5 @@ class MatrixTransform(SceneGraphNode):
         self.matrix = matrix
 
     def apply(self):
+        """Transform implementation: gl operation that can be popped"""
         glMultMatrixd(self.matrix)
