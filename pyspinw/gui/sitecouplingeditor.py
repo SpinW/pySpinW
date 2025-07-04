@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QL
 
 from pyspinw.gui.couplingtable import CouplingTable
 from pyspinw.gui.couplingcreator import CouplingCreatorWindow
-from pyspinw.gui.crystalviewer.actionlabel import ActionLabel
+from pyspinw.gui.helperwidgets.actionlabel import ActionLabel
 from pyspinw.gui.helperwidgets.dockwidget import SpinWDockWidget
 from pyspinw.gui.sitetable import SiteTable
 from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
