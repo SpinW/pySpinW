@@ -1,3 +1,5 @@
+""" Miscellaneous widgets that are generally useful"""
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel, QWidget, QSlider, QVBoxLayout
 
@@ -50,6 +52,7 @@ class FloatSlider(QWidget):
 
     @property
     def value(self) -> float:
+        """ Slider value as a float"""
         return self.slider.value() * self.scale + self.bottom
 
     @value.setter

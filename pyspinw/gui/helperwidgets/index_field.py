@@ -1,3 +1,5 @@
+""" Index field helper widget (ijk entries) """
+
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import QLineEdit, QWidget, QHBoxLayout
@@ -39,7 +41,8 @@ class IndexField(QWidget):
         self.value_changed.emit()
 
     @property
-    def value(self):
+    def value(self) -> tuple[int, int, int]:
+        """ Current value as a tuple of ints"""
         return int(self.i.text()), int(self.j.text()), int(self.k.text())
 
     @value.setter
