@@ -1,7 +1,8 @@
-from typing import List, Callable
+""" Main scene object (camera, render tree, etc)"""
+
+from typing import Callable
 import numpy as np
 
-# from PyQt5 import QtWidgets, Qt, QtGui, QtOpenGL, QtCore
 from PySide6 import QtGui, QtCore
 from PySide6 import QtWidgets, QtOpenGLWidgets
 
@@ -12,7 +13,7 @@ from pyspinw.gui.crystalviewer.GL.renderable import Renderable
 from pyspinw.gui.crystalviewer.GL.surface import Surface
 
 class Scene(QtOpenGLWidgets.QOpenGLWidget):
-
+    """ Overall scene, render tree, camera controls etc"""
 
     def __init__(self, parent=None, on_key: Callable[[int], None] = lambda x: None):
 
@@ -43,7 +44,7 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
         self.view_azimuth_difference = 0.0
         self.view_elevation_difference = 0.0
 
-        self._items: List[Renderable] = []
+        self._items: list[Renderable] = []
 
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
 
@@ -52,12 +53,14 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
 
 
     def initializeGL(self):
+        """GL implement: initialisation"""
         glClearDepth(1.0)
         glDepthFunc(GL_LESS)
         glEnable(GL_DEPTH_TEST)
         glShadeModel(GL_SMOOTH)
 
     def default_viewport(self):
+        """ Default viewport"""
         x = int(self.width() * self.devicePixelRatioF())
         y = int(self.height() * self.devicePixelRatioF())
         # return -x//2, -y//2, x//2, y//2
@@ -66,8 +69,7 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
 
 
     def paintGL(self):
-        """Paint the GL viewport
-        """
+        """GL implementation: Paint the GL viewport"""
         glViewport(*self.default_viewport())
         self.set_projection()
 
@@ -89,6 +91,7 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
 
 
     def projection_matrix(self):
+        """ Create a GL projection matrix based on the viewing settings """
         x0, y0, w, h = self.default_viewport()
         dist = self.view_distance
         nearClip = dist * 0.001
@@ -102,14 +105,14 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
         return tr
 
     def set_projection(self):
-
+        """ Set up the GL_PROJECTION options """
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         # gluPerspective(45.0,1.33,0.1, 100.0)
         glLoadMatrixf(np.array(self.projection_matrix().data(), dtype=np.float32))
 
     def set_model_view(self):
-
+        """ Set up a view of the current model """
         tr = QtGui.QMatrix4x4()
         # tr.translate(0.0, 0.0, -self.view_distance)
         tr.translate(0.0,0.0,-self.view_distance)
@@ -133,9 +136,11 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
 
 
     def mousePressEvent(self, ev):
+        """ Qt implementation: mouse press"""
         self.mouse_position = ev.localPos()
 
     def mouseMoveEvent(self, ev):
+        """Qt implementation: mouse move"""
         new_mouse_position = ev.localPos()
         diff = new_mouse_position - self.mouse_position
 
@@ -149,6 +154,7 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
 
         self.update()
     def mouseReleaseEvent(self, ev):
+        """Qt implementation: mouse release"""
         # Mouse released, add dragging offset the view variables
 
         self.view_centre += np.array(self.view_centre_difference)
@@ -162,6 +168,7 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
         self.update()
 
     def wheelEvent(self, event: QtGui.QWheelEvent):
+        """Qt implementation: mouse wheel"""
         scroll_amount = event.angleDelta().y()
 
         self.view_distance *= np.exp(scroll_amount * self.scroll_sensitivity)
@@ -177,9 +184,11 @@ class Scene(QtOpenGLWidgets.QOpenGLWidget):
         self.update()
 
     def add(self, item: Renderable):
+        """ Add something renderable to the scene"""
         self._items.append(item)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
+        """Qt implementation: key press"""
         self.on_key(event.key())
 
 
