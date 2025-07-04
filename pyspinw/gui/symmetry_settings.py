@@ -1,3 +1,5 @@
+""" Information/structures around symmetry state """
+
 from dataclasses import dataclass
 
 from pyspinw.symmetry.group import MagneticSpaceGroup, SpaceGroup, magnetic_group_symbol_lookup, \
@@ -7,6 +9,8 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 @dataclass
 class SymmetrySettings:
+    """ Object to hold symmetry information together """
+
     space_group: SpaceGroup
     magnetic_group: MagneticSpaceGroup
     unit_cell: UnitCell

@@ -1,3 +1,5 @@
+""" Classes for symmetry editor dock window """
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QBoxLayout, QGridLayout, QWidget, QApplication, QLabel, QDockWidget, QVBoxLayout, \
     QSpacerItem, QSizePolicy
@@ -9,6 +11,7 @@ from pyspinw.gui.unitcell import UnitCellWidget
 
 
 class SymmetryEditor(SpinWDockWidget):
+    """ Dockable window containing symmetry settings """
 
     symmetry_changed = Signal()
 
@@ -59,6 +62,7 @@ class SymmetryEditor(SpinWDockWidget):
 
     @property
     def symmetry(self) -> SymmetrySettings:
+        """ Getter for symmetry"""
         return SymmetrySettings(
             space_group=self.symmetry_widget.current_spacegroup,
             magnetic_group=self.symmetry_widget.current_magetic_group,

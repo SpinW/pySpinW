@@ -1,3 +1,5 @@
+"""Symmetry sub-widget (not unit cell or supercell, just the group stuff)"""
+
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QGridLayout, QWidget, QComboBox, QLabel
 from ase.lattice import bravais_lattices
@@ -10,6 +12,7 @@ from pyspinw.symmetry.group import spacegroup_lattice_symbol_lookup, SymmetryGro
 from pyspinw.gui.helperwidgets.misc import QRightLabel
 
 class SymmetryWidget(QWidget):
+    """ Widget for choosing symmetry group"""
 
     symmetry_changed = Signal()
 
@@ -148,37 +151,45 @@ class SymmetryWidget(QWidget):
 
     @property
     def current_lattice_system(self):
+        """ Get the current lattice system"""
         return lattice_system_name_lookup[self.system_combo.currentText()]
 
     @property
     def current_bravais(self):
+        """ Get the current bravais type (primitive/face centred/etc)"""
         return lattice_type_name_lookup[self.bravais_type_combo.currentText()]
 
 
     @property
     def current_bravais_symbol(self):
+        """ Get the letter code of the bravais lattice"""
         lattice = self.current_lattice_system
         bravais = self.current_bravais
         return lattice.letter + bravais.letter
 
     @property
     def current_spacegroup_symbol(self):
+        """ Get the spacegroup symbol as a string, e.g. "P1" """
         return self.space_group_combo.currentText()
 
     @property
     def current_spacegroup(self) -> SpaceGroup:
+        """ Get the current spacegraoup object"""
         return spacegroup_symbol_lookup[self.current_spacegroup_symbol]
 
     @property
     def current_magnetic_group_symbol(self):
+        """ Get the magnetic spacegroup symbol as a string, e.g. "P1.1" """
         return self.magnetic_group_combo.currentText()
 
     @property
     def current_magetic_group(self):
+        """ Get the magnetic spacegroup object """
         return magnetic_group_symbol_lookup[self.current_magnetic_group_symbol]
 
 
-    def lattice_autoset(self, lattice_system_name):
+    def lattice_autoset(self, lattice_system_name: str):
+        """ Try to set the lattice combo with a string"""
         if lattice_system_name in lattice_system_name_lookup: # Check for existence
             self.system_combo.setCurrentText(lattice_system_name)
         else:
