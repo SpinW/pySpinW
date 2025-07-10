@@ -9,3 +9,14 @@ class Instrument:
     """
 
     resolution: float
+
+    @classmethod
+    def from_ResINS(instrument_name: str) -> Instrument:
+        """Instantiate an instrument from ResINS.
+
+        Parameters
+        ----------
+        instrument_name: str
+            The name of the instrument.
+        """
+        raise NotImplementedError
