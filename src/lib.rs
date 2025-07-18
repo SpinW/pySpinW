@@ -11,6 +11,9 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 pub mod ldl;
 use crate::ldl::ldl;
 
+pub mod eigs;
+use crate::eigs::eigs;
+
 // some convenience types and statics for complex arithmetic
 type C64 = Complex<f64>;
 static J: C64 = Complex::new(0., 1.);
@@ -56,7 +59,7 @@ pub fn spinwave_calculation<'py>(
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<Py<Coupling>>,
-) -> PyResult<Vec<Bound<'py, PyArray1<C64>>>> {
+) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
     // convert PyO3-friendly array types to nalgebra matrices
     let r: Vec<Matrix3<C64>> = rotations
         .into_iter()
@@ -80,7 +83,7 @@ fn _calc_spinwave(
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vector3<f64>>,
     couplings: Vec<&Coupling>,
-) -> Vec<Vec<C64>> {
+) -> Vec<Vec<f64>> {
     let n_sites = rotations.len();
 
     // decompose rotation matrices
@@ -125,7 +128,7 @@ fn _spinwave_single_q(
     z: &[Vector3<C64>],
     spin_coefficients: &DMatrix<C64>,
     couplings: &Vec<&Coupling>,
-) -> Vec<C64> {
+) -> Vec<f64> {
     // create A and B matrices for the Hamiltonian
 
     let mut A = DMatrix::<C64>::zeros(n_sites, n_sites);
@@ -176,10 +179,9 @@ fn _spinwave_single_q(
     negative_half *= Complex::from(-1.);
 
     // calculate eigenvalues (energies) of the Hamiltonian and return
-    if let Some(v) = (sqrt_hamiltonian.adjoint() * shc).eigenvalues() {
-        v.data.into()
-    } else {
-        panic!("Could not calculate eigenvalues of the Hamiltonian.")
+    match eigs(sqrt_hamiltonian.adjoint() * shc, false) {
+        Ok(v) => v.data.into(),
+        Err(e) => panic!("Could not calculate eigenvalues of the Hamiltonian: {}", e)
     }
 }
 /// Get the components of the rotation matrices for the axis indexed by `index`.
