@@ -15,3 +15,5 @@ nalgebra = "0.33.2"
 num-complex = "0.4.6"
 rayon = "1.10.0"
 lapack = "0.20.0"
+lapack-src = { version = "0.11", features = ["netlib"] }
+

@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use std::{iter::zip, ops::Sub};
 
-use nalgebra::{stack, Const, Cholesky, DMatrix, DMatrixView, DVector, Dyn, Matrix3, Vector3};
+use nalgebra::{stack, Cholesky, Const, DMatrix, DMatrixView, DVector, Dyn, Matrix3, Vector3};
 use num_complex::Complex;
 use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray2, ToPyArray};
 use pyo3::prelude::*;
@@ -153,13 +153,12 @@ fn _spinwave_single_q(
 
     // take square root of Hamiltonian using the LDL decomposition
     let sqrt_hamiltonian = {
-    if let Some(chol) = Cholesky::new(hamiltonian.clone()) {
-        chol.l()
-    }
-    else { 
-        let (l, d) = ldl(hamiltonian);
-        l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
-    }
+        if let Some(chol) = Cholesky::new(hamiltonian.clone()) {
+            chol.l()
+        } else {
+            let (l, d) = ldl(hamiltonian);
+            l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
+        }
     };
 
     // 'shc' is "square root of Hamiltonian with commutation"
@@ -181,7 +180,7 @@ fn _spinwave_single_q(
     // calculate eigenvalues (energies) of the Hamiltonian and return
     match eigs(sqrt_hamiltonian.adjoint() * shc, false) {
         Ok(v) => v.data.into(),
-        Err(e) => panic!("Could not calculate eigenvalues of the Hamiltonian: {}", e)
+        Err(e) => panic!("Could not calculate eigenvalues of the Hamiltonian: {}", e),
     }
 }
 /// Get the components of the rotation matrices for the axis indexed by `index`.
