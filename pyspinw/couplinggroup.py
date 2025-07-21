@@ -63,47 +63,45 @@ class CouplingGroup():
 
     def __init__(self,
                  name: str,
-                 site_list_indices: list[int],
                  min_distance: float,
                  max_distance: float,
+                 max_order: int | None,
                  naming_pattern: str,
                  coupling_type: type[Coupling],
-                 parameters: dict,
+                 coupling_parameters: dict,
                  direction_filter: DirectionalityFilter):
 
         self.name = name
         self.min_distance = min_distance
         self.max_distance = max_distance
+        self.max_order = max_order
         self.naming_pattern = naming_pattern
         self.coupling_type = coupling_type
-        self.parameters = parameters
+        self.coupling_parameters = coupling_parameters
         self.direction_filter = direction_filter
 
 
     def couplings(self, sites: list[LatticeSite], unit_cell: UnitCell):
         """ Get the couplings defined by this groups given the sites and symmetry provided """
         abstract_couplings = batch_couplings(
-            sites=self.sites,
-            unit_cell=self.unit_cell,
+            sites=sites,
+            unit_cell=unit_cell,
             max_distance=self.max_distance,
-            naming_pattern=self.format_string,
-            type_symbol=self.short_string)
-
-        parameter_dict = {parameter: self.field_widget.get_value(parameter)
-                          for parameter in coupling_type.parameters}
+            naming_pattern=self.naming_pattern,
+            type_symbol=self.coupling_type.short_string)
 
         kept_couplings = []
         for coupling in abstract_couplings:
-            if parameters.max_order is not None and coupling.order > parameters.max_order:
+            if self.max_order is not None and coupling.order > self.max_order:
                 continue
 
-            if parameters.min_distance <= coupling.distance <= parameters.max_distance:
-                kept_couplings.append(coupling_type(
+            if self.min_distance <= coupling.distance <= self.max_distance:
+                kept_couplings.append(self.coupling_type(
                     name=coupling.name,
                     site_1=coupling.site_1,
                     site_2=coupling.site_2,
                     cell_offset=coupling.cell_offset,
-                    **parameter_dict))
+                    **self.coupling_parameters))
 
         return kept_couplings
 
