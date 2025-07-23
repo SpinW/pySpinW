@@ -98,3 +98,7 @@ class ImpliedLatticeSite(LatticeSite):
             mj=coordinates[4],
             mk=coordinates[5],
             name=name)
+
+    def reify(self):
+        """ Return LatticeSite (without parent site reference) """
+        LatticeSite.from_coordinates(self.values, self.name)

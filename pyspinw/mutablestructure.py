@@ -1,8 +1,18 @@
 """ TODO: WIP """
+from dataclasses import dataclass
 
 from pyspinw.couplinggroup import CouplingGroup
-from pyspinw.gui.symmetry_settings import SymmetrySettings
+from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite
+
+@dataclass
+class BoundCouplingGroup:
+    """ This links a coupling group to sites"""
+    def __init__(self, coupling_group: CouplingGroup, indices: list[int]):
+        self.coupling_group = coupling_group
+        self.indices = indices
+
+
 
 
 class MutableStructure:
@@ -12,12 +22,12 @@ class MutableStructure:
     """
 
     def __init__(self,
-                 sites: list[LatticeSite],
-                 coupling_groups: list[CouplingGroup],
-                 symmetry: SymmetrySettings):
+                 sites: list[LatticeSite] | None = None,
+                 coupling_groups: list[CouplingGroup] | None = None,
+                 symmetry: SymmetrySettings = DEFAULT_SYMMETRY):
 
-        self._sites = sites
-        self._coupling_groups = coupling_groups
+        self._sites = [] if sites is None else sites
+        self._coupling_groups = [] if coupling_groups is None else coupling_groups
         self.symmetry = symmetry
 
 
@@ -30,6 +40,7 @@ class MutableStructure:
     @property
     def sites(self):
         """ Getter for sites """
+        return self._sites
 
     def _update_symmmetry_sites(self):
         """ Update the sites
@@ -58,13 +69,20 @@ class MutableStructure:
         self._site_to_implied_site = site_to_implied_site
 
     def check_symmetry(self):
-        """ Check the symmetry of this system and the system definition are consitent """
+        """ Check the symmetry of this system and the system definition are consistent """
 
     def propose_symmetry(self):
         """ Propose symmetries that would be a good choice for this system """
 
-    def _make_real(self, implied_site_index):
+    def _make_real(self, implied_site_indices: list[int]):
         """ Take an implied site and turn it into a real site"""
+
+        new_sites = [self._implied_sites[i].reify() for i in implied_site_indices]
+
+        self._sites += new_sites
+
+        self._update_symmmetry_sites()
+
 
     def remove_site(self):
         """ Remove a site from the definition"""
