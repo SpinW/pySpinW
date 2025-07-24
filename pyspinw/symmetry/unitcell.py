@@ -7,7 +7,7 @@ from pyspinw.checks import check_sizes
 from ase.geometry.cell import cellpar_to_cell
 
 class BadCellDefinition(Exception):
-    """ Error for bad cell defintion"""
+    """ Error for bad cell definition"""
 
 class RawUnitCell:
     """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""

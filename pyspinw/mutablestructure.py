@@ -84,6 +84,8 @@ class MutableStructure:
         self._update_symmmetry_sites()
 
 
+
+
     def remove_site(self):
         """ Remove a site from the definition"""
 
