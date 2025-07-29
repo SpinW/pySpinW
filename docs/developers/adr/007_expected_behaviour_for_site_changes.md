@@ -1,44 +1,44 @@
 Expected behaviour for coupling and symmetry when sites change
 ==============================================================
 
-When the sites are modified the associated couplings.
+There are many different ways one can approach the interaction of user site and coupling changes with symmetry,
+and changes thereof.
 
-Sites are split into two kinds
-1) real/explicit/independent sites, these are set by the user, and correspond to magnetic freedoms in the solver
-2) implied/virtual sites, these are implied by the symmetry and are completely determined real sites and the symmetry
+It's a bit much to articulate all the possibilities for how this can work, instead, here is some desirata, and
+a description of a system that fits
 
+Desirata
+--------
 
-
-
-There are different ways that you can approach symmetry in the system
-1) Use the correct symmetry for your system
-2) Use lower symmetry
-3)
-
-
-Adding a site
--------------
-
-This is trivial
-
-Moving a site
--------------
-
-Moving a site can affect the symmetry, so, we need to check if this is now a duplicate of an existing site (i.e. if it
-has been moved to a higher symmetry point with a corresponding )
-
-Changing the magnetism on a site
---------------------------------
+* Symmetry considerations should apply to sites and couplings
+* The user should be able to work in a symmetry lower than the one of their system
+* Sites that cause conflicts due to a symmetry constraint should be flagged
+* Couplings that are impossible due to a symmetry constraint should be flagged
+* A set of couplings defined in a high symmetry system should also be definable in a lower symmetry system with as much similarity as possible
 
 
+The coupling group object
+-------------------------
 
-Reifying a site
----------------
+The `CouplingGroup` object defines the coupling between sites in an abstract form.
 
-Virtualising a site
--------------------
+This object, or it's usage, should be such that it obeys the following transitivity relationship, defined schematically as 
 
-Removing a site
----------------
+   couplings(symmetry(sites), P1) <=> couplings(P1(sites), symmetry)
 
-  * What happens when an explicit site is removed, but it is replaced with a virtual site
+That is, the couplings of sites defined by a symmetry group (the sites, and those implied by symmetry) should be the
+same as between a list of sites defined in P1 symmetry.
+
+The implementation of this is rather trivial, but it suggests a design choice. That is that the `CouplingGroup` object
+acts a list of all equivalent sites according to the symmetry group - as opposed to, for example,
+creating couplings then applying a symmetry. 
+
+Implications for couplings under symmetry
+-----------------------------------------
+
+There is then a question of what we do with couplings that are invalid due to symmetry. For example, a DM coupling
+from A->B along with the same coupling but B->A would have zero contribution to the Hamiltonian (by the anti-symmetry 
+of the cross product characteristic of DM couplings).
+
+Do we check this, or just ignore it?
+
