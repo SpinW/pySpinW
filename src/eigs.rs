@@ -24,7 +24,6 @@ pub fn eigs(
     // n is the dimension of the matrix
     // for our purposes lda is the same
     let n = matrix.shape().0 as i32;
-
     // m is the matrix in lapack-friendly format
     let m: &mut [C64] = matrix.as_mut_slice();
 
@@ -37,7 +36,7 @@ pub fn eigs(
     let mut rwork = vec![0.; max(1, 3 * (n as usize) - 2)];
 
     // if `lwork = -1`, `zheev` just calculates the optimal workspace size
-    let mut workspace = [Complex::from(0.)];
+    let mut placeholder = [Complex::from(0.)];
     unsafe {
         zheev(
             b'N',
@@ -46,7 +45,7 @@ pub fn eigs(
             m,
             n,
             w,
-            &mut workspace,
+            &mut placeholder,
             -1,
             &mut rwork,
             &mut info,
@@ -60,7 +59,7 @@ pub fn eigs(
         _ => (),
     };
 
-    let lwork = workspace[0].re as i32;
+    let lwork = placeholder[0].re as i32;
 
     let mut workspace = vec![Complex::from(0.); lwork as usize];
     unsafe {

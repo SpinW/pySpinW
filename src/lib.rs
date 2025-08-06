@@ -151,11 +151,14 @@ fn _spinwave_single_q(
     let hamiltonian: DMatrix<C64> = stack![ A_minus_C, B; 
                                             B.adjoint(), A_conj_minus_C];
 
-    // take square root of Hamiltonian using the LDL decomposition
-    let sqrt_hamiltonian = {
-        if let Some(chol) = Cholesky::new(hamiltonian.clone()) {
-            chol.l()
-        } else {
+    // take square root of Hamiltonian using Cholesky (if positive-definite)
+    // and if not, use the LDL decomposition
+    // in the positive-definite case we are using Cholesky L as the "square root" of the matrix
+    // and otherwise we use L sqrt(D) for our square root 
+    // [as L sqrt(D) (L sqrt(D))* = L sqrt(D)sqrt(D) L* = LDL* = M]
+    let sqrt_hamiltonian = match Cholesky::new(hamiltonian.clone()) {
+        Some(chol) => chol.l(),
+        None => {
             let (l, d) = ldl(hamiltonian);
             l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
         }
