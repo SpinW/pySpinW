@@ -64,17 +64,17 @@ pub fn eigs(
     let mut workspace = vec![Complex::from(0.); lwork as usize];
     unsafe {
         zheev(
-            jobz,            // whether to calculate eigenvectors
-            uplo,            // whether to use upper or lower triangle of matrix
-            n,               // size of matrix
-            m,               // the matrix itself (gets overwritten with eigenvectors!!!)
-            n,               // size of matrix (again)
-            w,               // array eigenvalues are output into
-            &mut workspace,  // workspace array for algorithm
-            lwork,           // length of the workspace array
-            &mut rwork,      // double precision array (don't know what this is for)
-            &mut info,       // debug info output; <0 for invalid arguments, >0 for failed
-                             //                    convergence, 0 for success
+            jobz,           // whether to calculate eigenvectors
+            uplo,           // whether to use upper or lower triangle of matrix
+            n,              // size of matrix
+            m,              // the matrix itself (gets overwritten with eigenvectors!!!)
+            n,              // size of matrix (again)
+            w,              // array eigenvalues are output into
+            &mut workspace, // workspace array for algorithm
+            lwork,          // length of the workspace array
+            &mut rwork,     // double precision array (don't know what this is for)
+            &mut info,      // debug info output; <0 for invalid arguments, >0 for failed
+                            //                    convergence, 0 for success
         )
     }
 

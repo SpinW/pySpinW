@@ -9,7 +9,9 @@ use rayon::iter::IntoParallelRefIterator;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 pub mod ldl;
+pub mod cholesky;
 use crate::ldl::ldl;
+use crate::cholesky::cholesky;
 
 pub mod eigs;
 use crate::eigs::eigs;
@@ -154,11 +156,12 @@ fn _spinwave_single_q(
     // take square root of Hamiltonian using Cholesky (if positive-definite)
     // and if not, use the LDL decomposition
     // in the positive-definite case we are using Cholesky L as the "square root" of the matrix
-    // and otherwise we use L sqrt(D) for our square root 
+    // and otherwise we use L sqrt(D) for our square root
     // [as L sqrt(D) (L sqrt(D))* = L sqrt(D)sqrt(D) L* = LDL* = M]
-    let sqrt_hamiltonian = match Cholesky::new(hamiltonian.clone()) {
-        Some(chol) => chol.l(),
+    let sqrt_hamiltonian = match cholesky(hamiltonian.clone()) {
+        Some(chol) => {println!("CHOL"); chol},
         None => {
+            println!("LDL");
             let (l, d) = ldl(hamiltonian);
             l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
         }
