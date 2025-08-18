@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use std::{iter::zip, ops::Sub};
 
-use nalgebra::{stack, Cholesky, Const, DMatrix, DMatrixView, DVector, Dyn, Matrix3, Vector3};
+use nalgebra::{stack, Const, DMatrix, DMatrixView, DVector, Dyn, Matrix3, Vector3};
 use num_complex::Complex;
 use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray2, ToPyArray};
 use pyo3::prelude::*;
@@ -9,9 +9,7 @@ use rayon::iter::IntoParallelRefIterator;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 pub mod ldl;
-pub mod cholesky;
 use crate::ldl::ldl;
-use crate::cholesky::cholesky;
 
 pub mod eigs;
 use crate::eigs::eigs;
@@ -158,10 +156,26 @@ fn _spinwave_single_q(
     // in the positive-definite case we are using Cholesky L as the "square root" of the matrix
     // and otherwise we use L sqrt(D) for our square root
     // [as L sqrt(D) (L sqrt(D))* = L sqrt(D)sqrt(D) L* = LDL* = M]
-    let sqrt_hamiltonian = match cholesky(hamiltonian.clone()) {
-        Some(chol) => {println!("CHOL"); chol},
-        None => {
-            println!("LDL");
+    //
+    // The Cholesky positive-definite check in `nalgebra` uses a trick that doesn't work for
+    // complex numbers (see https://github.com/dimforge/nalgebra/issues/1536) so we do our own
+    // check afterwards; the Cholesky Decomposition Theorem says that if A is positive-definite,
+    // then L will have all diagonal entries be real and positive
+    let sqrt_hamiltonian = match hamiltonian.clone().cholesky() {
+        Some(chol)
+            if chol
+                // l_dirty unpacks L without zeroing out the garbage upper-triangular
+                // part; that's fine here as we're just reading the diag and will take
+                // the proper unpack if the check passes
+                .l_dirty()
+                .diagonal()
+                .iter()
+                .all(|&x| x.re > 0. && x.im < f64::EPSILON) =>
+        {
+            chol.l()
+        }
+        // else if the matrix is not positive-definite, we take the LDL decomposition
+        _ => {
             let (l, d) = ldl(hamiltonian);
             l * DMatrix::from_diagonal(&d.map(nalgebra::Complex::sqrt))
         }
