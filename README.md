@@ -1,2 +1,6 @@
+
+![](./docs/branding/logo_with_background_small.png)
 # pySpinW
-SpinW for Python
+## SpinW in Python
+## A Work in Progress
+

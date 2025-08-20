@@ -2,6 +2,9 @@
 
 import numpy as np
 from pyspinw.checks import check_sizes
+from pyspinw.tolerances import tolerances
+from pyspinw.util import triple_product_matrix
+
 
 @check_sizes(vectors=(-1, 3))
 def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -48,6 +51,24 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
 
     return e_1, e_2, e_3
 
+@check_sizes(axis=(3,), force_numpy=True)
+def angle_axis_rotation_matrix(angle_rad, axis: np.ndarray):
+    """ Get a matrix for rotation by `angle_rad` radians around the axis `axis`"""
+    mag = np.sqrt(np.sum(axis**2))
+
+    if mag < tolerances.IS_ZERO_TOL:
+        raise ValueError("Rotation axis has very small or zero magnitude")
+
+    axis = np.array(axis, dtype=float) / mag
+
+    cos_theta = np.cos(angle_rad)
+    sin_theta = np.sin(angle_rad)
+
+    part1 = axis.reshape(-1, 1) * axis.reshape(1, -1) * (1 - cos_theta)
+    part2 = cos_theta * np.eye(3)
+    part3 = triple_product_matrix(axis * sin_theta)
+
+    return part1 + part2 + part3
 
 def demo_find_aligned_basis():
     """Example / test for find_aligned_basis"""
@@ -64,6 +85,45 @@ def demo_find_aligned_basis():
     print(e2)
     print(e3)
 
+def demo_angle_axis_rotation_matrix():
+    """ Show some plots demonstrating the angle-axis rotations"""
+    import matplotlib.pyplot as plt
+
+    v = np.array([1,0,0])
+
+    xs = []
+    ys = []
+
+    for i in range(11):
+
+        r = angle_axis_rotation_matrix(2*i*np.pi/11, [0,0,1])
+
+        v2 = r @ v
+
+        xs.append(v2[0])
+        ys.append(v2[1])
+
+    plt.scatter(xs, ys)
+
+    xs = []
+    ys = []
+
+    for i in range(11):
+
+        r = angle_axis_rotation_matrix(2*i*np.pi/11, [1,1,1])
+
+        v2 = r @ v
+
+        xs.append(v2[0])
+        ys.append(v2[1])
+
+
+    plt.scatter(xs, ys)
+    plt.show()
+
+
+
 
 if __name__ == "__main__":
     demo_find_aligned_basis()
+    demo_angle_axis_rotation_matrix()

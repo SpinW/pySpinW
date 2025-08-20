@@ -7,9 +7,15 @@ This is an abstract outline, the actual implementations are in different files
 # pylint: disable=R0903
 
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 import numpy as np
 from ase.lattice import BravaisLattice
+from pydantic import BaseModel
+
+from pyspinw.gui.cell_offsets import CellOffset
+from pyspinw.site import LatticeSite
+from pyspinw.symmetry.unitcell import UnitCell
 
 
 class MagneticStructure(ABC):
@@ -42,13 +48,23 @@ class Sample(ABC):
 Identifier = str # temporary choice for now
 
 
-class Coupling:
+class Coupling(BaseModel):
     """Coupling between different sites"""
 
-    def __init__(self, site_1: Identifier, site_2: Identifier):
-        self._site_1 = site_1
-        self._site_2 = site_2
-        self._coupling_matrix = None
+    name: str
+
+    site_1: LatticeSite
+    site_2: LatticeSite
+
+    cell_offset: CellOffset = CellOffset(i=0,j=0,k=0)
+
+    coupling_type: ClassVar[str] = "Base Coupling"
+    parameters: ClassVar[list[str]] = []
+    parameter_defaults: ClassVar[list[int]] = []
+    short_string: ClassVar[str] = "X"
+
+    _coupling_matrix: np.ndarray | None = None
+
 
     @property
     def coupling_matrix(self) -> np.ndarray:
@@ -64,6 +80,23 @@ class Coupling:
         else:
             return self._coupling_matrix
 
+    @property
+    def parameter_string(self) -> str:
+        """ String representation of parameters """
+        return ", ".join([f"{parameter}={self.__dict__[parameter]:.5g}" for parameter in self.parameters])
+
+    @property
+    def lattice_vector(self):
+        """ Vector from site 1 to site 2 in lattice coordinates"""
+        return self.cell_offset.as_tuple + self.site_2.ijk - self.site_1.ijk
+
+    def vector(self, unit_cell: UnitCell):
+        """ Vector from site 1 to site 2 in cartesian coordinates (requires a unit cell definition)"""
+        return unit_cell.fractional_to_cartesian(self.lattice_vector)
+
+    def distance(self, unit_cell: UnitCell):
+        """ Distance between sites """
+        return np.sqrt(np.sum(self.vector(unit_cell)))
 
 class Anisotropy:
     """Defines the anisotropy at a given site"""

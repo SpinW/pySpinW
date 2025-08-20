@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 from pyspinw.checks import check_sizes
+from pyspinw.tolerances import tolerances
+
 
 @dataclass
 class InteractionGeometries:
@@ -18,6 +20,13 @@ class InteractionGeometries:
     distances: np.ndarray
     """ Distance to the each point"""
 
+    def expand(self) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        """ Create a list of tuples from the data in this object"""
+        return [(self.cell_indices[i, :],
+                 self.vectors[i, :],
+                 self.distances[i])
+                    for i in range(len(self.distances))]
+
 
 @check_sizes(fractional_coordinates=(3,),
              unit_cell_transform=(3,3))
@@ -25,7 +34,7 @@ def find_relative_positions(
         fractional_coordinates: np.ndarray,
         unit_cell_transform: np.ndarray,
         max_distance: float,
-        tol: float=1e-7,
+        tol: float=tolerances.SAME_SITE_ABS_TOL,
         allow_self=True) -> InteractionGeometries:
     """Find fractional coordinates from translations of the unit cell close to the origin.
 
@@ -39,6 +48,7 @@ def find_relative_positions(
     :param allow_self: include the original point with no translation (i,j,k = 0,0,0)
     """
     fractional_coordinate_offsets = get_cell_offsets_containing_bounding_box(unit_cell_transform, max_distance)
+
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
 
     cartesian_position = fractional_positions @ unit_cell_transform.T
@@ -116,8 +126,7 @@ def get_cell_offsets_containing_bounding_box(
     ijk = np.concatenate((
         i.reshape(-1,1),
         j.reshape(-1,1),
-        k.reshape(-1,1)
-    ), axis=1)
+        k.reshape(-1,1)), axis=1)
 
     return ijk
 

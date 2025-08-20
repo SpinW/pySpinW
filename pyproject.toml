@@ -59,7 +59,8 @@ select = ["D1",  # undocumented objects
           "W",  # pycodestyle warnings
           ]
 
-ignore = ["D107",  # undocumented __init__
+ignore = ["D105",  # Missing docstring in magic method (we know what magic methods do!)
+          "D107",  # undocumented __init__
           "D203",  # 1 blank line before class docstring
           "D210",  # whitespace surrounding docstring text
           "D213",  # multi-line summary starts at second line
