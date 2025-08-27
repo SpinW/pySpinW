@@ -2,12 +2,18 @@
 
 See https://spinw.org/tutorials/07tutorial.
 """
+import sys
+
 import numpy as np
 
 try:
-    from pyspinw.rust import spinwave_calculation, Coupling
+    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
+    RUST_AVAILABLE = True
 except ModuleNotFoundError:
-    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+    RUST_AVAILABLE = False
+
+from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+
 
 # define our rotation matrices
 def rotation(theta):
@@ -37,7 +43,7 @@ def rotation(theta):
         dtype=complex, order='F',
     )
 
-def kagome_antiferromagnet(n_q = 100):
+def kagome_antiferromagnet(n_q = 100, rust = False):
     """Kagome anti-ferromagnet like in tutorial 7."""
     # Three sites, otherwise identical
     rotations = [
@@ -47,11 +53,18 @@ def kagome_antiferromagnet(n_q = 100):
     ]
     magnitudes = np.array([1.0]*3)  # spin-1
 
+    if rust:
+        rust_kw = {'dtype':complex, 'order':'F'}
+        Coupling = RsCoupling
+    else:
+        rust_kw = {}
+        Coupling = PyCoupling
+
     # Do the J1 (nearest neighbour) couplings - using table from Matlab Tutorial 7
     # Run the example until the end and then run:
     # >> AFkagome.table('bond',1:2)
     # And use the values in idx1, idx2, and dl (idx1, idx2 indexed from 1 not 0)
-    J1mat = np.eye(3, dtype=complex, order='F') * 1.0
+    J1mat = np.eye(3, **rust_kw) * 1.0
     couplings = [
         Coupling(2, 0, J1mat, np.array([0., 1, 0])),
         Coupling(0, 1, J1mat, np.array([0., -1, 0])),
@@ -71,7 +84,7 @@ def kagome_antiferromagnet(n_q = 100):
     ])
 
     # Do the J2 (next-nearest-neigbour) couplings
-    J2mat = np.eye(3, dtype=complex, order='F') * 0.11
+    J2mat = np.eye(3, **rust_kw) * 0.11
     couplings.extend([
         Coupling(0, 1, J2mat, np.array([1., -1, 0])),
         Coupling(1, 2, J2mat, np.array([0., 1, 0])),
@@ -102,7 +115,10 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    structure = kagome_antiferromagnet()
+    use_rust = ("py" not in sys.argv[1]) if len(sys.argv) > 1 else RUST_AVAILABLE
+    spinwave_calculation = rs_spinwave if use_rust else py_spinwave
+
+    structure = kagome_antiferromagnet(rust = use_rust)
     q_vectors = structure[2]
 
     indices = np.arange(201)
