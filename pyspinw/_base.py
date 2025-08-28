@@ -88,7 +88,7 @@ class Coupling(BaseModel):
     @property
     def lattice_vector(self):
         """ Vector from site 1 to site 2 in lattice coordinates"""
-        return self.cell_offset.as_tuple + self.site_2.ijk - self.site_1.ijk
+        return self.cell_offset.vector + self.site_2.ijk - self.site_1.ijk
 
     def vector(self, unit_cell: UnitCell):
         """ Vector from site 1 to site 2 in cartesian coordinates (requires a unit cell definition)"""
@@ -96,7 +96,7 @@ class Coupling(BaseModel):
 
     def distance(self, unit_cell: UnitCell):
         """ Distance between sites """
-        return np.sqrt(np.sum(self.vector(unit_cell)))
+        return np.sqrt(np.sum(self.vector(unit_cell)**2))
 
 class Anisotropy:
     """Defines the anisotropy at a given site"""

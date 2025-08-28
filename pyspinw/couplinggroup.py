@@ -5,9 +5,10 @@ TODO: Currently broken - WIP
 """
 
 import numpy as np
+from numpy._typing import ArrayLike
 
 from pyspinw._base import Coupling
-from pyspinw.batch_couplings import batch_couplings
+from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -30,7 +31,8 @@ class DirectionalityFilter:
 class InDirectionFilter(DirectionalityFilter):
     """ Selects vectors in a given direction """
 
-    def __init__(self, direction: np.ndarray, max_dev_angle_deg: float):
+    def __init__(self, direction: ArrayLike, max_dev_angle_deg: float = 0.01):
+        direction = np.array(direction, dtype=float)
         self.direction = direction / np.sqrt(np.sum(direction**2))
         self.in_direction_dev_num = np.cos((np.pi/180) * max_dev_angle_deg)
 
@@ -45,7 +47,8 @@ class InDirectionFilter(DirectionalityFilter):
 class InPlaneFilter(DirectionalityFilter):
     """ Selects vectors in a given plane (specified by normal)"""
 
-    def __init__(self, direction: np.ndarray, max_dev_angle_deg: float):
+    def __init__(self, direction: ArrayLike, max_dev_angle_deg: float = 0.01):
+        direction = np.array(direction)
         self.direction = direction / np.sqrt(np.sum(direction**2))
         self.in_plane_dev_num = np.sin((np.pi/180) * max_dev_angle_deg)
 
@@ -55,10 +58,10 @@ class InPlaneFilter(DirectionalityFilter):
         if sq_mag == 0:
             return False
         else:
-            return np.dot(self.direction, vector) / np.sqrt(sq_mag) < self.in_plane_dev_num
+            return np.abs(np.dot(self.direction, vector) / np.sqrt(sq_mag)) < self.in_plane_dev_num
 
 
-class CouplingGroup():
+class CouplingGroup:
     """ Class representing the batch creation of couplings"""
 
     def __init__(self,
@@ -66,10 +69,10 @@ class CouplingGroup():
                  min_distance: float,
                  max_distance: float,
                  max_order: int | None,
-                 naming_pattern: str,
+                 naming_pattern: str | None,
                  coupling_type: type[Coupling],
                  coupling_parameters: dict,
-                 direction_filter: DirectionalityFilter):
+                 direction_filter: DirectionalityFilter | None):
 
         self.name = name
         self.min_distance = min_distance
@@ -87,7 +90,7 @@ class CouplingGroup():
             sites=sites,
             unit_cell=unit_cell,
             max_distance=self.max_distance,
-            naming_pattern=self.naming_pattern,
+            naming_pattern=default_naming_pattern if self.naming_pattern is None else self.naming_pattern,
             type_symbol=self.coupling_type.short_string)
 
         kept_couplings = []
@@ -102,6 +105,12 @@ class CouplingGroup():
                     site_2=coupling.site_2,
                     cell_offset=coupling.cell_offset,
                     **self.coupling_parameters))
+
+        # Apply the filtering
+        if self.direction_filter is not None:
+            kept_couplings = [coupling
+                              for coupling in kept_couplings
+                              if self.direction_filter.accept(coupling.vector(unit_cell))]
 
         return kept_couplings
 
