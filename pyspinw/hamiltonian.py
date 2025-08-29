@@ -46,13 +46,6 @@ class GeneralHamiltonian(Hamiltonian):
     """
 
 
-class HeisenbergMagnet(GeneralHamiltonian):
-    """Heisenberg Ferromagnet Hamiltonian of the form H = - Σ J s.s
-
-    More explicitly, the equation is ... TODO
-    """
-
-
 class BiQuadratic(Hamiltonian):
     """Biquadratic Hamiltonian of the form H = - Σ A (s.s)^2
 
