@@ -3,15 +3,18 @@
 from abc import ABC, abstractmethod
 
 from pyspinw._base import MagneticStructure
+from pyspinw.serialisation import SPWSerialisable
+import numpy as np
+
 
 # pylint: disable=R0903
 
-class Hamiltonian(ABC):
+class Hamiltonian(ABC, SPWSerialisable):
     """Hamiltonian base class"""
 
     def __init__(self,
                  magnetic_structure: MagneticStructure,
-                 couplings: list[Couplings]):
+                 couplings: list[Coupling]):
 
         self.magnetic_structure = magnetic_structure
         self.couplings = couplings
@@ -29,6 +32,10 @@ class Hamiltonian(ABC):
         """Calculate the energy levels of the system for the given q-vectors."""
         # this will have a specific implementation for each Hamiltonian
         raise NotImplementedError
+
+    def serialise(self) -> dict:
+        return {"magnetic_structure": self.magnetic_structure.serialise(),
+                "couplings": [coupling.serialise() for coupling in self.couplings]}
 
 
 class GeneralHamiltonian(Hamiltonian):
