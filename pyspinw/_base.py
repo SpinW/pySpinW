@@ -13,38 +13,45 @@ import numpy as np
 from ase.lattice import BravaisLattice
 from pydantic import BaseModel
 
+from pyspinw.checks import check_sizes
 from pyspinw.gui.cell_offsets import CellOffset
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, numpy_serialise, numpy_deserialise
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-class MagneticStructure(ABC):
+class MagneticStructure(SPWSerialisable):
     """Base class for representations of the Magnetic Structures"""
 
     def __init__(self):
         pass
 
+    def serialise(self):
+        return {}
 
-Identifier = str # temporary choice for now
+    def deserialise(data: dict):
+        return MagneticStructure()
 
-
-class Coupling(BaseModel):
+class Coupling(SPWSerialisable):
     """Coupling between different sites"""
 
-    name: str
+    def __init__(self,
+                 name: str,
+                 site_1: LatticeSite,
+                 site_2: LatticeSite,
+                 cell_offset: CellOffset | None):
 
-    site_1: LatticeSite
-    site_2: LatticeSite
+        self.name = name
+        self.site_1 = site_1
+        self.site_2 = site_2
 
-    cell_offset: CellOffset = CellOffset(i=0,j=0,k=0)
+        self.cell_offset = CellOffset(i=0,j=0,k=0) if cell_offset is None else cell_offset
+
 
     coupling_type: ClassVar[str] = "Base Coupling"
     parameters: ClassVar[list[str]] = []
     parameter_defaults: ClassVar[list[int]] = []
     short_string: ClassVar[str] = "X"
-
-    _coupling_matrix: np.ndarray | None = None
-
 
     @property
     def coupling_matrix(self) -> np.ndarray:
@@ -55,10 +62,7 @@ class Coupling(BaseModel):
 
         H = S^T M S
         """
-        if self._coupling_matrix is None:
-            raise ValueError("Coupling matrix not initialised - this shouldn't happen")
-        else:
-            return self._coupling_matrix
+        raise NotImplementedError()
 
     @property
     def parameter_string(self) -> str:
@@ -78,20 +82,6 @@ class Coupling(BaseModel):
         """ Distance between sites """
         return np.sqrt(np.sum(self.vector(unit_cell)))
 
-class Anisotropy:
-    """Defines the anisotropy at a given site"""
-
-    def __init__(self, site: Identifier):
-        self._site = site
-        self._anisotropy_matrix = None
-
-    @property
-    def anisotropy_matrix(self) -> np.ndarray:
-        """Matrix spefifying the anisotropy - `A` term in the Hamiltonian"""
-        if self._anisotropy_matrix is None:
-            raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
-        else:
-            return self._anisotropy_matrix
 
 
 class Data:

@@ -1,53 +1,76 @@
 """Different kinds of anisotropy"""
 import numpy as np
 
-from pyspinw._base import Anisotropy, Identifier
 from pyspinw.checks import check_sizes
+from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, numpy_deserialise
+from pyspinw.site import LatticeSite
+from pyspinw.tolerances import tolerances
 
 
-class GeneralAnisotropy(Anisotropy):
-    """General anisotropy specification"""
+class Anisotropy(SPWSerialisable):
+    """Defines the anisotropy at a given site"""
 
-    @check_sizes(a=(3,3), force_numpy=True)
-    def __init__(self, site: Identifier, a: np.ndarray):
-        super().__init__(site)
-
-        self._a = a
+    @check_sizes(anisotropy_matrix=(3,3))
+    def __init__(self, site: LatticeSite, anisotropy_matrix: np.ndarray):
+        self._site = site
+        self._anisotropy_matrix = anisotropy_matrix
 
     @property
     def anisotropy_matrix(self) -> np.ndarray:
-        """The matrix defining the anisotropy."""
-        return self._a
+        """Matrix spefifying the anisotropy - `A` term in the Hamiltonian"""
+        if self._anisotropy_matrix is None:
+            raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
+        else:
+            return self._anisotropy_matrix
+
+    def serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "site": self._site.serialise(context),
+            "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix)}
+
+    @staticmethod
+    def deserialise(json: dict, context: SPWSerialisationContext):
+        site = LatticeSite.deserialise(json["site"], context)
+        anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
+        return Anisotropy(site, anisotropy_matrix)
 
 
-class DiagonalAnisotropy(GeneralAnisotropy):
+class DiagonalAnisotropy(Anisotropy):
     """Anisotropy oriented with axes, but variable amount in x, y and z"""
 
-    @check_sizes(a=(3,), force_numpy=True)
-    def __init__(self, site: Identifier, a: np.ndarray):
-        super().__init__(site, a)
-        self._v = a
+    @check_sizes(v=(3,), a=(1,), force_numpy=True)
+    def __init__(self, site: LatticeSite, a: float, v: np.ndarray = np.array([0, 0, 1])):
+        mag = np.sqrt(np.sum(v))
 
+        if np.isclose(mag, 0, atol=tolerances.VECTOR_TOL):
+            self._vector = np.zeros((3,), dtype=float)
+        else:
+            self._vector = v / mag
 
-class XAxisAnisotropy(DiagonalAnisotropy):
-    """Pure X anisotropy"""
+        anisotropy_matrix = a * v.reshape(3, 1) * v.reshape(1, 3)
 
-    def __init__(self, site: Identifier, a: float):
-        super().__init__(site, np.array([1,0,0], dtype=float))
-        self.a_x = a
+        super().__init__(site, anisotropy_matrix)
+        self._a = a
 
+    @property
+    def constant(self):
+        return self._a
 
-class YAxisAnisotropy(DiagonalAnisotropy):
-    """Pure Y anisotropy"""
+    @property
+    def direction(self):
+        return self._vector
 
-    def __init__(self, site: Identifier, a: float):
-        super().__init__(site, np.array([0,1,0], dtype=float))
-        self.a_y = a
+    def serialise(self, context: SPWSerialisationContext):
+        return {
+            "site": self._site.serialise(context),
+            "vector": numpy_serialise(self._vector),
+            "a": float(self._a)
+        }
 
-
-class ZAxisAnisotropy(DiagonalAnisotropy):
-    """Pure Z anisotropy"""
-
-    def __init__(self, site: Identifier, a: float):
-        super().__init__(site, np.array([0,0,1], dtype=float))
-        self.a_z = a
+    @staticmethod
+    def deserialise(json: dict, context: SPWSerialisationContext):
+        return DiagonalAnisotropy(
+            LatticeSite.deserialise(json["site"], context),
+            json["a"],
+            numpy_deserialise(json["vector"]),
+        )
