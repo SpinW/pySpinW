@@ -2,7 +2,8 @@
 import numpy as np
 
 from pyspinw.checks import check_sizes
-from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, numpy_deserialise
+from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, numpy_deserialise, \
+    SPWDeserialisationContext
 from pyspinw.site import LatticeSite
 from pyspinw.tolerances import tolerances
 
@@ -23,14 +24,14 @@ class Anisotropy(SPWSerialisable):
         else:
             return self._anisotropy_matrix
 
-    def serialise(self, context: SPWSerialisationContext) -> dict:
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
-            "site": self._site.serialise(context),
+            "site": self._site._serialise(context),
             "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix)}
 
     @staticmethod
-    def deserialise(json: dict, context: SPWSerialisationContext):
-        site = LatticeSite.deserialise(json["site"], context)
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        site = LatticeSite._deserialise(json["site"], context)
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
         return Anisotropy(site, anisotropy_matrix)
 
@@ -60,17 +61,17 @@ class DiagonalAnisotropy(Anisotropy):
     def direction(self):
         return self._vector
 
-    def serialise(self, context: SPWSerialisationContext):
+    def _serialise(self, context: SPWSerialisationContext):
         return {
-            "site": self._site.serialise(context),
+            "site": self._site._serialise(context),
             "vector": numpy_serialise(self._vector),
             "a": float(self._a)
         }
 
     @staticmethod
-    def deserialise(json: dict, context: SPWSerialisationContext):
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
         return DiagonalAnisotropy(
-            LatticeSite.deserialise(json["site"], context),
+            LatticeSite._deserialise(json["site"], context),
             json["a"],
             numpy_deserialise(json["vector"]),
         )

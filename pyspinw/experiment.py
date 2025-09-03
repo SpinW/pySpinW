@@ -6,7 +6,7 @@ from pyspinw._base import Data
 import numpy as np
 
 from instrument import Instrument
-from pyspinw.serialisation import SPWSerialisable
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 
 
 class Experiment(SPWSerialisable):
@@ -28,12 +28,12 @@ class Experiment(SPWSerialisable):
         q_values = data.q
         raise NotImplementedError()
 
-    def serialise(self) -> dict:
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"sample": self.sample.serialise(),
                 "instrument": self.instrument.serialise()}
 
     @staticmethod
-    def deserialise(data: dict):
+    def _deserialise(data: dict, context: SPWDeserialisationContext):
         return Experiment(
             Sample.deserialise(data["sample"]),
             Instrument.deserialise(data["instrument"])

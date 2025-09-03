@@ -94,9 +94,9 @@ class Coupling(SPWSerialisable):
     def _base_serialisation(self, context: SPWSerialisationContext):
         return {
             "name": self.name,
-            "site_1": self._site_1.serialise(context),
-            "site_2": self._site_2.serialise(context),
-            "cell_offset": self._cell_offset.serialise(context)
+            "site_1": self._site_1._serialise(context),
+            "site_2": self._site_2._serialise(context),
+            "cell_offset": self._cell_offset._serialise(context)
         }
 
     @staticmethod
@@ -104,11 +104,11 @@ class Coupling(SPWSerialisable):
     def _base_deserialisation(json, context: SPWSerialisationContext):
         return CouplingBaseDeserialisation(
             name=json["name"],
-            site_1=LatticeSite.deserialise(json["site_1"], context),
-            site_2=LatticeSite.deserialise(json["site_2"], context),
-            cell_offset=CellOffset.deserialise(json["cell_offset"], context))
+            site_1=LatticeSite._deserialise(json["site_1"], context),
+            site_2=LatticeSite._deserialise(json["site_2"], context),
+            cell_offset=CellOffset._deserialise(json["cell_offset"], context))
 
-    def serialise(self, context: SPWSerialisationContext) -> dict:
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
             "type": self.coupling_type.lower(),
             "data": self._coupling_serialise(context)
@@ -121,9 +121,9 @@ class Coupling(SPWSerialisable):
 
     @staticmethod
     @expects_keys("type, data")
-    def deserialise(json: dict, context: SPWSerialisationContext):
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
         type_name = json["type"]
-        return lowercase_coupling_lookup[type_name].deserialise(json["data"], context)
+        return lowercase_coupling_lookup[type_name]._deserialise(json["data"], context)
 
 
     @staticmethod

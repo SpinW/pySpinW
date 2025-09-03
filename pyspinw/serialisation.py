@@ -8,16 +8,48 @@ import numpy as np
 class SPWSerialisationError(Exception):
     pass
 
+
+class SPWSerialisationContextGroup:
+    def __init__(self, name: str):
+        # Name given to this context
+        self._name = name
+
+        # For generating keys
+        self._counter = 0
+
+    def _next_id(self):
+        """ Generate a new ID in this context """
+        self._counter += 1
+        return self._counter - 1
+
+
 class SPWSerialisationContext:
-    pass
+    def __init__(self):
+        self.sites = SPWSerialisationContextGroup("site")
+
+class SPWDeserialisationContexGroup:
+    def __init__(self, name: str):
+        self._name = name
+
+class SPWDeserialisationContext:
+    def __init__(self):
+        self.sites = SPWDeserialisationContexGroup("site")
 
 class SPWSerialisable:
+    """ Classes that are serialisable to SPW files should use implement this interface """
 
-    def serialise(self, context: SPWSerialisationContext) -> dict:
+    def serialise(self):
+        pass
+
+    @staticmethod
+    def deserialise(json):
+        pass
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
         raise NotImplementedError("Serialisation not implemented")
 
     @staticmethod
-    def deserialise(json: dict, context: SPWSerialisationContext):
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
         raise NotImplementedError("Deserialisation not implemented")
 
 

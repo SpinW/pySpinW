@@ -48,14 +48,14 @@ class CellOffset(SPWSerialisable):
             j=self.j % sj,
             k=self.k % sk)
 
-    def serialise(self, context: SPWSerialisationContext) -> dict:
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
             "i": self._i,
             "j": self._j,
             "k": self._k }
 
     @staticmethod
-    def deserialise(data: dict, context: SPWSerialisationContext):
+    def _deserialise(data: dict, context: SPWSerialisationContext):
         return CellOffset(data["i"], data["j"], data["k"])
 
     @staticmethod

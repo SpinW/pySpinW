@@ -11,7 +11,8 @@ import numpy as np
 
 from pyspinw.cell_offsets import CellOffset, CellOffsetCoercible
 from pyspinw.checks import check_sizes
-from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContexGroup, \
+    SPWDeserialisationContext
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
@@ -22,10 +23,11 @@ class MagneticStructure(SPWSerialisable):
     def __init__(self):
         pass
 
-    def serialise(self):
+    def _serialise(self, context: SPWSerialisationContext):
         return {}
 
-    def deserialise(data: dict):
+    @staticmethod
+    def _deserialise(data: dict, context: SPWDeserialisationContext):
         return MagneticStructure()
 
 

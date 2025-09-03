@@ -33,9 +33,9 @@ class Hamiltonian(ABC, SPWSerialisable):
         # this will have a specific implementation for each Hamiltonian
         raise NotImplementedError
 
-    def serialise(self) -> dict:
-        return {"magnetic_structure": self.magnetic_structure.serialise(),
-                "couplings": [coupling.serialise() for coupling in self.couplings]}
+    def _serialise(self) -> dict:
+        return {"magnetic_structure": self.magnetic_structure._serialise(),
+                "couplings": [coupling._serialise() for coupling in self.couplings]}
 
 
 class GeneralHamiltonian(Hamiltonian):
