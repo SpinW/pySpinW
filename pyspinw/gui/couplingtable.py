@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
 
 from pyspinw.coupling import Coupling, DMCoupling
-from pyspinw.gui.cell_offsets import CellOffset
+from pyspinw.cell_offsets import CellOffset
 from pyspinw.site import LatticeSite
 
 

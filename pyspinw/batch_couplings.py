@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from pyspinw.lattice_distances import find_relative_positions
-from pyspinw.gui.cell_offsets import CellOffset
+from pyspinw.cell_offsets import CellOffset
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances

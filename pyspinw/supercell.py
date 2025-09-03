@@ -5,10 +5,10 @@ from math import lcm
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel, root_validator, model_validator, field_validator
+from pydantic import BaseModel, model_validator, field_validator
 
 from pyspinw.tolerances import tolerances
-from pyspinw.gui.cell_offsets import CellOffset
+from pyspinw.cell_offsets import CellOffset
 
 class PropagationVector(BaseModel):
     """ Propagation vector"""

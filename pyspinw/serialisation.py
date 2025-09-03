@@ -1,5 +1,7 @@
 """ Serialisation mixin
 """
+import inspect
+from functools import wraps
 
 import numpy as np
 
@@ -15,8 +17,39 @@ class SPWSerialisable:
         raise NotImplementedError("Serialisation not implemented")
 
     @staticmethod
-    def deserialise(data: dict, context: SPWSerialisationContext):
+    def deserialise(json: dict, context: SPWSerialisationContext):
         raise NotImplementedError("Deserialisation not implemented")
+
+
+def expects_keys(keystring: str):
+    """ Decorator for functions that take json dicts as first argument with given keys"""
+    keys = [x.strip() for x in keystring.split(",")]
+
+    def decorator(fun):
+
+        # We want to get the first parameter, regardless of how it is called, need to use inspection
+        sig = inspect.signature(fun)
+        first_param = next(iter(sig.parameters))
+
+        @wraps(fun)
+        def wrapper(*args, **kwargs):
+
+            # Get our arguments by name, even if they're positional
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+            json = bound.arguments[first_param]
+
+            if not isinstance(json, dict):
+                raise SPWSerialisationError(f"Expected a dictionary as first argument, got {json}")
+
+            for key in keys:
+                if key not in json:
+                    raise SPWSerialisationError(f"Expected to find key {key} in first parameter")
+
+            return fun(*args, **kwargs)
+
+        return wrapper
+    return decorator
 
 def numpy_serialise(data: np.ndarray) -> dict:
     shape = data.shape
