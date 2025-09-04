@@ -84,7 +84,12 @@ class Coupling(SPWSerialisable):
     def parameter_string(self) -> str:
         """ String representation of parameters """
         # Note that we reference the _parameter value, not the property that references it
-        return ", ".join([f"{parameter}={self.__dict__["_"+parameter]:.5g}" for parameter in self.parameters])
+        substrings = []
+        for parameter in self.parameters:
+            value=self.__dict__["_" + parameter]
+            substrings.append(f"{parameter}={value:.5g}")
+
+        return ", ".join(substrings)
 
     def __repr__(self):
         return "".join([
