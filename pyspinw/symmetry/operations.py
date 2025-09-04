@@ -95,7 +95,7 @@ class SpaceOperation:
         return ", ".join(strings)
 
 
-    def and_then(self, other: "MagneticOperation"):
+    def and_then(self, other: "SpaceOperation"):
         """ Composition of operations """
         # Notationally, it is common in group theory to use implicit
         #  multiplication for left composition, and dot for right composition elsewhere.
@@ -147,33 +147,26 @@ class SpaceOperation:
 
 
 
-
-
-
-class MagneticOperation(BaseModel):
+class MagneticOperation:
     """ Magnetic Operation """
 
-    point_operation: PointOperationType
-    translation: TranslationType
-    time_reversal: int
+    def __init__(self,
+                point_operation: PointOperationType,
+                translation: TranslationType,
+                time_reversal: int,
+                name: str | None = None):
 
-    name: str | None = None
-
-    @field_validator("time_reversal")
-    def validate_time_reversal(cls, value: int):
-        """ Validate time reversal field"""
-        if value not in (1, -1):
+        # Validate time reversal field
+        if time_reversal not in (1, -1):
             raise ValueError("Time inversion must be either 1 or -1.")
-        return value
 
-    @field_validator("point_operation")
-    def validate_point_operation(cls, value: PointOperationType):
-        """ Validate point operation field"""
-        if len(value) != 3:
+
+        # Validate point operation field
+        if len(point_operation) != 3:
             raise ValueError("Rotation must have 3 rows")
 
         for i in range(3):
-            col = value[i]
+            col = point_operation[i]
             if len(col) != 3:
                 raise ValueError("Rotation columns must have length 3")
 
@@ -181,7 +174,13 @@ class MagneticOperation(BaseModel):
                 if col[j] not in (-1, 0, 1):
                     raise ValueError("Rotation entries must be -1, 0 or 1")
 
-        return value
+        # Validate translation field
+        if len(translation) != 3:
+            raise ValueError("Translation must have 3 values")
+
+        for i in range(3):
+            if translation[i] < 0 or translation[i] >= 1:
+                raise ValueError("Translation entries must take values in the half open interval [0, 1)")
 
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
@@ -272,17 +271,6 @@ class MagneticOperation(BaseModel):
             time_reversal=new_time_reversal)
 
 
-    @field_validator("translation")
-    def validate_translation(cls, value):
-        """ Validate translation field"""
-        if len(value) != 3:
-            raise ValueError("Translation must have 3 values")
-
-        for i in range(3):
-            if value[i] < 0 or value[i] >= 1:
-                raise ValueError("Translation entries must take values in the half open interval [0, 1)")
-
-        return value
 
     @staticmethod
     def from_numpy(point_operation: np.ndarray, translation: np.ndarray,
