@@ -12,6 +12,8 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 class Experiment(SPWSerialisable):
     """The setup of a neutron experiment."""
 
+    serialisation_name = "experiment"
+
     def __init__(self, sample: Sample, instrument: Instrument | None = None):
         self.sample = sample
         self.instrument = instrument

@@ -10,6 +10,8 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext
 class CellOffset(SPWSerialisable):
     """ Representation of the relative position of individual unit cells within the lattice """
 
+    serialisation_name = "cell_offset"
+
     def __init__(self, i: int, j: int, k: int):
         self._i = i
         self._j = j

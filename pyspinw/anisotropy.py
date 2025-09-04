@@ -11,6 +11,8 @@ from pyspinw.tolerances import tolerances
 class Anisotropy(SPWSerialisable):
     """Defines the anisotropy at a given site"""
 
+    serialisation_name = "anisotropy"
+
     @check_sizes(anisotropy_matrix=(3,3))
     def __init__(self, site: LatticeSite, anisotropy_matrix: np.ndarray):
         self._site = site

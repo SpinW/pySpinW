@@ -12,6 +12,8 @@ import numpy as np
 class Hamiltonian(ABC, SPWSerialisable):
     """Hamiltonian base class"""
 
+    serialisation_name = "hamiltonian"
+
     def __init__(self,
                  magnetic_structure: MagneticStructure,
                  couplings: list[Coupling]):

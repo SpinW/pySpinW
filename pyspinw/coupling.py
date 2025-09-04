@@ -25,6 +25,8 @@ class CouplingBaseDeserialisation:
 class Coupling(SPWSerialisable):
     """Coupling between different sites"""
 
+    serialisation_name = "coupling"
+
     @check_sizes(coupling_matrix=(3,3))
     def __init__(self,
                  site_1: LatticeSite,

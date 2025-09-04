@@ -20,6 +20,8 @@ class LatticeSite(SPWSerialisable):
     :param: mi,mj,mk - Magnetic moment along unit cell aligned axis
     """
 
+    serialisation_name = "site"
+
     def __init__(self,
                  i: float, j: float, k: float,
                  mi: float = 0.0, mj: float = 0.0, mk: float = 0.0,
@@ -101,11 +103,16 @@ class LatticeSite(SPWSerialisable):
         return self._unique_id
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
-        return context.sites.reference_for(self)
+        pass
 
     @staticmethod
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        pass
+        site_or_json = context.sites.request_by_json(json)
+
+        if site_or_json.deserialised:
+            return site_or_json.value
+
+
 
 class ImpliedLatticeSite(LatticeSite):
     """ Lattice site that is implied by symmetry by a specified site"""

@@ -20,6 +20,8 @@ from pyspinw.symmetry.unitcell import UnitCell
 class MagneticStructure(SPWSerialisable):
     """Base class for representations of the Magnetic Structures"""
 
+    serialisation_name = "structure"
+
     def __init__(self):
         pass
 
