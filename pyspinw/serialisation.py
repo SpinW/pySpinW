@@ -242,8 +242,9 @@ def numpy_deserialise(json: dict) -> np.ndarray:
 
     except ValueError as ve:
         required_length = shape
+        actual_length = len(json["data"])
         raise SPWSerialisationError(f"Failed to set shape of numpy object. "
                                     f"{shape} requires length {required_length} "
-                                    f"but found {len(json["data"])} values") from ve
+                                    f"but found {actual_length} values") from ve
 
     return data
