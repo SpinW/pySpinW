@@ -43,6 +43,11 @@ class LatticeSite(SPWSerialisable):
         self._unique_id = _generate_unique_id()
 
     @property
+    def name(self):
+        """ Name given to this site """
+        return self._name
+
+    @property
     def i(self):
         """ Fractional position along first unit cell axis """
         return self._i
@@ -103,40 +108,103 @@ class LatticeSite(SPWSerialisable):
         return self._unique_id
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
-        pass
+        if not context.sites.has(self._unique_id):
+            json = {
+                "i": self.i,
+                "j": self.j,
+                "k": self.k,
+                "mi": self.mi,
+                "mj": self.mj,
+                "mk": self.mk,
+                "name": self.name
+            }
+
+            context.sites.put(self._unique_id, json)
+
+        return context.sites.reference(self._unique_id)
+
 
     @staticmethod
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        site_or_json = context.sites.request_by_json(json)
+        response = context.sites.request_by_json(json)
 
-        if site_or_json.deserialised:
-            return site_or_json.value
+        if response.deserialised:
+            return response.value
 
+        else:
+            json = response.value
+            # Do the actual deserialisation
+
+            if "parent" in json:
+                parent = LatticeSite._deserialise(json["parent"], context)
+                site = ImpliedLatticeSite(
+                    parent_site = parent,
+                    i=json["i"],
+                    j=json["j"],
+                    k=json["k"],
+                    mi=json["mi"],
+                    mj=json["mj"],
+                    mk=json["mk"],
+                    name=json["name"])
+            else:
+                site = LatticeSite(
+                    i=json["i"],
+                    j=json["j"],
+                    k=json["k"],
+                    mi=json["mi"],
+                    mj=json["mj"],
+                    mk=json["mk"],
+                    name=json["name"])
+
+            context.sites.put(response.id, site)
+
+            return site
 
 
 class ImpliedLatticeSite(LatticeSite):
     """ Lattice site that is implied by symmetry by a specified site"""
 
-    parent_site: LatticeSite
+    def __init__(self,
+                 parent_site: LatticeSite,
+                 i: float, j: float, k: float,
+                 mi: float = 0, mj: float = 0, mk: float = 0,
+                 name: str | None = None):
 
-    @staticmethod
-    def create(parent_site: LatticeSite,
-               i: float, j: float, k: float,
-               mi: float = 0, mj: float = 0, mk: float = 0,
-               name: str | None = None):
-        """ Create using ordered arguments"""
-        return ImpliedLatticeSite(parent_site=parent_site, i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
+        self.parent_site = parent_site
+
+        super().__init__(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
+
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        if not context.sites.has(self._unique_id):
+            parent_ref = self.parent_site._serialise(context)
+            json = {
+                "i": self.i,
+                "j": self.j,
+                "k": self.k,
+                "mi": self.mi,
+                "mj": self.mj,
+                "mk": self.mk,
+                "name": self.name,
+                "parent": parent_ref
+            }
+
+            context.sites.put(self._unique_id, json)
+
+        return context.sites.reference(self._unique_id)
+
+
 
     @staticmethod
     def from_coordinates(parent_site: LatticeSite, coordinates: np.ndarray, name: str = ""):
         """ Create ImpliedLatticeSite from coordinates"""
         return ImpliedLatticeSite(
             parent_site=parent_site,
-            i=coordinates[0],
-            j=coordinates[1],
-            k=coordinates[2],
-            mi=coordinates[3],
-            mj=coordinates[4],
-            mk=coordinates[5],
+            i=float(coordinates[0]),
+            j=float(coordinates[1]),
+            k=float(coordinates[2]),
+            mi=float(coordinates[3]),
+            mj=float(coordinates[4]),
+            mk=float(coordinates[5]),
             name=name)
 

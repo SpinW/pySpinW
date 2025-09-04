@@ -67,6 +67,9 @@ class SPWSerialisationContextGroup:
         self._counter += 1
         return self._counter - 1
 
+    def has(self, key):
+        return key in self._ids
+
     def put(self, key, serialisation_data):
         if key not in self._ids:
             id = self._next_id()
@@ -99,9 +102,10 @@ class SPWDeserialisationRequestResponse:
     Contains a value which can be a deserialised object or json. Has a flag for
     is whether or not it is the deserialised object
     """
-    def __init__(self, value, deserialised: bool):
+    def __init__(self, value, id: int, deserialised: bool):
         self.value = value
         self.deserialised = deserialised
+        self.id = id
 
 
 class SPWDeserialisationContexGroup:
