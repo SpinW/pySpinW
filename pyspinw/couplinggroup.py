@@ -7,7 +7,7 @@ TODO: Currently broken - WIP
 import numpy as np
 from numpy._typing import ArrayLike
 
-from pyspinw._base import Coupling
+from pyspinw.coupling import Coupling
 from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.gui.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
