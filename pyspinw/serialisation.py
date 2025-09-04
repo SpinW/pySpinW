@@ -4,6 +4,7 @@ import inspect
 from functools import wraps
 
 import numpy as np
+import json
 
 class SPWSerialisationError(Exception):
     pass
@@ -38,7 +39,9 @@ def expects_keys(keystring: str, parameter_index=0):
 
             for key in keys:
                 if key not in json:
-                    raise SPWSerialisationError(f"Expected to find key {key} in first parameter")
+                    found_keys = ",".join([key for key in json])
+                    raise SPWSerialisationError(f"Expected to find key {key} in first parameter, "
+                                                f"only found {found_keys}")
 
             return fun(*args, **kwargs)
 
@@ -74,12 +77,12 @@ class SPWSerialisationContextGroup:
         if key not in self._ids:
             id = self._next_id()
             self._ids[key] = id
-            self.data[id] = serialisation_data
+            self._data[id] = serialisation_data
 
     def reference(self, key):
         """ Return a reference to an object in this group"""
-        return {"reference": self.name,
-                "id": self._ids[key]}
+        return {"reference": self._name,
+                "id": str(self._ids[key])}
 
     def serialise(self):
         """ Get the serialisation data for this group """
@@ -119,9 +122,9 @@ class SPWDeserialisationContexGroup:
 
     def request_by_id(self, id) -> SPWDeserialisationRequestResponse:
         if id in self.objects:
-            return SPWDeserialisationRequestResponse(self.objects[id], True)
+            return SPWDeserialisationRequestResponse(self.objects[id], id, True)
         else:
-            return SPWDeserialisationRequestResponse(self.context_data[id], False)
+            return SPWDeserialisationRequestResponse(self.context_data[id], id, False)
 
     @expects_keys("reference, id", parameter_index=1)
     def request_by_json(self, json) -> SPWDeserialisationRequestResponse:
@@ -148,25 +151,32 @@ class SPWSerialisable:
 
     serialisation_name = "<not-implemented>"
 
-    def serialise(self):
+    def serialise(self) -> str:
         context = SPWSerialisationContext()
-        return {
+        data = {
             "type": self.serialisation_name,
             "object": self._serialise(context),
             "context": context.serialise()
         }
+        return json.dumps(data, indent=4, sort_keys=True)
 
     @classmethod
-    @expects_keys("type, object, context", parameter_index=1)
-    def deserialise(cls, json):
-        got_type = json["type"]
+    def deserialise(cls, json_string: str):
+
+        json_data = json.loads(json_string)
+
+        for key in ["type", "object", "context"]:
+            if key not in json_data:
+                raise SPWSerialisationError(f"Expected json key: '{key}'")
+
+        got_type = json_data["type"]
         if cls.serialisation_name != got_type:
             raise SPWSerialisationError(f"Tried to deserialise object of kind '{got_type}' but "
                                         f"expected {cls.serialisation_name}")
 
-        context = SPWDeserialisationContext(json["context"])
+        context = SPWDeserialisationContext(json_data["context"])
 
-        cls._deserialise(json["object"], context)
+        return cls._deserialise(json_data["object"], context)
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         raise NotImplementedError("Serialisation not implemented")

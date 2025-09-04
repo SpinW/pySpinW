@@ -41,6 +41,9 @@ class CellOffset(SPWSerialisable):
         """ Vector of index (int array)"""
         return self._vector
 
+    def __repr__(self):
+        return str(self.as_tuple)
+
     def position_in_supercell(self, supercell_size: tuple[int, int, int]):
         """ Get the position within a supercell, rather than an infinite crystal (do mods)"""
         si, sj, sk = supercell_size
@@ -75,7 +78,7 @@ class CellOffset(SPWSerialisable):
             return CellOffset(0,0,0)
 
         elif isinstance(cell_offset_or_data, tuple):
-            if len(cell_offset_or_data == 3):
+            if len(cell_offset_or_data) == 3:
                 if all([isinstance(x, int) for x in cell_offset_or_data]):
                     return CellOffset(*cell_offset_or_data)
 

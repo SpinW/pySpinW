@@ -78,7 +78,15 @@ class Coupling(SPWSerialisable):
     @property
     def parameter_string(self) -> str:
         """ String representation of parameters """
-        return ", ".join([f"{parameter}={self.__dict__[parameter]:.5g}" for parameter in self.parameters])
+        # Note that we reference the _parameter value, not the property that references it
+        return ", ".join([f"{parameter}={self.__dict__["_"+parameter]:.5g}" for parameter in self.parameters])
+
+    def __repr__(self):
+        return "".join([
+            self.__class__.__name__,
+            f"['{self.name}', '{self.site_1.name}'->'{self.site_2.name}' offset={self.cell_offset}, ",
+            self.parameter_string,
+            "]"])
 
     @property
     def lattice_vector(self):
@@ -125,7 +133,7 @@ class Coupling(SPWSerialisable):
     @expects_keys("type, data")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         type_name = json["type"]
-        return lowercase_coupling_lookup[type_name]._deserialise(json["data"], context)
+        return lowercase_coupling_lookup[type_name]._coupling_deserialise(json["data"], context)
 
 
     @staticmethod
@@ -165,13 +173,18 @@ class HeisenbergCoupling(Coupling):
                  name: str=""):
 
         self._j = j
-        self._coupling_matrix = -j * np.eye(3)
+        self._coupling_matrix = j * np.eye(3)
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
                          coupling_matrix=self._coupling_matrix,
                          name=name)
+
+    @property
+    def j(self):
+        """ Coupling constant """
+        return self._j
 
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
@@ -228,6 +241,23 @@ class DiagonalCoupling(Coupling):
                          coupling_matrix=self._coupling_matrix,
                          name=name)
 
+    @property
+    def j_x(self):
+        """ Coupling constant for x """
+        return self._j_x
+
+
+    @property
+    def j_y(self):
+        """ Coupling constant for y """
+        return self._j_y
+
+
+    @property
+    def j_z(self):
+        """ Coupling constant for z """
+        return self._j_z
+
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
         json["j_x"] = self._j_x
@@ -266,6 +296,12 @@ class XYCoupling(Coupling):
     parameter_defaults = [1.0]
     short_string = "J"
 
+
+    @property
+    def j(self):
+        """ Coupling constant for x and y """
+        return self._j
+
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
@@ -273,8 +309,8 @@ class XYCoupling(Coupling):
 
         self._j = j
         self._coupling_matrix = np.eye(3)
-        self._coupling_matrix[0,0] = -j
-        self._coupling_matrix[1,1] = -j
+        self._coupling_matrix[0,0] = j
+        self._coupling_matrix[1,1] = j
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
@@ -333,6 +369,19 @@ class XXZCoupling(Coupling):
                          coupling_matrix=self._coupling_matrix,
                          name=name)
 
+
+
+    @property
+    def j_xy(self):
+        """ Coupling constant for x and y """
+        return self._j_xy
+
+
+    @property
+    def j_z(self):
+        """ Coupling constant for z """
+        return self._j_z
+
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
         json["j_xy"] = self._j_xy
@@ -382,6 +431,11 @@ class IsingCoupling(Coupling):
                          coupling_matrix=self._coupling_matrix,
                          name=name)
 
+    @property
+    def j_z(self):
+        """ Coupling constant for z """
+        return self._j_z
+
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
         json["j_z"] = self._j_z
@@ -413,7 +467,7 @@ class DMCoupling(Coupling):
 
     """
 
-    coupling_type = "Dzyaloshinskii–Moriya"
+    coupling_type = "Dzyaloshinskii-Moriya"
     parameters = ["d_x", "d_y", "d_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "DM"
@@ -436,6 +490,22 @@ class DMCoupling(Coupling):
                          coupling_matrix=self._coupling_matrix,
                          name=name)
 
+
+    @property
+    def j_x(self):
+        """ DM coupling constant for x """
+        return self._d_x
+
+    @property
+    def j_y(self):
+        """ DM coupling constant for y """
+        return self._d_y
+
+    @property
+    def j_z(self):
+        """ DM coupling constant for z """
+        return self._d_z
+
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
         json["d_x"] = self._d_x
@@ -447,14 +517,14 @@ class DMCoupling(Coupling):
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
         base = Coupling._base_deserialisation(data, context)
 
-        return DiagonalCoupling(
+        return DMCoupling(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
             name=base.name,
-            j_x = data["d_x"],
-            j_y = data["d_y"],
-            j_z = data["d_z"])
+            d_x = data["d_x"],
+            d_y = data["d_y"],
+            d_z = data["d_z"])
 
 
 couplings = [HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling]
