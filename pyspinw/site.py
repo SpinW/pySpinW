@@ -2,8 +2,6 @@
 
 import numpy as np
 
-from pydantic import BaseModel, Field
-
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext
 
 _id_counter = -1
