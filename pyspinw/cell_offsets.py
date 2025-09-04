@@ -1,6 +1,4 @@
 """ Cell offsets (i.e. reference to a particular unit cell in a crystal)"""
-from typing import Self, Any
-
 import numpy as np
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext

@@ -1,12 +1,11 @@
 """Coupling Terms"""
 from dataclasses import dataclass
-from typing import ClassVar
 
 import numpy as np
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
-from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, SPWSerialisationError, \
+from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
