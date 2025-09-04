@@ -156,6 +156,11 @@ class MagneticOperation:
                 time_reversal: int,
                 name: str | None = None):
 
+        self.point_operation = point_operation
+        self.translation = translation
+        self.time_reversal = time_reversal
+        self.name = name
+
         # Validate time reversal field
         if time_reversal not in (1, -1):
             raise ValueError("Time inversion must be either 1 or -1.")
