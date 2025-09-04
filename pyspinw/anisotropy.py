@@ -57,10 +57,12 @@ class DiagonalAnisotropy(Anisotropy):
 
     @property
     def constant(self):
+        """ Amount of anisotropy (anisotropy constant)"""
         return self._a
 
     @property
     def direction(self):
+        """ The principal direction of the anisotropy"""
         return self._vector
 
     def _serialise(self, context: SPWSerialisationContext):

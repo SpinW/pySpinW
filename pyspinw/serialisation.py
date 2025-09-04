@@ -1,4 +1,7 @@
 """ Serialisation mixin
+
+See design document 004 for details.
+
 """
 import inspect
 from functools import wraps
@@ -7,12 +10,11 @@ import numpy as np
 import json
 
 class SPWSerialisationError(Exception):
-    pass
+    """ Exceptions thrown by the [de]serialisation process """
 
 
 def expects_keys(keystring: str, parameter_index=0):
-    """ Decorator for functions that take json dicts as first (or other if parameter_index is specified)
-    argument with given keys"""
+    """ Decorator for functions that take json dicts with given keys as the `parameter_index` place parameter"""
     keys = [x.strip() for x in keystring.split(",")]
 
     def decorator(fun):
@@ -71,9 +73,11 @@ class SPWSerialisationContextGroup:
         return self._counter - 1
 
     def has(self, key):
+        """ Does this serialisation context have the object specified by 'key'"""
         return key in self._ids
 
     def put(self, key, serialisation_data):
+        """ Put a new serialised object into this context """
         if key not in self._ids:
             id = self._next_id()
             self._ids[key] = id
@@ -91,10 +95,13 @@ class SPWSerialisationContextGroup:
 
 
 class SPWSerialisationContext:
+    """ Context object (see design document 004) for serialisation """
+
     def __init__(self):
         self.sites = SPWSerialisationContextGroup("sites")
 
     def serialise(self):
+        """ Serialise the data in this context to JSON"""
         return {
             "sites": self.sites.serialise()
         }
@@ -105,6 +112,7 @@ class SPWDeserialisationRequestResponse:
     Contains a value which can be a deserialised object or json. Has a flag for
     is whether or not it is the deserialised object
     """
+
     def __init__(self, value, id: int, deserialised: bool):
         self.value = value
         self.deserialised = deserialised
@@ -113,6 +121,7 @@ class SPWDeserialisationRequestResponse:
 
 class SPWDeserialisationContexGroup:
     """ Group of objects for deserialisation """
+
     def __init__(self, name: str, context_data: dict):
         self._name = name
 
@@ -121,6 +130,11 @@ class SPWDeserialisationContexGroup:
         self.context_data = context_data
 
     def request_by_id(self, id) -> SPWDeserialisationRequestResponse:
+        """ Ask for an object from this context-group using its serialisation id
+
+        It will return an object that contains either the deserialised object, or json that needs to
+        be deserialised (along with appropriate metadata)
+        """
         if id in self.objects:
             return SPWDeserialisationRequestResponse(self.objects[id], id, True)
         else:
@@ -128,6 +142,11 @@ class SPWDeserialisationContexGroup:
 
     @expects_keys("reference, id", parameter_index=1)
     def request_by_json(self, json) -> SPWDeserialisationRequestResponse:
+        """ Ask for an object from this context-group using a json object
+
+        It will return an object that contains either the deserialised object, or json that needs to
+        be deserialised (along with appropriate metadata)
+        """
         reference = json["reference"]
         if reference == self._name:
             return self.request_by_id(json["id"])
@@ -139,7 +158,7 @@ class SPWDeserialisationContexGroup:
         self.objects[id] = instance
 
 class SPWDeserialisationContext:
-    """ Carries information needed to deserialise objects"""
+    """ Context object (see design document 004) for deserialisation """
 
     @expects_keys("sites", parameter_index=1)
     def __init__(self, context_data: dict):
@@ -152,6 +171,7 @@ class SPWSerialisable:
     serialisation_name = "<not-implemented>"
 
     def serialise(self) -> str:
+        """ Serialise an object of this type to a JSON string"""
         context = SPWSerialisationContext()
         data = {
             "type": self.serialisation_name,
@@ -162,7 +182,7 @@ class SPWSerialisable:
 
     @classmethod
     def deserialise(cls, json_string: str):
-
+        """ Deserialise an object of this type to a JSON string """
         json_data = json.loads(json_string)
 
         for key in ["type", "object", "context"]:

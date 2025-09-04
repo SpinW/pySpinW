@@ -16,6 +16,7 @@ from pyspinw.util import triple_product_matrix
 @dataclass
 class CouplingBaseDeserialisation:
     """ Class to hold basic properties of the coupling """
+
     name: str
     site_1: LatticeSite
     site_2: LatticeSite
@@ -50,18 +51,22 @@ class Coupling(SPWSerialisable):
 
     @property
     def name(self):
+        """ Name of this coupling """
         return self._name
 
     @property
     def site_1(self):
+        """ First site"""
         return self._site_1
 
     @property
     def site_2(self):
+        """ Second site"""
         return self._site_2
 
     @property
     def cell_offset(self):
+        """ Offset between unit cells containing sites 1 and 2"""
         return self._cell_offset
 
     @property
@@ -218,7 +223,6 @@ class DiagonalCoupling(Coupling):
 
     """
 
-
     coupling_type = "Diagonal"
     parameters = ["j_x", "j_y", "j_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
@@ -289,7 +293,6 @@ class XYCoupling(Coupling):
     :param j: The coupling coefficient for the x and y components.
 
     """
-
 
     coupling_type = "XY"
     parameters = ["j"]

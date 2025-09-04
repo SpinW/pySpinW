@@ -21,14 +21,17 @@ class CellOffset(SPWSerialisable):
 
     @property
     def i(self):
+        """ First cell offset component"""
         return self._i
 
     @property
     def j(self):
+        """ Second cell offset component"""
         return self._j
 
     @property
     def k(self):
+        """ Third cell offset component"""
         return self._k
 
     @property
@@ -64,12 +67,11 @@ class CellOffset(SPWSerialisable):
         return CellOffset(data["i"], data["j"], data["k"])
 
     @staticmethod
-    def coerce(cell_offset_or_data: Any):
-        """ Convert a cell offset specification which could be a tuple, None or CellOffset into
-        a CellOffset object
+    def coerce(cell_offset_or_data):
+        """ Convert a cell offset specification to a CellOffset object
 
+        Input could be a tuple, None or CellOffset
         """
-
         if isinstance(cell_offset_or_data, CellOffset):
             return cell_offset_or_data
 
