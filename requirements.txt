@@ -5,4 +5,3 @@ spglib == 2.5.0
 
 pyopengl
 pyside6
-pydantic
