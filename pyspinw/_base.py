@@ -25,26 +25,6 @@ class MagneticStructure(ABC):
         pass
 
 
-class Hamiltonian(ABC):
-    """Hamiltonian base class"""
-
-    def __init__(self,
-                 crystal_structure: BravaisLattice,
-                 magnetic_structure: MagneticStructure):
-
-        self.crystal_structure = crystal_structure
-        self.magnetic_structure = magnetic_structure
-
-    @abstractmethod
-    def energies(self, q_vectors: np.ndarray):
-        """Get the energy levels of the system at the given q vectors"""
-
-class Sample(ABC):
-    """Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
-
-    def __init__(self, hamiltonian: Hamiltonian):
-        self.hamiltonian = hamiltonian
-
 Identifier = str # temporary choice for now
 
 
@@ -117,8 +97,9 @@ class Anisotropy:
 class Data:
     """Placeholder"""
 
-class Experiment:
-    """The setup of a neutron experiment (base class)"""
+    def __init__(self, data):
+        self.data = data
 
-    def __init__(self, sample: Sample, data: Data | None = None):
-        pass
+    @property
+    def q(self) -> np.ndarray:
+        raise NotImplementedError
