@@ -6,14 +6,9 @@ This is the magnet in MATLAB SpinW tutorial 8:
 import sys
 
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
-    RUST_AVAILABLE = True
-except ModuleNotFoundError:
-    RUST_AVAILABLE = False
-
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+from examples.raw_calculations.utils import run_example
 
 # define our rotation matrices
 def rotation(theta):
@@ -28,14 +23,11 @@ def rotation(theta):
     )
 
 
-def kagome_supercell(n_q = 100, rust = False):
+def kagome_supercell(n_q = 100, coupling_class = PyCoupling):
     """A sqrt(3) x sqrt(3) Kagome antiferromagnet supercell lattice."""
-    if rust:
-        rust_kw = {'dtype':complex, 'order':'F'}
-        Coupling = RsCoupling
-    else:
-        rust_kw = {}
-        Coupling = PyCoupling
+    rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
+
 
     # we index the supercell by indexing each unit cell in order: so that the
     # 'central' atom is 0 mod 3, the top-left atom is 1 mod 3, the right is 2 mod 3
@@ -142,23 +134,19 @@ def kagome_supercell(n_q = 100, rust = False):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    use_rust = ("py" not in sys.argv[1]) if len(sys.argv) > 1 else RUST_AVAILABLE
-    spinwave_calculation = rs_spinwave if use_rust else py_spinwave
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
 
-    structure = kagome_supercell(rust = use_rust)
+    structure, energies = run_example(kagome_supercell, use_rust)
+
     q_vectors = structure[2]
-
     indices = np.arange(201)
-
     label_indices = [0, 100, 200]
-    # label_indices = []
-
     labels = [str(q_vectors[idx, :]) for idx in label_indices]
 
-    energies = spinwave_calculation(*structure)
-
     energies = [np.sort(energy.real) for energy in energies]
-
     positive_energies = [energy[energy > 0] for energy in energies]
     min_energy = min([np.min(energy) for energy in positive_energies])
     translated_energies = [energy - min_energy for energy in positive_energies]

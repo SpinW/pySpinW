@@ -5,23 +5,14 @@ See https://spinw.org/tutorials/01tutorial
 import sys
 
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
-    RUST_AVAILABLE = True
-except ModuleNotFoundError:
-    RUST_AVAILABLE = False
+from examples.raw_calculations.utils import run_example
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
-
-def heisenberg_ferromagnet(n_q = 100, rust = False):
+def heisenberg_ferromagnet(n_q = 100, coupling_class = PyCoupling):
     """Basic ferromagnet."""
-    if rust:
-        rust_kw = {'dtype':complex, 'order':'F'}
-        Coupling = RsCoupling
-    else:
-        rust_kw = {}
-        Coupling = PyCoupling
+    rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
 
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
@@ -38,16 +29,16 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    n_q = 100
-    use_rust = ("py" not in sys.argv[1]) if len(sys.argv) > 1 else RUST_AVAILABLE
-    spinwave_calculation = rs_spinwave if use_rust else py_spinwave
-    q_mags = np.linspace(0, 1, n_q)
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
 
-    structure = heisenberg_ferromagnet(n_q, rust=use_rust)
-    energies = spinwave_calculation(*structure)
+    q_mags = np.linspace(0, 1, 100)
+
+    _, energies = run_example(heisenberg_ferromagnet, use_rust)
 
     # Note: we get complex data types with real part zero
-
     plt.plot(q_mags, energies)
 
     # Compare with tutorial 1, 3rd last figure (https://spinw.org/tutorial1_05.png)
