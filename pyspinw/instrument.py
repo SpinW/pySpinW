@@ -19,4 +19,4 @@ class Instrument:
         instrument_name: str
             The name of the instrument.
         """
-        raise NotImplementedError
+        raise NotImplementedError("ResINS compatibility has not yet been implemented.")
