@@ -5,23 +5,14 @@ See https://spinw.org/tutorials/05tutorial.
 import sys
 
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
-    RUST_AVAILABLE = True
-except ModuleNotFoundError:
-    RUST_AVAILABLE = False
+from examples.raw_calculations.utils import run_example
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
-
-def kagome_ferromagnet(n_q = 100, rust = False):
+def kagome_ferromagnet(n_q = 100, coupling_class = PyCoupling):
     """Basic ferromagnet on a kagome lattice."""
-    if rust:
-        rust_kw = {'dtype':complex, 'order':'F'}
-        Coupling = RsCoupling
-    else:
-        rust_kw = {}
-        Coupling = PyCoupling
+    rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
 
     # Three sites, otherwise identical
     rotations = [np.eye(3, **rust_kw) for _ in range(3)]
@@ -74,16 +65,17 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
+
+    structure, energies = run_example(kagome_ferromagnet, use_rust)
+
     indices = np.arange(201)
-
     label_indices = [0, 100, 200]
-
-    use_rust = ("py" not in sys.argv[1]) if len(sys.argv) > 1 else RUST_AVAILABLE
-    spinwave_calculation = rs_spinwave if use_rust else py_spinwave
-
-    rotations, magnitudes, q_vectors, couplings = kagome_ferromagnet(100, rust=use_rust)
+    q_vectors = structure[2]
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
-    energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
 
     plt.plot(indices, np.real(energies))
     # plt.plot(indices, [method.value for method in result.method])

@@ -5,15 +5,9 @@ See https://spinw.org/tutorials/07tutorial.
 import sys
 
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
-    RUST_AVAILABLE = True
-except ModuleNotFoundError:
-    RUST_AVAILABLE = False
-
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
-
+from examples.raw_calculations.utils import run_example
 
 # define our rotation matrices
 def rotation(theta):
@@ -43,7 +37,7 @@ def rotation(theta):
         dtype=complex, order='F',
     )
 
-def kagome_antiferromagnet(n_q = 100, rust = False):
+def kagome_antiferromagnet(n_q = 100, coupling_class = PyCoupling):
     """Kagome anti-ferromagnet like in tutorial 7."""
     # Three sites, otherwise identical
     rotations = [
@@ -53,12 +47,8 @@ def kagome_antiferromagnet(n_q = 100, rust = False):
     ]
     magnitudes = np.array([1.0]*3)  # spin-1
 
-    if rust:
-        rust_kw = {'dtype':complex, 'order':'F'}
-        Coupling = RsCoupling
-    else:
-        rust_kw = {}
-        Coupling = PyCoupling
+    rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
 
     # Do the J1 (nearest neighbour) couplings - using table from Matlab Tutorial 7
     # Run the example until the end and then run:
@@ -115,24 +105,20 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    use_rust = ("py" not in sys.argv[1]) if len(sys.argv) > 1 else RUST_AVAILABLE
-    spinwave_calculation = rs_spinwave if use_rust else py_spinwave
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
 
-    structure = kagome_antiferromagnet(rust = use_rust)
-    q_vectors = structure[2]
+    structure, energies = run_example(kagome_antiferromagnet, use_rust)
 
     indices = np.arange(201)
-
     label_indices = [0, 100, 200]
-    # label_indices = []
-
+    q_vectors = structure[2]
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
-
-    energies = spinwave_calculation(*structure)
 
     # Ignore imaginary energies (we shouldn't get any here...)
     energies = [np.sort(energy.real) for energy in energies]
-
     positive_energies = [energy[energy>0] for energy in energies]
 
     plt.plot(indices, positive_energies)
