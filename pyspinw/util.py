@@ -56,5 +56,23 @@ def problematic_sites(sites: list[LatticeSite],
 
     return bad_sites
 
+@check_sizes(axis=(3,), force_numpy=True)
+def rotation_matrix(angle, axis):
+    mag = np.sqrt(np.sum(axis**2))
+
+    if mag == 0:
+        raise ValueError("Rotation matrix cannot be made for axis (0,0,0) ")
+
+    axis = axis/mag  # Don't use /= because of dtype error possibility
+
+    c = np.cos(angle)
+    s = np.sin(angle)
+
+    part1 = (axis.reshape(-1, 1) * axis.reshape(1, -1)) * (1-c)
+    part2 = c * np.eye(3)
+    part3 = s * triple_product_matrix(-axis)
+
+    return part1 + part2 + part3
+
 if __name__ == "__main__":
     demo_triple_product_matrix()

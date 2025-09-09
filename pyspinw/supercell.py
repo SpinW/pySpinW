@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 
+from checks import check_sizes
 from pyspinw.tolerances import tolerances
 from pyspinw.cell_offsets import CellOffset
 
@@ -56,9 +57,11 @@ class CommensuratePropagationVector(PropagationVector):
                  j: Fraction | float,
                  k: Fraction | float):
 
-        self.i = _coerce_numeric_input(i)
-        self.j = _coerce_numeric_input(j)
-        self.k = _coerce_numeric_input(k)
+        i = _coerce_numeric_input(i)
+        j = _coerce_numeric_input(j)
+        k = _coerce_numeric_input(k)
+
+        super().__init__(i, j, k)
 
         self._vector = np.array([self.i, self.j, self.k], dtype=float)
 
@@ -69,8 +72,8 @@ class IncommensuratePropagationVector(PropagationVector):
 class CommensurateSupercell:
     """ Base class for a commensurate supercell"""
 
-    def __init__(self):
-        propagation_vectors: list[CommensuratePropagationVector]
+    def __init__(self, propagation_vectors):
+        propagation_vectors = propagation_vectors
 
     def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         """ Get the moment at a given cell location"""
@@ -94,9 +97,11 @@ class SummationSupercell(CommensurateSupercell):
     m = sum(m_j exp(2 pi i r.k_j)).real
     """
 
-    def __init__(self, propagation_vectors, moments):
-        moments: list[np.ndarray]
+    def __init__(self, propagation_vectors):
+        super().__init__(propagation_vectors)
 
+
+    def apply(self, moments):
         for moment in moments:
             if not isinstance(moment, np.ndarray):
                 raise TypeError("moments must contain numpy ndarrays")
@@ -111,6 +116,24 @@ class SummationSupercell(CommensurateSupercell):
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
 
+class SupercellTransformation:
+
+    @check_sizes(matrix=(3,3))
+    def __init__(self, matrix: np.ndarray):
+        self._matrix = matrix
+
+    @property
+    def matrix(self):
+        return self._matrix
+
+class GeneralSupercellTransformation
+
+class SupercellRotation(SupercellTransformation):
+    def __init__(self, propagation_vector: CommensuratePropagationVector, axis: np.ndarray):
+
+
+
+
 class TransformationSupercell(CommensurateSupercell):
     """ Supercell with moments defined by the following equation:
 
@@ -120,17 +143,6 @@ class TransformationSupercell(CommensurateSupercell):
     """
 
     transforms: list[np.ndarray]
-
-    @field_validator("transforms")
-    def check_numpy_array(cls, list_of_arrays):
-        """pydantic: validator for numpy array list"""
-        for moment in list_of_arrays:
-            if not isinstance(moment, np.ndarray):
-                raise TypeError("transforms must contain numpy ndarrays")
-            if moment.shape != (3,3):
-                raise ValueError("transforms must be of shape (3,3)")
-
-        return list_of_arrays
 
     @model_validator(mode="after")
     def check_lengths(self):

@@ -70,7 +70,7 @@ class LatticeSite(SPWSerialisable):
         """magnetic moment as numpy array"""
         return self._m
 
-    def moment(self, supercell: Supercell | None = None):
+    def moment(self, supercell: str | None = None): #TODO: Supercell class name
         """ Get the magnetic moment, with the option of accounting for the supercell"""
         if supercell is None:
             return self.base_moment
