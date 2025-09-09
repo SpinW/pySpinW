@@ -4,7 +4,7 @@ from enum import Enum
 
 import numpy as np
 
-from pyspinw._base import Coupling
+from pyspinw.coupling import Coupling
 from pyspinw.couplinggroup import CouplingGroup
 from pyspinw.gui.symmetry_settings import SymmetrySettings, DEFAULT_SYMMETRY
 from pyspinw.site import LatticeSite

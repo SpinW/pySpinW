@@ -61,29 +61,21 @@ class LatticeSite(SPWSerialisable):
         return self._k
 
     @property
-    def mi(self):
-        """ Magnetic moment along first unit cell axis """
-        return self._mi
-
-    @property
-    def mj(self):
-        """ Magnetic moment along second unit cell axis """
-        return self._mj
-
-    @property
-    def mk(self):
-        """ Magnetic moment along third unit cell axis """
-        return self._mk
-
-    @property
     def ijk(self):
         """ ijk values as a numpy array"""
         return self._ijk
 
     @property
-    def m(self):
+    def base_moment(self):
         """magnetic moment as numpy array"""
         return self._m
+
+    def moment(self, supercell: Supercell | None = None):
+        """ Get the magnetic moment, with the option of accounting for the supercell"""
+        if supercell is None:
+            return self.base_moment
+        else:
+            raise NotImplementedError()
 
     @property
     def values(self):
