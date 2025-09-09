@@ -3,7 +3,6 @@
 This is an abstract outline, the actual implementations are in different files
 
 """
-from dataclasses import dataclass
 
 # pylint: disable=R0903
 

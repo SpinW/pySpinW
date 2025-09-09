@@ -1,7 +1,5 @@
 """Instrument specification"""
 
-from dataclasses import dataclass
-
 class Instrument:
     """Defines an instrument
 
@@ -11,7 +9,7 @@ class Instrument:
     resolution: float
 
     @classmethod
-    def from_ResINS(instrument_name: str) -> Instrument:
+    def from_ResINS(instrument_name: str) -> "Instrument":
         """Instantiate an instrument from ResINS.
 
         Parameters
