@@ -22,6 +22,7 @@ from examples.raw_calculations.kagome import kagome_ferromagnet
 from examples.raw_calculations.kagome_antiferro import kagome_antiferromagnet
 from examples.raw_calculations.kagome_supercell import kagome_supercell
 
+@pytest.mark.rust
 @pytest.mark.parametrize("example",
                          [heisenberg_ferromagnet,
                           antiferro_chain,
