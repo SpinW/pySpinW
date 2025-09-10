@@ -9,8 +9,9 @@ name = "rust"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = {version="0.24.2", features=["num-complex"]}
-numpy = {version="0.24.0", features=["nalgebra"]}
-nalgebra = "0.33.2" 
+pyo3 = {version="0.23.3", features=["num-complex"]}
+numpy = "0.23.0"
+faer = "0.22.6"
+faer-ext = {version="0.6.0", features=["numpy"]}
 num-complex = "0.4.6"
 rayon = "1.10.0"
