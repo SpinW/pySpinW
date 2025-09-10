@@ -22,16 +22,38 @@ class LatticeSite(SPWSerialisable):
 
     def __init__(self,
                  i: float, j: float, k: float,
-                 mi: float = 0.0, mj: float = 0.0, mk: float = 0.0,
+                 mi: float | None = None,
+                 mj: float | None = None,
+                 mk: float | None = None,
+                 supercell_moments: np.ndarray | None = None,
                  name: str = ""):
 
         self._i = i
         self._j = j
         self._k = k
 
-        self._mi = mi
-        self._mj = mj
-        self._mk = mk
+        #
+        # Lots of case checking for the moment input format
+        #
+
+        if supercell_moments is None:
+            self._moment_data = np.array([[
+                0.0 if mi is None else mi,
+                0.0 if mj is None else mj,
+                0.0 if mk is None else mk]],
+                    dtype=float)
+
+        else:
+            if mi is not None or mj is not None or mk is not None:
+                raise ValueError("Specify either")
+
+            if len(supercell_moments.shape) == 1:
+                if supercell_moments.shape[0] != 3:
+                    raise ValueError("Expected moments to be of the form")
+
+            self._moment_data = supercell_moments.reshape((1, 3))
+
+        self._base_moment = np.sum(supercell_moments, axis=0)
 
         self._name = name
 
@@ -70,12 +92,10 @@ class LatticeSite(SPWSerialisable):
         """magnetic moment as numpy array"""
         return self._m
 
-    def moment(self, supercell: str | None = None): #TODO: Supercell class name
-        """ Get the magnetic moment, with the option of accounting for the supercell"""
-        if supercell is None:
-            return self.base_moment
-        else:
-            raise NotImplementedError()
+    @property
+    def moment_data(self, supercell: str | None = None):
+        """ Get all the magnetic moment data"""
+        raise NotImplementedError()
 
     @property
     def values(self):
