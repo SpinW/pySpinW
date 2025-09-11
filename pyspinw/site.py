@@ -1,6 +1,7 @@
 """ Representation of sites (e.g. magnetic atoms) within a magnetic system"""
 
 import numpy as np
+from scipy.stats import goodness_of_fit
 
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext
 
@@ -45,11 +46,23 @@ class LatticeSite(SPWSerialisable):
 
         else:
             if mi is not None or mj is not None or mk is not None:
-                raise ValueError("Specify either")
+                raise ValueError("You need to specify at least one of 'mi', 'mj', 'mk' or 'supercell_moments'")
+
+            good_shape = True
 
             if len(supercell_moments.shape) == 1:
                 if supercell_moments.shape[0] != 3:
-                    raise ValueError("Expected moments to be of the form")
+                    good_shape = False
+
+            elif len(supercell_moments.shape) == 2:
+                if supercell_moments.shape[1] != 3:
+                    good_shape = False
+
+            else:
+                good_shape = False
+
+            if not good_shape:
+                raise ValueError("'supercell_moments' should have shape (3,) or (n,3)")
 
             self._moment_data = supercell_moments.reshape((1, 3))
 

@@ -1,5 +1,5 @@
 """ Supercell representations"""
-
+from abc import ABC, abstractmethod
 from fractions import Fraction
 from math import lcm
 from typing import Any
@@ -7,8 +7,11 @@ from typing import Any
 import numpy as np
 
 from checks import check_sizes
+from pyspinw.site import LatticeSite
 from pyspinw.tolerances import tolerances
 from pyspinw.cell_offsets import CellOffset
+from pyspinw.util import rotation_matrix
+
 
 class PropagationVector:
     """ Propagation vector"""
@@ -69,27 +72,115 @@ class IncommensuratePropagationVector(PropagationVector):
     """ Propagation vector with non-integral values"""
 
 
-class CommensurateSupercell:
+class SupercellTransformation(ABC):
+
+    @abstractmethod
+    def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        """ Apply this transformation to a moment with a given offset """
+
+class IdentityTransform(SupercellTransformation):
+    def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        return moment
+
+class SupercellRotation(SupercellTransformation):
+    """ Rotation transformation in a supercell"""
+    def __init__(self, axis: np.ndarray):
+        self._axis = axis
+
+    def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        angle = 2 * np.pi * propagation_vector.dot(cell_offset)
+        return moment @ rotation_matrix(angle, self._axis)
+
+
+class Supercell(ABC):
+    def __init__(self, scaling: tuple[int, int, int] | None = None):
+
+        if any([scaling_axis < 1 for scaling_axis in scaling]):
+            raise ValueError("Scaling components should be >= 1")
+
+        if scaling is None:
+            self._scaling = (1,1,1)
+        else:
+            self._scaling = scaling
+
+    @abstractmethod
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Evaluate the moment of a lattice site in this unit cell """
+
+    @abstractmethod
+    def cell_size(self) -> tuple[int, int, int]:
+        """ How big is this supercell """
+
+    @abstractmethod
+    def summation_form(self) -> "Supercell":
+        """Get a summation type supercell"""
+
+
+
+class NoSupercell(Supercell):
+    """ Trivial supercell, just a single unit cell """
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        return site.base_moment
+
+    def cell_size(self) -> tuple[int, int, int]:
+        return self._scaling
+
+    def summation_form(self) -> "Supercell":
+        return self
+
+
+class CommensurateSupercell(Supercell):
     """ Base class for a commensurate supercell"""
 
-    def __init__(self, propagation_vectors):
-        propagation_vectors = propagation_vectors
+    def __init__(self, propagation_vectors, scaling: tuple[int, int, int] | None = None):
+        self._propagation_vectors = propagation_vectors
+        super().__init__(scaling)
 
-    def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
-        """ Get the moment at a given cell location"""
+
+    def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
+        """ Apply the transformation to a given moment """
         raise NotImplementedError("evaluate not implemented in base class")
 
-    def minimal_supercell(self) -> tuple[int, int, int] | None:
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        return self._transform_evaluate(cell_offset=cell_offset, moment=site.base_moment)
+
+    def cell_size(self) -> tuple[int, int, int] | None:
         """ Get the smallest possible supercell"""
         i = lcm(*[vector.i.denominator for vector in self.propagation_vectors])
         j = lcm(*[vector.j.denominator for vector in self.propagation_vectors])
         k = lcm(*[vector.k.denominator for vector in self.propagation_vectors])
 
-        return i, j, k
+        return self._scaling[0]*i, self._scaling[1]*j, self._scaling[2]*k
 
-    def summation_form(self, moment) -> "SummationSupercell":
-        """Get a summation type supercell"""
-        raise NotImplementedError("summation_form not implemented in base class")
+    def n_cells(self):
+        """ Number of cells in this supercell """
+        a, b, c = self.cell_size()
+        return a*b*c
+
+
+class TransformationSupercell(CommensurateSupercell):
+    """ Supercell with moments defined by the following equation:
+
+    m = prod(M_i^{r.k}) m0
+
+    where m0 is the existing moment at a given site
+    """
+
+    def __init__(self, *transforms: tuple[CommensuratePropagationVector, SupercellTransformation | None]):
+        # TODO: Provide a nicer interface for this maybe
+        self._transforms = [(vector, IdentityTransform() if transform is None else transform)
+                            for vector, transform in transforms]
+
+
+    def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
+        for vector, transform in self._transforms:
+            moment = transform.apply(moment=moment, propagation_vector=vector, cell_offset=cell_offset)
+
+        return moment
+
+    def summation_form(self) -> "Supercell":
+        pass
+
 
 class SummationSupercell(CommensurateSupercell):
     """ Supercell with moments defined by
@@ -101,79 +192,10 @@ class SummationSupercell(CommensurateSupercell):
         super().__init__(propagation_vectors)
 
 
-    def apply(self, moments):
-        for moment in moments:
-            if not isinstance(moment, np.ndarray):
-                raise TypeError("moments must contain numpy ndarrays")
-            if moment.shape != (3,):
-                raise ValueError("moments must be of shape (3,)")
-
-    def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
+    def moment(self, cell_offset: CellOffset, moment: np.ndarray):
         """ Calculate moment at a given cell offset"""
         return np.sum(component.evaluate(cell_offset) for component in self.components).real
 
     def summation_form(self, moment) -> "SummationSupercell":
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
-
-class SupercellTransformation:
-
-    @check_sizes(matrix=(3,3))
-    def __init__(self, matrix: np.ndarray):
-        self._matrix = matrix
-
-    @property
-    def matrix(self):
-        return self._matrix
-
-class GeneralSupercellTransformation
-
-class SupercellRotation(SupercellTransformation):
-    def __init__(self, propagation_vector: CommensuratePropagationVector, axis: np.ndarray):
-
-
-
-
-class TransformationSupercell(CommensurateSupercell):
-    """ Supercell with moments defined by the following equation:
-
-    m = prod(M_i^{r.k}) m0
-
-    where m0 is the existing moment at a given site
-    """
-
-    transforms: list[np.ndarray]
-
-    @model_validator(mode="after")
-    def check_lengths(self):
-        """pydantic: checks sizes"""
-        if len(self.transforms) != len(self.propagation_vectors):
-            raise ValueError('the lists: transforms and propagation_vectors must have the same length')
-        return self
-
-
-
-    def evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
-        """ Get the moment at a given cell offset"""
-        # Get the values of k.r, reduce to unit cell though, which will make sure we have integer powers
-        powers = [propagation_vector.dot(cell_offset.position_in_supercell(self.minimal_supercell()))
-                  for propagation_vector in self.propagation_vectors]
-
-        int_powers = [int(power) for power in powers]
-
-        # Check they're really integers
-        for power, int_power in zip(powers, int_powers):
-            if abs(power - int_power) > tolerances.IS_INTEGER_TOL:
-                raise ValueError(f"Supercell k.r has non-integer values ({power})")
-
-        # TODO: Certainly better performing ways of doing this
-        for matrix, power in zip(self.transforms, int_powers):
-            for i in range(power):
-                moment = moment @ matrix
-
-        return moment
-
-    def summation_form(self, moment) -> SummationSupercell:
-        """ Convert to summation form """
-
-        # TODO
