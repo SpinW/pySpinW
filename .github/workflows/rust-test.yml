@@ -26,4 +26,6 @@ jobs:
     - name: Run tests with pytest
       run: | 
         # `pytest -m rust` only runs tests decorated @pytest.mark.rust
-        python -m pytest -m rust 
+        # `--runxfail` means 'expect xfail tests to pass' - the Rust tests
+        # are set to xfail if the Rust module is not available
+        python -m pytest --runxfail -m rust 
