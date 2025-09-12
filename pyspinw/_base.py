@@ -17,23 +17,6 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-class MagneticStructure(SPWSerialisable):
-    """Base class for representations of the Magnetic Structures"""
-
-    serialisation_name = "structure"
-
-    def __init__(self):
-        pass
-
-    def _serialise(self, context: SPWSerialisationContext):
-        return {}
-
-    @staticmethod
-    def _deserialise(data: dict, context: SPWDeserialisationContext):
-        return MagneticStructure()
-
-
-
 class Data:
     """Placeholder"""
 

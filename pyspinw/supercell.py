@@ -2,19 +2,35 @@
 from abc import ABC, abstractmethod
 from fractions import Fraction
 from math import lcm
-from typing import Any
 
 import numpy as np
 
-from checks import check_sizes
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, \
+    serialise_fraction_or_builtin, deserialise_fraction_or_builtin, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
-from pyspinw.tolerances import tolerances
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.util import rotation_matrix
 
 
-class PropagationVector:
+def _coerce_numeric_input(value: Fraction | float, max_denom=1000_000):
+    """ Convert floats or fractions into the form needed for a propagation vector"""
+    if not isinstance(value, Fraction):
+        value = Fraction(value).limit_denominator(max_denominator=max_denom)
+
+    # It's conventional to use 0 rather than one for a period 1 supercell (as they're indistinguishable)
+    # but mathematically, it should be one
+
+    if value == 0:
+        return Fraction(1)
+
+    else:
+        return value
+
+
+class PropagationVector(SPWSerialisable):
     """ Propagation vector"""
+
+    serialisation_name = "propagation_vector"
 
     def __init__(self,
                 i: Fraction | float,
@@ -37,20 +53,26 @@ class PropagationVector:
         """ Dot product with a cell offset"""
         return np.dot(self.vector, cell_offset.vector)
 
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "i": serialise_fraction_or_builtin(self.i),
+            "j": serialise_fraction_or_builtin(self.j),
+            "k": serialise_fraction_or_builtin(self.k),
+            "assured_commensurate": False
+        }
 
-def _coerce_numeric_input(value: Fraction | float, max_denom=1000_000):
-    """ Convert floats or fractions into the form needed for a propagation vector"""
-    if not isinstance(value, Fraction):
-        value = Fraction(value).limit_denominator(max_denominator=max_denom)
+    @staticmethod
+    @expects_keys("i,j,k")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        i = deserialise_fraction_or_builtin(json["i"])
+        j = deserialise_fraction_or_builtin(json["j"])
+        k = deserialise_fraction_or_builtin(json["k"])
 
-    # It's conventional to use 0 rather than one for a period 1 supercell (as they're indistinguishable)
-    # but mathematically, it should be one
+        if json["assured_commensurate"]:
+            return CommensuratePropagationVector(i, j, k)
+        else:
+            return PropagationVector(i, j, k)
 
-    if value == 0:
-        return Fraction(1)
-
-    else:
-        return value
 
 class CommensuratePropagationVector(PropagationVector):
     """ Propagation vector with integer values"""
@@ -68,15 +90,21 @@ class CommensuratePropagationVector(PropagationVector):
 
         self._vector = np.array([self.i, self.j, self.k], dtype=float)
 
-class IncommensuratePropagationVector(PropagationVector):
-    """ Propagation vector with non-integral values"""
 
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        serialised = super()._serialise(context)
+        serialised["assured_commensurate"] = True
+        return serialised
 
-class SupercellTransformation(ABC):
+class SupercellTransformation(ABC, SPWSerialisable):
+
+    serialisation_name = "supercell_transformation"
 
     @abstractmethod
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
         """ Apply this transformation to a moment with a given offset """
+
+
 
 class IdentityTransform(SupercellTransformation):
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
@@ -92,7 +120,10 @@ class SupercellRotation(SupercellTransformation):
         return moment @ rotation_matrix(angle, self._axis)
 
 
-class Supercell(ABC):
+class Supercell(ABC, SPWSerialisable):
+
+    serialisation_name = "supercell"
+
     def __init__(self, scaling: tuple[int, int, int] | None = None):
 
         if any([scaling_axis < 1 for scaling_axis in scaling]):
@@ -115,6 +146,11 @@ class Supercell(ABC):
     def summation_form(self) -> "Supercell":
         """Get a summation type supercell"""
 
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        pass
+
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        pass
 
 
 class NoSupercell(Supercell):
