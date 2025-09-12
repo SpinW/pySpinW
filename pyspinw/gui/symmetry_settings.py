@@ -7,13 +7,25 @@ from pyspinw.symmetry.group import MagneticSpaceGroup, SpaceGroup, magnetic_grou
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-@dataclass
 class SymmetrySettings:
     """ Object to hold symmetry information together """
+    def __init__(self, space_group: SpaceGroup, magnetic_group: MagneticSpaceGroup, unit_cell: UnitCell):
 
-    space_group: SpaceGroup
-    magnetic_group: MagneticSpaceGroup
-    unit_cell: UnitCell
+        self._space_group = space_group
+        self._magnetic_group = magnetic_group
+        self._unit_cell = unit_cell
+
+    @property
+    def space_group(self):
+        return self._space_group
+
+    @property
+    def magnetic_group(self):
+        return self._magnetic_group
+
+    @property
+    def unit_cell(self):
+        return self._unit_cell
 
 DEFAULT_SYMMETRY = SymmetrySettings(
     space_group=spacegroup_symbol_lookup["P 1"],
