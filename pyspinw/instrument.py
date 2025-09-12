@@ -15,7 +15,7 @@ class Instrument:
     energy: NDArray
     resolution: Callable[[float], float] = lambda energy: np.max(self.energy)*0.02
 
-    @classmethod
+    @staticmethod
     def from_ResINS(instrument_name: str) -> 'Instrument':
         """Instantiate an instrument from ResINS.
 
