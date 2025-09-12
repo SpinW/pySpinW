@@ -132,7 +132,7 @@ class SupercellTransformation(ABC, SPWSerialisable):
             return transform_types[json["type"]]._deserialise_transform(json["data"])
 
         except KeyError as ke:
-            expected_names = ", ".join([f"'{cls.transformation_name}'" for cls in transform_types])
+            expected_names = ", ".join([f"'{key}'" for key in transform_types])
             raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
 
 
@@ -202,34 +202,41 @@ class Supercell(ABC, SPWSerialisable):
         """Get a summation type supercell"""
 
     @abstractmethod
-    def _serialise_supercell(self):
+    def _serialise_supercell(self, context: SPWSerialisationContext):
         """ Serialise this supercell """
 
     @staticmethod
     @abstractmethod
-    def _deserialise_supercell(json):
+    def _deserialise_supercell(json, scale: tuple[int, int, int], context: SPWDeserialisationContext):
         """ Deserialise this supercell type """
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
             "type": self.supercell_name,
-            "data": self._serialise_supercell()
+            "data": self._serialise_supercell(context),
+            "s_i": self.scale[0],
+            "s_j": self.scale[1],
+            "s_k": self.scale[2]
         }
 
     @staticmethod
-    @expects_keys("type, data")
+    @expects_keys("type, data, s_i, s_j, s_k")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
 
         try:
-            return supercell_types[json["type"]]._deserialise_supercell(json["data"])
+            scale = (json["s_i"], json["s_j"], json["s_k"])
+            return supercell_types[json["type"]]._deserialise_supercell(json["data"], scale, context)
 
         except KeyError as ke:
-            expected_names = ", ".join([f"'{cls.supercell_name}'" for cls in supercell_types])
+            expected_names = ", ".join([f"'{key}'" for key in supercell_types])
             raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
 
 
-class NoSupercell(Supercell):
+class TrivialSupercell(Supercell):
     """ Trivial supercell, just a single unit cell """
+
+    supercell_name = "trivial"
+
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
         return site.base_moment
 
@@ -239,6 +246,12 @@ class NoSupercell(Supercell):
     def summation_form(self) -> "Supercell":
         return self
 
+    def _serialise_supercell(self, context: SPWSerialisationContext):
+        return {}
+
+    @staticmethod
+    def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
+        return TrivialSupercell(scale)
 
 class CommensurateSupercell(Supercell):
     """ Base class for a commensurate supercell"""
@@ -277,11 +290,12 @@ class TransformationSupercell(CommensurateSupercell):
     where m0 is the existing moment at a given site
     """
 
-    def __init__(self, *transforms: tuple[CommensuratePropagationVector, SupercellTransformation | None]):
+    def __init__(self, scale, transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]]):
         # TODO: Provide a nicer interface for this maybe
         self._transforms = [(vector, IdentityTransform() if transform is None else transform)
                             for vector, transform in transforms]
 
+        super().__init__(scale)
 
     def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         for vector, transform in self._transforms:
@@ -290,7 +304,20 @@ class TransformationSupercell(CommensurateSupercell):
         return moment
 
     def summation_form(self) -> "Supercell":
-        pass
+        raise NotImplementedError("Not implemented yet")
+
+    def _serialise_supercell(self, context: SPWSerialisationContext):
+        return [{"vector": vector._serialise(context),
+                 "transform": transform._serialise(context)}
+                    for vector, transform in self._transforms]
+
+    @staticmethod
+    def _deserialise_supercell(json, scale, context):
+        transforms = [(PropagationVector._deserialise(part["vector"], context),
+                       SupercellTransformation._deserialise(part["transform"], context))
+                      for part in json]
+
+        return TransformationSupercell(scale, transforms)
 
 
 class SummationSupercell(CommensurateSupercell):
@@ -311,5 +338,12 @@ class SummationSupercell(CommensurateSupercell):
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
 
+    def _serialise_supercell(self, context: SPWSerialisationContext):
+        raise NotImplementedError("Serialisation not implemented") # TODO
+
+    @staticmethod
+    def _deserialise_supercell(json, scale: tuple[int, int, int], context: SPWDeserialisationContext):
+        raise NotImplementedError("Serialisation not implemented") # TODO
+
 supercell_types = {cls.supercell_name: cls
-                   for cls in [NoSupercell, TransformationSupercell, SummationSupercell]}
+                   for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell]}
