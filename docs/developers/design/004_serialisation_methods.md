@@ -78,6 +78,18 @@ or whether there are multiple subclasses.
 In the case where there are multiple subclasses, we follow the pattern of
 creating seperate private method (e.g. `_serialise_transform`) in the base class,
 which is called by the `_serialise` method. The serialise method will specify which
-subclass has been serialised, and return a dict of the form `{"type": ..., "data":...}`
+subclass has been serialised, and return a dict of the form `{"type": ..., "data":... [shared keys]}`
 Each subclass will have the same `serialisation_name` but will have
 a different key for the other method, e.g. `transform_name`.
+
+Validation
+==========
+
+There remains a question about the degree of validation required on the saved data.
+In general, we take the approach that `.spw` files will rarely be edited by hand,
+and if they are, the onus is on the user to specify things correctly.
+
+Unit tests will check that anything serialised is deserialised correctly, and
+checks on the class constructors will check that classes are properly formed,
+and thereby perform validation on objects when they are created during serialisation,
+as well as when created by users.

@@ -2,15 +2,19 @@
 
 import numpy as np
 
-from pyspinw.checks import check_sizes
-
 from ase.geometry.cell import cellpar_to_cell
+
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
+    SPWSerialisationError, numpy_serialise, numpy_deserialise
+
 
 class BadCellDefinition(Exception):
     """ Error for bad cell definition"""
 
-class RawUnitCell:
+class RawUnitCell(SPWSerialisable):
     """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""
+
+    _unit_cell_name = "raw"
 
     def __init__(self, xyz):
         self._xyz = xyz
@@ -45,9 +49,37 @@ class RawUnitCell:
         """Equality (approximate)"""
         return np.all(np.abs(self._xyz - other._xyz) < 1e-10)
 
+    def _unit_cell_serialise(self):
+        return {"xyz": numpy_serialise(self._xyz)}
+
+    @staticmethod
+    @expects_keys("xyz")
+    def _unit_cell_deserialise(json):
+        return RawUnitCell(numpy_deserialise(json["xyz"]))
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "type": self._unit_cell_name,
+            "data": self._unit_cell_serialise()
+        }
+
+    @staticmethod
+    @expects_keys("type, data")
+    def _deserialise(json, context: SPWDeserialisationContext):
+
+        try:
+            return unit_cell_types[json["type"]]._unit_cell_deserialise(json["data"])
+
+        except KeyError as ke:
+            names = ", ".join([f"'{key}'" for key in unit_cell_types])
+            raise SPWSerialisationError(f"Expected unit cell type to be one of {names}") from ke
+
+
 
 class UnitCell(RawUnitCell):
     """ A Unit Cell Definition """
+
+    _unit_cell_name = "abc"
 
     def __init__(self,
                  a: float,
@@ -110,3 +142,23 @@ class UnitCell(RawUnitCell):
     def __repr__(self):
         """repr implementation"""
         return f"UnitCell({self.a}, {self.b}, {self.c} | {self.alpha}, {self.beta}, {self.gamma})"
+
+
+    def _unit_cell_serialise(self):
+        return {
+            "a": self.a,
+            "b": self.b,
+            "c": self.c,
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "gamma": self.gamma,
+
+        }
+
+    @staticmethod
+    @expects_keys("a, b, c, alpha, beta, gamma, ab_normal, direction")
+    def _unit_cell_deserialise(json):
+        pass
+
+
+unit_cell_types = {cls._unit_cell_name: cls for cls in [RawUnitCell, UnitCell]}

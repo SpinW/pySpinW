@@ -1,6 +1,6 @@
 import pytest
 
-from pyspinw.supercell import PropagationVector, CommensuratePropagationVector
+from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector
 
 some_numbers = [0.1, 1/3, 4/7, 18/21, 0]
 
