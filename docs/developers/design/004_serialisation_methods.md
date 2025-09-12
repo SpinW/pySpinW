@@ -1,5 +1,5 @@
-Serialisation Methods
-=====================
+Serialisation
+=============
 
 The data structures in pySpinW are not a simple tree, but have shared leaves/branches. That is to say, it **does not** look like this...
 
@@ -58,3 +58,26 @@ When we come to a node that can be a duplicate, instead of serilising diretly, w
 ```
 
 TODO: Better diagram
+
+Serialisation Methods
+=====================
+
+In practice, we implement `serialise` and `deserialise` exactly 
+once, in the `SPWSerialisable` class.
+These are public methods whose responsibility is to the create the serialisation context,
+provide it to the private methods `_serialise` and `_deserialise` which are recursive,
+and span the tree.
+It is also responsible for making sure that the context is serialised/deserialised.
+
+`_serialise` and `_deserialise` are not the only serialisation methods that 
+appear in the codebase.
+When a serialised class contains another, it can specify the type of contained class,
+and serialisation of the contained class depends on whether this class unique, 
+or whether there are multiple subclasses.
+
+In the case where there are multiple subclasses, we follow the pattern of
+creating seperate private method (e.g. `_serialise_transform`) in the base class,
+which is called by the `_serialise` method. The serialise method will specify which
+subclass has been serialised, and return a dict of the form `{"type": ..., "data":...}`
+Each subclass will have the same `serialisation_name` but will have
+a different key for the other method, e.g. `transform_name`.

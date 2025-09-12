@@ -5,8 +5,10 @@ from math import lcm
 
 import numpy as np
 
+from pyspinw.checks import check_sizes
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, \
-    serialise_fraction_or_builtin, deserialise_fraction_or_builtin, SPWDeserialisationContext, expects_keys
+    serialise_fraction_or_builtin, deserialise_fraction_or_builtin, SPWDeserialisationContext, expects_keys, \
+    SPWSerialisationError, numpy_serialise, numpy_deserialise
 from pyspinw.site import LatticeSite
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.util import rotation_matrix
@@ -92,6 +94,8 @@ class CommensuratePropagationVector(PropagationVector):
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
+
+        # Just use the parent class serialiser, but set the 'assured_commensurate' flag
         serialised = super()._serialise(context)
         serialised["assured_commensurate"] = True
         return serialised
@@ -99,30 +103,81 @@ class CommensuratePropagationVector(PropagationVector):
 class SupercellTransformation(ABC, SPWSerialisable):
 
     serialisation_name = "supercell_transformation"
+    transformation_name = "<transform base class>"
 
     @abstractmethod
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
         """ Apply this transformation to a moment with a given offset """
 
+    @abstractmethod
+    def _serialise_transform(self) -> dict:
+        """ Serialise this transform"""
+
+    @staticmethod
+    @abstractmethod
+    def _deserialise_transform(json) -> "SupercellTransformation":
+        """ Deserialise this transform"""
+
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "type": self.transformation_name,
+            "data": self._serialise_transform()
+        }
+
+    @staticmethod
+    @expects_keys("type, data")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        try:
+            return transform_types[json["type"]]._deserialise_transform(json["data"])
+
+        except KeyError as ke:
+            expected_names = ", ".join([f"'{cls.transformation_name}'" for cls in transform_types])
+            raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
 
 
 class IdentityTransform(SupercellTransformation):
+
+    transformation_name = "identity"
+
+    def _serialise_transform(self) -> dict:
+       return {}
+
+    @staticmethod
+    def _deserialise_transform(json) -> "SupercellTransformation":
+        return IdentityTransform()
+
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
         return moment
 
-class SupercellRotation(SupercellTransformation):
+class RotationTransform(SupercellTransformation):
     """ Rotation transformation in a supercell"""
+
+    transformation_name = "rotation"
+
+    @check_sizes(axis=(3,))
     def __init__(self, axis: np.ndarray):
         self._axis = axis
+
+    def _serialise_transform(self):
+        return {"axis": numpy_serialise(self._axis)}
+
+    @staticmethod
+    @expects_keys("axis")
+    def _deserialise_transform(json) -> "SupercellTransformation":
+        return RotationTransform(axis=numpy_deserialise(json["axis"]))
 
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
         angle = 2 * np.pi * propagation_vector.dot(cell_offset)
         return moment @ rotation_matrix(angle, self._axis)
 
+transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, RotationTransform]}
+
 
 class Supercell(ABC, SPWSerialisable):
 
     serialisation_name = "supercell"
+    supercell_name = "<base supercell>"
 
     def __init__(self, scaling: tuple[int, int, int] | None = None):
 
@@ -146,11 +201,31 @@ class Supercell(ABC, SPWSerialisable):
     def summation_form(self) -> "Supercell":
         """Get a summation type supercell"""
 
-    def _serialise(self, context: SPWSerialisationContext) -> dict:
-        pass
+    @abstractmethod
+    def _serialise_supercell(self):
+        """ Serialise this supercell """
 
+    @staticmethod
+    @abstractmethod
+    def _deserialise_supercell(json):
+        """ Deserialise this supercell type """
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "type": self.supercell_name,
+            "data": self._serialise_supercell()
+        }
+
+    @staticmethod
+    @expects_keys("type, data")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        pass
+
+        try:
+            return supercell_types[json["type"]]._deserialise_supercell(json["data"])
+
+        except KeyError as ke:
+            expected_names = ", ".join([f"'{cls.supercell_name}'" for cls in supercell_types])
+            raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
 
 
 class NoSupercell(Supercell):
@@ -235,3 +310,6 @@ class SummationSupercell(CommensurateSupercell):
     def summation_form(self, moment) -> "SummationSupercell":
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
+
+supercell_types = {cls.supercell_name: cls
+                   for cls in [NoSupercell, TransformationSupercell, SummationSupercell]}
