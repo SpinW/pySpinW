@@ -315,9 +315,7 @@ class XYCoupling(Coupling):
                  name: str=""):
 
         self._j = j
-        self._coupling_matrix = np.eye(3)
-        self._coupling_matrix[0,0] = j
-        self._coupling_matrix[1,1] = j
+        self._coupling_matrix = np.diag([0.0, j, j], dtype=float)
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
