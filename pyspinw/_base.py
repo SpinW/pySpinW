@@ -24,6 +24,14 @@ class MagneticStructure(SPWSerialisable):
     def __init__(self):
         pass
 
+
+Identifier = str # temporary choice for now
+
+
+class Coupling(BaseModel):
+    """Coupling between different sites"""
+
+    name: str
     def _serialise(self, context: SPWSerialisationContext):
         return {}
 
