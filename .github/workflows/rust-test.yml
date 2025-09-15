@@ -28,8 +28,15 @@ jobs:
         pip install -r requirements.txt
         pip install . -v
     - name: Run tests with pytest
-      run: | 
+      run: |
+        # go back a directory so it uses the installed pyspinw
+        # rather than the local repo folder
+        # and get the examples which need to be local
+        # TODO: better package structure so we don't
+        # have to do this
+        cd ..
+        cp -r pySpinW/examples .
         # `pytest -m rust` only runs tests decorated @pytest.mark.rust
         # `--runxfail` means 'expect xfail tests to pass' - the Rust tests
         # are set to xfail if the Rust module is not available
-        python -m pytest --runxfail -m rust 
+        python -m pytest pySpinW/tests --runxfail -m rust 
