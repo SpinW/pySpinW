@@ -42,21 +42,43 @@ impl Coupling {
     }
 }
 
+#[pyclass(frozen)]
+#[derive(Clone)]
+pub struct MagneticField {
+    vector: Col<C64>,
+    g_tensors: Vec<Mat<C64>>,
+}
+
+#[pymethods]
+impl MagneticField {
+    #[new]
+    fn new(vector: PyReadonlyArray1<C64>, g_tensors: Vec<PyReadonlyArray2<C64>>) -> Self {
+        MagneticField {
+            vector: vector.into_faer().to_owned(),
+            g_tensors: g_tensors
+                .into_iter()
+                .map(|t| t.into_faer().to_owned())
+                .collect(),
+        }
+    }
+}
+
 /// Run the main calculation step for a spinwave calculation.
-#[pyfunction]
+#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, field=None))]
 pub fn spinwave_calculation<'py>(
     py: Python<'py>,
     rotations: Vec<PyReadonlyArray2<C64>>,
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<Py<Coupling>>,
+    field: Option<MagneticField>, // `field` is either a MagneticField struct or None
 ) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
     // convert PyO3-friendly array types to faer matrices
     let r: Vec<MatRef<C64>> = rotations.into_iter().map(faer_ext::IntoFaer::into_faer).collect();
 
     let c = couplings.par_iter().map(pyo3::Py::get).collect();
 
-    let energies = calc_spinwave(r, magnitudes, q_vectors, c);
+    let energies = calc_spinwave(r, magnitudes, q_vectors, c, field);
     Ok(energies.into_iter().map(|v| v.to_pyarray(py)).collect())
 }
 
@@ -65,5 +87,6 @@ pub fn spinwave_calculation<'py>(
 fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(spinwave_calculation, m)?)?;
     m.add_class::<Coupling>()?;
+    m.add_class::<MagneticField>()?;
     Ok(())
 }
