@@ -2,11 +2,17 @@
 
 from typing import Callable
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+from pyspinw.calculations.spinwave import (
+    spinwave_calculation as py_spinwave,
+    Coupling as PyCoupling,
+    MagneticField as PyField,
+)
 
 
 def run_example(
-    example: Callable[[int, object], tuple[list, "np.array", "np.array", list]], use_rust=False
+    example: Callable[[int, object], tuple[list, "np.array", "np.array", list]],
+    use_rust: bool = False,
+    has_field: bool = False,
 ) -> (tuple, "np.array"):
     """Run an example.
 
@@ -27,6 +33,8 @@ def run_example(
 
     use_rust: bool
         Whether to use the Rust calculation routine.
+    has_field: bool
+        Whether the example has an external magnetic field.
 
     Returns
     -------
@@ -37,7 +45,7 @@ def run_example(
 
     """
     try:
-        from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
+        from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling, MagneticField as RsField
 
         RUST_AVAILABLE = True
     except ModuleNotFoundError:
@@ -45,10 +53,12 @@ def run_example(
 
     # default to Python unless Rust is requested (which it is by default) and available
     coupling_class = PyCoupling
+    field_class = PyField
     spinwave_calculation = py_spinwave
     if use_rust:
         if RUST_AVAILABLE:
             coupling_class = RsCoupling
+            field_class = RsField
             spinwave_calculation = rs_spinwave
         else:
             print(
@@ -57,7 +67,10 @@ def run_example(
                 "pass 'python' as an argument to the Python script in the terminal."
             )
 
-    structure = example(coupling_class=coupling_class)
+    if has_field:
+        structure = example(coupling_class=coupling_class, field_class=field_class)
+    else:
+        structure = example(coupling_class=coupling_class)
     energies = spinwave_calculation(*structure)
 
     return structure, energies
