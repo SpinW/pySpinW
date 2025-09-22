@@ -3,13 +3,12 @@
 This is the magnet in MATLAB SpinW tutorial 8:
     https://spinw.org/tutorials/08tutorial
 """
+import sys
+
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation, Coupling
-except ModuleNotFoundError:
-    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
-
+from examples.raw_calculations.utils import run_example
 
 # define our rotation matrices
 def rotation(theta):
@@ -24,8 +23,11 @@ def rotation(theta):
     )
 
 
-def kagome_supercell(n_q = 100):
+def kagome_supercell(n_q = 100, coupling_class = PyCoupling):
     """A sqrt(3) x sqrt(3) Kagome antiferromagnet supercell lattice."""
+    rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
+
 
     # we index the supercell by indexing each unit cell in order: so that the
     # 'central' atom is 0 mod 3, the top-left atom is 1 mod 3, the right is 2 mod 3
@@ -105,13 +107,12 @@ def kagome_supercell(n_q = 100):
 
     couplings = []
 
-    rskw = {'dtype':complex, 'order':'F'}
-    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rskw), np.array([1., 0, 0])) for (idx1, idx2) in horizontal_pairs)
-    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rskw), np.array([-1., 0, 0])) for (idx1, idx2) in horizontal_pairs)
-    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rskw), np.array([0., 1, 0])) for (idx1, idx2) in vertical_pairs)
-    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rskw), np.array([0., -1, 0])) for (idx1, idx2) in vertical_pairs)
-    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rskw), np.array([0., 0, 0])) for (idx1, idx2) in other_pairs)
-    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rskw), np.array([0., 0, 0])) for (idx1, idx2) in other_pairs)
+    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rust_kw), np.array([1., 0, 0])) for (idx1, idx2) in horizontal_pairs)
+    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rust_kw), np.array([-1., 0, 0])) for (idx1, idx2) in horizontal_pairs)
+    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rust_kw), np.array([0., 1, 0])) for (idx1, idx2) in vertical_pairs)
+    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rust_kw), np.array([0., -1, 0])) for (idx1, idx2) in vertical_pairs)
+    couplings.extend(Coupling(idx1, idx2, np.eye(3, **rust_kw), np.array([0., 0, 0])) for (idx1, idx2) in other_pairs)
+    couplings.extend(Coupling(idx2, idx1, np.eye(3, **rust_kw), np.array([0., 0, 0])) for (idx1, idx2) in other_pairs)
 
     q_mags = 0.5 * np.linspace(0, 1, n_q + 1).reshape(-1, 1)
 
@@ -133,20 +134,19 @@ def kagome_supercell(n_q = 100):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    structure = kagome_supercell()
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
+
+    structure, energies = run_example(kagome_supercell, use_rust)
+
     q_vectors = structure[2]
-
     indices = np.arange(201)
-
     label_indices = [0, 100, 200]
-    # label_indices = []
-
     labels = [str(q_vectors[idx, :]) for idx in label_indices]
 
-    energies = spinwave_calculation(*structure)
-
     energies = [np.sort(energy.real) for energy in energies]
-
     positive_energies = [energy[energy > 0] for energy in energies]
     min_energy = min([np.min(energy) for energy in positive_energies])
     translated_energies = [energy - min_energy for energy in positive_energies]
