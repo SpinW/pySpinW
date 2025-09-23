@@ -16,7 +16,7 @@ static SCALAR_J: Scale<C64> = Scale(J);
 pub fn calc_spinwave(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
-    q_vectors: Vec<Col<f64>>,
+    q_vectors: Vec<Vec<f64>>,
     couplings: Vec<&Coupling>,
 ) -> Vec<Vec<f64>> {
     let n_sites = rotations.len();
@@ -49,7 +49,7 @@ pub fn calc_spinwave(
 
     q_vectors
         .into_par_iter()
-        .map(|q| spinwave_single_q(q, &C, n_sites, &z, &spin_coefficients, &couplings))
+        .map(|q| spinwave_single_q(Col::from_iter(q), &C, n_sites, &z, &spin_coefficients, &couplings))
         .collect()
 }
 
