@@ -6,18 +6,17 @@ https://github.com/SpinW/spinw/blob/dc06a4bec2c44bcfde6baa630ecb6329fb4b68ba/tut
 import sys
 
 import numpy as np
-from pyspinw.calculations.spinwave import Coupling as PyCoupling, MagneticField as PyField
 
-from examples.raw_calculations.utils import run_example
+from examples.raw_calculations.utils import run_example, py_classes
 
-def antiferro_ef(n_q = 100, coupling_class = PyCoupling, field_class = PyField):
-    """Antiferromagnetic chain.
+def antiferro_ef(n_q = 100, classes = py_classes):
+    """Antiferromagnetic chain with external magnetic field.
 
     We use a 2x1x1 supercell to capture the magnetic rotation periodicity.
     """
     rust_kw = {'dtype':complex, 'order':'F'}
-    Coupling = coupling_class
-    MagneticField = field_class
+    Coupling = classes.coupling
+    MagneticField = classes.field
 
     rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
     magnitudes = np.array([1.0]*2)
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     else:
         use_rust = True
 
-    _, energies = run_example(antiferro_ef, use_rust, has_field=True)
+    _, energies = run_example(antiferro_ef, use_rust)
 
 
     # Note: we get complex data types with real part zero
