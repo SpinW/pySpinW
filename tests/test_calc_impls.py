@@ -12,7 +12,9 @@ import pytest
 try:
     from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
 except ImportError:
-    pytestmark = pytest.mark.skip("Rust module not installed.")
+    # we can use the --runxfail option for pytest to then ensure
+    # that the Rust tests run and pass if we're expecting Rust to be installed
+    pytestmark = pytest.mark.xfail(raises=NameError, reason="Rust module not installed.")
 
 from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
 
@@ -22,6 +24,7 @@ from examples.raw_calculations.kagome import kagome_ferromagnet
 from examples.raw_calculations.kagome_antiferro import kagome_antiferromagnet
 from examples.raw_calculations.kagome_supercell import kagome_supercell
 
+@pytest.mark.rust
 @pytest.mark.parametrize("example",
                          [heisenberg_ferromagnet,
                           antiferro_chain,
