@@ -6,9 +6,8 @@ This is the magnet in MATLAB SpinW tutorial 8:
 import sys
 
 import numpy as np
-from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-from examples.raw_calculations.utils import run_example
+from examples.raw_calculations.utils import run_example, py_classes
 
 # define our rotation matrices
 def rotation(theta):
@@ -23,10 +22,10 @@ def rotation(theta):
     )
 
 
-def kagome_supercell(n_q = 100, coupling_class = PyCoupling):
+def kagome_supercell(n_q = 100, classes = py_classes):
     """A sqrt(3) x sqrt(3) Kagome antiferromagnet supercell lattice."""
     rust_kw = {'dtype':complex, 'order':'F'}
-    Coupling = coupling_class
+    Coupling = classes.coupling
 
 
     # we index the supercell by indexing each unit cell in order: so that the

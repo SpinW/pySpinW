@@ -5,9 +5,8 @@ See https://spinw.org/tutorials/07tutorial.
 import sys
 
 import numpy as np
-from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-from examples.raw_calculations.utils import run_example
+from examples.raw_calculations.utils import run_example, py_classes
 
 # define our rotation matrices
 def rotation(theta):
@@ -37,7 +36,7 @@ def rotation(theta):
         dtype=complex, order='F',
     )
 
-def kagome_antiferromagnet(n_q = 100, coupling_class = PyCoupling):
+def kagome_antiferromagnet(n_q = 100, classes = py_classes):
     """Kagome anti-ferromagnet like in tutorial 7."""
     # Three sites, otherwise identical
     rotations = [
@@ -48,7 +47,7 @@ def kagome_antiferromagnet(n_q = 100, coupling_class = PyCoupling):
     magnitudes = np.array([1.0]*3)  # spin-1
 
     rust_kw = {'dtype':complex, 'order':'F'}
-    Coupling = coupling_class
+    Coupling = classes.coupling
 
     # Do the J1 (nearest neighbour) couplings - using table from Matlab Tutorial 7
     # Run the example until the end and then run:

@@ -5,14 +5,13 @@ See https://spinw.org/tutorials/01tutorial
 import sys
 
 import numpy as np
-from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-from examples.raw_calculations.utils import run_example
+from examples.raw_calculations.utils import run_example, py_classes
 
-def heisenberg_ferromagnet(n_q = 100, coupling_class = PyCoupling):
+def heisenberg_ferromagnet(n_q = 100, classes = py_classes):
     """Basic ferromagnet."""
     rust_kw = {'dtype':complex, 'order':'F'}
-    Coupling = coupling_class
+    Coupling = classes.coupling
 
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags

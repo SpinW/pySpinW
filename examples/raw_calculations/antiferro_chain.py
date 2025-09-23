@@ -5,17 +5,16 @@ See https://spinw.org/tutorials/02tutorial
 import sys
 
 import numpy as np
-from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-from examples.raw_calculations.utils import run_example
+from examples.raw_calculations.utils import run_example, py_classes
 
-def antiferro_chain(n_q = 100, coupling_class = PyCoupling):
+def antiferro_chain(n_q = 100, classes = py_classes):
     """Antiferromagnetic chain.
 
     We use a 2x1x1 supercell to capture the magnetic rotation periodicity.
     """
     rust_kw = {'dtype':complex, 'order':'F'}
-    Coupling = coupling_class
+    Coupling = classes.coupling
 
     rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
     magnitudes = np.array([1.0]*2)
