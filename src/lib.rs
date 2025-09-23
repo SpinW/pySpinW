@@ -52,7 +52,7 @@ pub fn spinwave_calculation<'py>(
     couplings: Vec<Py<Coupling>>,
 ) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
     // convert PyO3-friendly array types to faer matrices
-    let r: Vec<MatRef<C64>> = rotations.into_iter().map(|m| m.into_faer()).collect();
+    let r: Vec<MatRef<C64>> = rotations.into_iter().map(faer_ext::IntoFaer::into_faer).collect();
     let qv = q_vectors.into_par_iter().map(Col::from_iter).collect();
 
     let c = couplings.par_iter().map(pyo3::Py::get).collect();

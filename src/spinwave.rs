@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use std::iter::zip;
 
-use faer::{concat, unzip, zip, Col, Mat, MatRef, Scale, Side};
+use faer::{unzip, zip, Col, Mat, MatRef, Scale, Side};
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::{Coupling, C64};
@@ -25,12 +25,12 @@ pub fn calc_spinwave(
     // in the notation of Petit (2011)
     // eta[i] is the direction of the i'th moment in Cartesian coordinates
     let z: Vec<Col<C64>> = zip(
-        _get_rotation_component(&rotations, 0),
-        _get_rotation_component(&rotations, 1),
+        get_rotation_component(&rotations, 0),
+        get_rotation_component(&rotations, 1),
     )
     .map(|(r1, r2)| r1 + (r2 * SCALAR_J))
     .collect();
-    let etas = _get_rotation_component(&rotations, 2);
+    let etas = get_rotation_component(&rotations, 2);
 
     // make spin coefficients array
     // so spin_coefficients[i, j] = sqrt(S_i S_j) / 2
@@ -49,13 +49,13 @@ pub fn calc_spinwave(
 
     q_vectors
         .into_par_iter()
-        .map(|q| _spinwave_single_q(q, &C, n_sites, &z, &spin_coefficients, &couplings))
+        .map(|q| spinwave_single_q(q, &C, n_sites, &z, &spin_coefficients, &couplings))
         .collect()
 }
 
 /// Calculate spectra for a single q-value.
 #[allow(non_snake_case)]
-fn _spinwave_single_q(
+fn spinwave_single_q(
     q: Col<f64>,
     C: &Mat<C64>,
     n_sites: usize,
@@ -76,15 +76,14 @@ fn _spinwave_single_q(
         B[(i, j)] += (z[i].transpose() * c.matrix.as_ref() * z[j].as_ref()) * phase_factor;
     }
 
-    A = _component_mul(&A, spin_coefficients);
-    B = _component_mul(&B, spin_coefficients);
+    A = component_mul(&A, spin_coefficients);
+    B = component_mul(&B, spin_coefficients);
 
     // create Hamiltonian as a block matrix (the stack! macro creates a block matrix)
-    let A_minus_C: Mat<C64> = A.clone() - C;
-    let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
-    let hamiltonian: Mat<C64> = concat![[A_minus_C, B], [B.adjoint(), A_conj_minus_C]];
+    let hamiltonian: Mat<C64> = make_block_hamiltonian(A, B, C);
 
-    // take square root of Hamiltonian using the LDL decomposition
+    // take square root of Hamiltonian using Cholesky if possible; if this fails,
+    // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
     let sqrt_hamiltonian = {
         if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
             chol.L().to_owned()
@@ -125,7 +124,7 @@ fn _spinwave_single_q(
         .expect("Could not calculate eigenvalues of the Hamiltonian.")
 }
 /// Get the components of the rotation matrices for the axis indexed by `index`.
-fn _get_rotation_component(rotations: &Vec<MatRef<C64>>, index: usize) -> Vec<Col<C64>> {
+fn get_rotation_component(rotations: &Vec<MatRef<C64>>, index: usize) -> Vec<Col<C64>> {
     rotations
         .par_iter()
         .map(|r| r.col(index).to_owned())
@@ -133,8 +132,33 @@ fn _get_rotation_component(rotations: &Vec<MatRef<C64>>, index: usize) -> Vec<Co
 }
 
 /// Perform componentwise multiplication on two matrices.
-fn _component_mul(a: &Mat<C64>, b: &MatRef<C64>) -> Mat<C64> {
+fn component_mul(a: &Mat<C64>, b: &MatRef<C64>) -> Mat<C64> {
     let mut product = Mat::<C64>::zeros(a.nrows(), a.ncols());
     zip!(&mut product, a, b).for_each(|unzip!(product, x, y)| *product = x * y);
     product
+}
+
+/// Combine the A, B, and C matrices into the Hamiltonian `h(q)` matrix.
+#[allow(non_snake_case)]
+fn make_block_hamiltonian(A: Mat<C64>, B: Mat<C64>, C: &Mat<C64>) -> Mat<C64> {
+    let A_minus_C: Mat<C64> = A.clone() - C;
+    let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
+
+    let n_sites = B.nrows();
+
+    let mut hamiltonian = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
+
+    // `submatrix_mut` takes a writable view of part of the matrix, and `copy_from` copies
+    // its argument into the matrix. So this is copying each of our matrices into sections
+    // of the `hamiltonian` matrix
+    // copy A - C into upper-left quarter of matrix
+    hamiltonian.submatrix_mut(0, 0, n_sites, n_sites).copy_from(A_minus_C);
+    // copy B into upper-right
+    hamiltonian.submatrix_mut(n_sites, 0, n_sites, n_sites).copy_from(B.as_ref());
+    // copy B* into bottom-left
+    hamiltonian.submatrix_mut(0, n_sites, n_sites, n_sites).copy_from(B.adjoint());
+    // copy A* - C into bottom-right
+    hamiltonian.submatrix_mut(n_sites, n_sites, n_sites, n_sites).copy_from(A_conj_minus_C);
+
+    hamiltonian
 }
