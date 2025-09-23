@@ -61,7 +61,7 @@ fn spinwave_single_q(
     n_sites: usize,
     z: &[Col<C64>],
     spin_coefficients: &MatRef<C64>,
-    couplings: &Vec<&Coupling>,
+    couplings: &[&Coupling],
 ) -> Vec<f64> {
     // create A and B matrices for the Hamiltonian
 
@@ -124,6 +124,7 @@ fn spinwave_single_q(
         .expect("Could not calculate eigenvalues of the Hamiltonian.")
 }
 /// Get the components of the rotation matrices for the axis indexed by `index`.
+#[inline]
 fn get_rotation_component(rotations: &Vec<MatRef<C64>>, index: usize) -> Vec<Col<C64>> {
     rotations
         .par_iter()
@@ -132,6 +133,7 @@ fn get_rotation_component(rotations: &Vec<MatRef<C64>>, index: usize) -> Vec<Col
 }
 
 /// Perform componentwise multiplication on two matrices.
+#[inline]
 fn component_mul(a: &Mat<C64>, b: &MatRef<C64>) -> Mat<C64> {
     let mut product = Mat::<C64>::zeros(a.nrows(), a.ncols());
     zip!(&mut product, a, b).for_each(|unzip!(product, x, y)| *product = x * y);
@@ -140,6 +142,7 @@ fn component_mul(a: &Mat<C64>, b: &MatRef<C64>) -> Mat<C64> {
 
 /// Combine the A, B, and C matrices into the Hamiltonian `h(q)` matrix.
 #[allow(non_snake_case)]
+#[inline(always)]
 fn make_block_hamiltonian(A: Mat<C64>, B: Mat<C64>, C: &Mat<C64>) -> Mat<C64> {
     let A_minus_C: Mat<C64> = A.clone() - C;
     let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
