@@ -1,8 +1,7 @@
 use std::f64::consts::PI;
-use std::iter::zip;
 
-use faer::{unzip, zip, Col, Mat, MatRef, Scale, Side};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Scale, Side};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{Coupling, C64};
 
@@ -23,14 +22,8 @@ pub fn calc_spinwave(
 
     // decompose rotation matrices
     // in the notation of Petit (2011)
-    // eta[i] is the direction of the i'th moment in Cartesian coordinates
-    let z: Vec<Col<C64>> = zip(
-        get_rotation_component(&rotations, 0),
-        get_rotation_component(&rotations, 1),
-    )
-    .map(|(r1, r2)| r1 + (r2 * SCALAR_J))
-    .collect();
-    let etas = get_rotation_component(&rotations, 2);
+    // etas[i] is the direction of the i'th moment in Cartesian coordinates
+    let (z, etas) = get_rotation_components(rotations);
 
     // make spin coefficients array
     // so spin_coefficients[i, j] = sqrt(S_i S_j) / 2
@@ -43,7 +36,7 @@ pub fn calc_spinwave(
     let mut C = Mat::<C64>::zeros(n_sites, n_sites);
     for c in &couplings {
         C[(c.index2, c.index2)] += spin_coefficients[(c.index2, c.index2)]
-            * (etas[c.index1].transpose() * c.matrix.as_ref() * etas[c.index2].as_ref());
+            * (etas[c.index1].transpose() * c.matrix.as_ref() * etas[c.index2]);
     }
     C *= 2.;
 
@@ -124,11 +117,14 @@ fn spinwave_single_q(
         .expect("Could not calculate eigenvalues of the Hamiltonian.")
 }
 /// Get the components of the rotation matrices for the axis indexed by `index`.
-#[inline]
-fn get_rotation_component(rotations: &Vec<MatRef<C64>>, index: usize) -> Vec<Col<C64>> {
+#[inline(always)]
+fn get_rotation_components(rotations: Vec<MatRef<C64>>) -> (Vec<Col<C64>>, Vec<ColRef<C64>>) {
+    // r.col(index) gets the components of the rotation matrix
+    // and then in the map we compile the x and y components into z, and the other into eta
+    // so this function returns (z, eta) 
     rotations
-        .par_iter()
-        .map(|r| r.col(index).to_owned())
+        .into_par_iter()
+        .map(|r| (r.col(0) + (r.col(1) * SCALAR_J), r.col(2)))
         .collect()
 }
 
