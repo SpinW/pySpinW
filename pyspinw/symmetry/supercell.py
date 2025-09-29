@@ -155,8 +155,8 @@ class RotationTransform(SupercellTransformation):
 
     transformation_name = "rotation"
 
-    @check_sizes(axis=(3,))
-    def __init__(self, axis: np.ndarray):
+    @check_sizes(axis=(3,), force_numpy=True)
+    def __init__(self, axis: np.ndarray | list[float]):
         self._axis = axis
 
     def _serialise_transform(self):
@@ -197,6 +197,14 @@ class Supercell(ABC, SPWSerialisable):
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
 
+    def cells(self):
+        """ Iterator for cells in supercell """
+        a, b, c = self.cell_size()
+        for i in range(a):
+            for j in range(b):
+                for k in range(c):
+                    yield CellOffset(i,j,k)
+
     @abstractmethod
     def summation_form(self) -> "Supercell":
         """Get a summation type supercell"""
@@ -214,9 +222,9 @@ class Supercell(ABC, SPWSerialisable):
         return {
             "type": self.supercell_name,
             "data": self._serialise_supercell(context),
-            "s_i": self.scale[0],
-            "s_j": self.scale[1],
-            "s_k": self.scale[2]
+            "s_i": self._scaling[0],
+            "s_j": self._scaling[1],
+            "s_k": self._scaling[2]
         }
 
     @staticmethod
@@ -253,6 +261,7 @@ class TrivialSupercell(Supercell):
     def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
         return TrivialSupercell(scale)
 
+
 class CommensurateSupercell(Supercell):
     """ Base class for a commensurate supercell"""
 
@@ -270,9 +279,9 @@ class CommensurateSupercell(Supercell):
 
     def cell_size(self) -> tuple[int, int, int] | None:
         """ Get the smallest possible supercell"""
-        i = lcm(*[vector.i.denominator for vector in self.propagation_vectors])
-        j = lcm(*[vector.j.denominator for vector in self.propagation_vectors])
-        k = lcm(*[vector.k.denominator for vector in self.propagation_vectors])
+        i = lcm(*[vector.i.denominator for vector in self._propagation_vectors])
+        j = lcm(*[vector.j.denominator for vector in self._propagation_vectors])
+        k = lcm(*[vector.k.denominator for vector in self._propagation_vectors])
 
         return self._scaling[0]*i, self._scaling[1]*j, self._scaling[2]*k
 
@@ -290,12 +299,14 @@ class TransformationSupercell(CommensurateSupercell):
     where m0 is the existing moment at a given site
     """
 
-    def __init__(self, scale, transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]]):
+    def __init__(self, transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]], scale=(1,1,1)):
         # TODO: Provide a nicer interface for this maybe
         self._transforms = [(vector, IdentityTransform() if transform is None else transform)
                             for vector, transform in transforms]
 
-        super().__init__(scale)
+        propagation_vectors = [vector for vector, _ in transforms]
+
+        super().__init__(propagation_vectors, scale)
 
     def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         for vector, transform in self._transforms:
@@ -334,7 +345,7 @@ class SummationSupercell(CommensurateSupercell):
         """ Calculate moment at a given cell offset"""
         return np.sum(component.evaluate(cell_offset) for component in self.components).real
 
-    def summation_form(self, moment) -> "SummationSupercell":
+    def summation_form(self) -> "SummationSupercell":
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
 
