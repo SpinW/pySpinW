@@ -7,7 +7,7 @@ use faer_ext::IntoFaer;
 use num_complex::Complex;
 use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::prelude::*;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 pub mod spinwave;
 use crate::spinwave::calc_spinwave;
@@ -52,12 +52,11 @@ pub fn spinwave_calculation<'py>(
     couplings: Vec<Py<Coupling>>,
 ) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
     // convert PyO3-friendly array types to faer matrices
-    let r: Vec<MatRef<C64>> = rotations.into_iter().map(|m| m.into_faer()).collect();
-    let qv = q_vectors.into_par_iter().map(Col::from_iter).collect();
+    let r: Vec<MatRef<C64>> = rotations.into_iter().map(faer_ext::IntoFaer::into_faer).collect();
 
     let c = couplings.par_iter().map(pyo3::Py::get).collect();
 
-    let energies = calc_spinwave(r, magnitudes, qv, c);
+    let energies = calc_spinwave(r, magnitudes, q_vectors, c);
     Ok(energies.into_iter().map(|v| v.to_pyarray(py)).collect())
 }
 
