@@ -72,7 +72,6 @@ fn spinwave_single_q(
     A = component_mul(&A, spin_coefficients);
     B = component_mul(&B, spin_coefficients);
 
-    // create Hamiltonian as a block matrix (the stack! macro creates a block matrix)
     let hamiltonian: Mat<C64> = make_block_hamiltonian(A, B, C);
 
     // take square root of Hamiltonian using Cholesky if possible; if this fails,
