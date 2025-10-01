@@ -9,6 +9,7 @@ import numpy as np
 from scipy.linalg import ldl
 
 from pyspinw.checks import check_sizes
+from pyspinw.constants import MU_B
 
 PARALLEL = True
 
@@ -24,6 +25,13 @@ class Coupling:
     index2: int
     matrix: np.ndarray
     inter_site_vector: np.ndarray
+
+@dataclass
+class MagneticField:
+    """Description of an external magnetic field."""
+
+    vector: np.ndarray
+    g_tensors: list[np.ndarray]
 
 class CalculationMethod(Enum):
     """Type of method used (for debugging purposes)"""
@@ -45,7 +53,8 @@ class SpinwaveResult:
 def spinwave_calculation(rotations: list[np.ndarray],
                          magnitudes: np.ndarray,
                          q_vectors: np.ndarray,
-                         couplings: list[Coupling]):
+                         couplings: list[Coupling],
+                         field: MagneticField | None = None):
     """Main calculation step
 
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
@@ -68,17 +77,25 @@ def spinwave_calculation(rotations: list[np.ndarray],
         C[j, j] += spin_coefficients[j,j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
     C *= 2
 
+    # calculate the Zeeman term for the A matrix (A^z in Toth & Lake)
+    if field is not None:
+        Az = np.array([field.vector @ g_tensor @ eta[i, :] for i, g_tensor in enumerate(field.g_tensors)])
+        Az *= - 1/2 * MU_B
+        Az = np.diag(Az)
+    else:
+        Az = None
+
     if PARALLEL:
         # Linear algebra routines in numpy are already parallelised and usually use 4 cores
         # for a single process, so we want to reduce contention by using fewer processes.
         n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
         with ProcessPoolExecutor() as executor:
-            q_calculations = [executor.submit(_calc_q_chunks, q, C, n_sites, z, spin_coefficients, couplings)
+            q_calculations = [executor.submit(_calc_q_chunks, q, C, n_sites, z, spin_coefficients, couplings, Az)
                               for q in _get_q_chunks(q_vectors, n_proc)]
         wait(q_calculations)
         energies = np.concat(tuple(future.result() for future in q_calculations))
     else:
-        energies = _calc_q_chunks(q_vectors, C, n_sites, z, spin_coefficients, couplings)
+        energies = _calc_q_chunks(q_vectors, C, n_sites, z, spin_coefficients, couplings, Az)
 
     #return SpinwaveResult( q_vectors=q_vectors, raw_energies=energies, method=[])
     return energies
@@ -94,7 +111,8 @@ def _calc_q_chunks(q_vectors: np.ndarray,
                    n_sites: int,
                    z: np.ndarray,
                    spin_coefficients: np.ndarray,
-                   couplings: list[Coupling]):
+                   couplings: list[Coupling],
+                   Az: np.ndarray | None = None):
     """Calculate the energies for the 'Hamiltonian' h(q) for a set of q-values."""
     energies = []
     for q in q_vectors:
@@ -115,6 +133,9 @@ def _calc_q_chunks(q_vectors: np.ndarray,
 
         A *= spin_coefficients
         B *= spin_coefficients
+
+        if Az is not None:
+            A += Az
         #
         # print("A", A)
         # print("B", B)

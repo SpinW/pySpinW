@@ -5,14 +5,13 @@ See https://spinw.org/tutorials/05tutorial.
 import sys
 
 import numpy as np
-from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-from examples.raw_calculations.utils import run_example
+from examples.raw_calculations.utils import run_example, py_classes
 
-def kagome_ferromagnet(n_q = 100, coupling_class = PyCoupling):
+def kagome_ferromagnet(n_q = 100, classes = py_classes):
     """Basic ferromagnet on a kagome lattice."""
     rust_kw = {'dtype':complex, 'order':'F'}
-    Coupling = coupling_class
+    Coupling = classes.coupling
 
     # Three sites, otherwise identical
     rotations = [np.eye(3, **rust_kw) for _ in range(3)]

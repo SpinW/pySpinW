@@ -3,12 +3,13 @@ use std::f64::consts::PI;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Scale, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-use crate::{Coupling, C64};
+use crate::{Coupling, MagneticField, C64};
 
 // for convenience
 // `Scale` is the faer scalar type used for matrix-scalar multiplication
 static J: C64 = C64::new(0., 1.);
 static SCALAR_J: Scale<C64> = Scale(J);
+static MU_B: f64 = 0.05788382;
 
 /// Run the main calculation step for a spinwave calculation.
 #[allow(non_snake_case)]
@@ -17,6 +18,7 @@ pub fn calc_spinwave(
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<&Coupling>,
+    field: Option<MagneticField>,
 ) -> Vec<Vec<f64>> {
     let n_sites = rotations.len();
 
@@ -40,9 +42,20 @@ pub fn calc_spinwave(
     }
     C *= 2.;
 
+    let Az: Option<Vec<C64>> = match field {
+        Some(f) => Some(
+            f.g_tensors
+                .into_iter()
+                .enumerate()
+                .map(|(i, t)| -0.5 * MU_B * f.vector.transpose() * t * etas[i].clone())
+                .collect(),
+        ),
+        None => None,
+    };
+
     q_vectors
         .into_par_iter()
-        .map(|q| spinwave_single_q(Col::from_iter(q), &C, n_sites, &z, &spin_coefficients, &couplings))
+        .map(|q| spinwave_single_q(Col::from_iter(q), &C, n_sites, &z, &spin_coefficients, &couplings, &Az))
         .collect()
 }
 
@@ -55,6 +68,7 @@ fn spinwave_single_q(
     z: &[Col<C64>],
     spin_coefficients: &MatRef<C64>,
     couplings: &[&Coupling],
+    Az: &Option<Vec<C64>>,
 ) -> Vec<f64> {
     // create A and B matrices for the Hamiltonian
 
@@ -71,6 +85,14 @@ fn spinwave_single_q(
 
     A = component_mul(&A, spin_coefficients);
     B = component_mul(&B, spin_coefficients);
+
+    // slightly convoluted way to add to the diagonal of A because adding a Diag to a Mat
+    // isn't implemented by `faer` yet (missed out, apparently!)
+    if let Some(Az_vals) = Az {
+        for i in 0..n_sites {
+            A[(i, i)] += Az_vals[i];
+        }
+    }
 
     let hamiltonian: Mat<C64> = make_block_hamiltonian(A, B, C);
 
