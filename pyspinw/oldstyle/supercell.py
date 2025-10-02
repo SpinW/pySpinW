@@ -5,7 +5,7 @@ import numpy as np
 from pyspinw.basis import angle_axis_rotation_matrix
 from pyspinw.checks import check_sizes
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.supercell import CommensurateSupercell, CommensuratePropagationVector, TransformationSupercell
+from pyspinw.symmetry.supercell import CommensurateSupercell, CommensuratePropagationVector, TransformationSupercell
 
 
 @check_sizes(k=(3,), force_numpy=True)

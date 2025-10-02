@@ -1,7 +1,7 @@
 """Different kinds of experimental setups"""
 
 from pyspinw.sample import Sample
-from pyspinw._base import Data
+from pyspinw.data import Data
 
 import numpy as np
 

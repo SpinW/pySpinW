@@ -1,1 +1,0 @@
-"""Data used by pySpinW."""
