@@ -75,6 +75,8 @@ class PropagationVector(SPWSerialisable):
         else:
             return PropagationVector(i, j, k)
 
+    def __eq__(self, other):
+        return self.i == other.i and self.j == other.j and self.k == other.k
 
 class CommensuratePropagationVector(PropagationVector):
     """ Propagation vector with integer values"""
@@ -99,6 +101,12 @@ class CommensuratePropagationVector(PropagationVector):
         serialised = super()._serialise(context)
         serialised["assured_commensurate"] = True
         return serialised
+
+    def __eq__(self, other):
+        if isinstance(other, CommensuratePropagationVector):
+            return self.i == other.i and self.j == other.j and self.k == other.k
+
+        return False
 
 class SupercellTransformation(ABC, SPWSerialisable):
 
@@ -181,13 +189,13 @@ class Supercell(ABC, SPWSerialisable):
 
     def __init__(self, scaling: tuple[int, int, int] | None = None):
 
-        if any([scaling_axis < 1 for scaling_axis in scaling]):
-            raise ValueError("Scaling components should be >= 1")
-
         if scaling is None:
             self._scaling = (1,1,1)
         else:
             self._scaling = scaling
+
+        if any([scaling_component < 1 for scaling_component in self._scaling]):
+            raise ValueError("Scaling components should be >= 1")
 
     @abstractmethod
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
@@ -233,7 +241,9 @@ class Supercell(ABC, SPWSerialisable):
 
         try:
             scale = (json["s_i"], json["s_j"], json["s_k"])
-            return supercell_types[json["type"]]._deserialise_supercell(json["data"], scale, context)
+            supercell_type = json["type"]
+            further_data = json["data"]
+            return supercell_types[supercell_type]._deserialise_supercell(further_data, scale, context)
 
         except KeyError as ke:
             expected_names = ", ".join([f"'{key}'" for key in supercell_types])
@@ -265,7 +275,12 @@ class TrivialSupercell(Supercell):
 class CommensurateSupercell(Supercell):
     """ Base class for a commensurate supercell"""
 
-    def __init__(self, propagation_vectors, scaling: tuple[int, int, int] | None = None):
+    supercell_name = "<commensurate supercell base>"
+
+    def __init__(self,
+                 propagation_vectors: list[CommensuratePropagationVector],
+                 scaling: tuple[int, int, int] | None = None):
+
         self._propagation_vectors = propagation_vectors
         super().__init__(scaling)
 
@@ -299,14 +314,16 @@ class TransformationSupercell(CommensurateSupercell):
     where m0 is the existing moment at a given site
     """
 
-    def __init__(self, transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]], scale=(1,1,1)):
+    supercell_name = "transformation"
+
+    def __init__(self, transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]], scaling=(1, 1, 1)):
         # TODO: Provide a nicer interface for this maybe
         self._transforms = [(vector, IdentityTransform() if transform is None else transform)
                             for vector, transform in transforms]
 
         propagation_vectors = [vector for vector, _ in transforms]
 
-        super().__init__(propagation_vectors, scale)
+        super().__init__(propagation_vectors, scaling)
 
     def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
         for vector, transform in self._transforms:
@@ -328,7 +345,7 @@ class TransformationSupercell(CommensurateSupercell):
                        SupercellTransformation._deserialise(part["transform"], context))
                       for part in json]
 
-        return TransformationSupercell(scale, transforms)
+        return TransformationSupercell(transforms, scale)
 
 
 class SummationSupercell(CommensurateSupercell):
@@ -337,24 +354,35 @@ class SummationSupercell(CommensurateSupercell):
     m = sum(m_j exp(2 pi i r.k_j)).real
     """
 
-    def __init__(self, propagation_vectors):
-        super().__init__(propagation_vectors)
+    supercell_name = "summation"
 
+    def __init__(self,
+                 propagation_vectors: list[CommensuratePropagationVector],
+                 scaling: tuple[int, int, int] | None = None):
 
-    def moment(self, cell_offset: CellOffset, moment: np.ndarray):
+        super().__init__(propagation_vectors, scaling)
+
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Calculate moment at a given cell offset"""
-        return np.sum(component.evaluate(cell_offset) for component in self.components).real
+        moment = np.zeros(3, dtype=complex)
+        for component, propagation_vector in zip(site.moment_data, self._propagation_vectors):
+            # TODO: check
+            moment += component * np.exp(2j * np.pi * propagation_vector.dot(cell_offset))
+
+        return moment.real
 
     def summation_form(self) -> "SummationSupercell":
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
         return self
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        raise NotImplementedError("Serialisation not implemented") # TODO
+        return {"vectors": [vector._serialise(context) for vector in self._propagation_vectors]}
 
     @staticmethod
+    @expects_keys("vectors")
     def _deserialise_supercell(json, scale: tuple[int, int, int], context: SPWDeserialisationContext):
-        raise NotImplementedError("Serialisation not implemented") # TODO
+        vectors = [PropagationVector._deserialise(data, context) for data in json["vectors"]]
+        return SummationSupercell(vectors, scale)
 
 supercell_types = {cls.supercell_name: cls
                    for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell]}

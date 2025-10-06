@@ -1,12 +1,9 @@
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from matplotlib.lines import drawStyles
-from matplotlib.patches import FancyArrowPatch
-from mpl_toolkits.mplot3d import proj3d
 
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import Supercell, TransformationSupercell, PropagationVector, RotationTransform, \
-    CommensuratePropagationVector
+    CommensuratePropagationVector, SummationSupercell
 
 
 def draw_supercell(figure: Figure, supercell: Supercell, sites: list[LatticeSite], vector_length: float=1.0, do_equal=False):
@@ -32,6 +29,12 @@ def draw_supercell(figure: Figure, supercell: Supercell, sites: list[LatticeSite
             mzs.append(this_moment[2])
 
     ax.quiver(xs,ys,zs, mxs, mys, mzs, normalize=False, length=vector_length)
+
+    xlim, ylim, zlim = supercell.cell_size()
+    ax.set_xlim(0, xlim)
+    ax.set_ylim(0, ylim)
+    ax.set_zlim(0, zlim)
+
     if do_equal:
         ax.set_aspect("equal")
 
@@ -59,6 +62,19 @@ if __name__ == "__main__":
     sites = [
         LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
     ]
+
+    draw_supercell(fig, supercell, sites, vector_length=0.3)
+
+    fig = plt.figure("Test 3")
+
+    supercell = SummationSupercell([
+        CommensuratePropagationVector(1,0,0),
+        CommensuratePropagationVector(1/2, 1/2, 0)])
+
+    sites = [
+        LatticeSite(0.5, 0.5, 0.5, supercell_moments=[[1.0,0,0], [0.0, 1.0, 0]])
+    ]
+
 
     draw_supercell(fig, supercell, sites, vector_length=0.3)
 

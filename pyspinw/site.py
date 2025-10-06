@@ -50,6 +50,8 @@ class LatticeSite(SPWSerialisable):
 
             good_shape = True
 
+            supercell_moments = np.array(supercell_moments)
+
             if len(supercell_moments.shape) == 1:
                 if supercell_moments.shape[0] != 3:
                     good_shape = False
@@ -64,7 +66,7 @@ class LatticeSite(SPWSerialisable):
             if not good_shape:
                 raise ValueError("'supercell_moments' should have shape (3,) or (n,3)")
 
-            self._moment_data = supercell_moments.reshape((1, 3))
+            self._moment_data = supercell_moments.reshape((-1, 3))
 
         self._base_moment = np.sum(supercell_moments, axis=0)
 
@@ -106,9 +108,9 @@ class LatticeSite(SPWSerialisable):
         return self._m
 
     @property
-    def moment_data(self, supercell: str | None = None):
+    def moment_data(self):
         """ Get all the magnetic moment data"""
-        raise NotImplementedError()
+        return self._moment_data
 
     @property
     def values(self):
