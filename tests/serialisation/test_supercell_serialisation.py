@@ -1,7 +1,7 @@
 """ Tests for the serialisation of supercells """
 import numpy as np
 
-from pyspinw.symmetry.supercell import TrivialSupercell, Supercell, CommensurateSupercell, PropagationVector, \
+from pyspinw.symmetry.supercell import TrivialSupercell, Supercell, \
     CommensuratePropagationVector, SummationSupercell, TransformationSupercell, RotationTransform
 
 
