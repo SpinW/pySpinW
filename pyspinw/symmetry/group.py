@@ -182,4 +182,4 @@ spacegroup_symbol_lookup = {group.symbol: group for group in spacegroups}
 magnetic_group_symbol_lookup = {group.symbol: group for group in magnetic_groups}
 
 if __name__ == "__main__":
-    print(spacegroup_lattice_symbol_lookup)
+    print(magnetic_group_symbol_lookup)
