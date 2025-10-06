@@ -16,6 +16,7 @@ def test_trivial_supercell_serialisation():
     assert deserialised._scaling == supercell._scaling
 
 def test_summation_supercell_serialisation():
+    """ Check that summation supercells serialise correctly """
     vectors = [CommensuratePropagationVector(0, 0, 1/2),
                CommensuratePropagationVector(1/3, 1/3, 1/3)]
     supercell = SummationSupercell(vectors, scaling=(1,3,5))
