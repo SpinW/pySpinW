@@ -2,17 +2,20 @@
 
 See https://spinw.org/tutorials/05tutorial.
 """
+import sys
+
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation, Coupling
-except ModuleNotFoundError:
-    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+from examples.raw_calculations.utils import run_example
 
-def kagome_ferromagnet(n_q = 100):
+def kagome_ferromagnet(n_q = 100, coupling_class = PyCoupling):
     """Basic ferromagnet on a kagome lattice."""
+    rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
+
     # Three sites, otherwise identical
-    rotations = [np.eye(3, dtype=complex, order='F') for _ in range(3)]
+    rotations = [np.eye(3, **rust_kw) for _ in range(3)]
     magnitudes = np.array([1.0]*3)  # spin-1
 
     # Each site coupled to two of each of the others, so there are 6 couplings,
@@ -28,18 +31,18 @@ def kagome_ferromagnet(n_q = 100):
     k = 0.5
 
     couplings = [
-                 Coupling(0, 1, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 1.,  0., 0.])),
-                 Coupling(0, 1, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([-1.,  0., 0.])),
-                 Coupling(1, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 1.,  0., 0.])),
-                 Coupling(1, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([-1.,  0., 0.])),
-                 Coupling(0, 2, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 1.,  1., 0.])),
-                 Coupling(0, 2, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([-1., -1., 0.])),
-                 Coupling(2, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 1.,  1., 0.])),
-                 Coupling(2, 0, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([-1., -1., 0.])),
-                 Coupling(1, 2, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 0.,  1., 0.])),
-                 Coupling(1, 2, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 0., -1., 0.])),
-                 Coupling(2, 1, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 0.,  1., 0.])),
-                 Coupling(2, 1, np.eye(3, dtype=complex, order='F'), inter_site_vector=k*np.array([ 0., -1., 0.]))
+                 Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 1.,  0., 0.])),
+                 Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=k*np.array([-1.,  0., 0.])),
+                 Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 1.,  0., 0.])),
+                 Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=k*np.array([-1.,  0., 0.])),
+                 Coupling(0, 2, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 1.,  1., 0.])),
+                 Coupling(0, 2, np.eye(3, **rust_kw), inter_site_vector=k*np.array([-1., -1., 0.])),
+                 Coupling(2, 0, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 1.,  1., 0.])),
+                 Coupling(2, 0, np.eye(3, **rust_kw), inter_site_vector=k*np.array([-1., -1., 0.])),
+                 Coupling(1, 2, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 0.,  1., 0.])),
+                 Coupling(1, 2, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 0., -1., 0.])),
+                 Coupling(2, 1, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 0.,  1., 0.])),
+                 Coupling(2, 1, np.eye(3, **rust_kw), inter_site_vector=k*np.array([ 0., -1., 0.]))
                  ]
 
 
@@ -62,13 +65,17 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
+
+    structure, energies = run_example(kagome_ferromagnet, use_rust)
+
     indices = np.arange(201)
-
     label_indices = [0, 100, 200]
-
-    rotations, magnitudes, q_vectors, couplings = kagome_ferromagnet(100)
+    q_vectors = structure[2]
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
-    energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
 
     plt.plot(indices, np.real(energies))
     # plt.plot(indices, [method.value for method in result.method])

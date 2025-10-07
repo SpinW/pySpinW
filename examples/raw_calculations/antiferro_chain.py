@@ -2,19 +2,21 @@
 
 See https://spinw.org/tutorials/02tutorial
 """
+import sys
+
 import numpy as np
+from pyspinw.calculations.spinwave import Coupling as PyCoupling
 
-try:
-    from pyspinw.rust import spinwave_calculation, Coupling
-except ModuleNotFoundError:
-    from pyspinw.calculations.spinwave import spinwave_calculation, Coupling
+from examples.raw_calculations.utils import run_example
 
-def antiferro_chain(n_q = 100):
+def antiferro_chain(n_q = 100, coupling_class = PyCoupling):
     """Antiferromagnetic chain.
 
     We use a 2x1x1 supercell to capture the magnetic rotation periodicity.
     """
     rust_kw = {'dtype':complex, 'order':'F'}
+    Coupling = coupling_class
+
     rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
     magnitudes = np.array([1.0]*2)
 
@@ -34,8 +36,12 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    structure = antiferro_chain()
-    energies = spinwave_calculation(*structure)
+    if len(sys.argv) > 1:
+        use_rust = "py" not in sys.argv[1]
+    else:
+        use_rust = True
+
+    _, energies = run_example(antiferro_chain, use_rust)
 
     # Note: we get complex data types with real part zero
 
