@@ -22,6 +22,7 @@ except ImportError:
 from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling, MagneticField as PyField
 
 from examples.raw_calculations.ferromagnetic_chain import heisenberg_ferromagnet
+from examples.raw_calculations.ferromagnet_gtensor import ferromagnet_gtensor
 from examples.raw_calculations.antiferro_chain import antiferro_chain
 from examples.raw_calculations.antiferro_ef import antiferro_ef
 from examples.raw_calculations.kagome import kagome_ferromagnet
@@ -31,6 +32,7 @@ from examples.raw_calculations.kagome_supercell import kagome_supercell
 @pytest.mark.rust
 @pytest.mark.parametrize("example",
                          [heisenberg_ferromagnet,
+                          ferromagnet_gtensor,
                           antiferro_chain,
                           antiferro_ef,
                           kagome_ferromagnet,
