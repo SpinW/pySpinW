@@ -9,55 +9,41 @@ from pyspinw.symmetry.supercell import Supercell
 from pyspinw.tolerances import tolerances
 
 
-def check_individual_moment_consistency(position: np.ndarray,
-                                        moment: np.ndarray,
-                                        group: MagneticSpaceGroup,
-                                        verbose: bool=False) -> list[str]:
-
-    position_and_moment = np.concatenate((position, moment)).reshape(-1, 6)
-    info = []
-    for symmetry in group.operations:
-        transformed = symmetry(position_and_moment)
-
-        # If the location is not invariant with respect to the symmetry operation, then it doesn't matter, continue
-        new_position = transformed[0, :3]
-        if np.any(np.abs(new_position - position) > tolerances.SAME_SITE_ABS_TOL):
-            if verbose:
-                info.append(f"Site at ({position[0]}, {position[1]}, {position[2]}) is NOT "
-                            f"INVARIANT under '{symmetry.text_form}'")
-
-            continue
-
-        # If the location is invariant, the moment should be too
-        new_moment = transformed[0, 3:]
-        if np.any(np.abs(new_moment - moment) > tolerances.SAME_SITE_ABS_TOL):
-
-            info.append(f"Site at ({position[0]}, {position[1]}, {position[2]}) "
-                            f"with moment ({moment[0]}, {moment[1]}, {moment[2]}) "
-                            f"is inconsistent with symmetry operation '{symmetry.text_form}'")
-
-        else:
-            if verbose:
-                info.append(f"Site at ({position[0]}, {position[1]}, {position[2]}) "
-                            f"with moment ({moment[0]}, {moment[1]}, {moment[2]}) "
-                            f"is CONSISTENT with symmetry operation '{symmetry.text_form}'")
-
-    return info
-
-
 def check_supercell_moment_consistency(
         supercell: Supercell,
         group: MagneticSpaceGroup,
-        sites: list[LatticeSite],
-        verbose: bool=False):
-    """ Check consistency of magnetic moments with the spacegroup"""
-    info = defaultdict(list[str])
+        sites: list[LatticeSite]):
+    """ Check consistency of magnetic moments in a supercell with the magnetic spacegroup"""
 
+    position_and_moments = []
+    offsets = []
     for cell_offset in supercell.cells():
         for site in sites:
-            moment = supercell.moment(site, cell_offset)
-            cell_site_errors = check_individual_moment_consistency(site.ijk, moment, group, verbose=verbose)
-            if cell_site_errors:
-                info[cell_offset.as_tuple] += cell_site_errors
+            position_and_moments.append(supercell.cell_position_and_moment(site, cell_offset))
+            offsets.append(cell_offset.as_tuple)
+
+    position_and_moments = np.array(position_and_moments)
+    offsets = np.array(offsets)
+
+    info = defaultdict(list[str])
+    for symmetry in group.operations:
+        transformed = symmetry(position_and_moments)
+
+        # We want to search for position invariants that do not leave the momentum unchanged
+        diffs = np.abs(position_and_moments - transformed)
+        same_positions = np.all(diffs[:, :3] < tolerances.SAME_SITE_ABS_TOL, axis=1)
+        same_momenta = np.all(diffs[:, 3:] < tolerances.SAME_SITE_ABS_TOL, axis=1)
+
+        problems = same_positions & ~same_momenta
+        problem_sites = position_and_moments[problems, :]
+        problem_offsets = offsets[problems, :]
+
+        for site, offset in zip(problem_sites, problem_offsets):
+            offset = tuple(int(x) for x in offset)
+            info[offset].append(f"Site at ({site[0]:.4g}, {site[1]:.4g}, {site[2]:.4g}) "
+                                f"with moment ({site[3]:.4f}, {site[4]:.4f}, {site[5]:.4f}) "
+                                f"in cell at ({offset[0]}, {offset[1]}, {offset[2]}) "
+                                f"is magnetically inconsistent under '{symmetry.text_form}'")
+
 
     return info

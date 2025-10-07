@@ -8,8 +8,9 @@ from pyspinw.symmetry.symmetry_checking import check_supercell_moment_consistenc
 def display_warnings(warnings):
     for offset in warnings:
         print(f"Cell {offset}: {len(warnings[offset])} warnings")
+
+    for offset in warnings:
         for warning in warnings[offset]:
-            print(f"Cell {offset}: ", end='')
             print(warning)
 
 
@@ -36,7 +37,7 @@ def check_moment_consistency_forbidden_example(group="P4_2/mnm.1'_I[I4/mmm]"):
         (CommensuratePropagationVector(0, 1/3, 0), RotationTransform([1, 0, 0])),
         (CommensuratePropagationVector(0, 0, 1/3), RotationTransform([0, 1, 0]))])
 
-    warnings = check_supercell_moment_consistency(supercell, symmetry, sites, verbose=False)
+    warnings = check_supercell_moment_consistency(supercell, symmetry, sites)
 
     display_warnings(warnings)
 
@@ -78,7 +79,7 @@ def check_moment_consistency_forbidden_example_2(group="P4_2/mnm.1'_I[I4/mmm]"):
         (CommensuratePropagationVector(0, 1/3, 0), RotationTransform([1, 0, 0])),
         (CommensuratePropagationVector(0, 0, 1/3), RotationTransform([0, 1, 0]))])
 
-    warnings = check_supercell_moment_consistency(supercell, symmetry, sites, verbose=False)
+    warnings = check_supercell_moment_consistency(supercell, symmetry, sites)
 
 
     for offset in warnings:
@@ -88,8 +89,8 @@ def check_moment_consistency_forbidden_example_2(group="P4_2/mnm.1'_I[I4/mmm]"):
 
 if __name__ == "__main__":
 
-    # check_moment_consistency_p1_example()
+    check_moment_consistency_p1_example()
 
     # check_moment_consistency_forbidden_example()
 
-    find_supercell_only_inconsistent_groups()
+    # find_supercell_only_inconsistent_groups()

@@ -201,6 +201,14 @@ class Supercell(ABC, SPWSerialisable):
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Evaluate the moment of a lattice site in this unit cell """
 
+    def cell_position_and_moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Position within the unit cell, and moment"""
+        return np.concatenate((site.ijk, self.moment(site, cell_offset)))
+
+    def supercell_position_and_moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Position within the supercell and moment """
+        return np.concatenate((site.ijk + cell_offset.vector, self.moment(site, cell_offset)))
+
     @abstractmethod
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
