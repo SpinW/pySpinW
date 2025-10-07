@@ -117,6 +117,10 @@ class LatticeSite(SPWSerialisable):
         """ ijk and moments as a numpy 6-vector"""
         return self._values
 
+    @property
+    def parent_site(self):
+        return self
+
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
         """ Create from an array of values """
@@ -195,10 +199,13 @@ class ImpliedLatticeSite(LatticeSite):
                  mi: float = 0, mj: float = 0, mk: float = 0,
                  name: str | None = None):
 
-        self.parent_site = parent_site
+        self._parent_site = parent_site
 
         super().__init__(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
 
+    @property
+    def parent_site(self):
+        return self._parent_site
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         if not context.sites.has(self._unique_id):

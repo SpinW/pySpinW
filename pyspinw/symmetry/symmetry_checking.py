@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 
+from pyspinw.coupling import Coupling
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import MagneticSpaceGroup
 from pyspinw.symmetry.supercell import Supercell
@@ -45,5 +46,11 @@ def check_supercell_moment_consistency(
                                 f"in cell at ({offset[0]}, {offset[1]}, {offset[2]}) "
                                 f"is magnetically inconsistent under '{symmetry.text_form}'")
 
-
     return info
+
+def check_coupling_consistency(coupling: Coupling):
+    """ Check that a coupling actually does something, not cancelled by symmetry """
+
+    # Are they referring to the same site
+    if coupling.site_1.parent_site._unique_id == coupling.site_2.parent_site._unique_id:
+        pass

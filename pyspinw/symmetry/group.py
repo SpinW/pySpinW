@@ -120,7 +120,7 @@ def _load_spg_group_data():
     for i in range(1,1652):
 
         op_data = spglib.get_magnetic_symmetry_from_database(i)
-        metadata = spglib.get_magnetic_spacegroup_type(i)
+        # metadata = spglib.get_magnetic_spacegroup_type(i)
         # print(metadata)
 
         rotations = op_data["rotations"]
