@@ -24,7 +24,7 @@ class MagneticSpaceGroup(SymmetryGroup):
 
     def __repr__(self):
         """repr"""
-        return f"SpaceGroup({self.number}, {self.symbol})"
+        return f"MagneticSpaceGroup({self.number}, {self.symbol})"
 
     def duplicates(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
@@ -102,15 +102,18 @@ def _load_spg_group_data():
     spacegroup_names = {}
     for i in range(1, 531):
         group_data = spglib.get_spacegroup_type(i)
-        number = group_data["number"]
-        name = group_data["international_full"]
+
+        number = group_data.number
+
+        name = group_data.international_full
+
         spacegroup_names[number] = name
 
     # Make a lookup for spacegroups
     spacegroup_to_magnetic_group = defaultdict(list[int])
     for i in range(1,1652):
         metadata = spglib.get_magnetic_spacegroup_type(i)
-        spacegroup_to_magnetic_group[metadata["number"]].append(i)
+        spacegroup_to_magnetic_group[metadata.number].append(i)
 
     # Create magnetic groups
     magnetic_groups = []
