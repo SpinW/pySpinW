@@ -19,7 +19,8 @@ If the calculation that results in the scattering intensity is the same as that 
 Proposal
 ========
 
-We should be checking for connectivity of all non-zero moments, and warn the user or error if this is the case.
-We should not be trying to automatically work out scattering for these complex cases.
+* We should be checking for connectivity of all non-zero moments, and warn the user or error if this is the case.
+* We should not be trying to automatically work out scattering for these complex cases.
+
 
 
