@@ -8,7 +8,7 @@ and it is possible that we can decompose into more than just two systems. Clearl
 By definion, a system that is decomposable has multiple, uncoupled subsystems, therefore, it would be possible to excite one without exciting the other. Or, perhaps more relevant,
 we can excite one with a given wavevector and energy ($q_1$ and $E_1$) and another with a different wavevector and energy ($q_2$ and $E_2$) with a single neutron with $q = q_1 + q_2$ 
 and $E = E_1 + E_2$. This is in-fact a two magnon excitation. If our systems are decomposable, proper treatmeant appears to require doing a multi-magnon calculation, which is problematic 
-as whilst achievable in the 2 magnon case with some computational expense, will have an expense that grows as $n^3m$, where $n$ is the number of $q$ samples in one dimension, and $m$ is 
+as whilst achievable in the 2 magnon case with some computational expense, will have an expense that grows as $n^{3m}$, where $n$ is the number of $q$ samples in one dimension, and $m$ is 
 the number of components in the system.
 
 Multi-magnon Systems
