@@ -3,9 +3,13 @@ use std::f64::consts::PI;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
+use crate::constants::{J, MU_B, SCALAR_J};
 use crate::{Coupling, MagneticField, C64};
-use crate::constants::{J, SCALAR_J, MU_B};
 
+pub struct SpinwaveResult {
+    pub energies: Vec<f64>,
+    correlation: Option<Mat<C64>>,
+}
 
 /// Run the main calculation step for a spinwave calculation.
 #[allow(non_snake_case)]
@@ -15,7 +19,7 @@ pub fn calc_spinwave(
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<&Coupling>,
     field: Option<MagneticField>,
-) -> Vec<Vec<f64>> {
+) -> Vec<SpinwaveResult> {
     let n_sites = rotations.len();
 
     // decompose rotation matrices
@@ -51,13 +55,21 @@ pub fn calc_spinwave(
 
     q_vectors
         .into_par_iter()
-        .map(|q| spinwave_single_q(Col::from_iter(q), &C, n_sites, &z, &spin_coefficients, &couplings, &Az))
+        .map(|q| {
+            energies_single_q(
+                Col::from_iter(q),
+                &C,
+                n_sites,
+                &z,
+                &spin_coefficients,
+                &couplings,
+                &Az,
+            )
+        })
         .collect()
 }
 
-/// Calculate spectra for a single q-value.
-#[allow(non_snake_case)]
-fn spinwave_single_q(
+pub fn energies_single_q(
     q: Col<f64>,
     C: &Mat<C64>,
     n_sites: usize,
@@ -65,18 +77,87 @@ fn spinwave_single_q(
     spin_coefficients: &MatRef<C64>,
     couplings: &[&Coupling],
     Az: &Option<Vec<C64>>,
-) -> Vec<f64> {
+) -> SpinwaveResult {
+    let (sqrt_hamiltonian, _) =
+        calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az, false);
+    // 'shc' is "square root of Hamiltonian with commutation"`
+    // We need to enforce the bosonic commutation properties, we do this
+    // by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
+    // and then negating the second half.
+    //
+    // In matrix form we do
+    //
+    //     M = K^dagger g K
+    //
+    // where g is a diagonal matrix of length 2n, with the first n entries being 1, and the
+    // remaining entries being -1.
+    // We do this by just multiplying the >n_sites rows of shc to get g*K
+    let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
+    let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
+    negative_half *= -1.;
+
+    SpinwaveResult {
+        energies: (sqrt_hamiltonian.adjoint() * shc)
+            .self_adjoint_eigenvalues(Side::Lower)
+            .expect("Could not calculate eigendecomposition of the Hamiltonian."),
+        correlation: None,
+    }
+}
+
+/// Calculate the square root of the Hamiltonian,
+/// and optionally the block matrix [YZ;VW] for S^alpha,beta
+fn calc_sqrt_hamiltonian(
+    q: Col<f64>,
+    C: &Mat<C64>,
+    n_sites: usize,
+    z: &[Col<C64>],
+    spin_coefficients: &MatRef<C64>,
+    couplings: &[&Coupling],
+    Az: &Option<Vec<C64>>,
+    calc_Sab: bool,
+) -> (Mat<C64>, Option<Mat<Mat<C64>>>) {
     // create A and B matrices for the Hamiltonian
+    // as well as the workspace for the dynamical correlation function
+    // S'^alpha,beta(k, omega)
 
     let mut A = Mat::<C64>::zeros(n_sites, n_sites);
     let mut B = Mat::<C64>::zeros(n_sites, n_sites);
+
+    // We store S' as a 3x3 matrix of matrices indexed by alpha, beta
+    // where each element is an 2 * n_sites x 2 * n_sites matrix
+    // later on we will sum over the diagonal elements to get S'^alpha,beta(k, omega)
+    let mut S_prime_mats = match calc_Sab {
+        true => Some(Mat::<Mat<C64>>::full(
+            3,
+            3,
+            Mat::<C64>::zeros(2 * n_sites, 2 * n_sites),
+        )),
+        false => None,
+    };
 
     for c in couplings {
         let phase_factor = ((2. * J * PI) * (q.transpose() * c.inter_site_vector.as_ref())).exp();
         let (i, j) = (c.index1, c.index2);
 
+        // contributions to A and B from this coupling
         A[(i, j)] += (z[i].transpose() * c.matrix.as_ref() * z[j].conjugate()) * phase_factor;
         B[(i, j)] += (z[i].transpose() * c.matrix.as_ref() * z[j].as_ref()) * phase_factor;
+
+        if let Some(ref mut spm) = S_prime_mats {
+            // contributions to S' from this coupling
+            let common_term = spin_coefficients[(i, j)] * phase_factor;
+            for alpha in 0..3 {
+                for beta in 0..3 {
+                    spm[(alpha, beta)][(i, j)] += common_term * (z[i][alpha] * z[j][beta].conj());
+                    spm[(alpha, beta)][(i + n_sites, j + n_sites)] +=
+                        common_term * (z[i][alpha].conj() * z[j][beta]);
+                    spm[(alpha, beta)][(i, j + n_sites)] +=
+                        common_term * (z[i][alpha] * z[j][beta]);
+                    spm[(alpha, beta)][(i + n_sites, j)] +=
+                        common_term * (z[i][alpha].conj() * z[j][beta].conj());
+                }
+            }
+        }
     }
 
     A = component_mul(&A, spin_coefficients);
@@ -111,34 +192,15 @@ fn spinwave_single_q(
             ldl.P().inverse() * l * sqrt_d.as_diagonal()
         }
     };
-
-    // 'shc' is "square root of Hamiltonian with commutation"`
-    // We need to enforce the bosonic commutation properties, we do this
-    // by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
-    // and then negating the second half.
-    //
-    // In matrix form we do
-    //
-    //     M = K^dagger g K
-    //
-    // where g is a diagonal matrix of length 2n, with the first n entries being 1, and the
-    // remaining entries being -1.
-    // We do this by just multiplying the >n_sites rows of shc to get g*K
-    let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
-    let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
-    negative_half *= -1.;
-
-    // calculate eigenvalues (energies) of the Hamiltonian and return
-    (sqrt_hamiltonian.adjoint() * shc)
-        .self_adjoint_eigenvalues(Side::Lower)
-        .expect("Could not calculate eigenvalues of the Hamiltonian.")
+    (sqrt_hamiltonian, S_prime_mats)
 }
+
 /// Get the components of the rotation matrices for the axis indexed by `index`.
 #[inline(always)]
 fn get_rotation_components(rotations: Vec<MatRef<C64>>) -> (Vec<Col<C64>>, Vec<ColRef<C64>>) {
     // r.col(index) gets the components of the rotation matrix
     // and then in the map we compile the x and y components into z, and the other into eta
-    // so this function returns (z, eta) 
+    // so this function returns (z, eta)
     rotations
         .into_par_iter()
         .map(|r| (r.col(0) + (r.col(1) * SCALAR_J), r.col(2)))
@@ -154,7 +216,6 @@ fn component_mul(a: &Mat<C64>, b: &MatRef<C64>) -> Mat<C64> {
 }
 
 /// Combine the A, B, and C matrices into the Hamiltonian `h(q)` matrix.
-#[allow(non_snake_case)]
 #[inline(always)]
 fn make_block_hamiltonian(A: Mat<C64>, B: Mat<C64>, C: &Mat<C64>) -> Mat<C64> {
     let A_minus_C: Mat<C64> = A.clone() - C;
@@ -168,13 +229,21 @@ fn make_block_hamiltonian(A: Mat<C64>, B: Mat<C64>, C: &Mat<C64>) -> Mat<C64> {
     // its argument into the matrix. So this is copying each of our matrices into sections
     // of the `hamiltonian` matrix
     // copy A - C into upper-left quarter of matrix
-    hamiltonian.submatrix_mut(0, 0, n_sites, n_sites).copy_from(A_minus_C);
+    hamiltonian
+        .submatrix_mut(0, 0, n_sites, n_sites)
+        .copy_from(A_minus_C);
     // copy B into upper-right
-    hamiltonian.submatrix_mut(n_sites, 0, n_sites, n_sites).copy_from(B.as_ref());
+    hamiltonian
+        .submatrix_mut(n_sites, 0, n_sites, n_sites)
+        .copy_from(B.as_ref());
     // copy B* into bottom-left
-    hamiltonian.submatrix_mut(0, n_sites, n_sites, n_sites).copy_from(B.adjoint());
+    hamiltonian
+        .submatrix_mut(0, n_sites, n_sites, n_sites)
+        .copy_from(B.adjoint());
     // copy A* - C into bottom-right
-    hamiltonian.submatrix_mut(n_sites, n_sites, n_sites, n_sites).copy_from(A_conj_minus_C);
+    hamiltonian
+        .submatrix_mut(n_sites, n_sites, n_sites, n_sites)
+        .copy_from(A_conj_minus_C);
 
     hamiltonian
 }

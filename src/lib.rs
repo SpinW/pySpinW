@@ -1,6 +1,7 @@
 //! A Rust-based implementation of the spinwave calculation.
 //! The file `lib.rs` contains the Python bindings,
 //! and the actual pure Rust calculation is in `spinwave.rs`.
+#![allow(non_snake_case)]
 
 use faer::{Col, Mat, MatRef};
 use faer_ext::IntoFaer;
@@ -73,15 +74,21 @@ pub fn spinwave_calculation<'py>(
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<Py<Coupling>>,
-    field: Option<MagneticField>, // `field` is either a MagneticField struct or None
+    field: Option<MagneticField>,
 ) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
     // convert PyO3-friendly array types to faer matrices
-    let r: Vec<MatRef<C64>> = rotations.into_iter().map(faer_ext::IntoFaer::into_faer).collect();
+    let r: Vec<MatRef<C64>> = rotations
+        .into_iter()
+        .map(faer_ext::IntoFaer::into_faer)
+        .collect();
 
     let c = couplings.par_iter().map(pyo3::Py::get).collect();
 
-    let energies = calc_spinwave(r, magnitudes, q_vectors, c, field);
-    Ok(energies.into_iter().map(|v| v.to_pyarray(py)).collect())
+    let results = calc_spinwave(r, magnitudes, q_vectors, c, field);
+    Ok(results
+        .into_iter()
+        .map(|result| result.energies.to_pyarray(py))
+        .collect())
 }
 
 /// A Python module implemented in Rust.
