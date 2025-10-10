@@ -19,7 +19,6 @@ def test_no_couplings_no_parenting():
 
 def test_no_couplings_some_parenting():
     """ Check that parented sites get put in same group"""
-
     # Use the i component to identify two groups
     sites = [LatticeSite(0,0,0),
              LatticeSite(1,0,0)]
@@ -71,8 +70,8 @@ def test_two_systems():
 
 def test_parenting_connected_two_systems():
     """ Same as the two system test, except the non-coupled sites are connected by parentage,
-    therefore there should only be a single group"""
-
+    therefore there should only be a single group
+    """
     sites = [LatticeSite(0, 0, 0),
              LatticeSite(1, 0, 0)]
 

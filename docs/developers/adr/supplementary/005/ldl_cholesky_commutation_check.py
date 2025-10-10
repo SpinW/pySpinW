@@ -65,7 +65,6 @@ def normalise(vectors):
 
 def check_commutation_application(m):
     """ Check the commutation relationship """
-
     assert m.shape[0] == m.shape[1]
     assert m.shape[0] % 2 == 0
 

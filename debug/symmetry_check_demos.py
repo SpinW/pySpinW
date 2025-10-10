@@ -44,8 +44,8 @@ def check_moment_consistency_forbidden_example(group="P4_2/mnm.1'_I[I4/mmm]"):
 
 def find_supercell_only_inconsistent_groups():
     """ List all the groups that are inconsistent with the supercell, but not the base unit cell,
-    for one particular system"""
-
+    for one particular system
+    """
     sites = [LatticeSite(0,0,0,1,0,0)]
     supercell = TransformationSupercell([
         (CommensuratePropagationVector(1/3, 0, 0), RotationTransform([0, 1, 0])),

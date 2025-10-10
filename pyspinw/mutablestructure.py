@@ -15,6 +15,7 @@ from pyspinw.tolerances import tolerances
 @dataclass
 class BoundCouplingGroup:
     """ This links a coupling group to sites"""
+
     def __init__(self, coupling_group: CouplingGroup, indices: list[int]):
         self.coupling_group = coupling_group
         self.indices = indices
@@ -97,7 +98,6 @@ class MutableStructure:
 
     def check_symmetry(self) -> list[SymmetryConflict]:
         """ Check the symmetry of this system and the system definition are consistent """
-
         check_results = []
 
         # Check site symmetry
@@ -128,7 +128,6 @@ class MutableStructure:
 
     def _make_real(self, implied_site_indices: list[int]):
         """ Take an implied site and turn it into a real site"""
-
         new_sites = [self._implied_sites[i].reify() for i in implied_site_indices]
 
         self._sites += new_sites

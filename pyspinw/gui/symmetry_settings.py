@@ -9,6 +9,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 class SymmetrySettings:
     """ Object to hold symmetry information together """
+
     def __init__(self, space_group: SpaceGroup, magnetic_group: MagneticSpaceGroup, unit_cell: UnitCell):
 
         self._space_group = space_group

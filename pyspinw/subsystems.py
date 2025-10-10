@@ -6,6 +6,7 @@ from pyspinw.site import LatticeSite, ImpliedLatticeSite
 
 class Node:
     """ Graph model for depth first search """
+
     def __init__(self):
         self.connected: list["Node"] = []
         self.group = -1
@@ -23,12 +24,11 @@ class Node:
 
 def find_components(sites: list[LatticeSite], couplings: list[Coupling]) \
         -> list[tuple[list[LatticeSite], list[Coupling]]]:
-    """
-    Find components (maximal disjoint subsystems) of the given system, or
+    """Find components (maximal disjoint subsystems) of the given system, or
     in other words, group the sites by being coupled to each other
 
-    Important: Assumes that all the sites in the couplings are in the list of sites"""
-
+    Important: Assumes that all the sites in the couplings are in the list of sites
+    """
     unique_sites = [site for site in sites if not isinstance(site, ImpliedLatticeSite)]
     n_unique_sites = len(unique_sites)
     unique_id_to_index = {unique_sites[index]._unique_id: index for index in range(n_unique_sites)}

@@ -35,7 +35,6 @@ def test_summation_supercell_serialisation():
 
 def test_rotation_supercell_serialisation():
     """ Test that rotation supercells serialise correctly"""
-
     input_data = [(CommensuratePropagationVector(0, 0, 1 / 2), RotationTransform([0,1,0])),
                 (CommensuratePropagationVector(1 / 3, 1 / 3, 1 / 3), RotationTransform([1,0,0]))]
     supercell = TransformationSupercell(input_data, scaling=(1, 3, 5))

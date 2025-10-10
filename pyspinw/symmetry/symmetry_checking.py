@@ -15,7 +15,6 @@ def check_supercell_moment_consistency(
         group: MagneticSpaceGroup,
         sites: list[LatticeSite]):
     """ Check consistency of magnetic moments in a supercell with the magnetic spacegroup"""
-
     position_and_moments = []
     offsets = []
     for cell_offset in supercell.cells():
@@ -50,7 +49,6 @@ def check_supercell_moment_consistency(
 
 def check_coupling_consistency(sites: list[LatticeSite], couplings: list[Coupling]):
     """ Check that a coupling actually does something, not cancelled by symmetry """
-
     for coupling in couplings:
 
         # Are they referring to the same site
@@ -59,8 +57,6 @@ def check_coupling_consistency(sites: list[LatticeSite], couplings: list[Couplin
             #  As the magnitude of S can be different when actually running the calculation,
             #  this can only happen when the constant is zero,
             #  which is when R1 M R2 is antisymmetric
-
-
 
             pass
 

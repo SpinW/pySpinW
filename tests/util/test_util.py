@@ -24,7 +24,6 @@ def test_triple_product_matrix_does_triple_product(a,b,c):
 
     i.e. = b.M.c = a . (b x c)
     """
-
     m = triple_product_matrix(a)
     with_matrix = b @ m @ c
     with_cross = np.dot(a, np.cross(b, c))

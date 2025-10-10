@@ -2,7 +2,6 @@ from pyspinw.symmetry.system import lattice_systems
 
 def test_all_systems_present():
     """ Test that all the Bravais lattices are there are correct """
-
     expected_names = sorted([
         "aP",
         "mP", "mS",

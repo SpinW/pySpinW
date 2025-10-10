@@ -252,7 +252,6 @@ def numpy_deserialise(json: dict) -> np.ndarray:
 
 def serialise_fraction(fraction: Fraction) -> dict:
     """ Serialise a Fraction """
-
     return {
         "numerator": fraction.numerator,
         "denominator": fraction.denominator
