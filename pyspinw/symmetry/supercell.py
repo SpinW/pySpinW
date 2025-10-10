@@ -109,6 +109,7 @@ class CommensuratePropagationVector(PropagationVector):
         return False
 
 class SupercellTransformation(ABC, SPWSerialisable):
+    """ Base class for supercell transformations """
 
     serialisation_name = "supercell_transformation"
     transformation_name = "<transform base class>"
@@ -145,6 +146,7 @@ class SupercellTransformation(ABC, SPWSerialisable):
 
 
 class IdentityTransform(SupercellTransformation):
+    """ Transformation that does nothing """
 
     transformation_name = "identity"
 
@@ -156,6 +158,7 @@ class IdentityTransform(SupercellTransformation):
         return IdentityTransform()
 
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        """ Apply this transformation to a given moment (as it is the identity it does nothing to it)"""
         return moment
 
 class RotationTransform(SupercellTransformation):
@@ -176,6 +179,7 @@ class RotationTransform(SupercellTransformation):
         return RotationTransform(axis=numpy_deserialise(json["axis"]))
 
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        """ Apply this transformation (rotation) to a moment in a specified cell """
         angle = 2 * np.pi * propagation_vector.dot(cell_offset)
         return moment @ rotation_matrix(angle, self._axis)
 
@@ -183,6 +187,7 @@ transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, R
 
 
 class Supercell(ABC, SPWSerialisable):
+    """ Base class for different supercells """
 
     serialisation_name = "supercell"
     supercell_name = "<base supercell>"
@@ -264,12 +269,15 @@ class TrivialSupercell(Supercell):
     supercell_name = "trivial"
 
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Get the moment for a site with a an offset within the supercell """
         return site.base_moment
 
     def cell_size(self) -> tuple[int, int, int]:
+        """ How big is this supercell """
         return self._scaling
 
     def summation_form(self) -> "Supercell":
+        """ Get this supercell in summation form """
         return self
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
@@ -298,6 +306,7 @@ class CommensurateSupercell(Supercell):
         raise NotImplementedError("evaluate not implemented in base class")
 
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Get the moment for a site in a specified cell according to the supercell"""
         return self._transform_evaluate(cell_offset=cell_offset, moment=site.base_moment)
 
     def cell_size(self) -> tuple[int, int, int] | None:
@@ -324,7 +333,10 @@ class TransformationSupercell(CommensurateSupercell):
 
     supercell_name = "transformation"
 
-    def __init__(self, transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]], scaling=(1, 1, 1)):
+    def __init__(self,
+                 transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]],
+                 scaling=(1, 1, 1)):
+
         # TODO: Provide a nicer interface for this maybe
         self._transforms = [(vector, IdentityTransform() if transform is None else transform)
                             for vector, transform in transforms]
@@ -340,6 +352,7 @@ class TransformationSupercell(CommensurateSupercell):
         return moment
 
     def summation_form(self) -> "Supercell":
+        """ Convert into summation form """
         raise NotImplementedError("Not implemented yet")
 
     def _serialise_supercell(self, context: SPWSerialisationContext):

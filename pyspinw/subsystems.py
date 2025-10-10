@@ -24,8 +24,9 @@ class Node:
 
 def find_components(sites: list[LatticeSite], couplings: list[Coupling]) \
         -> list[tuple[list[LatticeSite], list[Coupling]]]:
-    """Find components (maximal disjoint subsystems) of the given system, or
-    in other words, group the sites by being coupled to each other
+    """Find components (maximal disjoint subsystems) of the given system
+
+    or in other words, group the sites by being coupled to each other.
 
     Important: Assumes that all the sites in the couplings are in the list of sites
     """
@@ -61,7 +62,10 @@ def find_components(sites: list[LatticeSite], couplings: list[Coupling]) \
 
     # Collect couplings together
     for coupling in couplings:
-        node_index = unique_id_to_index[coupling.site_1.parent_site._unique_id] # Group should be the same for both sites
+
+        # Group should be the same for both sites
+        node_index = unique_id_to_index[coupling.site_1.parent_site._unique_id]
+
         group_index = nodes[node_index].group
         coupling_groups[group_index].append(coupling)
 

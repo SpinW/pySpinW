@@ -1,4 +1,4 @@
-
+""" Magnetic structure """
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup
@@ -11,7 +11,12 @@ class MagneticStructure(SPWSerialisable):
     serialisation_name = "structure"
     """ Object to hold symmetry information together """
 
-    def __init__(self, space_group: SpaceGroup, magnetic_group: MagneticSpaceGroup, unit_cell: UnitCell, supercell: Supercell):
+    def __init__(self,
+                 space_group: SpaceGroup,
+                 magnetic_group: MagneticSpaceGroup,
+                 unit_cell: UnitCell,
+                 supercell: Supercell):
+
         self._space_group = space_group
         self._magnetic_group = magnetic_group
         self._unit_cell = unit_cell
@@ -19,21 +24,26 @@ class MagneticStructure(SPWSerialisable):
 
     @property
     def space_group(self):
+        """ Get the space group """
         return self._space_group
 
     @property
     def magnetic_group(self):
+        """ Get the magnetic group """
         return self._magnetic_group
 
     @property
     def unit_cell(self):
+        """ Get the unit cell """
         return self._unit_cell
 
     def _serialise(self, context: SPWSerialisationContext):
+        """ Serialise this object """
         return {}
 
     @staticmethod
     def _deserialise(data: dict, context: SPWDeserialisationContext):
+        """ Deserialise an object of this kind """
         return MagneticStructure()
 
     def validate(self):

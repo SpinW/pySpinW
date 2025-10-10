@@ -58,6 +58,7 @@ def problematic_sites(sites: list[LatticeSite],
 
 @check_sizes(axis=(3,), force_numpy=True)
 def rotation_matrix(angle, axis):
+    """ Create a rotation matrix """
     mag = np.sqrt(np.sum(axis**2))
 
     if mag == 0:

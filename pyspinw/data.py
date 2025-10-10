@@ -1,3 +1,5 @@
+""" Data object - placeholder """
+
 import numpy as np
 
 class Data:
@@ -8,4 +10,5 @@ class Data:
 
     @property
     def q(self) -> np.ndarray:
-        raise NotImplementedError
+        """ Q Values"""
+        raise NotImplementedError()

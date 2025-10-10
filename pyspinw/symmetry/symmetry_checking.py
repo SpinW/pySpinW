@@ -38,8 +38,8 @@ def check_supercell_moment_consistency(
         problem_sites = position_and_moments[problems, :]
         problem_offsets = offsets[problems, :]
 
-        for site, offset in zip(problem_sites, problem_offsets):
-            offset = tuple(int(x) for x in offset)
+        for site, raw_offset in zip(problem_sites, problem_offsets):
+            offset = tuple(int(x) for x in raw_offset)
             info[offset].append(f"Site at ({site[0]:.4g}, {site[1]:.4g}, {site[2]:.4g}) "
                                 f"with moment ({site[3]:.4f}, {site[4]:.4f}, {site[5]:.4f}) "
                                 f"in cell at ({offset[0]}, {offset[1]}, {offset[2]}) "

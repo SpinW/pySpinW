@@ -21,15 +21,20 @@ class BoundCouplingGroup:
         self.indices = indices
 
     def couplings(self, sites: list[LatticeSite], unit_cell: UnitCell) -> list[Coupling]:
+        """ Return couplings for the coupling group """
         return self.coupling_group.couplings([sites[index] for index in self.indices], unit_cell=unit_cell)
 
 class SymmetryConflictType(Enum):
+    """ Types of symmetry conflict"""
+
     POSITION_CONFLICT = "position conflict"
     MAGNETIC_CONFLICT = "magnetic conflict"
     COUPLING_CANCELLED = "coupling cancelled"
 
 @dataclass
 class SymmetryConflict:
+    """ Representation of a symmetry conflict"""
+
     conflict_type: SymmetryConflictType
     message: str
 
@@ -108,11 +113,13 @@ class MutableStructure:
 
                     if np.all(np.abs(site1.m - site2.m) > tolerances.SAME_SITE_ABS_TOL):
                         conflict = SymmetryConflict(
-                            SymmetryConflictType.POSITION_CONFLICT, f"{site1} and {site2} share the same position and moment")
+                            SymmetryConflictType.POSITION_CONFLICT,
+                                f"{site1} and {site2} share the same position and moment")
 
                     else:
                         conflict = SymmetryConflict(
-                            SymmetryConflictType.MAGNETIC_CONFLICT, f"{site1} and {site2} share the same position, but with different moments")
+                            SymmetryConflictType.MAGNETIC_CONFLICT,
+                                f"{site1} and {site2} share the same position, but with different moments")
 
                     check_results.append(conflict)
 

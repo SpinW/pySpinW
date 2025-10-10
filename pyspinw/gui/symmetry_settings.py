@@ -18,14 +18,17 @@ class SymmetrySettings:
 
     @property
     def space_group(self):
+        """ Get the space group """
         return self._space_group
 
     @property
     def magnetic_group(self):
+        """ Get the magnetic group """
         return self._magnetic_group
 
     @property
     def unit_cell(self):
+        """ Get the unit cell """
         return self._unit_cell
 
 DEFAULT_SYMMETRY = SymmetrySettings(

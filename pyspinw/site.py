@@ -119,6 +119,7 @@ class LatticeSite(SPWSerialisable):
 
     @property
     def parent_site(self):
+        """ Get the parent site (just itself for non-implied sites)"""
         return self
 
     @staticmethod
@@ -205,6 +206,7 @@ class ImpliedLatticeSite(LatticeSite):
 
     @property
     def parent_site(self):
+        """ Get the parent of this site """
         return self._parent_site
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:

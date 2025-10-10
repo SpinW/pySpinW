@@ -263,6 +263,7 @@ def deserialise_fraction(json: dict) -> Fraction:
     return Fraction(json["numerator"], json["denominator"])
 
 def serialise_fraction_or_builtin(value: int | float | Fraction):
+    """ Serialise a union type of fraction or builtin number to pre-json"""
     if isinstance(value, Fraction):
         return {
             "type": "fraction",
@@ -276,6 +277,7 @@ def serialise_fraction_or_builtin(value: int | float | Fraction):
 
 @expects_keys("type, data")
 def deserialise_fraction_or_builtin(json: dict) -> int | float | Fraction:
+    """ Deserialise the pre-json representation of a fraction or builtin"""
     match json["type"]:
         case "fraction":
             return deserialise_fraction(json["data"])
