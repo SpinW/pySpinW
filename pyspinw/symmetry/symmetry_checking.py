@@ -48,9 +48,20 @@ def check_supercell_moment_consistency(
 
     return info
 
-def check_coupling_consistency(coupling: Coupling):
+def check_coupling_consistency(sites: list[LatticeSite], couplings: list[Coupling]):
     """ Check that a coupling actually does something, not cancelled by symmetry """
 
-    # Are they referring to the same site
-    if coupling.site_1.parent_site._unique_id == coupling.site_2.parent_site._unique_id:
-        pass
+    for coupling in couplings:
+
+        # Are they referring to the same site
+        if coupling.site_1.parent_site._unique_id == coupling.site_2.parent_site._unique_id:
+            # We want to check whether (R1 S)^T M (R2 S) is constant
+            #  As the magnitude of S can be different when actually running the calculation,
+            #  this can only happen when the constant is zero,
+            #  which is when R1 M R2 is antisymmetric
+
+
+
+            pass
+
+
