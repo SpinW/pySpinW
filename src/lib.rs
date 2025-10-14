@@ -9,8 +9,10 @@ use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::prelude::*;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-pub mod spinwave;
+mod spinwave;
 use crate::spinwave::calc_spinwave;
+
+mod constants;
 
 // convenience type for complex arithmetic
 type C64 = Complex<f64>;

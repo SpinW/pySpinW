@@ -1,15 +1,11 @@
 use std::f64::consts::PI;
 
-use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Scale, Side};
+use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{Coupling, MagneticField, C64};
+use crate::constants::{J, SCALAR_J, MU_B};
 
-// for convenience
-// `Scale` is the faer scalar type used for matrix-scalar multiplication
-static J: C64 = C64::new(0., 1.);
-static SCALAR_J: Scale<C64> = Scale(J);
-static MU_B: f64 = 0.05788382;
 
 /// Run the main calculation step for a spinwave calculation.
 #[allow(non_snake_case)]
@@ -47,7 +43,7 @@ pub fn calc_spinwave(
             f.g_tensors
                 .into_iter()
                 .enumerate()
-                .map(|(i, t)| -0.5 * MU_B * f.vector.transpose() * t * etas[i].clone())
+                .map(|(i, t)| -0.5 * MU_B * f.vector.transpose() * t * etas[i])
                 .collect(),
         ),
         None => None,
