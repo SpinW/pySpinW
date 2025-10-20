@@ -1,11 +1,4 @@
-""" Tests for the check_dimensions decorator
-
-Soooo many decorators, it must be Christmas.
-
-It's November.
-
-So yes.
-"""
+""" Tests for the check_dimensions decorator """
 
 # Disable linting for unused arguments
 
