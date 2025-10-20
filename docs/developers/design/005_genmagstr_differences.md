@@ -212,6 +212,8 @@ Mode that determines how the magnetic structure is generated:
   if it is `false`, the first spin will have 0 phase. Default is
   `true`.
 
+: <span style="color:red">**Phases now based on cell position** </span>
+
 ### Output Arguments
 
 The [obj.mag_str] field will contain the new magnetic structure.

@@ -12,7 +12,7 @@ class DimensionalityError(ValueError):
     """The dimensions of a numpy array don't match the specification"""
 
 
-def check_sizes(force_numpy: bool = False, **kwargs):
+def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
     """Decorator to check the dimensionality of a given vector
 
     Example usage:
@@ -26,7 +26,8 @@ def check_sizes(force_numpy: bool = False, **kwargs):
         Limitations: can only check dimensions are the same, can't check things like whether sizes are related by
                      some arbitrary formula.
 
-    :param force_numpy: default=True, Convert the named arrays into numpy form if they are not already
+    :param force_numpy: default=False, Convert the named arrays into numpy form if they are not already
+    :param allow_nones: default=False, Allow None to be given for values
 
     """
     # If assertions are not enabled, give a decorator that just return the function as is
@@ -94,6 +95,8 @@ def check_sizes(force_numpy: bool = False, **kwargs):
                 if not isinstance(all_args[name], np.ndarray):
                     if force_numpy:
                         all_args[name] = np.array(all_args[name])
+                    elif allow_nones and all_args[name] is None:
+                        pass
                     else:
                         raise TypeError(f"Argument '{name}' is not a numpy array, but is {type(all_args[name])}")
 
@@ -104,6 +107,10 @@ def check_sizes(force_numpy: bool = False, **kwargs):
             # Check all the constant values
             for name, dimension, size in constants:
                 data = all_args[name]
+
+                if allow_nones and data is None:
+                    continue
+
                 # We have already checked that it's an array and for correct len(shape), so resolving
                 # this should not throw
 
@@ -116,6 +123,9 @@ def check_sizes(force_numpy: bool = False, **kwargs):
                 size = None
                 for name, dimension in equalities[symbol]:
                     data = all_args[name]
+                    if allow_nones and data is None:
+                        continue
+
                     # Again, the validity of this should be checked in len(shape) loop
                     if size is None:
                         size = data.shape[dimension]
