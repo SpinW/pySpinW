@@ -12,5 +12,7 @@ class GenLatticeResult:
     unit_cell: UnitCell
 
 @check_sizes(angle=(3,), angled=(3,), )
-def genlattice(angle: np.ndarray | None = None, angled: np.ndarray | None, ):
+def genlattice(angle: np.ndarray | None = None, angled: np.ndarray | None = None, ):
     pass
+
+

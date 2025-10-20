@@ -61,7 +61,7 @@ class LatticeSystem(ABC):
     name: str = ""
     letter: str = ""
 
-    negative_constraints: dict[str, Callable[UnitCell, bool]] = {}
+    negative_constraints: dict[str, Callable[[UnitCell], bool]] = {}
     """ Functions that check whether the unit cell parameters are appropriate """
 
     @property
