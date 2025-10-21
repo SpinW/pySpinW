@@ -10,6 +10,7 @@ from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
 from pyspinw.tolerances import tolerances
+from symmetry.system import LatticeSystem, lattice_system_letter_lookup
 
 
 class SymmetryGroup:
@@ -67,11 +68,20 @@ class MagneticSpaceGroup(SymmetryGroup):
 class SpaceGroup(SymmetryGroup):
     """ Representation of a spacegroup"""
 
-    def __init__(self, number, international_symbol, operations, magnetic_variants: list[MagneticSpaceGroup]):
+    def __init__(self,
+                 number,
+                 international_symbol,
+                 short_symbol,
+                 operations,
+                 magnetic_variants: list[MagneticSpaceGroup],
+                 lattice_system: LatticeSystem):
+
         self.number = number
         self.symbol = international_symbol
+        self.short_symbol = short_symbol
         self.operations = operations
         self.magnetic_variants = magnetic_variants
+        self.lattice_system = lattice_system
 
     def __repr__(self):
         """repr"""
@@ -101,14 +111,14 @@ def _load_spg_group_data():
     }
 
     spacegroup_names = {}
+    spacegroup_short_names = {}
     for i in range(1, 531):
         group_data = spglib.get_spacegroup_type(i)
 
         number = group_data.number
 
-        name = group_data.international_full
-
-        spacegroup_names[number] = name
+        spacegroup_names[number] = group_data.international_full
+        spacegroup_short_names[number] = group_data.international_short
 
     # Make a lookup for spacegroups
     spacegroup_to_magnetic_group = defaultdict(list[int])
@@ -154,6 +164,7 @@ def _load_spg_group_data():
 
         # Classify
         name = spacegroup_names[i]
+        short_name = spacegroup_short_names[i]
         lattice_type_from_name = name[0]
 
         first_letter = spacegroup_number_to_lattice_system[i-1]
@@ -171,9 +182,11 @@ def _load_spg_group_data():
 
         group = SpaceGroup(
             number=i,
-            international_symbol = name,
-            operations = operations,
-            magnetic_variants=corresponding_magnetic_groups)
+            international_symbol=name,
+            short_symbol=short_name,
+            operations=operations,
+            magnetic_variants=corresponding_magnetic_groups,
+            lattice_system=lattice_system_letter_lookup[first_letter])
 
         spacegroups.append(group)
         lattice_symbol_to_spacegroups[bravais_lattice].append(group)
@@ -182,8 +195,18 @@ def _load_spg_group_data():
 
 # Load the data
 spacegroups, spacegroup_lattice_symbol_lookup, magnetic_groups = _load_spg_group_data()
+
+# Lookup for spacegroups by long/short international symbol
 spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in spacegroups}
+spacegroup_symbol_lookup.update({group.short_symbol: group for group in spacegroups})
+
 magnetic_group_symbol_lookup: dict[str, MagneticSpaceGroup] = {group.symbol: group for group in magnetic_groups}
+
+# reverse the spacegroup/lattice relationship ????
+spacegroup_symbol_to_lattice = {
+    spacegroup.symbol: lattice_symbol
+        for lattice_symbol in spacegroup_lattice_symbol_lookup
+        for spacegroup in spacegroup_lattice_symbol_lookup[lattice_symbol]}
 
 _lowercase_space_group_lookup: dict[str, SpaceGroup] = {
     key.lower(): spacegroup_symbol_lookup[key]
@@ -197,32 +220,52 @@ _lowercase_magnetic_group_lookup: dict[str, MagneticSpaceGroup] = {
 class NoSuchGroup(Exception):
     """ Raised when a group is not found. """
 
+
 def spacegroup_by_name(name: str) -> SpaceGroup:
     """ Get a spacegroup by name"""
 
     lower_name = name.lower()
-    try:
-        return _lowercase_space_group_lookup[lower_name]
-    except KeyError as e:
-        similar = get_close_matches(lower_name, _lowercase_space_group_lookup.keys(), n=3)
-        formatted = [_lowercase_space_group_lookup[key].symbol for key in similar]
-        suggestion_string = ", ".join([f"'{s}'" for s in formatted])
 
-        raise NoSuchGroup(f"Unknown space group {name}, perhaps you meant {suggestion_string} or something similar.")
+    if lower_name in _lowercase_space_group_lookup:
+        return _lowercase_space_group_lookup[lower_name]
+
+    # Failure branch
+
+    potential_names = {key.lower(): key for key in spacegroup_symbol_lookup.keys()}
+    similar = get_close_matches(name, potential_names.keys(), n=3, cutoff=0.4)
+
+    if similar:
+        suggestion_string = ", ".join([f"'{potential_names[s]}'" for s in similar])
+        message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
+
+    else:
+        message_string = f"Unknown space group '{name}', doesn't seem to be even close to a magnetic space group."
+
+    raise NoSuchGroup(message_string)
 
 
 def magnetic_spacegroup_by_name(name: str) -> MagneticSpaceGroup:
-    """ Get a magnetic spacegroup by name"""
+    """ Get a magnetic spacegroup by name
+
+    TODO: make this work more like the normal spacegroup one
+    """
 
     lower_name = name.lower()
-    try:
+    if lower_name in _lowercase_magnetic_group_lookup:
         return _lowercase_magnetic_group_lookup[lower_name]
-    except KeyError as e:
-        similar = get_close_matches(lower_name, _lowercase_magnetic_group_lookup.keys(), n=3)
-        formatted = [_lowercase_magnetic_group_lookup[key].symbol for key in similar]
-        suggestion_string = ", ".join([f"'{s}'" for s in formatted])
 
-        raise NoSuchGroup(f"Unknown space group {name}, perhaps you meant {suggestion_string} or something similar.")
+    similar = get_close_matches(lower_name, _lowercase_magnetic_group_lookup.keys(), n=3)
+    formatted = [_lowercase_magnetic_group_lookup[key].symbol for key in similar]
+
+    if similar:
+        suggestion_string = ", ".join([f"'{s}'" for s in formatted])
+        message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
+
+    else:
+
+        message_string = f"Unknown space group '{name}', doesn't seem to be even close to a magnetic space group."
+
+    raise NoSuchGroup(message_string)
 
 
 if __name__ == "__main__":

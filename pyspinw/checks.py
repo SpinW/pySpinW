@@ -1,6 +1,7 @@
 """Tools for checking input shapes"""
 
 import functools
+import inspect
 
 from typing import Callable
 from collections import defaultdict
@@ -76,11 +77,20 @@ def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
         # grab the argument names
         variable_names = fun.__code__.co_varnames
 
+        sig = inspect.signature(fun)
+        defaults = {
+            name: param.default
+            for name, param in sig.parameters.items()
+            if param.default is not inspect._empty
+        }
+
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
 
             # shove all the arguments in a dictionary keyed by the variable names
-            all_args = dict(zip(variable_names, args))
+            all_args = defaults.copy()
+            for name, arg in zip(variable_names, args):
+                all_args[name] = arg
             all_args.update(**kwargs)
 
             # Check the sizes, and the type while were at it
@@ -88,15 +98,15 @@ def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
             #  Note: THIS POTENTIALLY UPDATES all_args
             #
             for name, size in sizes:
+                if allow_nones and all_args[name] is None:
+                    continue
 
                 if name not in all_args:
-                    raise ValueError(f"The numpy array required ('{name}') was not given")
+                    raise ValueError(f"The required numpy array '{name}' was not given")
 
                 if not isinstance(all_args[name], np.ndarray):
                     if force_numpy:
                         all_args[name] = np.array(all_args[name])
-                    elif allow_nones and all_args[name] is None:
-                        pass
                     else:
                         raise TypeError(f"Argument '{name}' is not a numpy array, but is {type(all_args[name])}")
 
