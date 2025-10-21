@@ -5,7 +5,7 @@ import numpy as np
 from ase.geometry.cell import cellpar_to_cell
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
-    SPWSerialisationError, numpy_serialise, numpy_deserialise
+    SPWSerialisationError, numpy_serialise, numpy_deserialise, vec3_serialise
 
 
 class BadCellDefinition(Exception):
@@ -152,13 +152,23 @@ class UnitCell(RawUnitCell):
             "alpha": self.alpha,
             "beta": self.beta,
             "gamma": self.gamma,
-
+            "ab_normal": vec3_serialise(*self.ab_normal),
+            "direction": vec3_serialise(*self.direction)
         }
 
     @staticmethod
     @expects_keys("a, b, c, alpha, beta, gamma, ab_normal, direction")
     def _unit_cell_deserialise(json):
-        pass
+        return UnitCell(
+            a=json["a"],
+            b=json["b"],
+            c=json["c"],
+            alpha=json["alpha"],
+            beta=json["beta"],
+            gamma=json["gamma"],
+            ab_normal=json["ab_normal"],
+            direction=json["direction"]
+        )
 
 
 unit_cell_types = {cls._unit_cell_name: cls for cls in [RawUnitCell, UnitCell]}
