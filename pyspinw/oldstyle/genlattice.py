@@ -5,6 +5,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup
 from pyspinw.symmetry.unitcell import UnitCell
+from ase.geometry.cell import cell_to_cellpar
 
 
 class GenLatticeResult:
@@ -12,7 +13,7 @@ class GenLatticeResult:
     unit_cell: UnitCell
 
 @check_sizes(angle=(3,), angled=(3,), )
-def genlattice(angle: np.ndarray | None = None, angled: np.ndarray | None = None, ):
+def genlattice(angle: np.ndarray | None = None, angled: np.ndarray | None = None, spacegroup: SpaceGroup | str):
     pass
 
 

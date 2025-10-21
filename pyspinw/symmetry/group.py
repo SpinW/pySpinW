@@ -4,6 +4,7 @@ from collections import defaultdict
 
 import numpy as np
 import spglib
+from difflib import get_close_matches
 
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
@@ -181,8 +182,48 @@ def _load_spg_group_data():
 
 # Load the data
 spacegroups, spacegroup_lattice_symbol_lookup, magnetic_groups = _load_spg_group_data()
-spacegroup_symbol_lookup = {group.symbol: group for group in spacegroups}
-magnetic_group_symbol_lookup = {group.symbol: group for group in magnetic_groups}
+spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in spacegroups}
+magnetic_group_symbol_lookup: dict[str, MagneticSpaceGroup] = {group.symbol: group for group in magnetic_groups}
+
+_lowercase_space_group_lookup: dict[str, SpaceGroup] = {
+    key.lower(): spacegroup_symbol_lookup[key]
+        for key in spacegroup_symbol_lookup}
+
+_lowercase_magnetic_group_lookup: dict[str, MagneticSpaceGroup] = {
+    key.lower(): magnetic_group_symbol_lookup[key]
+        for key in magnetic_group_symbol_lookup}
+
+
+class NoSuchGroup(Exception):
+    """ Raised when a group is not found. """
+
+def spacegroup_by_name(name: str) -> SpaceGroup:
+    """ Get a spacegroup by name"""
+
+    lower_name = name.lower()
+    try:
+        return _lowercase_space_group_lookup[lower_name]
+    except KeyError as e:
+        similar = get_close_matches(lower_name, _lowercase_space_group_lookup.keys(), n=3)
+        formatted = [_lowercase_space_group_lookup[key].symbol for key in similar]
+        suggestion_string = ", ".join([f"'{s}'" for s in formatted])
+
+        raise NoSuchGroup(f"Unknown space group {name}, perhaps you meant {suggestion_string} or something similar.")
+
+
+def magnetic_spacegroup_by_name(name: str) -> MagneticSpaceGroup:
+    """ Get a magnetic spacegroup by name"""
+
+    lower_name = name.lower()
+    try:
+        return _lowercase_magnetic_group_lookup[lower_name]
+    except KeyError as e:
+        similar = get_close_matches(lower_name, _lowercase_magnetic_group_lookup.keys(), n=3)
+        formatted = [_lowercase_magnetic_group_lookup[key].symbol for key in similar]
+        suggestion_string = ", ".join([f"'{s}'" for s in formatted])
+
+        raise NoSuchGroup(f"Unknown space group {name}, perhaps you meant {suggestion_string} or something similar.")
+
 
 if __name__ == "__main__":
     print(magnetic_group_symbol_lookup)
