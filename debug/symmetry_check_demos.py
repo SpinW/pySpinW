@@ -1,4 +1,4 @@
-from pyspinw.oldstyle.supercell import rotation_supercell
+from pyspinw.legacy.supercell import rotation_supercell
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import magnetic_group_symbol_lookup
 from pyspinw.symmetry.supercell import TrivialSupercell, TransformationSupercell, CommensuratePropagationVector, \

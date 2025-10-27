@@ -77,7 +77,8 @@ class SpaceGroup(SymmetryGroup):
                  short_symbol,
                  operations,
                  magnetic_variants: list[MagneticSpaceGroup],
-                 lattice_system: LatticeSystem):
+                 lattice_system: LatticeSystem,
+                 choice: str | None):
 
         self.number = number
         self.symbol = international_symbol
@@ -85,10 +86,14 @@ class SpaceGroup(SymmetryGroup):
         self.operations = operations
         self.magnetic_variants = magnetic_variants
         self.lattice_system = lattice_system
+        self.choice = choice
 
     def __repr__(self):
         """repr"""
-        return f"SpaceGroup({self.number}, {self.symbol})"
+        if self.choice is None:
+            return f"SpaceGroup({self.number}, {self.symbol})"
+        else:
+            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}])"
 
 
 class NoSuchGroup(Exception):
@@ -120,7 +125,7 @@ class SpacegroupDatabase:
     }
 
     # Used for looking up spacegroups by name
-    _spacegroup_name_to_index, _canonical_spacegroup_name_to_index = spacegroup_conventions()
+    _canonincal_name_to_group_name, _canonical_spacegroup_name_to_index = spacegroup_conventions()
 
     def __init__(self):
 
@@ -157,7 +162,7 @@ class SpacegroupDatabase:
 
         # Create spacegroups
         self._lattice_symbol_to_spacegroups = defaultdict(list[SpaceGroup])
-        spacegroups = []
+        self.spacegroups = []
 
 
         for i in range(1, 531):
@@ -173,7 +178,7 @@ class SpacegroupDatabase:
             short_name = sg_data.international_short
             lattice_type_from_name = name[0]
 
-            first_letter = SpacegroupDatabase._spacegroup_number_to_lattice_system[sg_data.number]
+            first_letter = SpacegroupDatabase._spacegroup_number_to_lattice_system[sg_data.number-1]
             second_letter = SpacegroupDatabase._spacegroup_symbol_to_bravais_symbol[lattice_type_from_name]
             bravais_lattice = first_letter + second_letter
 
@@ -186,20 +191,23 @@ class SpacegroupDatabase:
                 op = SpaceOperation.from_numpy(rotation, translation)
                 operations.append(op)
 
+            choice = None if sg_data.choice == "" else sg_data.choice
+
             group = SpaceGroup(
                 number=sg_data.number,
                 international_symbol=name,
                 short_symbol=short_name,
                 operations=operations,
+                choice=choice,
                 magnetic_variants=corresponding_magnetic_groups,
                 lattice_system=lattice_system_letter_lookup[first_letter])
 
-            spacegroups.append(group)
+            self.spacegroups.append(group)
             self._lattice_symbol_to_spacegroups[bravais_lattice].append(group)
 
         # Lookup for spacegroups by long/short international symbol
-        self._spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in spacegroups}
-        self._spacegroup_symbol_lookup.update({group.short_symbol: group for group in spacegroups})
+        self._spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in self.spacegroups}
+        self._spacegroup_symbol_lookup.update({group.short_symbol: group for group in self.spacegroups})
 
         # Lookup for magnetic spacegroups
         self._magnetic_group_symbol_lookup: dict[str, MagneticSpaceGroup] = {
@@ -210,7 +218,7 @@ class SpacegroupDatabase:
 
         # Lookup for spacegroups based on their number
         self._spacegroup_number_lookup = defaultdict(list[SpaceGroup])
-        for group in spacegroups:
+        for group in self.spacegroups:
             self._spacegroup_number_lookup[group.number].append(group)
 
 
@@ -222,22 +230,21 @@ class SpacegroupDatabase:
     def spacegroups_for_lattice_symbol(self, lattice_symbol: str):
         return self._lattice_symbol_to_spacegroups[lattice_symbol]
 
-
-
     def spacegroup_by_name(self, name: str) -> SpaceGroup:
         """ Get a spacegroup by name"""
 
         canonised_input = canonise_spacegroup_name(name)
 
         if canonised_input in self._canonical_spacegroup_name_to_index:
-            return self._canonical_spacegroup_name_to_index[canonised_input]
+            index = self._canonical_spacegroup_name_to_index[canonised_input]
+            return self.spacegroups[index-1]
 
         # Failure branch...
-        potential_names = {key.lower(): key for key in spacegroup_symbol_lookup.keys()}
-        similar = get_close_matches(name, potential_names.keys(), n=3, cutoff=0.4)
+        # We want to get names that are similar in their input text form, but report the standard form
+        similar = get_close_matches(name, self._canonincal_name_to_group_name.keys(), n=3, cutoff=0.4)
 
         if similar:
-            suggestion_string = ", ".join([f"'{potential_names[s]}'" for s in similar])
+            suggestion_string = ", ".join([f"'{self._canonincal_name_to_group_name[s]}'" for s in similar])
             message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
 
         else:
@@ -251,26 +258,32 @@ class SpacegroupDatabase:
 
         TODO: make this work more like the normal spacegroup one
         """
+        #
+        # lower_name = name.lower()
+        # if lower_name in _lowercase_magnetic_group_lookup:
+        #     return _lowercase_magnetic_group_lookup[lower_name]
+        #
+        # similar = get_close_matches(lower_name, _lowercase_magnetic_group_lookup.keys(), n=3)
+        # formatted = [_lowercase_magnetic_group_lookup[key].symbol for key in similar]
+        #
+        # if similar:
+        #     suggestion_string = ", ".join([f"'{s}'" for s in formatted])
+        #     message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
+        #
+        # else:
+        #
+        #     message_string = f"Unknown space group '{name}', doesn't seem to be even close to a magnetic space group."
+        #
+        # raise NoSuchGroup(message_string)
 
-        lower_name = name.lower()
-        if lower_name in _lowercase_magnetic_group_lookup:
-            return _lowercase_magnetic_group_lookup[lower_name]
 
-        similar = get_close_matches(lower_name, _lowercase_magnetic_group_lookup.keys(), n=3)
-        formatted = [_lowercase_magnetic_group_lookup[key].symbol for key in similar]
-
-        if similar:
-            suggestion_string = ", ".join([f"'{s}'" for s in formatted])
-            message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
-
-        else:
-
-            message_string = f"Unknown space group '{name}', doesn't seem to be even close to a magnetic space group."
-
-        raise NoSuchGroup(message_string)
-
-
-
+database = SpacegroupDatabase()
 
 if __name__ == "__main__":
-    pass
+    print(database.spacegroup_by_name("b2/m"))
+    print(database.spacegroup_by_name("c2/m"))
+
+    print(database.spacegroup_by_name("pnnn:1"))
+
+    for i, spacegroup in enumerate(database.spacegroups):
+        print(i, spacegroup)

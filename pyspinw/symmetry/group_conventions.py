@@ -43,24 +43,28 @@ def spacegroup_conventions():
             group_name_to_index[names[0]] = i
 
         # The rest we can add safely
-        for name in names:
+        for name in names[1:]:
             group_name_to_index[name] = i
 
     # Make a lookup for the cannonical names, should be a one-to-one mapping
     canonical_name_to_index: dict[str, int] = {}
+    canonical_name_to_group_name: dict[str, str] = {}
     for name in group_name_to_index:
         canonical_name = canonise_spacegroup_name(name)
+        index = group_name_to_index[name]
 
         # check for collisions
         assert canonical_name not in canonical_name_to_index, "Conflicting canonical name"
 
-        canonical_name_to_index[canonical_name] = group_name_to_index[name]
+        canonical_name_to_index[canonical_name] = index
 
-    return group_name_to_index, canonical_name_to_index
+        canonical_name_to_group_name[canonical_name] = name
+
+    return canonical_name_to_group_name, canonical_name_to_index
 
 if __name__ == "__main__":
-    group_names_to_index, canonical_names_to_index = spacegroup_conventions()
+    canonical_names_to_group_name, canonical_names_to_index = spacegroup_conventions()
 
-    for key in group_names_to_index:
-        print(key, "->", group_names_to_index[key])
+    for key in canonical_names_to_group_name:
+        print(key, "->", canonical_names_to_group_name[key])
 
