@@ -48,9 +48,7 @@ def genlattice(
                          beta=angled[1],
                          gamma=angled[2])
 
-    spacegroup.lattice_system.constrain()
-
-    return spacegroup
+    return GenLatticeResult(spacegroup, base_cell)
 
 if __name__ == "__main__":
     genlattice(angle=(1,2,3), lat_const=(1,2,3), spgr="p7")
