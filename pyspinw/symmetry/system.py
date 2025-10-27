@@ -134,7 +134,14 @@ class LatticeSystem(ABC):
                                        f"Expected {violation_string}")
 
 
+    def create_unit_cell(self):
+        raise NotImplementedError("Create unit cell is only available in derived classes")
 
+#
+#
+#   Specific lattice systems
+#
+#
 
 class Triclinic(LatticeSystem):
     """ Triclinic lattice system """
@@ -163,6 +170,14 @@ class Triclinic(LatticeSystem):
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions()
 
+    def create_unit_cell(self, a: float, b: float, c: float,
+                         alpha: float, beta: float, gamma: float):
+        """ Create a unit cell for this lattice """
+
+        cell = UnitCell(a, b, c, alpha, beta, gamma)
+        self.validate(cell)
+
+        return cell
 
 
 class Monoclinic(LatticeSystem):
@@ -196,7 +211,10 @@ class Monoclinic(LatticeSystem):
     def create_unit_cell(self, a: float, b: float, c: float, gamma: float):
         """ Create a unit cell for this lattice """
 
-        return UnitCell(a, b, c, 90, 90, gamma)
+        cell = UnitCell(a, b, c, 90, 90, gamma)
+        self.validate(cell)
+
+        return cell
 
 
 
@@ -231,10 +249,13 @@ class Orthorhombic(LatticeSystem):
             body_centered=True,
             face_centered=True)
 
-    def create_unit_cell(self, a: float, b: float, c: float, gamma: float):
+    def create_unit_cell(self, a: float, b: float, c: float):
         """ Create a unit cell for this lattice """
 
-        return UnitCell(a, b, c, 90, 90, gamma)
+        cell = UnitCell(a, b, c, 90, 90, 90)
+        self.validate(cell)
+
+        return cell
 
 class Tetragonal(LatticeSystem):
     """ Tetragonal lattice system"""
@@ -262,6 +283,15 @@ class Tetragonal(LatticeSystem):
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(body_centered=True)
+
+
+    def create_unit_cell(self, a: float, c: float):
+        """ Create a unit cell for this lattice """
+
+        cell = UnitCell(a, a, c, 90, 90, 90)
+        self.validate(cell)
+
+        return cell
 
 
 class Rhombohedral(LatticeSystem):
@@ -292,6 +322,13 @@ class Rhombohedral(LatticeSystem):
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(primitive=False, rhombohedral=True)
 
+    def create_unit_cell(self, a: float, alpha: float):
+        """ Create a unit cell for this lattice """
+
+        cell = UnitCell(a, a, a, alpha, alpha, alpha)
+        self.validate(cell)
+
+        return cell
 
 class Hexagonal(LatticeSystem):
     """ Hexagonal lattice system """
@@ -320,6 +357,13 @@ class Hexagonal(LatticeSystem):
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions()
 
+    def create_unit_cell(self, a: float, c: float):
+        """ Create a unit cell for this lattice """
+
+        cell = UnitCell(a, a, c, 90, 90, 120)
+        self.validate(cell)
+
+        return cell
 
 class Cubic(LatticeSystem):
     """ Cubic lattice system"""
@@ -346,6 +390,15 @@ class Cubic(LatticeSystem):
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(body_centered=True, face_centered=True)
+
+
+    def create_unit_cell(self, a: float):
+        """ Create a unit cell for this lattice """
+
+        cell = UnitCell(a, a, a, 90, 90, 90)
+        self.validate(cell)
+
+        return cell
 
 # All the possible systems
 lattice_systems: list[LatticeSystem] = [

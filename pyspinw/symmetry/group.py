@@ -1,6 +1,7 @@
 """ Space groups and magnetic space groups"""
 
 from collections import defaultdict
+from typing import Callable
 
 import numpy as np
 import spglib
@@ -87,6 +88,9 @@ class SpaceGroup(SymmetryGroup):
         self.magnetic_variants = magnetic_variants
         self.lattice_system = lattice_system
         self.choice = choice
+
+        # This is slightly unusual, this is actually binding a method
+        self.create_unit_cell: Callable[..., SpaceGroup] = lattice_system.create_unit_cell
 
     def __repr__(self):
         """repr"""
