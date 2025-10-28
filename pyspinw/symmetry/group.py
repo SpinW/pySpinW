@@ -12,7 +12,8 @@ from pyspinw.symmetry.group_conventions import spacegroup_conventions, canonise_
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
-from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup
+from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
+    lattice_system_name_lookup
 
 from pyspinw.tolerances import tolerances
 
@@ -69,7 +70,7 @@ class MagneticSpaceGroup(SymmetryGroup):
 
 
 
-class SpaceGroup(SymmetryGroup):
+class SpaceGroup[T: LatticeSystem](SymmetryGroup):
     """ Representation of a space group"""
 
     def __init__(self,
@@ -78,7 +79,7 @@ class SpaceGroup(SymmetryGroup):
                  short_symbol,
                  operations,
                  magnetic_variants: list[MagneticSpaceGroup],
-                 lattice_system: LatticeSystem,
+                 lattice_system: T,
                  choice: str | None):
 
         self.number = number
@@ -86,11 +87,11 @@ class SpaceGroup(SymmetryGroup):
         self.short_symbol = short_symbol
         self.operations = operations
         self.magnetic_variants = magnetic_variants
-        self.lattice_system = lattice_system
+        self.lattice_system: T = lattice_system
         self.choice = choice
 
-        # This is slightly unusual, this is actually binding a method
-        self.create_unit_cell: Callable[..., SpaceGroup] = lattice_system.create_unit_cell
+        # This is slightly unusual, make a reference to the lattice system create_unit_cell method
+        self.create_unit_cell = lattice_system.create_unit_cell
 
     def __repr__(self):
         """repr"""
@@ -166,7 +167,7 @@ class SpacegroupDatabase:
 
         # Create spacegroups
         self._lattice_symbol_to_spacegroups = defaultdict(list[SpaceGroup])
-        self.spacegroups = []
+        self.spacegroups: list[SpaceGroup] = []
 
 
         for i in range(1, 531):
@@ -197,6 +198,12 @@ class SpacegroupDatabase:
 
             choice = None if sg_data.choice == "" else sg_data.choice
 
+            if choice == "R":
+                lattice_system = lattice_system_name_lookup["Rhombohedral"]
+                bravais_lattice = "hR"
+            else:
+                lattice_system = lattice_system_letter_lookup[first_letter]
+
             group = SpaceGroup(
                 number=sg_data.number,
                 international_symbol=name,
@@ -204,7 +211,7 @@ class SpacegroupDatabase:
                 operations=operations,
                 choice=choice,
                 magnetic_variants=corresponding_magnetic_groups,
-                lattice_system=lattice_system_letter_lookup[first_letter])
+                lattice_system=lattice_system)
 
             self.spacegroups.append(group)
             self._lattice_symbol_to_spacegroups[bravais_lattice].append(group)

@@ -137,6 +137,9 @@ class LatticeSystem(ABC):
     def create_unit_cell(self):
         raise NotImplementedError("Create unit cell is only available in derived classes")
 
+    def __repr__(self):
+        return self.name
+
 #
 #
 #   Specific lattice systems
