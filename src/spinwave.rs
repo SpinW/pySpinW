@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Side};
+use faer::{linalg::solvers::DenseSolveCore, unzip, zip, Col, ColRef, Mat, MatRef, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B, SCALAR_J};
@@ -8,7 +8,7 @@ use crate::{Coupling, MagneticField, C64};
 
 pub struct SpinwaveResult {
     pub energies: Vec<f64>,
-    correlation: Option<Mat<C64>>,
+    pub correlation: Option<Mat<C64>>
 }
 
 /// Run the main calculation step for a spinwave calculation.
@@ -69,7 +69,8 @@ pub fn calc_spinwave(
         .collect()
 }
 
-pub fn energies_single_q(
+/// Calculate energies (eigenvalues of the Hamiltonian) for a single q-value
+fn energies_single_q(
     q: Col<f64>,
     C: &Mat<C64>,
     n_sites: usize,
@@ -104,8 +105,66 @@ pub fn energies_single_q(
     }
 }
 
-/// Calculate the square root of the Hamiltonian,
-/// and optionally the block matrix [YZ;VW] for S^alpha,beta
+/// Calculate energies and intensities for a single q-point. Outputs only the correlation function
+/// component perpendicular to Q (as measured by neutron scattering).
+fn neutron_single_q(
+    q: Col<f64>,
+    C: &Mat<C64>,
+    n_sites: usize,
+    z: &[Col<C64>],
+    spin_coefficients: &MatRef<C64>,
+    couplings: &[&Coupling],
+    Az: &Option<Vec<C64>>,
+) -> SpinwaveResult {
+
+    let (sqrt_hamiltonian, S_prime_mats) = calc_sqrt_hamiltonian(q.clone(), C, n_sites, z, spin_coefficients, couplings, Az, true);
+    let sab = S_prime_mats.unwrap();
+
+    let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
+    let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
+    negative_half *= -1.;
+
+    let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
+        .self_adjoint_eigen(Side::Lower)
+        .expect("Could not calculate eigendecomposition of the Hamiltonian.");
+
+    let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
+    let eigvecs: MatRef<C64> = eigendecomp.U();
+
+    // calculate transformation matrix for spin-spin correlation function
+    // this is T = K^-1 * U * sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
+    // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
+    // for the eigenvalues of the Hamiltonian
+    let inv_K = sqrt_hamiltonian.partial_piv_lu().inverse();
+    let mut sqrt_E = eigvals.to_owned();
+    let mut negative_half = sqrt_E.subrows_mut(n_sites, n_sites);
+    negative_half *= -1.;
+    sqrt_E.iter_mut().for_each(|x| *x = x.sqrt());
+
+    let T: Mat<C64> = inv_K * eigvecs * sqrt_E.as_diagonal();
+    // Create S'^alpha,beta from the matrices we calculated in calc_sqrt_hamiltonian 
+    let mut S_prime = Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
+        let S_prime_matrix = T.adjoint() * sab[(alpha, beta)].as_ref() * T.as_ref();
+        S_prime_matrix.diagonal().column_vector().iter().sum::<C64>() / C64::from(2. * n_sites as f64)
+    });
+
+    // Calculate the component of S' perpendicular to Q
+    //
+    // S_perp = S' - (S' . Q_hat) Q_hat
+    // where Q_hat is the unit vector in the direction of Q
+    let q_magnitude = (&q.transpose() * &q).sqrt();
+    if q_magnitude > 0. {
+        let q_hat: Col<C64> = (q / q_magnitude).iter().map(C64::from).collect();
+        S_prime -= q_hat.as_ref() * (q_hat.transpose() * S_prime.as_ref());
+    }
+    SpinwaveResult {
+        energies: eigvals.iter().map(|x| x.re).collect(),
+        correlation: Some(S_prime),
+    }
+}
+
+/// Calculate the square root of the Hamiltonian, 
+/// and optionally the block matrix [YZ;VW] for S^alpha,beta 
 fn calc_sqrt_hamiltonian(
     q: Col<f64>,
     C: &Mat<C64>,
