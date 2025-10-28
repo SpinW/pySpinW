@@ -2,7 +2,7 @@ import re
 
 import spglib
 
-def canonise_spacegroup_name(name: str):
+def canonise_string(name: str):
     """ Make name into a form for searching """
 
     # remove spaces
@@ -24,7 +24,7 @@ def spacegroup_conventions():
         names = [s.strip() for s in group_data.international.split("=")]
 
         # Check that it is correct to use the first name in the lookup
-        assert canonise_spacegroup_name(names[0]) == canonise_spacegroup_name(group_data.international_short)
+        assert canonise_string(names[0]) == canonise_string(group_data.international_short)
 
 
         # Does the name contain the setting choice? this depends on what kind of choice it is
@@ -50,7 +50,7 @@ def spacegroup_conventions():
     canonical_name_to_index: dict[str, int] = {}
     canonical_name_to_group_name: dict[str, str] = {}
     for name in group_name_to_index:
-        canonical_name = canonise_spacegroup_name(name)
+        canonical_name = canonise_string(name)
         index = group_name_to_index[name]
 
         # check for collisions

@@ -8,7 +8,7 @@ import spglib
 from difflib import get_close_matches
 
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
-from pyspinw.symmetry.group_conventions import spacegroup_conventions, canonise_spacegroup_name
+from pyspinw.symmetry.group_conventions import spacegroup_conventions, canonise_string
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
@@ -100,10 +100,17 @@ class SpaceGroup[T: LatticeSystem](SymmetryGroup):
         else:
             return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}])"
 
+class ExactMatch:
+    def __init__(self, spacegroup: SpaceGroup):
+        self.spacegroup = spacegroup
+
+class PartialMatch:
+    def __init__(self, spacegroups: list[SpaceGroup]):
+        self.spacegroups = spacegroups
+
 
 class NoSuchGroup(Exception):
     """ Raised when a group is not found. """
-
 
 
 class SpacegroupDatabase:
@@ -164,11 +171,10 @@ class SpacegroupDatabase:
             self.magnetic_groups.append(group)
 
 
-
         # Create spacegroups
         self._lattice_symbol_to_spacegroups = defaultdict(list[SpaceGroup])
         self.spacegroups: list[SpaceGroup] = []
-
+        self._operation_lookup = []
 
         for i in range(1, 531):
 
@@ -195,6 +201,9 @@ class SpacegroupDatabase:
             for translation, rotation, in zip(translations, rotations):
                 op = SpaceOperation.from_numpy(rotation, translation)
                 operations.append(op)
+
+            self._operation_lookup.append(
+                {canonise_string(operation.text_form) for operation in operations})
 
             choice = None if sg_data.choice == "" else sg_data.choice
 
@@ -225,7 +234,7 @@ class SpacegroupDatabase:
                 group.symbol: group for group in self.magnetic_groups }
 
         self._canonical_magnetic_spacegroup_name_to_index = {
-            canonise_spacegroup_name(group.symbol): group for group in self.magnetic_groups }
+            canonise_string(group.symbol): group for group in self.magnetic_groups }
 
         # Lookup for spacegroups based on their number
         self._spacegroup_number_lookup = defaultdict(list[SpaceGroup])
@@ -241,10 +250,31 @@ class SpacegroupDatabase:
     def spacegroups_for_lattice_symbol(self, lattice_symbol: str):
         return self._lattice_symbol_to_spacegroups[lattice_symbol]
 
+    def spacegroups_with_operations(self, operation_string: str) -> ExactMatch | PartialMatch:
+        """ Get a spacegroup by a list of operations
+
+        Example: TODO
+
+        :param operation_string: A list of operations in the x,y,z form, semicolon separated
+        :return: ExactMatch or MultipleMatches
+        """
+        operations = {canonise_string(op) for op in operation_string.split(";")}
+
+        out = []
+        for i, test_operations in enumerate(self._operation_lookup):
+            if operations <= test_operations:
+                if operations == test_operations:
+                    return ExactMatch(self.spacegroups[i])
+
+                out.append(self.spacegroups[i])
+
+        return PartialMatch(out)
+
+
     def spacegroup_by_name(self, name: str) -> SpaceGroup:
         """ Get a spacegroup by name"""
 
-        canonised_input = canonise_spacegroup_name(name)
+        canonised_input = canonise_string(name)
 
         if canonised_input in self._canonical_spacegroup_name_to_index:
             index = self._canonical_spacegroup_name_to_index[canonised_input]
