@@ -1,3 +1,5 @@
+""" Spacegroup and unit cell creation examples """
+
 from pyspinw.interface import spacegroup
 
 group = spacegroup("r-3h")
@@ -33,3 +35,4 @@ print(group)
 print(group.lattice_system)
 print(group.create_unit_cell(1,2,3,50,60,80))
 print()
+

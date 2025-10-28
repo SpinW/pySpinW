@@ -101,10 +101,14 @@ class SpaceGroup[T: LatticeSystem](SymmetryGroup):
             return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}])"
 
 class ExactMatch:
+    """ Result for exact matches in database searches"""
+
     def __init__(self, spacegroup: SpaceGroup):
         self.spacegroup = spacegroup
 
 class PartialMatch:
+    """ Result for database searches that are not exact"""
+
     def __init__(self, spacegroups: list[SpaceGroup]):
         self.spacegroups = spacegroups
 
@@ -248,6 +252,7 @@ class SpacegroupDatabase:
         return self._spacegroup_number_lookup[number]
 
     def spacegroups_for_lattice_symbol(self, lattice_symbol: str):
+        """ Get the spacegroups that correspond to a given lattice symbol (e.g. hR)"""
         return self._lattice_symbol_to_spacegroups[lattice_symbol]
 
     def spacegroups_with_operations(self, operation_string: str) -> ExactMatch | PartialMatch:
@@ -273,7 +278,6 @@ class SpacegroupDatabase:
 
     def spacegroup_by_name(self, name: str) -> SpaceGroup:
         """ Get a spacegroup by name"""
-
         canonised_input = canonise_string(name)
 
         if canonised_input in self._canonical_spacegroup_name_to_index:
@@ -286,7 +290,8 @@ class SpacegroupDatabase:
 
         if similar:
             suggestion_string = ", ".join([f"'{self._canonincal_name_to_group_name[s]}'" for s in similar])
-            message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
+            message_string = (f"Unknown space group '{name}', "
+                              f"perhaps you meant {suggestion_string} or something similar.")
 
         else:
             message_string = f"Unknown space group '{name}', doesn't seem to be even close to a magnetic space group."
@@ -309,7 +314,8 @@ class SpacegroupDatabase:
         #
         # if similar:
         #     suggestion_string = ", ".join([f"'{s}'" for s in formatted])
-        #     message_string = f"Unknown space group '{name}', perhaps you meant {suggestion_string} or something similar."
+        #     message_string = (f"Unknown space group '{name}', "
+        #                       f"perhaps you meant {suggestion_string} or something similar.")
         #
         # else:
         #

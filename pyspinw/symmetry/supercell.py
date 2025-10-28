@@ -83,12 +83,10 @@ class PropagationVector(SPWSerialisable):
 
     def uncorrected_phase_position(self, site: LatticeSite):
         """ Get the position of a site along the propagation vector, from (0,0,0), ignoring the phase correction"""
-
         return 2*np.pi*(self.vector * site.ijk)
 
     def corrected_phase_position(self, site: LatticeSite):
         """ Get the position of a site along the propagation vector, from (0,0,0), including the phase correction"""
-
         return 2 * np.pi * (self.vector * site.ijk) + self.phase
 
 class CommensuratePropagationVector(PropagationVector):

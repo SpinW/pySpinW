@@ -10,6 +10,8 @@ from ase.geometry.cell import cell_to_cellpar
 
 
 class GenLatticeResult:
+    """ Result from a genlattice call """
+
     spacegroup: SpaceGroup
     unit_cell: UnitCell
 
@@ -21,7 +23,7 @@ def genlattice(
         angle: ArrayLike | None = None,
         angled: ArrayLike | None = None,
         spgr: SpaceGroup | str = "P1"):
-
+    """ TODO: Docstring """
     # a better name
     spacegroup = spgr
 

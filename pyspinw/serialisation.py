@@ -207,6 +207,7 @@ class SPWSerialisable:
         raise NotImplementedError("Deserialisation not implemented")
 
 def vec3_serialise(x,y,z):
+    """ Serialise a 3D vector"""
     return {
         "x": x,
         "y": y,
@@ -215,6 +216,7 @@ def vec3_serialise(x,y,z):
 
 @expects_keys("x,y,z")
 def vec3_deserialise(json):
+    """ Deserialise a 3D vector """
     return (json["x"], json["y"], json["z"])
 
 def numpy_serialise(data: np.ndarray) -> dict:

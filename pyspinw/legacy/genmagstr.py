@@ -8,6 +8,8 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 
 class GenMagStrMode(Enum):
+    """ Different ways of generating magnetic structures using genmagstr"""
+
     RANDOM = 'random'
     DIRECT = 'direct'
     TILE = 'tile'
@@ -18,8 +20,10 @@ class GenMagStrMode(Enum):
     EXTEND = 'extend' # Deprecated
 
 class UnitSystem(Enum):
-    XYZ = 'xyz'
-    LU = 'lu'
+    """ Types of coordinate system """
+
+    XYZ = 'xyz' # Cartesian
+    LU = 'lu'   # Lattice units
 
 def genmagstr(
         mode: GenMagStrMode | str,
@@ -34,7 +38,7 @@ def genmagstr(
         unit_cell: UnitCell = UnitCell(1,1,1),
         norm: bool = True,
         r0: bool = True):
-
+    """ TODO: Needs a docstring"""
     # TODO: Make this apply to an object that contains unit cell and sites,
     #  will depend on the output from other functions used to create sites (i.e. genlattice)
 

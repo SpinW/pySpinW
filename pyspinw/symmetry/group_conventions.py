@@ -1,10 +1,11 @@
+""" Conversions and conventions for working with spacegroup string data"""
+
 import re
 
 import spglib
 
 def canonise_string(name: str):
     """ Make name into a form for searching """
-
     # remove spaces
     name = re.sub(r"\s+", "", name)
 
@@ -12,7 +13,7 @@ def canonise_string(name: str):
     return name.lower()
 
 def spacegroup_conventions():
-
+    """ Get naming data from the spglib database that can be used for looking up spacegroups."""
     group_name_to_index = {}
 
     for i in range(1, 531):
@@ -49,9 +50,8 @@ def spacegroup_conventions():
     # Make a lookup for the cannonical names, should be a one-to-one mapping
     canonical_name_to_index: dict[str, int] = {}
     canonical_name_to_group_name: dict[str, str] = {}
-    for name in group_name_to_index:
+    for name, index in group_name_to_index.items():
         canonical_name = canonise_string(name)
-        index = group_name_to_index[name]
 
         # check for collisions
         assert canonical_name not in canonical_name_to_index, "Conflicting canonical name"

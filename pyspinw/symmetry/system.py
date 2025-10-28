@@ -104,12 +104,13 @@ class LatticeSystem(ABC):
 
     def validate(self, unit_cell: UnitCell):
         """ Raises an exception if the unit cell is not compatible with this system """
-
         # Positive constraints
 
-        for key, value in self.positive_constraints.items():
+        for key, entry in self.positive_constraints.items():
 
-            if not isinstance(value, (int,float)):
+            if isinstance(entry, (int,float)):
+                value = entry
+            else:
                 value = value(unit_cell)
 
             if unit_cell.__dict__[key] != value:
@@ -135,6 +136,7 @@ class LatticeSystem(ABC):
 
 
     def create_unit_cell(self):
+        """ Create a unit cell that matches this lattice system """
         raise NotImplementedError("Create unit cell is only available in derived classes")
 
     def __repr__(self):
@@ -176,7 +178,6 @@ class Triclinic(LatticeSystem):
     def create_unit_cell(self, a: float, b: float, c: float,
                          alpha: float, beta: float, gamma: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, b, c, alpha, beta, gamma)
         self.validate(cell)
 
@@ -213,7 +214,6 @@ class Monoclinic(LatticeSystem):
 
     def create_unit_cell(self, a: float, b: float, c: float, gamma: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, b, c, 90, 90, gamma)
         self.validate(cell)
 
@@ -254,7 +254,6 @@ class Orthorhombic(LatticeSystem):
 
     def create_unit_cell(self, a: float, b: float, c: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, b, c, 90, 90, 90)
         self.validate(cell)
 
@@ -290,7 +289,6 @@ class Tetragonal(LatticeSystem):
 
     def create_unit_cell(self, a: float, c: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, a, c, 90, 90, 90)
         self.validate(cell)
 
@@ -327,7 +325,6 @@ class Rhombohedral(LatticeSystem):
 
     def create_unit_cell(self, a: float, alpha: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, a, a, alpha, alpha, alpha)
         self.validate(cell)
 
@@ -362,7 +359,6 @@ class Hexagonal(LatticeSystem):
 
     def create_unit_cell(self, a: float, c: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, a, c, 90, 90, 120)
         self.validate(cell)
 
@@ -397,7 +393,6 @@ class Cubic(LatticeSystem):
 
     def create_unit_cell(self, a: float):
         """ Create a unit cell for this lattice """
-
         cell = UnitCell(a, a, a, 90, 90, 90)
         self.validate(cell)
 
