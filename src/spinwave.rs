@@ -9,7 +9,7 @@ use crate::{Coupling, MagneticField, C64};
 
 pub struct SpinwaveResult {
     pub energies: Vec<f64>,
-    pub correlation: Option<Mat<C64>>,
+    pub correlation: Option<Vec<Mat<C64>>>,
 }
 
 /// Generate a spinwave calculation function for a given single-q calculation function.
@@ -254,23 +254,27 @@ fn spinwave_single_q(
     sqrt_E.iter_mut().for_each(|x| *x = x.sqrt());
 
     let T: Mat<C64> = inv_K * eigvecs * sqrt_E.as_diagonal();
-    // Create S'^alpha,beta from the matrices we calculated in calc_sqrt_hamiltonian
-    let S_prime = Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
-        let S_prime_matrix = T.adjoint() * sab[(alpha, beta)].as_ref() * T.as_ref();
-        calc_Sab(S_prime_matrix, n_sites) 
+    // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
+    // and then we just take the diagonal elements as that's all we need to calculate
+    // S'^alpha,beta(k, omega) at each eigenvalue
+    let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
+        let mat = T.adjoint() * sab[(alpha, beta)].as_ref() * T.as_ref();
+        mat.diagonal().column_vector().to_owned()
     });
+
+    // now create S' for each eigenvalue (the only places where there are non-zero intensities)
+    let Sab: Vec<Mat<C64>> = (0..n_sites)
+        .map(|i| {
+            // each element of S' over alpha, beta is created from an index over 2 * n_sites
+            Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
+                let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
+                diag[i] + 2. * diag[i + n_sites]
+            })
+        })
+        .collect();
 
     SpinwaveResult {
         energies: eigvals.iter().map(|x| x.re).collect(),
-        correlation: Some(S_prime),
+        correlation: Some(Sab),
     }
-}
-
-/// Calculate the S^alpha,beta matrix entry from the block matrix T*[YZ;VW]T
-fn calc_Sab(block_mat: Mat<C64>, n_sites: usize) -> C64 {
-    
-    // start with diagonal elements of the block matrix
-    let diags: ColRef<C64> = block_mat.diagonal().column_vector();
-     
-    todo!()
 }

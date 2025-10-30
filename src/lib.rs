@@ -4,14 +4,17 @@
 #![allow(non_snake_case)]
 
 use faer::{Col, Mat, MatRef};
-use faer_ext::IntoFaer;
+use faer_ext::{IntoFaer, IntoNdarray};
 use num_complex::Complex;
-use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
+use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::prelude::*;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 mod spinwave;
 use crate::spinwave::{calc_energies, calc_spinwave};
+
+mod postprocessing;
+use crate::postprocessing::neutron;
 
 mod constants;
 mod utils;
@@ -114,7 +117,7 @@ pub fn spinwave_calculation<'py>(
     field: Option<MagneticField>,
 ) -> PyResult<(
     Vec<Bound<'py, PyArray1<f64>>>,
-    Vec<Bound<'py, PyArray1<C64>>>,
+    Vec<Vec<Bound<'py, PyArray2<C64>>>>,
 )> {
     // convert PyO3-friendly array types to faer matrices
     let r: Vec<MatRef<C64>> = rotations
@@ -125,18 +128,31 @@ pub fn spinwave_calculation<'py>(
     let c = couplings.par_iter().map(pyo3::Py::get).collect();
 
     let results = calc_spinwave(r, magnitudes, q_vectors, c, field);
-    Ok(
+    Ok((
         results
             .iter()
-            .map(|result| (result.energies.to_pyarray(py), result.correlation.unwrap().to_pyarray(py)))
+            .map(|result| result.energies.to_pyarray(py))
             .collect(),
-    )
+        results
+            .iter()
+            .map(|result| {
+                result
+                    .correlation
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .map(|v| PyArray2::from_array(py, &v.as_ref().into_ndarray()))
+                    .collect()
+            })
+            .collect(),
+    ))
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(energies, m)?)?;
+    m.add_function(wrap_pyfunction!(spinwave_calculation, m)?)?;
     m.add_class::<Coupling>()?;
     m.add_class::<MagneticField>()?;
     Ok(())
