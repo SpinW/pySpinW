@@ -1,6 +1,37 @@
 """ Helper functions for python interface """
+from numpy._typing import ArrayLike
 
+from pyspinw.checks import check_sizes
+from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
+from pyspinw.symmetry.unitcell import UnitCell
+
+
+@check_sizes(position=("n", 3), moments=("n", 3, -1), force_numpy=True, allow_nones=True)
+def site(position: ArrayLike,
+         moments: ArrayLike | None = None,
+         convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+
+    """ Create lattice site
+
+    :param position: positions of the sites
+    :param moments: moments of the sites, if not specified, they will be set to zero
+    :param convert_to_cell_with: If this is None, we assume the position is in lattice units, and moments
+                                are in the unit cell moment coordinate system
+                                (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
+                                `pyspinw.UnitCell.moment_cartesian_to_fractional`)
+                                if instead it is a unit cell, we assume the coordinates are cartesian,
+                                and the positions will be converted into lattice units
+    """
+
+    if convert_to_cell_with is not None:
+        position = convert_to_cell_with.moment_cartesian_to_fractional(position)
+        moments = convert_to_cell_with.moment_cartesian_to_fractional(moments)
+
+    n_sites = position.shape[0]
+
+    for i in range(n_sites):
+
 
 
 def spacegroup(search_string: str):

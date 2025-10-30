@@ -1,4 +1,5 @@
 """ Implementation of python version of genmagstr """
+from dataclasses import dataclass
 from enum import Enum
 
 from numpy._typing import ArrayLike
@@ -25,9 +26,14 @@ class UnitSystem(Enum):
     XYZ = 'xyz' # Cartesian
     LU = 'lu'   # Lattice units
 
+@dataclass
+class GenMagStrResult:
+    sites: list[LatticeSite]
+
+
 def genmagstr(
         mode: GenMagStrMode | str,
-        sites: list[LatticeSite],
+        sites: ArrayLike | list[LatticeSite],
         s: ArrayLike,
         phi: float = 0.0,
         phi_d: float = 0.0,
@@ -59,6 +65,7 @@ def genmagstr(
                                       " structures use the python interface rather than this legacy interface")
 
         case GenMagStrMode.TILE:
+            # This is just the idenity supercell
             pass
 
         case GenMagStrMode.DIRECT:
