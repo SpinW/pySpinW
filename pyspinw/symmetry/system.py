@@ -192,14 +192,14 @@ class Monoclinic(LatticeSystem):
 
     positive_constraints = {
         "alpha": 90,
-        "beta": 90
+        "gamma": 90
     }
 
     negative_constraints = {
         "a ≠ b": lambda cell: cell.a != cell.b,
         "b ≠ c": lambda cell: cell.b != cell.c,
         "c ≠ a": lambda cell: cell.c != cell.a,
-        "γ ≠ 90°": lambda cell: cell.gamma != 90
+        "β ≠ 90°": lambda cell: cell.beta != 90
     }
 
     @property
@@ -212,12 +212,13 @@ class Monoclinic(LatticeSystem):
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(base_centered=True)
 
-    def create_unit_cell(self, a: float, b: float, c: float, gamma: float):
+    def create_unit_cell(self, a: float, b: float, c: float, beta: float):
         """ Create a unit cell for this lattice """
-        cell = UnitCell(a, b, c, 90, 90, gamma)
+        cell = UnitCell(a, b, c, 90, beta, 90)
         self.validate(cell)
 
         return cell
+
 
 
 
