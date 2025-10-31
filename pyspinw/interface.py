@@ -5,6 +5,8 @@ from numpy._typing import ArrayLike
 from pyspinw.checks import check_sizes
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
+from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
+    TransformationSupercell, SummationSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 
@@ -100,6 +102,87 @@ def sites(positions: ArrayLike,
 
     return out
 
+#
+# Supercell methods
+#
+
+@check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
+def propagation_vectors(
+        directions: np.ndarray,
+        phases: np.ndarray | None = None,
+        incommensurate: bool=False) -> list[PropagationVector]:
+
+    if phases is None:
+        phases = [0.0 for _ in range(directions.shape[0])]
+
+
+    if incommensurate:
+        constructor = PropagationVector
+    else:
+        constructor = CommensuratePropagationVector
+
+    out = []
+    for i in range(directions.shape[0]):
+        pv = constructor(
+                float(directions[i, 0]),
+                float(directions[i, 1]),
+                float(directions[i, 2]),
+                phase=float(phases[i]))
+
+        out.append(pv)
+
+
+@check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
+def rotation_supercell(
+        directions: ArrayLike,
+        axes: ArrayLike,
+        phases: ArrayLike | None = None,
+        scaling: tuple[int, int, int]=(1,1,1)):
+
+    """ Create a supercell that rotates spins as we move along the propagation vector
+
+    :param directions: propagation vector directions
+    :param axes: rotation axes for each propagation vector,
+                 or if only a single axis is specified, apply it to all of them
+    :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
+    :param scaling: Make a larger supercell by tiling the result this many times in each axis
+    """
+
+    # Check that the axes match up
+
+    # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
+    vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
+
+    pairs = [(vector, RotationTransform(axes[i, :])) for i, vector in enumerate(vectors)]
+
+    return TransformationSupercell(
+        transforms=pairs,
+        scaling=scaling)
+
+
+@check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
+def summartion_supercell(
+        directions: np.ndarray,
+        phases: np.ndarray | None = None,
+        scaling: tuple[int, int, int]=(1,1,1)):
+
+    """ Create a supercell based on the propagation vectors and partial moments
+
+    i.e. $m = \sum_j mu_j exp(2 \pi i d_j.r + \phi_j)$
+
+    :param directions: propagation vector directions
+    :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
+    :param scaling: Make a larger supercell by tiling the result this many times in each axis
+    """
+
+    # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
+    vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
+
+    return SummationSupercell(vectors, scaling=scaling)
+
+#
+# Spacegroup methods
+#
 
 def spacegroup(search_string: str):
     """ Get a spacegroup by name or symmetry operations
