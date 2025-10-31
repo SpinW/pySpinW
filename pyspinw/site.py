@@ -29,9 +29,9 @@ class LatticeSite(SPWSerialisable):
                  supercell_moments: np.ndarray | None = None,
                  name: str = ""):
 
-        self._i = i
-        self._j = j
-        self._k = k
+        self._i = float(i)
+        self._j = float(j)
+        self._k = float(k)
 
         #
         # Lots of case checking for the moment input format

@@ -1,4 +1,5 @@
 """ Helper functions for python interface """
+import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.checks import check_sizes
@@ -7,14 +8,14 @@ from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMat
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-@check_sizes(position=("n", 3), moments=("n", 3, -1), force_numpy=True, allow_nones=True)
-def site(position: ArrayLike,
-         moments: ArrayLike | None = None,
-         convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+def sites(positions: ArrayLike,
+          moments: ArrayLike | None = None,
+          names: list[str] | None=None,
+          convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
 
     """ Create lattice site
 
-    :param position: positions of the sites
+    :param positions: positions of the sites
     :param moments: moments of the sites, if not specified, they will be set to zero
     :param convert_to_cell_with: If this is None, we assume the position is in lattice units, and moments
                                 are in the unit cell moment coordinate system
@@ -24,14 +25,80 @@ def site(position: ArrayLike,
                                 and the positions will be converted into lattice units
     """
 
+    # check the positions are n-by-3, or 1d
+    positions = np.array(positions)
+    match len(positions.shape):
+        case 1:
+            if positions.shape[0] == 3:
+                positions = positions.reshape(1, 3)
+                n_sites = 1
+            else:
+                raise ValueError("Expected positions to be n-by-3, or a single vector of length 3")
+        case 2:
+            if positions.shape[1] == 3:
+                n_sites = positions.shape[0]
+            else:
+                raise ValueError("Expected positions to be n-by-3, or a single vector of length 3")
+        case _:
+            raise ValueError("Expected positions to be n-by-3, or a single vector of length 3")
+
+    # check moment definitions
+    moments = np.array(moments)
+    match len(moments.shape):
+        case 1:
+            if n_sites != 1:
+                raise ValueError("Expected same number of moments as positions")
+
+            if moments.shape[0] != 3:
+                raise ValueError("Expected moment to have three components")
+
+            moments = moments.reshape(1,3,1)
+
+        case 2:
+            if n_sites != moments.shape[1]:
+                raise ValueError("Expected same number of moments as positions")
+
+            if moments.shape[1] != 3:
+                raise ValueError("Expected moments to have three components")
+
+            moments = moments.reshape(-1, 3, 1)
+
+        case 3:
+            if n_sites != moments.shape[1]:
+                raise ValueError("Expected same number of moments as postions")
+
+            if moments.shape[1] != 3:
+                raise ValueError("Expected moments to have three components")
+
+        case _:
+            raise ValueError("Expected moments to be n-by-3-m, n-by-3, or vector of length 3")
+
+    # Convert cell positions
     if convert_to_cell_with is not None:
-        position = convert_to_cell_with.moment_cartesian_to_fractional(position)
-        moments = convert_to_cell_with.moment_cartesian_to_fractional(moments)
+        positions = convert_to_cell_with.cartesian_to_fractional(positions)
 
-    n_sites = position.shape[0]
+        # convert moments
+        converted_moments = np.zeros_like(moments)
+        for i in range(moments.shape[2]):
+            converted_moments[:,:,i] = convert_to_cell_with.moment_cartesian_to_fractional(moments[:,:,i])
 
+        moments = converted_moments
+
+    n_sites = positions.shape[0]
+
+    out = []
     for i in range(n_sites):
+        position = positions[i, :]
 
+        out.append(LatticeSite(
+            i = position[0],
+            j = position[1],
+            k = position[2],
+            supercell_moments=moments[i, :, :],
+            name = names[i]
+        ))
+
+    return out
 
 
 def spacegroup(search_string: str):
