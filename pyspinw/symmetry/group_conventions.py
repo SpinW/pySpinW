@@ -31,21 +31,39 @@ def spacegroup_conventions():
         # Does the name contain the setting choice? this depends on what kind of choice it is
         # If the choice is 1/2, or R/H it doesn't
 
-        # Chiral group
-        if group_data.choice in ["1", "2"]:
-            names = [name + " : " + group_data.choice for name in names]
+        # settings 1 and 2
+        if group_data.choice.startswith("1") or group_data.choice.startswith("2"):
+            names = [name + " : " + group_data.choice[:1] for name in names]
 
         # Rhombohedral/Hexagonal settings
         if group_data.choice in ["H", "R"]:
             names = [name + " " + group_data.choice for name in names]
 
-        # Use the first entry we find a short name for as the referent for the short name
+        # Use the first entry as a short name if it is not there already
         if names[0] not in group_name_to_index:
             group_name_to_index[names[0]] = i
+
 
         # The rest we can add safely
         for name in names[1:]:
             group_name_to_index[name] = i
+
+    for i in range(1, 531):
+        group_data = spglib.get_spacegroup_type(i)
+
+        # This is a little bit tricky, we need to make sure that the full name isn't already there
+        # It might be there already, and point to a different group (because the international full
+        # doesn't include the setting)
+        full_name = group_data.international_full
+
+        if group_data.choice.startswith("1") or group_data.choice.startswith("2"):
+            full_name += " : " + group_data.choice[:1]
+
+        if group_data.choice in ["R", "H"]:
+            full_name += " " + group_data.choice
+
+        if full_name not in group_name_to_index:
+            group_name_to_index[full_name] = i
 
     # Make a lookup for the cannonical names, should be a one-to-one mapping
     canonical_name_to_index: dict[str, int] = {}

@@ -7,6 +7,7 @@ import numpy as np
 import spglib
 from difflib import get_close_matches
 
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.group_conventions import spacegroup_conventions, canonise_string
 
@@ -18,11 +19,11 @@ from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup,
 from pyspinw.tolerances import tolerances
 
 
-class SymmetryGroup:
-    """Base class for the different kinds of groups """
 
-class MagneticSpaceGroup(SymmetryGroup):
+class MagneticSpaceGroup(SPWSerialisable):
     """ Representation of a magnetic space group"""
+
+    serialisation_name = "MagneticGroup"
 
     def __init__(self, number: int, symbol: str, operations: list[MagneticOperation]):
         self.number = number
@@ -70,8 +71,10 @@ class MagneticSpaceGroup(SymmetryGroup):
 
 
 
-class SpaceGroup[T: LatticeSystem](SymmetryGroup):
+class SpaceGroup(SPWSerialisable):
     """ Representation of a space group"""
+
+    serialisation_name = "SpaceGroup"
 
     def __init__(self,
                  number,
@@ -79,7 +82,7 @@ class SpaceGroup[T: LatticeSystem](SymmetryGroup):
                  short_symbol,
                  operations,
                  magnetic_variants: list[MagneticSpaceGroup],
-                 lattice_system: T,
+                 lattice_system: LatticeSystem,
                  choice: str | None):
 
         self.number = number
@@ -87,7 +90,7 @@ class SpaceGroup[T: LatticeSystem](SymmetryGroup):
         self.short_symbol = short_symbol
         self.operations = operations
         self.magnetic_variants = magnetic_variants
-        self.lattice_system: T = lattice_system
+        self.lattice_system = lattice_system
         self.choice = choice
 
         # This is slightly unusual, make a reference to the lattice system create_unit_cell method
@@ -99,6 +102,29 @@ class SpaceGroup[T: LatticeSystem](SymmetryGroup):
             return f"SpaceGroup({self.number}, {self.symbol})"
         else:
             return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}])"
+
+    def _serialisation_string(self):
+        """ Name to use to refer to this group in serialisation"""
+        if self.choice is not None:
+            if self.choice in ["R", "H"]:
+                appendum = " " + self.choice
+            elif self.choice.startswith("1") or self.choice.startswith("2"):
+                appendum = " : " + self.choice[:1]
+            else:
+                appendum = ""
+
+            return self.symbol + appendum
+
+        else:
+            return self.symbol
+
+    def _serialise(self, context: SPWSerialisationContext):
+        pass
+
+    @staticmethod
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        pass
+
 
 class ExactMatch:
     """ Result for exact matches in database searches"""

@@ -6,7 +6,7 @@ from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-class MagneticStructure(SPWSerialisable):
+class Geometry(SPWSerialisable):
     """Base class for representations of the Magnetic Structures"""
 
     serialisation_name = "structure"
@@ -51,7 +51,7 @@ class MagneticStructure(SPWSerialisable):
     @expects_keys("spacegroup, magnetic_group, unit_cell, supercell")
     def _deserialise(data: dict, context: SPWDeserialisationContext):
         """ Deserialise an object of this kind """
-        return MagneticStructure(
+        return Geometry(
             spacegroup=SpaceGroup._deserialse(data["spacegroup"]),
             magnetic_group=MagneticSpaceGroup._deserialise(data["magnetic_group"]),
             unit_cell=UnitCell._deserialise(data["unit_cell"]),
