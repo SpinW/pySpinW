@@ -40,8 +40,8 @@ from examples.raw_calculations.kagome_supercell import kagome_supercell
                           kagome_supercell,])
 def test_calc_impls(example):
     """Compare Rust and Python spinwave calculation implementations."""
-    rs_results = rs_spinwave(*example(classes=rs_classes))
-    py_results = py_spinwave(*example(classes=py_classes))
+    rs_energies, rs_sab = rs_spinwave(*example(classes=rs_classes))
+    py_energies = py_spinwave(*example(classes=py_classes))
 
     # we test to an absolute tolerance of 1e-6 in line with the MATLAB
-    np.testing.assert_allclose(np.sort(rs_results), np.sort(py_results), atol=1e-6, rtol=0)
+    np.testing.assert_allclose(np.sort(rs_energies), np.sort(py_energies), atol=1e-6, rtol=0)
