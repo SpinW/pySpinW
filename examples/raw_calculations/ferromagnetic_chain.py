@@ -17,7 +17,10 @@ def heisenberg_ferromagnet(n_q = 100, classes = py_classes):
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 
     # Single site
-    rotations = [np.eye(3, **rust_kw)]
+    rotations = [np.array([[1,  0, 0],
+                           [0,  0, 1],
+                           [0, -1, 0]],
+                          **rust_kw)]
     magnitudes = np.array([1.0])  # spin-1
     couplings = [Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
                  Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])), ]
@@ -35,7 +38,7 @@ if __name__ == "__main__":
 
     q_mags = np.linspace(0, 1, 100)
 
-    _, energies = run_example(heisenberg_ferromagnet, use_rust)
+    _, energies, sab = run_example(heisenberg_ferromagnet, use_rust)
 
     # Note: we get complex data types with real part zero
     plt.plot(q_mags, energies)

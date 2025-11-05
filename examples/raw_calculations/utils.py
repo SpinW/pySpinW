@@ -73,6 +73,6 @@ def run_example(
             )
 
     structure = example(classes=classes)
-    energies = spinwave_calculation(*structure)
+    energies, sab = spinwave_calculation(*structure)
 
-    return structure, energies
+    return structure, energies, sab
