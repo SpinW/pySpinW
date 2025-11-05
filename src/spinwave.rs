@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use faer::{linalg::solvers::DenseSolveCore, unzip, zip, Col, ColRef, Mat, MatRef, Side};
+use faer::{linalg::solvers::Solve, unzip, zip, Col, ColRef, Mat, MatRef, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B};
@@ -85,6 +85,7 @@ gen_spinwave_function!(calc_spinwave, spinwave_single_q);
 
 /// Calculate the square root of the Hamiltonian,
 /// and optionally the block matrix [YZ;VW] for S^alpha,beta
+#[inline(always)]
 fn calc_sqrt_hamiltonian(
     q: Col<f64>,
     C: &Mat<C64>,
@@ -124,16 +125,20 @@ fn calc_sqrt_hamiltonian(
 
         if let Some(ref mut spm) = S_prime_mats {
             // contributions to S' from this coupling
-            let common_term = spin_coefficients[(i, j)] * phase_factor;
+            let common_term = 2. * spin_coefficients[(i, j)] * phase_factor;
             for alpha in 0..3 {
                 for beta in 0..3 {
+                    // Y^alpha,beta
                     spm[(alpha, beta)][(i, j)] += common_term * (z[i][alpha] * z[j][beta].conj());
-                    spm[(alpha, beta)][(i + n_sites, j + n_sites)] +=
-                        common_term * (z[i][alpha].conj() * z[j][beta]);
+                    // Z^alpha,beta
                     spm[(alpha, beta)][(i, j + n_sites)] +=
                         common_term * (z[i][alpha] * z[j][beta]);
+                    // V^alpha,beta
                     spm[(alpha, beta)][(i + n_sites, j)] +=
                         common_term * (z[i][alpha].conj() * z[j][beta].conj());
+                    // W^alpha,beta
+                    spm[(alpha, beta)][(i + n_sites, j + n_sites)] +=
+                        common_term * (z[i][alpha].conj() * z[j][beta]);
                 }
             }
         }
@@ -241,21 +246,30 @@ fn spinwave_single_q(
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
     let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
-    let eigvecs: MatRef<C64> = eigendecomp.U();
+
+    // we reverse the rows of U to match the nonincreasing order of eigenvalues in sqrt_E
+    let eigvecs: MatRef<C64> = eigendecomp.U().reverse_rows();
 
     // calculate transformation matrix for spin-spin correlation function
-    // this is T = K^-1 * U * sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
+    // this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
     // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
     // for the eigenvalues of the Hamiltonian
-    let inv_K = sqrt_hamiltonian.partial_piv_lu().inverse();
-    let mut sqrt_E = eigvals.to_owned();
+    // we use `reverse_rows()` to sort eigvals in nonincreasing order (default is nondecreasing order)
+    // as Toth & Lake (2015) assumes eigenvalues are nonincreasing
+    let mut sqrt_E = eigvals.reverse_rows().to_owned();
     let mut negative_half = sqrt_E.subrows_mut(n_sites, n_sites);
     negative_half *= -1.;
     sqrt_E.iter_mut().for_each(|x| *x = x.sqrt());
 
-    let T: Mat<C64> = inv_K * eigvecs * sqrt_E.as_diagonal();
+    // instead of inverting K and calculating T = K^-1 U sqrt(E),
+    // it's faster and more stable to solve the linear system K T = U sqrt(E)
+    // note the `faer` solver is in-place so calculates it directly on T
+    // (the input T is the righthand side of the equation U sqrt(E))
+    let mut T = eigvecs * sqrt_E.as_diagonal();
+    sqrt_hamiltonian.partial_piv_lu().solve_in_place(T.as_mut());
+
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
-    // and then we just take the diagonal elements as that's all we need to calculate
+    // and then we just take the diagonal elements as that's all we need for 
     // S'^alpha,beta(k, omega) at each eigenvalue
     let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
         let mat = T.adjoint() * sab[(alpha, beta)].as_ref() * T.as_ref();
@@ -268,13 +282,21 @@ fn spinwave_single_q(
             // each element of S' over alpha, beta is created from an index over 2 * n_sites
             Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
                 let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
-                diag[i] + 2. * diag[i + n_sites]
+                (diag[i] + 2. * diag[i + n_sites]) / (2 * n_sites) as f64
             })
-        })
+        }).chain((0..n_sites).map(|i| {
+            // negative energy modes
+            Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
+                let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
+                (diag[i + n_sites] + 2. * diag[i]) / (2 * n_sites) as f64
+            })
+        }))
         .collect();
+    println!("{:?}", Sab);
 
     SpinwaveResult {
         energies: eigvals.iter().map(|x| x.re).collect(),
         correlation: Some(Sab),
     }
 }
+
