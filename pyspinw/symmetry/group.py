@@ -1,6 +1,7 @@
 """ Space groups and magnetic space groups"""
 
 from collections import defaultdict
+from enum import Enum
 from typing import Callable
 
 import numpy as np
@@ -13,10 +14,12 @@ from pyspinw.symmetry.group_conventions import spacegroup_conventions, canonise_
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
+from pyspinw.symmetry.settings import Setting
 from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
     lattice_system_name_lookup
 
 from pyspinw.tolerances import tolerances
+
 
 
 
@@ -92,6 +95,7 @@ class SpaceGroup(SPWSerialisable):
         self.magnetic_variants = magnetic_variants
         self.lattice_system = lattice_system
         self.choice = choice
+        self.setting = Setting.from_optional_string(choice)
 
         # This is slightly unusual, make a reference to the lattice system create_unit_cell method
         self.create_unit_cell = lattice_system.create_unit_cell
