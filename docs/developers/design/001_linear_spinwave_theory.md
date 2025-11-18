@@ -269,7 +269,6 @@ Now, often we speak of $`\mathrm{h}(\mathbf{q})`$ as the "Hamiltonian" but stric
 is $`\mathcal{H}`$ which is the sum of $`\mathrm{h}(\mathbf{q})`$ over all $`\mathbf{q}`$ in the Brillouin zone.
 Nonetheless, in order to calculate the inelastic neutron spectra, the quantity we need to calculate (and diagonalise) is $`\mathrm{h}(\mathbf{q})`$.
 
-
 ### Code for calculating the "Hamiltonian" matrix
 
 Despite the disclaimer above, in the rest of the text we will use "Hamiltonian matrix" to refer to the hermitian matrix $`\mathrm{h}(\mathbf{q})`$.
@@ -312,16 +311,6 @@ As an alternative to the vectorized Matlab code, there is an independent impleme
 [uses a loop over the sites of the unit cell](https://github.com/ILLGrenoble/magpie/blob/master/tlibs2/libs/magdyn/hamilton.h#L175-L264)
 which is more transparent with respects to the equations in the paper.
 
-<!--
-
-## The spin-spin correlation function
-
-The logical next step (and the one taken by most treatment) is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$
-to find the magnon energies $`E(\mathbf{q})`$ at each $`\mathbf{q}`$ point.
-However,
-
--->
-
 ## The Bogoliubov transformation
 
 The next step is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$ to find the magnon energies (the eigenvalues of $`h(\mathbf{q})`$,
@@ -337,3 +326,71 @@ Instead SpinW uses one of two algorithms:
   if the $`h(\mathbf{q})`$ matrix is not only Hermitian but also positive definite.
 * That of [White et al.](https://doi.org/10.1103/PhysRev.139.A450) for a general $`h(\mathbf{q})`$ matrix.
   Note that in this case SpinW can return (unphysical) imaginary magnon energies.
+
+## The spin-spin correlation function
+
+Once the Hamiltonian matrix has been diagonalised, the eigenvalues and eigenvectors can be used to compute the spin-spin correlation function
+which is directly related to the inelastic neutron scattering cross-section.
+
+Note that this calculation assumes that the eigenvalues (and their associated eigenvectors) are in decreasing order.
+
+For a matrix of eigenvectors $`U`$ and a $`2N \times 2N`$ diagonal matrix $`E = gL`$ where $`L`$ is the diagonal matrix of eigenvalues (the magnon energies),
+we define the transformation matrix as
+
+```math
+T = K^{-1} U E^{1/2}.
+```
+
+Note for computational precision and efficiency it is preferable to compute $`T`$ implicitly as the solution to the linear system
+
+```math
+K T = U E^{1/2}.
+```
+
+The spin-spin correlation function is then calculated from a tensor $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ defined as:
+
+```math
+S^{\alpha\beta}(\mathbf{q}, \omega) = \frac{1}{2N} \sum_{i=1}^{2N} 
+[T^* \left[ \begin{array}{cc}
+\mathrm{Y}^{\alpha, \beta}(\mathbf{q}) && \mathrm{Z}^{\alpha, \beta}(\mathbf{q}) \\
+\mathrm{V}^{\alpha, \beta}(\mathbf{q}) && \mathrm{W}^{\alpha, \beta}(\mathbf{q})
+\end{array} \right] T]_{ii} \delta(\omega - g_{ii} \omega_i) (n(\omega) - \frac{1}{2}(1 - g_{ii}))
+```
+
+where $`N`$ is the number of spins in the magnetic unit cell, $`\omega_i`$ is the $`i`$th entry of $`E`$ (which is the **absolute value** of the $`i`$'th eigenvalue!),
+$`n(\omega)`$ is the Bose factor of $`\omega`$ (which in this calculation is 1, as we are calculating the limit at temperature zero),
+and $`\mathrm{Y}, \mathrm{Z}, \mathrm{V}`$ and $`\mathrm{W}`$ are $`N \times N`$ matrices with elements:
+
+```math
+\begin{align}
+\mathrm{Y}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{\alpha} z_j^{*\beta} \\
+\mathrm{Z}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{\alpha} z_j^{\beta} \\
+\mathrm{V}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{*\alpha} z_j^{*\beta} \\
+\mathrm{W}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{*\alpha} z_j^{\beta}
+\end{align}
+```
+
+with $`\phi(\mathbf{q}) = e^{i \mathbf{q} (r_i - r_j)}`$ where $`r_i`$ and $`r_j`$ are the position vectors of spins $i$ and $j$ in the unit cell.
+Note that $`r_i`$ is the position **within the unit cell**, not the absolute position in the lattice!
+
+For the rest of this section, we will denote
+```math
+M = T^* \left[ \begin{array}{cc}
+\mathrm{Y}^{\alpha, \beta}(\mathbf{q}) && \mathrm{Z}^{\alpha, \beta}(\mathbf{q}) \\
+\mathrm{V}^{\alpha, \beta}(\mathbf{q}) && \mathrm{W}^{\alpha, \beta}(\mathbf{q})
+\end{array} \right] T
+```
+for brevity.
+
+In practice, unless an eigenvalue is repeated, $`S^{\alpha\beta}(\mathbf{q}, \omega)`$ will only be non-zero when $\omega$ is an eigenvalue of $`h(\mathbf{q})`$.
+If we denote the $`k`$'th eigenvalue as $`\lambda_k`$, then for the first $`N`$ eigenvalues (which are positive), we get 
+$`S'^{\alpha, \beta}(\mathbf{q}, \lambda_k) = M_{kk}`$,
+and for the last $`N`$ eigenvalues (which are negative), we get
+$`S'^{\alpha, \beta}(\mathbf{q}, \lambda_{k}) = - M_{(k - N) (k - N)}`$.
+This is because for positive eigenvalues, $`\delta(\omega - g_{ii} \omega_i)`$ is only non-zero when $`\omega = \lambda_k`$, which
+is the case for $`i = k`$,
+and for negative eigenvalues, $`\delta(\omega - g_{ii} \omega_i)`$ is only non-zero when $`\omega = -\lambda_k`$, which it only does
+for $`i = k - N`$.
+
+Thus for each $`\mathbf{q}`$, we can represent $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ as a list of $`2N`$ values corresponding to each eigenvalue of $`h(\mathbf{q})`$,
+and the full tensor $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ as a $`3 \times 3 \times 2N \times n_q`$ array.
