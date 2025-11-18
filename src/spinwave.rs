@@ -125,7 +125,7 @@ fn calc_sqrt_hamiltonian(
 
         if let Some(ref mut spm) = S_prime_mats {
             // contributions to S' from this coupling
-            let common_term = 2. * spin_coefficients[(i, j)] * phase_factor;
+            let common_term = spin_coefficients[(i, j)]; //* phase_factor;
             for alpha in 0..3 {
                 for beta in 0..3 {
                     // Y^alpha,beta
@@ -263,8 +263,8 @@ fn spinwave_single_q(
 
     // instead of inverting K and calculating T = K^-1 U sqrt(E),
     // it's faster and more stable to solve the linear system K T = U sqrt(E)
-    // note the `faer` solver is in-place so calculates it directly on T
-    // (the input T is the righthand side of the equation U sqrt(E))
+    // note the `faer` solver is in-place so calculates it directly on the variable `T`
+    // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
     sqrt_hamiltonian.partial_piv_lu().solve_in_place(T.as_mut());
 
@@ -273,6 +273,8 @@ fn spinwave_single_q(
     // S'^alpha,beta(k, omega) at each eigenvalue
     let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
         let mat = T.adjoint() * sab[(alpha, beta)].as_ref() * T.as_ref();
+        if (alpha, beta) == (0, 0) {
+        }
         mat.diagonal().column_vector().to_owned()
     });
 
@@ -282,17 +284,16 @@ fn spinwave_single_q(
             // each element of S' over alpha, beta is created from an index over 2 * n_sites
             Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
                 let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
-                (diag[i] + 2. * diag[i + n_sites]) / (2 * n_sites) as f64
+                diag[i] / (2 * n_sites) as f64
             })
         }).chain((0..n_sites).map(|i| {
             // negative energy modes
             Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
                 let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
-                (diag[i + n_sites] + 2. * diag[i]) / (2 * n_sites) as f64
+                diag[n_sites - i] / (2 * n_sites) as f64
             })
         }))
         .collect();
-    println!("{:?}", Sab);
 
     SpinwaveResult {
         energies: eigvals.iter().map(|x| x.re).collect(),
