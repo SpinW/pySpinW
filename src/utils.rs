@@ -1,5 +1,6 @@
 use crate::constants::SCALAR_J;
 use crate::C64;
+use faer::traits::ComplexField;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef};
 /// Utility functions for the calculations.
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -24,35 +25,25 @@ pub fn component_mul(a: &Mat<C64>, b: &Mat<C64>) -> Mat<C64> {
     product
 }
 
-/// Combine the A, B, and C matrices into the Hamiltonian `h(q)` matrix.
-#[inline(always)]
-pub fn make_block_hamiltonian(A: Mat<C64>, B: Mat<C64>, C: &Mat<C64>) -> Mat<C64> {
-    let A_minus_C: Mat<C64> = A.clone() - C;
-    let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
+/// Create a block matrix from four sub-matrices.
+#[inline]
+pub fn block_matrix<T: ComplexField>(TL: &Mat<T>, TR: &Mat<T>, BL: &Mat<T>, BR: &Mat<T>) -> Mat<T> {
+    let n_rows = TL.nrows() + BL.nrows();
+    let n_cols = TL.ncols() + TR.ncols();
+    let mut result = Mat::<T>::zeros(n_rows, n_cols);
 
-    let n_sites = B.nrows();
+    result
+        .submatrix_mut(0, 0, TL.nrows(), TL.ncols())
+        .copy_from(TL);
+    result
+        .submatrix_mut(0, TL.ncols(), TR.nrows(), TR.ncols())
+        .copy_from(TR);
+    result
+        .submatrix_mut(TL.nrows(), 0, BL.nrows(), BL.ncols())
+        .copy_from(BL);
+    result
+        .submatrix_mut(TL.nrows(), TR.ncols(), BR.nrows(), BR.ncols())
+        .copy_from(BR);
 
-    let mut hamiltonian = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
-
-    // `submatrix_mut` takes a writable view of part of the matrix, and `copy_from` copies
-    // its argument into the matrix. So this is copying each of our matrices into sections
-    // of the `hamiltonian` matrix
-    // copy A - C into upper-left quarter of matrix
-    hamiltonian
-        .submatrix_mut(0, 0, n_sites, n_sites)
-        .copy_from(A_minus_C);
-    // copy B into upper-right
-    hamiltonian
-        .submatrix_mut(n_sites, 0, n_sites, n_sites)
-        .copy_from(B.as_ref());
-    // copy B* into bottom-left
-    hamiltonian
-        .submatrix_mut(0, n_sites, n_sites, n_sites)
-        .copy_from(B.adjoint());
-    // copy A* - C into bottom-right
-    hamiltonian
-        .submatrix_mut(n_sites, n_sites, n_sites, n_sites)
-        .copy_from(A_conj_minus_C);
-
-    hamiltonian
+    result
 }

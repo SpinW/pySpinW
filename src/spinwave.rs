@@ -4,7 +4,7 @@ use faer::{linalg::solvers::Solve, unzip, zip, Col, ColRef, Mat, MatRef, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B};
-use crate::utils::{component_mul, get_rotation_components, make_block_hamiltonian};
+use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
 /// Result of a spinwave calculation.
@@ -91,7 +91,11 @@ fn calc_sqrt_hamiltonian(
         }
     }
 
-    let hamiltonian: Mat<C64> = make_block_hamiltonian(A, B, C);
+    let A_minus_C: Mat<C64> = A.clone() - C;
+    let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
+    let B_adj = B.adjoint().to_owned();
+
+    let hamiltonian: Mat<C64> = block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C);
 
     // take square root of Hamiltonian using Cholesky if possible; if this fails,
     // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
@@ -179,9 +183,7 @@ fn energies_single_q(
 
 /// Calculate the block matrices for S'^alpha, beta
 /// That is, the matrix [ Y Z ; V W ] for each alpha, beta pair
-/// note that the phase factor is NOT applied here; this is done later
 fn calc_sab_blocks(
-    n_sites: usize,
     z: &[Col<C64>],
     q: Col<f64>,
     spin_coefficients: &Mat<C64>,
@@ -199,38 +201,46 @@ fn calc_sab_blocks(
     // We store S' as a 3x3 matrix of matrices indexed by alpha, beta
     // where each element is an 2 * n_sites x 2 * n_sites matrix
     // later on we will sum over the diagonal elements to get S'^alpha,beta(k, omega)
-    Mat::<Mat<C64>>::from_fn(3, 3, |alpha, beta| -> Mat<C64> {
-        let mut matrix = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
-        let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
-        let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
+    let mut blocks = Mat::<Mat<C64>>::full(3, 3, Mat::<C64>::new());
 
-        // construct the four blocks V, W, Y, Z;
-        // note that while we're just dealing in the z components,
-        // V is conj(Z) and W is conj(Y)
-        let Y = z_alphas.clone() * z_betas.conjugate().transpose();
-        let Z = z_alphas * z_betas.transpose();
-        let V = Z.conjugate().to_owned();
-        let W = Y.conjugate().to_owned();
+    // note one can show:
+    // Y*[alpha, beta] = Y[beta, alpha]
+    // Z*[alpha, beta] = V[beta, alpha]
+    // V*[alpha, beta] = Z[beta, alpha]
+    // W*[alpha, beta] = W[beta, alpha]
+    // thus we only need to calculate one triangle and can fill in the rest by conjugation
+    for alpha in 0..3 {
+        for beta in 0..=alpha {
+            let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
+            let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
 
-        component_mul(&Y, &coefficients);
-        component_mul(&Z, &coefficients);
-        component_mul(&V, &coefficients);
-        component_mul(&W, &coefficients);
+            // construct the four blocks V, W, Y, Z;
+            // note that before we include the phase factors,
+            // V is conj(Z) and W is conj(Y)
+            let Yab = z_alphas.clone() * z_betas.conjugate().transpose();
+            let Zab = z_alphas * z_betas.transpose();
+            let Vab = Zab.conjugate().to_owned();
+            let Wab = Yab.conjugate().to_owned();
 
-        // copy the blocks into the matrix
-        matrix.submatrix_mut(0, 0, n_sites, n_sites).copy_from(&Y);
-        matrix
-            .submatrix_mut(0, n_sites, n_sites, n_sites)
-            .copy_from(&Z);
-        matrix
-            .submatrix_mut(n_sites, 0, n_sites, n_sites)
-            .copy_from(&V);
-        matrix
-            .submatrix_mut(n_sites, n_sites, n_sites, n_sites)
-            .copy_from(&W);
+            component_mul(&Yab, &coefficients);
+            component_mul(&Zab, &coefficients);
+            component_mul(&Vab, &coefficients);
+            component_mul(&Wab, &coefficients);
 
-        matrix
-    })
+            blocks[(alpha, beta)] = block_matrix(&Yab, &Zab, &Vab, &Wab);
+
+            if beta < alpha {
+                let Yba = Yab.adjoint().to_owned();
+                let Zba = Vab.adjoint().to_owned();
+                let Vba = Zab.adjoint().to_owned();
+                let Wba = Wab.adjoint().to_owned();
+
+                blocks[(beta, alpha)] = block_matrix(&Yba, &Zba, &Vba, &Wba);
+            }
+        }
+    }
+
+    blocks
 }
 
 pub fn calc_spinwave(
@@ -280,7 +290,7 @@ fn spinwave_single_q(
     let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
     negative_half *= -1.;
 
-    let sab_blocks = calc_sab_blocks(n_sites, z, q, spin_coefficients, positions);
+    let sab_blocks = calc_sab_blocks(z, q, spin_coefficients, positions);
 
     let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
         .self_adjoint_eigen(Side::Lower)
