@@ -3,7 +3,7 @@
 //! and the actual pure Rust calculation is in `spinwave.rs`.
 #![allow(non_snake_case)]
 
-use faer::{Col, Mat, MatRef};
+use faer::{Col, ColRef, Mat, MatRef};
 use faer_ext::{IntoFaer, IntoNdarray};
 use num_complex::Complex;
 use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
@@ -102,18 +102,19 @@ pub fn energies<'py>(
     let results = calc_energies(r, magnitudes, q_vectors, c, field);
     Ok(results
         .into_iter()
-        .map(|result| result.energies.to_pyarray(py))
+        .map(|result| result.to_pyarray(py))
         .collect())
 }
 
-///
-#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, field=None))]
+/// 
+#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, field=None))]
 pub fn spinwave_calculation<'py>(
     py: Python<'py>,
     rotations: Vec<PyReadonlyArray2<C64>>,
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<Py<Coupling>>,
+    positions: Vec<PyReadonlyArray1<f64>>,
     field: Option<MagneticField>,
 ) -> PyResult<(
     Vec<Bound<'py, PyArray1<f64>>>,
@@ -127,7 +128,12 @@ pub fn spinwave_calculation<'py>(
 
     let c = couplings.par_iter().map(pyo3::Py::get).collect();
 
-    let results = calc_spinwave(r, magnitudes, q_vectors, c, field);
+    let p: Vec<ColRef<f64>> = positions 
+        .into_iter()
+        .map(faer_ext::IntoFaer::into_faer)
+        .collect();
+
+    let results = calc_spinwave(r, magnitudes, q_vectors, c, p, field);
     Ok((
         results
             .iter()

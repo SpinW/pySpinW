@@ -18,7 +18,7 @@ pub fn get_rotation_components(rotations: Vec<MatRef<C64>>) -> (Vec<Col<C64>>, V
 
 /// Perform componentwise multiplication on two matrices.
 #[inline]
-pub fn component_mul(a: &Mat<C64>, b: &MatRef<C64>) -> Mat<C64> {
+pub fn component_mul(a: &Mat<C64>, b: &Mat<C64>) -> Mat<C64> {
     let mut product = Mat::<C64>::zeros(a.nrows(), a.ncols());
     zip!(&mut product, a, b).for_each(|unzip!(product, x, y)| *product = x * y);
     product
