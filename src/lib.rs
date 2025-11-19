@@ -22,6 +22,10 @@ mod utils;
 // convenience type for complex arithmetic
 type C64 = Complex<f64>;
 
+// nicer names for PyO3 output types
+type Energies<'py> = Vec<Bound<'py, PyArray1<f64>>>;
+type SabTensor<'py> = Vec<Vec<Bound<'py, PyArray2<C64>>>>;
+
 /// Temporary description of the coupling between atoms.
 #[pyclass(frozen)]
 pub struct Coupling {
@@ -90,7 +94,7 @@ pub fn energies<'py>(
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<Py<Coupling>>,
     field: Option<MagneticField>,
-) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
+) -> PyResult<Energies<'py>> {
     // convert PyO3-friendly array types to faer matrices
     let r: Vec<MatRef<C64>> = rotations
         .into_iter()
@@ -106,7 +110,7 @@ pub fn energies<'py>(
         .collect())
 }
 
-/// 
+///
 #[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, field=None))]
 pub fn spinwave_calculation<'py>(
     py: Python<'py>,
@@ -116,10 +120,7 @@ pub fn spinwave_calculation<'py>(
     couplings: Vec<Py<Coupling>>,
     positions: Vec<PyReadonlyArray1<f64>>,
     field: Option<MagneticField>,
-) -> PyResult<(
-    Vec<Bound<'py, PyArray1<f64>>>,
-    Vec<Vec<Bound<'py, PyArray2<C64>>>>,
-)> {
+) -> PyResult<(Energies<'py>, SabTensor<'py>)> {
     // convert PyO3-friendly array types to faer matrices
     let r: Vec<MatRef<C64>> = rotations
         .into_iter()
@@ -128,7 +129,7 @@ pub fn spinwave_calculation<'py>(
 
     let c = couplings.par_iter().map(pyo3::Py::get).collect();
 
-    let p: Vec<ColRef<f64>> = positions 
+    let p: Vec<ColRef<f64>> = positions
         .into_iter()
         .map(faer_ext::IntoFaer::into_faer)
         .collect();

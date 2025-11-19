@@ -15,50 +15,44 @@ pub struct SpinwaveResult {
 
 /// Calculate the q-independent components of the calculation.
 fn calc_q_independent(
-        rotations: Vec<MatRef<C64>>,
-        magnitudes: Vec<f64>,
-        couplings: &Vec<&Coupling>,
-        field: Option<MagneticField>,
-        ) -> (
-            Mat<C64>,
-            Vec<Col<C64>>,
-            Mat<C64>,
-            Option<Vec<C64>>,
-        ) {
-            let n_sites = rotations.len();
+    rotations: Vec<MatRef<C64>>,
+    magnitudes: Vec<f64>,
+    couplings: &Vec<&Coupling>,
+    field: Option<MagneticField>,
+) -> (Mat<C64>, Vec<Col<C64>>, Mat<C64>, Option<Vec<C64>>) {
+    let n_sites = rotations.len();
 
-            // decompose rotation matrices
-            // in the notation of Petit (2011)
-            // etas[i] is the direction of the i'th moment in Cartesian coordinates
-            let (z, etas) = get_rotation_components(rotations);
+    // decompose rotation matrices
+    // in the notation of Petit (2011)
+    // etas[i] is the direction of the i'th moment in Cartesian coordinates
+    let (z, etas) = get_rotation_components(rotations);
 
-            // make spin coefficients array
-            // so spin_coefficients[i, j] = sqrt(S_i S_j) / 2
-            let root_mags =
-                Col::<C64>::from_iter(magnitudes.iter().map(|x| C64::from((0.5 * x).sqrt())));
-            let spin_coefficients = root_mags.clone() * root_mags.transpose();
+    // make spin coefficients array
+    // so spin_coefficients[i, j] = sqrt(S_i S_j) / 2
+    let root_mags = Col::<C64>::from_iter(magnitudes.iter().map(|x| C64::from((0.5 * x).sqrt())));
+    let spin_coefficients = root_mags.clone() * root_mags.transpose();
 
-            // create matrix C of Hamiltonian which is q-independent
-            let mut C = Mat::<C64>::zeros(n_sites, n_sites);
-            for c in couplings {
-                C[(c.index2, c.index2)] += spin_coefficients[(c.index2, c.index2)]
-                    * (etas[c.index1].transpose() * c.matrix.as_ref() * etas[c.index2]);
-            }
-            C *= 2.;
+    // create matrix C of Hamiltonian which is q-independent
+    let mut C = Mat::<C64>::zeros(n_sites, n_sites);
+    for c in couplings {
+        C[(c.index2, c.index2)] += spin_coefficients[(c.index2, c.index2)]
+            * (etas[c.index1].transpose() * c.matrix.as_ref() * etas[c.index2]);
+    }
+    C *= 2.;
 
-            // if an external magnetic field is provided, calculate the Az matrix
-            // which is added to the diagonal of A in the Hamiltonian
-            let Az: Option<Vec<C64>> = match field {
-                Some(f) => Some(
-                    f.g_tensors
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, t)| -0.5 * MU_B * f.vector.transpose() * t * etas[i])
-                        .collect(),
-                ),
-                None => None,
-            };
-            (C, z, spin_coefficients, Az)
+    // if an external magnetic field is provided, calculate the Az matrix
+    // which is added to the diagonal of A in the Hamiltonian
+    let Az: Option<Vec<C64>> = match field {
+        Some(f) => Some(
+            f.g_tensors
+                .into_iter()
+                .enumerate()
+                .map(|(i, t)| -0.5 * MU_B * f.vector.transpose() * t * etas[i])
+                .collect(),
+        ),
+        None => None,
+    };
+    (C, z, spin_coefficients, Az)
 }
 
 /// Calculate the square root of the Hamiltonian.
@@ -122,38 +116,33 @@ fn calc_sqrt_hamiltonian(
 }
 
 pub fn calc_energies(
-            rotations: Vec<MatRef<C64>>,
-            magnitudes: Vec<f64>,
-            q_vectors: Vec<Vec<f64>>,
-            couplings: Vec<&Coupling>,
-            field: Option<MagneticField>,
-        ) -> Vec<Vec<f64>> {
+    rotations: Vec<MatRef<C64>>,
+    magnitudes: Vec<f64>,
+    q_vectors: Vec<Vec<f64>>,
+    couplings: Vec<&Coupling>,
+    field: Option<MagneticField>,
+) -> Vec<Vec<f64>> {
+    let n_sites = rotations.len();
 
-        let n_sites = rotations.len();
+    let (C, z, spin_coefficients, Az) =
+        calc_q_independent(rotations, magnitudes, &couplings, field);
 
-        let (C, z, spin_coefficients, Az) = calc_q_independent(
-            rotations,
-            magnitudes,
-            &couplings,
-            field,
-        );
-
-        // now perform the calculation for each q-vector in parallel
-        q_vectors
-            .into_par_iter()
-            .map(|q| {
-                energies_single_q(
-                    Col::from_iter(q),
-                    &C,
-                    n_sites,
-                    &z,
-                    &spin_coefficients,
-                    &couplings,
-                    &Az,
-                )
-            })
-            .collect()
-        }
+    // now perform the calculation for each q-vector in parallel
+    q_vectors
+        .into_par_iter()
+        .map(|q| {
+            energies_single_q(
+                Col::from_iter(q),
+                &C,
+                n_sites,
+                &z,
+                &spin_coefficients,
+                &couplings,
+                &Az,
+            )
+        })
+        .collect()
+}
 
 /// Calculate energies (eigenvalues of the Hamiltonian) for a single q-value
 fn energies_single_q(
@@ -184,9 +173,8 @@ fn energies_single_q(
     negative_half *= -1.;
 
     (sqrt_hamiltonian.adjoint() * shc)
-            .self_adjoint_eigenvalues(Side::Lower)
-            .expect("Could not calculate eigendecomposition of the Hamiltonian.")
-
+        .self_adjoint_eigenvalues(Side::Lower)
+        .expect("Could not calculate eigendecomposition of the Hamiltonian.")
 }
 
 /// Calculate the block matrices for S'^alpha, beta
@@ -199,8 +187,11 @@ fn calc_sab_blocks(
     spin_coefficients: &Mat<C64>,
     positions: &[ColRef<f64>],
 ) -> Mat<Mat<C64>> {
-
-    let phase_factors = Col::<C64>::from_iter(positions.iter().map(|r_i| (J * (q.transpose() * r_i)).exp()));
+    let phase_factors = Col::<C64>::from_iter(
+        positions
+            .iter()
+            .map(|r_i| (J * (q.transpose() * r_i)).exp()),
+    );
     let phase_factors_matrix = phase_factors.clone() * phase_factors.conjugate().transpose();
 
     let coefficients = component_mul(&spin_coefficients, &phase_factors_matrix);
@@ -208,70 +199,68 @@ fn calc_sab_blocks(
     // We store S' as a 3x3 matrix of matrices indexed by alpha, beta
     // where each element is an 2 * n_sites x 2 * n_sites matrix
     // later on we will sum over the diagonal elements to get S'^alpha,beta(k, omega)
-    Mat::<Mat<C64>>::from_fn(
-        3,
-        3,
-        |alpha, beta| -> Mat<C64> {
-            let mut matrix = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
-            let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
-            let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
+    Mat::<Mat<C64>>::from_fn(3, 3, |alpha, beta| -> Mat<C64> {
+        let mut matrix = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
+        let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
+        let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
 
-            // construct the four blocks V, W, Y, Z;
-            // note that while we're just dealing in the z components,
-            // V is conj(Z) and W is conj(Y)
-            let Y = z_alphas.clone() * z_betas.conjugate().transpose();
-            let Z = z_alphas * z_betas.transpose();
-            let V = Z.conjugate().to_owned();
-            let W = Y.conjugate().to_owned();
+        // construct the four blocks V, W, Y, Z;
+        // note that while we're just dealing in the z components,
+        // V is conj(Z) and W is conj(Y)
+        let Y = z_alphas.clone() * z_betas.conjugate().transpose();
+        let Z = z_alphas * z_betas.transpose();
+        let V = Z.conjugate().to_owned();
+        let W = Y.conjugate().to_owned();
 
-            component_mul(&Y, &coefficients);
-            component_mul(&Z, &coefficients);
-            component_mul(&V, &coefficients);
-            component_mul(&W, &coefficients);
+        component_mul(&Y, &coefficients);
+        component_mul(&Z, &coefficients);
+        component_mul(&V, &coefficients);
+        component_mul(&W, &coefficients);
 
-            // copy the blocks into the matrix
-            matrix.submatrix_mut(0, 0, n_sites, n_sites).copy_from(&Y);
-            matrix.submatrix_mut(0, n_sites, n_sites, n_sites).copy_from(&Z);
-            matrix.submatrix_mut(n_sites, 0, n_sites, n_sites).copy_from(&V);
-            matrix.submatrix_mut(n_sites, n_sites, n_sites, n_sites).copy_from(&W);
+        // copy the blocks into the matrix
+        matrix.submatrix_mut(0, 0, n_sites, n_sites).copy_from(&Y);
+        matrix
+            .submatrix_mut(0, n_sites, n_sites, n_sites)
+            .copy_from(&Z);
+        matrix
+            .submatrix_mut(n_sites, 0, n_sites, n_sites)
+            .copy_from(&V);
+        matrix
+            .submatrix_mut(n_sites, n_sites, n_sites, n_sites)
+            .copy_from(&W);
 
-            matrix
-        })
+        matrix
+    })
 }
 
 pub fn calc_spinwave(
-        rotations: Vec<MatRef<C64>>,
-        magnitudes: Vec<f64>,
-        q_vectors: Vec<Vec<f64>>,
-        couplings: Vec<&Coupling>,
-        positions: Vec<ColRef<f64>>,
-        field: Option<MagneticField>,
-    ) -> Vec<SpinwaveResult> {
+    rotations: Vec<MatRef<C64>>,
+    magnitudes: Vec<f64>,
+    q_vectors: Vec<Vec<f64>>,
+    couplings: Vec<&Coupling>,
+    positions: Vec<ColRef<f64>>,
+    field: Option<MagneticField>,
+) -> Vec<SpinwaveResult> {
+    let n_sites = rotations.len();
 
-        let n_sites = rotations.len();
+    let (C, z, spin_coefficients, Az) =
+        calc_q_independent(rotations, magnitudes, &couplings, field);
 
-        let (C, z, spin_coefficients, Az) = calc_q_independent(
-            rotations,
-            magnitudes,
-            &couplings,
-            field,
-        );
-
-        q_vectors
-            .into_par_iter()
-            .map(|q| {
-                spinwave_single_q(
-                    Col::from_iter(q),
-                    &C,
-                    n_sites,
-                    &z,
-                    &spin_coefficients,
-                    &couplings,
-                    &positions,
-                    &Az,
-                )
-            })
-            .collect()
+    q_vectors
+        .into_par_iter()
+        .map(|q| {
+            spinwave_single_q(
+                Col::from_iter(q),
+                &C,
+                n_sites,
+                &z,
+                &spin_coefficients,
+                &couplings,
+                &positions,
+                &Az,
+            )
+        })
+        .collect()
 }
 
 /// Calculate energies and intensities for a single q-point.
@@ -285,15 +274,8 @@ fn spinwave_single_q(
     positions: &[ColRef<f64>],
     Az: &Option<Vec<C64>>,
 ) -> SpinwaveResult {
-    let sqrt_hamiltonian = calc_sqrt_hamiltonian(
-        q.clone(),
-        C,
-        n_sites,
-        z,
-        spin_coefficients,
-        couplings,
-        Az,
-    );
+    let sqrt_hamiltonian =
+        calc_sqrt_hamiltonian(q.clone(), C, n_sites, z, spin_coefficients, couplings, Az);
     let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
     let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
     negative_half *= -1.;
@@ -328,7 +310,7 @@ fn spinwave_single_q(
     sqrt_hamiltonian.partial_piv_lu().solve_in_place(T.as_mut());
 
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
-    // and then we just take the diagonal elements as that's all we need for 
+    // and then we just take the diagonal elements as that's all we need for
     // S'^alpha,beta(k, omega) at each eigenvalue
     let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
         let mat = T.adjoint() * sab_blocks[(alpha, beta)].as_ref() * T.as_ref();
@@ -343,7 +325,8 @@ fn spinwave_single_q(
                 let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
                 diag[i] / (2 * n_sites) as f64
             })
-        }).chain((0..n_sites).map(|i| {
+        })
+        .chain((0..n_sites).map(|i| {
             // negative energy modes
             Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
                 let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
@@ -357,4 +340,3 @@ fn spinwave_single_q(
         correlation: Some(Sab),
     }
 }
-
