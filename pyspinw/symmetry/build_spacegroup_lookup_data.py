@@ -194,7 +194,7 @@ def build_spacegroup_lookup(target_directory: str):
             file.write("\n")
 
 
-    with open(os.path.join(target_directory, "all_spacegroup_names.txt"), 'w') as file:
+    with open(os.path.join(target_directory, "spacegroup_name_lookup.txt"), 'w') as file:
         for i in range(1, 531):
             group_data = spglib.get_spacegroup_type(i)
             file.write(f"{i}; {group_data.number}; ")
