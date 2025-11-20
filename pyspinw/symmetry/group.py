@@ -10,7 +10,8 @@ from difflib import get_close_matches
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
-from pyspinw.symmetry.group_conventions import spacegroup_conventions, canonise_string
+from pyspinw.symmetry.canonise import canonise_string
+from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonised_to_formatted, preferred_names
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
@@ -83,6 +84,7 @@ class SpaceGroup(SPWSerialisable):
                  number,
                  international_symbol,
                  short_symbol,
+                 preferred_symbol,
                  operations,
                  magnetic_variants: list[MagneticSpaceGroup],
                  lattice_system: LatticeSystem,
@@ -91,6 +93,7 @@ class SpaceGroup(SPWSerialisable):
         self.number = number
         self.symbol = international_symbol
         self.short_symbol = short_symbol
+        self.preferred_symbol = preferred_symbol
         self.operations = operations
         self.magnetic_variants = magnetic_variants
         self.lattice_system = lattice_system
@@ -109,18 +112,7 @@ class SpaceGroup(SPWSerialisable):
 
     def _serialisation_string(self):
         """ Name to use to refer to this group in serialisation"""
-        if self.choice is not None:
-            if self.choice in ["R", "H"]:
-                appendum = " " + self.choice
-            elif self.choice.startswith("1") or self.choice.startswith("2"):
-                appendum = " : " + self.choice[:1]
-            else:
-                appendum = ""
-
-            return self.symbol + appendum
-
-        else:
-            return self.symbol
+        return self.preferred_symbol
 
     def _serialise(self, context: SPWSerialisationContext):
         pass
@@ -170,8 +162,6 @@ class SpacegroupDatabase:
         "R": "R",
     }
 
-    # Used for looking up spacegroups by name
-    _canonincal_name_to_group_name, _canonical_spacegroup_name_to_index = spacegroup_conventions()
 
     def __init__(self):
 
@@ -251,6 +241,7 @@ class SpacegroupDatabase:
                 number=sg_data.number,
                 international_symbol=name,
                 short_symbol=short_name,
+                preferred_symbol=preferred_names[i],
                 operations=operations,
                 choice=choice,
                 magnetic_variants=corresponding_magnetic_groups,

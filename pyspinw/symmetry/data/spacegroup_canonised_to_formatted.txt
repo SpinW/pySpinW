@@ -1,0 +1,1340 @@
+p1; P 1
+p-1; P -1
+p2; P2
+p121; P 1 2 1
+p2(b); P2 (b)
+p2[b]; P2 [b]
+p112; P 1 1 2
+p2(c); P2 (c)
+p2[c]; P2 [c]
+p211; P 2 1 1
+p2(a); P2 (a)
+p2[a]; P2 [a]
+p2_1; P2_1
+p12_11; P 1 2_1 1
+p2_1(b); P2_1 (b)
+p2_1[b]; P2_1 [b]
+p112_1; P 1 1 2_1
+p2_1(c); P2_1 (c)
+p2_1[c]; P2_1 [c]
+p2_111; P 2_1 1 1
+p2_1(a); P2_1 (a)
+p2_1[a]; P2_1 [a]
+c2; C2
+c121; C 1 2 1
+c2(b1); C2 (b1)
+c2[b1]; C2 [b1]
+a121; A 1 2 1
+c2(b2); C2 (b2)
+c2[b2]; C2 [b2]
+i121; I 1 2 1
+c2(b3); C2 (b3)
+c2[b3]; C2 [b3]
+a112; A 1 1 2
+c2(c1); C2 (c1)
+c2[c1]; C2 [c1]
+b112; B 1 1 2
+c2(c2); C2 (c2)
+c2[c2]; C2 [c2]
+i112; I 1 1 2
+c2(c3); C2 (c3)
+c2[c3]; C2 [c3]
+b211; B 2 1 1
+c2(a1); C2 (a1)
+c2[a1]; C2 [a1]
+c211; C 2 1 1
+c2(a2); C2 (a2)
+c2[a2]; C2 [a2]
+i211; I 2 1 1
+c2(a3); C2 (a3)
+c2[a3]; C2 [a3]
+pm; Pm
+p1m1; P 1 m 1
+pm(b); Pm (b)
+pm[b]; Pm [b]
+p11m; P 1 1 m
+pm(c); Pm (c)
+pm[c]; Pm [c]
+pm11; P m 1 1
+pm(a); Pm (a)
+pm[a]; Pm [a]
+pc; Pc
+p1c1; P 1 c 1
+pc(b1); Pc (b1)
+pc[b1]; Pc [b1]
+p1n1; P 1 n 1
+pc(b2); Pc (b2)
+pc[b2]; Pc [b2]
+p1a1; P 1 a 1
+pc(b3); Pc (b3)
+pc[b3]; Pc [b3]
+p11a; P 1 1 a
+pc(c1); Pc (c1)
+pc[c1]; Pc [c1]
+p11n; P 1 1 n
+pc(c2); Pc (c2)
+pc[c2]; Pc [c2]
+p11b; P 1 1 b
+pc(c3); Pc (c3)
+pc[c3]; Pc [c3]
+pb11; P b 1 1
+pc(a1); Pc (a1)
+pc[a1]; Pc [a1]
+pn11; P n 1 1
+pc(a2); Pc (a2)
+pc[a2]; Pc [a2]
+pc11; P c 1 1
+pc(a3); Pc (a3)
+pc[a3]; Pc [a3]
+cm; Cm
+c1m1; C 1 m 1
+cm(b1); Cm (b1)
+cm[b1]; Cm [b1]
+a1m1; A 1 m 1
+cm(b2); Cm (b2)
+cm[b2]; Cm [b2]
+i1m1; I 1 m 1
+cm(b3); Cm (b3)
+cm[b3]; Cm [b3]
+a11m; A 1 1 m
+cm(c1); Cm (c1)
+cm[c1]; Cm [c1]
+b11m; B 1 1 m
+cm(c2); Cm (c2)
+cm[c2]; Cm [c2]
+i11m; I 1 1 m
+cm(c3); Cm (c3)
+cm[c3]; Cm [c3]
+bm11; B m 1 1
+cm(a1); Cm (a1)
+cm[a1]; Cm [a1]
+cm11; C m 1 1
+cm(a2); Cm (a2)
+cm[a2]; Cm [a2]
+im11; I m 1 1
+cm(a3); Cm (a3)
+cm[a3]; Cm [a3]
+cc; Cc
+c1c1; C 1 c 1
+cc(b1); Cc (b1)
+cc[b1]; Cc [b1]
+a1n1; A 1 n 1
+cc(b2); Cc (b2)
+cc[b2]; Cc [b2]
+i1a1; I 1 a 1
+cc(b3); Cc (b3)
+cc[b3]; Cc [b3]
+a1a1; A 1 a 1
+cc(-b1); Cc (-b1)
+cc[-b1]; Cc [-b1]
+c1n1; C 1 n 1
+cc(-b2); Cc (-b2)
+cc[-b2]; Cc [-b2]
+i1c1; I 1 c 1
+cc(-b3); Cc (-b3)
+cc[-b3]; Cc [-b3]
+a11a; A 1 1 a
+cc(c1); Cc (c1)
+cc[c1]; Cc [c1]
+b11n; B 1 1 n
+cc(c2); Cc (c2)
+cc[c2]; Cc [c2]
+i11b; I 1 1 b
+cc(c3); Cc (c3)
+cc[c3]; Cc [c3]
+b11b; B 1 1 b
+cc(-c1); Cc (-c1)
+cc[-c1]; Cc [-c1]
+a11n; A 1 1 n
+cc(-c2); Cc (-c2)
+cc[-c2]; Cc [-c2]
+i11a; I 1 1 a
+cc(-c3); Cc (-c3)
+cc[-c3]; Cc [-c3]
+bb11; B b 1 1
+cc(a1); Cc (a1)
+cc[a1]; Cc [a1]
+cn11; C n 1 1
+cc(a2); Cc (a2)
+cc[a2]; Cc [a2]
+ic11; I c 1 1
+cc(a3); Cc (a3)
+cc[a3]; Cc [a3]
+cc11; C c 1 1
+cc(-a1); Cc (-a1)
+cc[-a1]; Cc [-a1]
+bn11; B n 1 1
+cc(-a2); Cc (-a2)
+cc[-a2]; Cc [-a2]
+ib11; I b 1 1
+cc(-a3); Cc (-a3)
+cc[-a3]; Cc [-a3]
+p2/m; P2/m
+p12/m1; P 1 2/m 1
+p2/m(b); P2/m (b)
+p2/m[b]; P2/m [b]
+p112/m; P 1 1 2/m
+p2/m(c); P2/m (c)
+p2/m[c]; P2/m [c]
+p2/m11; P 2/m 1 1
+p2/m(a); P2/m (a)
+p2/m[a]; P2/m [a]
+p2_1/m; P2_1/m
+p12_1/m1; P 1 2_1/m 1
+p2_1/m(b); P2_1/m (b)
+p2_1/m[b]; P2_1/m [b]
+p112_1/m; P 1 1 2_1/m
+p2_1/m(c); P2_1/m (c)
+p2_1/m[c]; P2_1/m [c]
+p2_1/m11; P 2_1/m 1 1
+p2_1/m(a); P2_1/m (a)
+p2_1/m[a]; P2_1/m [a]
+c2/m; C2/m
+c12/m1; C 1 2/m 1
+c2/m(b1); C2/m (b1)
+c2/m[b1]; C2/m [b1]
+a12/m1; A 1 2/m 1
+c2/m(b2); C2/m (b2)
+c2/m[b2]; C2/m [b2]
+i12/m1; I 1 2/m 1
+c2/m(b3); C2/m (b3)
+c2/m[b3]; C2/m [b3]
+a112/m; A 1 1 2/m
+c2/m(c1); C2/m (c1)
+c2/m[c1]; C2/m [c1]
+b112/m; B 1 1 2/m
+c2/m(c2); C2/m (c2)
+c2/m[c2]; C2/m [c2]
+i112/m; I 1 1 2/m
+c2/m(c3); C2/m (c3)
+c2/m[c3]; C2/m [c3]
+b2/m11; B 2/m 1 1
+c2/m(a1); C2/m (a1)
+c2/m[a1]; C2/m [a1]
+c2/m11; C 2/m 1 1
+c2/m(a2); C2/m (a2)
+c2/m[a2]; C2/m [a2]
+i2/m11; I 2/m 1 1
+c2/m(a3); C2/m (a3)
+c2/m[a3]; C2/m [a3]
+p2/c; P2/c
+p12/c1; P 1 2/c 1
+p2/c(b1); P2/c (b1)
+p2/c[b1]; P2/c [b1]
+p12/n1; P 1 2/n 1
+p2/c(b2); P2/c (b2)
+p2/c[b2]; P2/c [b2]
+p12/a1; P 1 2/a 1
+p2/c(b3); P2/c (b3)
+p2/c[b3]; P2/c [b3]
+p112/a; P 1 1 2/a
+p2/c(c1); P2/c (c1)
+p2/c[c1]; P2/c [c1]
+p112/n; P 1 1 2/n
+p2/c(c2); P2/c (c2)
+p2/c[c2]; P2/c [c2]
+p112/b; P 1 1 2/b
+p2/c(c3); P2/c (c3)
+p2/c[c3]; P2/c [c3]
+p2/b11; P 2/b 1 1
+p2/c(a1); P2/c (a1)
+p2/c[a1]; P2/c [a1]
+p2/n11; P 2/n 1 1
+p2/c(a2); P2/c (a2)
+p2/c[a2]; P2/c [a2]
+p2/c11; P 2/c 1 1
+p2/c(a3); P2/c (a3)
+p2/c[a3]; P2/c [a3]
+p2_1/c; P2_1/c
+p12_1/c1; P 1 2_1/c 1
+p2_1/c(b1); P2_1/c (b1)
+p2_1/c[b1]; P2_1/c [b1]
+p12_1/n1; P 1 2_1/n 1
+p2_1/c(b2); P2_1/c (b2)
+p2_1/c[b2]; P2_1/c [b2]
+p12_1/a1; P 1 2_1/a 1
+p2_1/c(b3); P2_1/c (b3)
+p2_1/c[b3]; P2_1/c [b3]
+p112_1/a; P 1 1 2_1/a
+p2_1/c(c1); P2_1/c (c1)
+p2_1/c[c1]; P2_1/c [c1]
+p112_1/n; P 1 1 2_1/n
+p2_1/c(c2); P2_1/c (c2)
+p2_1/c[c2]; P2_1/c [c2]
+p112_1/b; P 1 1 2_1/b
+p2_1/c(c3); P2_1/c (c3)
+p2_1/c[c3]; P2_1/c [c3]
+p2_1/b11; P 2_1/b 1 1
+p2_1/c(a1); P2_1/c (a1)
+p2_1/c[a1]; P2_1/c [a1]
+p2_1/n11; P 2_1/n 1 1
+p2_1/c(a2); P2_1/c (a2)
+p2_1/c[a2]; P2_1/c [a2]
+p2_1/c11; P 2_1/c 1 1
+p2_1/c(a3); P2_1/c (a3)
+p2_1/c[a3]; P2_1/c [a3]
+c2/c; C2/c
+c12/c1; C 1 2/c 1
+c2/c(b1); C2/c (b1)
+c2/c[b1]; C2/c [b1]
+a12/n1; A 1 2/n 1
+c2/c(b2); C2/c (b2)
+c2/c[b2]; C2/c [b2]
+i12/a1; I 1 2/a 1
+c2/c(b3); C2/c (b3)
+c2/c[b3]; C2/c [b3]
+a12/a1; A 1 2/a 1
+c2/c(-b1); C2/c (-b1)
+c2/c[-b1]; C2/c [-b1]
+c12/n1; C 1 2/n 1
+c2/c(-b2); C2/c (-b2)
+c2/c[-b2]; C2/c [-b2]
+i12/c1; I 1 2/c 1
+c2/c(-b3); C2/c (-b3)
+c2/c[-b3]; C2/c [-b3]
+a112/a; A 1 1 2/a
+c2/c(c1); C2/c (c1)
+c2/c[c1]; C2/c [c1]
+b112/n; B 1 1 2/n
+c2/c(c2); C2/c (c2)
+c2/c[c2]; C2/c [c2]
+i112/b; I 1 1 2/b
+c2/c(c3); C2/c (c3)
+c2/c[c3]; C2/c [c3]
+b112/b; B 1 1 2/b
+c2/c(-c1); C2/c (-c1)
+c2/c[-c1]; C2/c [-c1]
+a112/n; A 1 1 2/n
+c2/c(-c2); C2/c (-c2)
+c2/c[-c2]; C2/c [-c2]
+i112/a; I 1 1 2/a
+c2/c(-c3); C2/c (-c3)
+c2/c[-c3]; C2/c [-c3]
+b2/b11; B 2/b 1 1
+c2/c(a1); C2/c (a1)
+c2/c[a1]; C2/c [a1]
+c2/n11; C 2/n 1 1
+c2/c(a2); C2/c (a2)
+c2/c[a2]; C2/c [a2]
+i2/c11; I 2/c 1 1
+c2/c(a3); C2/c (a3)
+c2/c[a3]; C2/c [a3]
+c2/c11; C 2/c 1 1
+c2/c(-a1); C2/c (-a1)
+c2/c[-a1]; C2/c [-a1]
+b2/n11; B 2/n 1 1
+c2/c(-a2); C2/c (-a2)
+c2/c[-a2]; C2/c [-a2]
+i2/b11; I 2/b 1 1
+c2/c(-a3); C2/c (-a3)
+c2/c[-a3]; C2/c [-a3]
+p222; P 2 2 2
+p222_1; P 2 2 2_1
+p2_122; P 2_1 2 2
+p222_1(cab); P222_1 (cab)
+p222_1[cab]; P222_1 [cab]
+p22_12; P 2 2_1 2
+p222_1(bca); P222_1 (bca)
+p222_1[bca]; P222_1 [bca]
+p2_12_12; P 2_1 2_1 2
+p22_12_1; P 2 2_1 2_1
+p2_12_12(cab); P2_12_12 (cab)
+p2_12_12[cab]; P2_12_12 [cab]
+p2_122_1; P 2_1 2 2_1
+p2_12_12(bca); P2_12_12 (bca)
+p2_12_12[bca]; P2_12_12 [bca]
+p2_12_12_1; P 2_1 2_1 2_1
+c222_1; C 2 2 2_1
+a2_122; A 2_1 2 2
+c222_1(cab); C222_1 (cab)
+c222_1[cab]; C222_1 [cab]
+b22_12; B 2 2_1 2
+c222_1(bca); C222_1 (bca)
+c222_1[bca]; C222_1 [bca]
+c222; C 2 2 2
+a222; A 2 2 2
+c222(cab); C222 (cab)
+c222[cab]; C222 [cab]
+b222; B 2 2 2
+c222(bca); C222 (bca)
+c222[bca]; C222 [bca]
+f222; F 2 2 2
+i222; I 2 2 2
+i2_12_12_1; I 2_1 2_1 2_1
+pmm2; P m m 2
+p2mm; P 2 m m
+pmm2(cab); Pmm2 (cab)
+pmm2[cab]; Pmm2 [cab]
+pm2m; P m 2 m
+pmm2(bca); Pmm2 (bca)
+pmm2[bca]; Pmm2 [bca]
+pmc2_1; P m c 2_1
+pcm2_1; P c m 2_1
+pmc2_1(ba-c); Pmc2_1 (ba-c)
+pmc2_1[ba-c]; Pmc2_1 [ba-c]
+p2_1ma; P 2_1 m a
+pmc2_1(cab); Pmc2_1 (cab)
+pmc2_1[cab]; Pmc2_1 [cab]
+p2_1am; P 2_1 a m
+pmc2_1(-cba); Pmc2_1 (-cba)
+pmc2_1[-cba]; Pmc2_1 [-cba]
+pb2_1m; P b 2_1 m
+pmc2_1(bca); Pmc2_1 (bca)
+pmc2_1[bca]; Pmc2_1 [bca]
+pm2_1b; P m 2_1 b
+pmc2_1(a-cb); Pmc2_1 (a-cb)
+pmc2_1[a-cb]; Pmc2_1 [a-cb]
+pcc2; P c c 2
+p2aa; P 2 a a
+pcc2(cab); Pcc2 (cab)
+pcc2[cab]; Pcc2 [cab]
+pb2b; P b 2 b
+pcc2(bca); Pcc2 (bca)
+pcc2[bca]; Pcc2 [bca]
+pma2; P m a 2
+pbm2; P b m 2
+pma2(ba-c); Pma2 (ba-c)
+pma2[ba-c]; Pma2 [ba-c]
+p2mb; P 2 m b
+pma2(cab); Pma2 (cab)
+pma2[cab]; Pma2 [cab]
+p2cm; P 2 c m
+pma2(-cba); Pma2 (-cba)
+pma2[-cba]; Pma2 [-cba]
+pc2m; P c 2 m
+pma2(bca); Pma2 (bca)
+pma2[bca]; Pma2 [bca]
+pm2a; P m 2 a
+pma2(a-cb); Pma2 (a-cb)
+pma2[a-cb]; Pma2 [a-cb]
+pca2_1; P c a 2_1
+pbc2_1; P b c 2_1
+pca2_1(ba-c); Pca2_1 (ba-c)
+pca2_1[ba-c]; Pca2_1 [ba-c]
+p2_1ab; P 2_1 a b
+pca2_1(cab); Pca2_1 (cab)
+pca2_1[cab]; Pca2_1 [cab]
+p2_1ca; P 2_1 c a
+pca2_1(-cba); Pca2_1 (-cba)
+pca2_1[-cba]; Pca2_1 [-cba]
+pc2_1b; P c 2_1 b
+pca2_1(bca); Pca2_1 (bca)
+pca2_1[bca]; Pca2_1 [bca]
+pb2_1a; P b 2_1 a
+pca2_1(a-cb); Pca2_1 (a-cb)
+pca2_1[a-cb]; Pca2_1 [a-cb]
+pnc2; P n c 2
+pcn2; P c n 2
+pnc2(ba-c); Pnc2 (ba-c)
+pnc2[ba-c]; Pnc2 [ba-c]
+p2na; P 2 n a
+pnc2(cab); Pnc2 (cab)
+pnc2[cab]; Pnc2 [cab]
+p2an; P 2 a n
+pnc2(-cba); Pnc2 (-cba)
+pnc2[-cba]; Pnc2 [-cba]
+pb2n; P b 2 n
+pnc2(bca); Pnc2 (bca)
+pnc2[bca]; Pnc2 [bca]
+pn2b; P n 2 b
+pnc2(a-cb); Pnc2 (a-cb)
+pnc2[a-cb]; Pnc2 [a-cb]
+pmn2_1; P m n 2_1
+pnm2_1; P n m 2_1
+pmn2_1(ba-c); Pmn2_1 (ba-c)
+pmn2_1[ba-c]; Pmn2_1 [ba-c]
+p2_1mn; P 2_1 m n
+pmn2_1(cab); Pmn2_1 (cab)
+pmn2_1[cab]; Pmn2_1 [cab]
+p2_1nm; P 2_1 n m
+pmn2_1(-cba); Pmn2_1 (-cba)
+pmn2_1[-cba]; Pmn2_1 [-cba]
+pn2_1m; P n 2_1 m
+pmn2_1(bca); Pmn2_1 (bca)
+pmn2_1[bca]; Pmn2_1 [bca]
+pm2_1n; P m 2_1 n
+pmn2_1(a-cb); Pmn2_1 (a-cb)
+pmn2_1[a-cb]; Pmn2_1 [a-cb]
+pba2; P b a 2
+p2cb; P 2 c b
+pba2(cab); Pba2 (cab)
+pba2[cab]; Pba2 [cab]
+pc2a; P c 2 a
+pba2(bca); Pba2 (bca)
+pba2[bca]; Pba2 [bca]
+pna2_1; P n a 2_1
+pbn2_1; P b n 2_1
+pna2_1(ba-c); Pna2_1 (ba-c)
+pna2_1[ba-c]; Pna2_1 [ba-c]
+p2_1nb; P 2_1 n b
+pna2_1(cab); Pna2_1 (cab)
+pna2_1[cab]; Pna2_1 [cab]
+p2_1cn; P 2_1 c n
+pna2_1(-cba); Pna2_1 (-cba)
+pna2_1[-cba]; Pna2_1 [-cba]
+pc2_1n; P c 2_1 n
+pna2_1(bca); Pna2_1 (bca)
+pna2_1[bca]; Pna2_1 [bca]
+pn2_1a; P n 2_1 a
+pna2_1(a-cb); Pna2_1 (a-cb)
+pna2_1[a-cb]; Pna2_1 [a-cb]
+pnn2; P n n 2
+p2nn; P 2 n n
+pnn2(cab); Pnn2 (cab)
+pnn2[cab]; Pnn2 [cab]
+pn2n; P n 2 n
+pnn2(bca); Pnn2 (bca)
+pnn2[bca]; Pnn2 [bca]
+cmm2; C m m 2
+a2mm; A 2 m m
+cmm2(cab); Cmm2 (cab)
+cmm2[cab]; Cmm2 [cab]
+bm2m; B m 2 m
+cmm2(bca); Cmm2 (bca)
+cmm2[bca]; Cmm2 [bca]
+cmc2_1; C m c 2_1
+ccm2_1; C c m 2_1
+cmc2_1(ba-c); Cmc2_1 (ba-c)
+cmc2_1[ba-c]; Cmc2_1 [ba-c]
+a2_1ma; A 2_1 m a
+cmc2_1(cab); Cmc2_1 (cab)
+cmc2_1[cab]; Cmc2_1 [cab]
+a2_1am; A 2_1 a m
+cmc2_1(-cba); Cmc2_1 (-cba)
+cmc2_1[-cba]; Cmc2_1 [-cba]
+bb2_1m; B b 2_1 m
+cmc2_1(bca); Cmc2_1 (bca)
+cmc2_1[bca]; Cmc2_1 [bca]
+bm2_1b; B m 2_1 b
+cmc2_1(a-cb); Cmc2_1 (a-cb)
+cmc2_1[a-cb]; Cmc2_1 [a-cb]
+ccc2; C c c 2
+a2aa; A 2 a a
+ccc2(cab); Ccc2 (cab)
+ccc2[cab]; Ccc2 [cab]
+bb2b; B b 2 b
+ccc2(bca); Ccc2 (bca)
+ccc2[bca]; Ccc2 [bca]
+amm2; A m m 2
+bmm2; B m m 2
+amm2(ba-c); Amm2 (ba-c)
+amm2[ba-c]; Amm2 [ba-c]
+b2mm; B 2 m m
+amm2(cab); Amm2 (cab)
+amm2[cab]; Amm2 [cab]
+c2mm; C 2 m m
+amm2(-cba); Amm2 (-cba)
+amm2[-cba]; Amm2 [-cba]
+cm2m; C m 2 m
+amm2(bca); Amm2 (bca)
+amm2[bca]; Amm2 [bca]
+am2m; A m 2 m
+amm2(a-cb); Amm2 (a-cb)
+amm2[a-cb]; Amm2 [a-cb]
+aem2; A e m 2
+bme2; B m e 2
+aem2(ba-c); Aem2 (ba-c)
+aem2[ba-c]; Aem2 [ba-c]
+b2em; B 2 e m
+aem2(cab); Aem2 (cab)
+aem2[cab]; Aem2 [cab]
+c2me; C 2 m e
+aem2(-cba); Aem2 (-cba)
+aem2[-cba]; Aem2 [-cba]
+cm2e; C m 2 e
+aem2(bca); Aem2 (bca)
+aem2[bca]; Aem2 [bca]
+ae2m; A e 2 m
+aem2(a-cb); Aem2 (a-cb)
+aem2[a-cb]; Aem2 [a-cb]
+ama2; A m a 2
+bbm2; B b m 2
+ama2(ba-c); Ama2 (ba-c)
+ama2[ba-c]; Ama2 [ba-c]
+b2mb; B 2 m b
+ama2(cab); Ama2 (cab)
+ama2[cab]; Ama2 [cab]
+c2cm; C 2 c m
+ama2(-cba); Ama2 (-cba)
+ama2[-cba]; Ama2 [-cba]
+cc2m; C c 2 m
+ama2(bca); Ama2 (bca)
+ama2[bca]; Ama2 [bca]
+am2a; A m 2 a
+ama2(a-cb); Ama2 (a-cb)
+ama2[a-cb]; Ama2 [a-cb]
+aea2; A e a 2
+bbe2; B b e 2
+aea2(ba-c); Aea2 (ba-c)
+aea2[ba-c]; Aea2 [ba-c]
+b2eb; B 2 e b
+aea2(cab); Aea2 (cab)
+aea2[cab]; Aea2 [cab]
+c2ce; C 2 c e
+aea2(-cba); Aea2 (-cba)
+aea2[-cba]; Aea2 [-cba]
+cc2e; C c 2 e
+aea2(bca); Aea2 (bca)
+aea2[bca]; Aea2 [bca]
+ae2a; A e 2 a
+aea2(a-cb); Aea2 (a-cb)
+aea2[a-cb]; Aea2 [a-cb]
+fmm2; F m m 2
+f2mm; F 2 m m
+fmm2(cab); Fmm2 (cab)
+fmm2[cab]; Fmm2 [cab]
+fm2m; F m 2 m
+fmm2(bca); Fmm2 (bca)
+fmm2[bca]; Fmm2 [bca]
+fdd2; F d d 2
+f2dd; F 2 d d
+fdd2(cab); Fdd2 (cab)
+fdd2[cab]; Fdd2 [cab]
+fd2d; F d 2 d
+fdd2(bca); Fdd2 (bca)
+fdd2[bca]; Fdd2 [bca]
+imm2; I m m 2
+i2mm; I 2 m m
+imm2(cab); Imm2 (cab)
+imm2[cab]; Imm2 [cab]
+im2m; I m 2 m
+imm2(bca); Imm2 (bca)
+imm2[bca]; Imm2 [bca]
+iba2; I b a 2
+i2cb; I 2 c b
+iba2(cab); Iba2 (cab)
+iba2[cab]; Iba2 [cab]
+ic2a; I c 2 a
+iba2(bca); Iba2 (bca)
+iba2[bca]; Iba2 [bca]
+ima2; I m a 2
+ibm2; I b m 2
+ima2(ba-c); Ima2 (ba-c)
+ima2[ba-c]; Ima2 [ba-c]
+i2mb; I 2 m b
+ima2(cab); Ima2 (cab)
+ima2[cab]; Ima2 [cab]
+i2cm; I 2 c m
+ima2(-cba); Ima2 (-cba)
+ima2[-cba]; Ima2 [-cba]
+ic2m; I c 2 m
+ima2(bca); Ima2 (bca)
+ima2[bca]; Ima2 [bca]
+im2a; I m 2 a
+ima2(a-cb); Ima2 (a-cb)
+ima2[a-cb]; Ima2 [a-cb]
+pmmm; Pmmm
+p2/m2/m2/m; P 2/m 2/m 2/m
+pnnn; Pnnn
+p2/n2/n2/n; P 2/n 2/n 2/n
+p2/n2/n2/n:1; P 2/n 2/n 2/n : 1
+pnnn(1); Pnnn (1)
+pnnn[1]; Pnnn [1]
+p2/n2/n2/n:2; P 2/n 2/n 2/n : 2
+pnnn(2); Pnnn (2)
+pnnn[2]; Pnnn [2]
+pccm; Pccm
+p2/c2/c2/m; P 2/c 2/c 2/m
+p2/m2/a2/a; P 2/m 2/a 2/a
+pccm(cab); Pccm (cab)
+pccm[cab]; Pccm [cab]
+p2/b2/m2/b; P 2/b 2/m 2/b
+pccm(bca); Pccm (bca)
+pccm[bca]; Pccm [bca]
+pban; Pban
+p2/b2/a2/n; P 2/b 2/a 2/n
+pban(1abc); Pban (1abc)
+pban[1abc]; Pban [1abc]
+pban(2abc); Pban (2abc)
+pban[2abc]; Pban [2abc]
+p2/n2/c2/b; P 2/n 2/c 2/b
+pban(1cab); Pban (1cab)
+pban[1cab]; Pban [1cab]
+pban(2cab); Pban (2cab)
+pban[2cab]; Pban [2cab]
+p2/c2/n2/a; P 2/c 2/n 2/a
+pban(1bca); Pban (1bca)
+pban[1bca]; Pban [1bca]
+pban(2bca); Pban (2bca)
+pban[2bca]; Pban [2bca]
+pmma; Pmma
+p2_1/m2/m2/a; P 2_1/m 2/m 2/a
+p2/m2_1/m2/b; P 2/m 2_1/m 2/b
+pmma(ba-c); Pmma (ba-c)
+pmma[ba-c]; Pmma [ba-c]
+p2/b2_1/m2/m; P 2/b 2_1/m 2/m
+pmma(cab); Pmma (cab)
+pmma[cab]; Pmma [cab]
+p2/c2/m2_1/m; P 2/c 2/m 2_1/m
+pmma(-cba); Pmma (-cba)
+pmma[-cba]; Pmma [-cba]
+p2/m2/c2_1/m; P 2/m 2/c 2_1/m
+pmma(bca); Pmma (bca)
+pmma[bca]; Pmma [bca]
+p2_1/m2/a2/m; P 2_1/m 2/a 2/m
+pmma(a-cb); Pmma (a-cb)
+pmma[a-cb]; Pmma [a-cb]
+pnna; Pnna
+p2/n2_1/n2/a; P 2/n 2_1/n 2/a
+p2_1/n2/n2/b; P 2_1/n 2/n 2/b
+pnna(ba-c); Pnna (ba-c)
+pnna[ba-c]; Pnna [ba-c]
+p2/b2/n2_1/n; P 2/b 2/n 2_1/n
+pnna(cab); Pnna (cab)
+pnna[cab]; Pnna [cab]
+p2/c2_1/n2/n; P 2/c 2_1/n 2/n
+pnna(-cba); Pnna (-cba)
+pnna[-cba]; Pnna [-cba]
+p2_1/n2/c2/n; P 2_1/n 2/c 2/n
+pnna(bca); Pnna (bca)
+pnna[bca]; Pnna [bca]
+p2/n2/a2_1/n; P 2/n 2/a 2_1/n
+pnna(a-cb); Pnna (a-cb)
+pnna[a-cb]; Pnna [a-cb]
+pmna; Pmna
+p2/m2/n2_1/a; P 2/m 2/n 2_1/a
+p2/n2/m2_1/b; P 2/n 2/m 2_1/b
+pmna(ba-c); Pmna (ba-c)
+pmna[ba-c]; Pmna [ba-c]
+p2_1/b2/m2/n; P 2_1/b 2/m 2/n
+pmna(cab); Pmna (cab)
+pmna[cab]; Pmna [cab]
+p2_1/c2/n2/m; P 2_1/c 2/n 2/m
+pmna(-cba); Pmna (-cba)
+pmna[-cba]; Pmna [-cba]
+p2/n2_1/c2/m; P 2/n 2_1/c 2/m
+pmna(bca); Pmna (bca)
+pmna[bca]; Pmna [bca]
+p2/m2_1/a2/n; P 2/m 2_1/a 2/n
+pmna(a-cb); Pmna (a-cb)
+pmna[a-cb]; Pmna [a-cb]
+pcca; Pcca
+p2_1/c2/c2/a; P 2_1/c 2/c 2/a
+p2/c2_1/c2/b; P 2/c 2_1/c 2/b
+pcca(ba-c); Pcca (ba-c)
+pcca[ba-c]; Pcca [ba-c]
+p2/b2_1/a2/a; P 2/b 2_1/a 2/a
+pcca(cab); Pcca (cab)
+pcca[cab]; Pcca [cab]
+p2/c2/a2_1/a; P 2/c 2/a 2_1/a
+pcca(-cba); Pcca (-cba)
+pcca[-cba]; Pcca [-cba]
+p2/b2/c2_1/b; P 2/b 2/c 2_1/b
+pcca(bca); Pcca (bca)
+pcca[bca]; Pcca [bca]
+p2_1/b2/a2/b; P 2_1/b 2/a 2/b
+pcca(a-cb); Pcca (a-cb)
+pcca[a-cb]; Pcca [a-cb]
+pbam; Pbam
+p2_1/b2_1/a2/m; P 2_1/b 2_1/a 2/m
+p2/m2_1/c2_1/b; P 2/m 2_1/c 2_1/b
+pbam(cab); Pbam (cab)
+pbam[cab]; Pbam [cab]
+p2_1/c2/m2_1/a; P 2_1/c 2/m 2_1/a
+pbam(bca); Pbam (bca)
+pbam[bca]; Pbam [bca]
+pccn; Pccn
+p2_1/c2_1/c2/n; P 2_1/c 2_1/c 2/n
+p2/n2_1/a2_1/a; P 2/n 2_1/a 2_1/a
+pccn(cab); Pccn (cab)
+pccn[cab]; Pccn [cab]
+p2_1/b2/n2_1/b; P 2_1/b 2/n 2_1/b
+pccn(bca); Pccn (bca)
+pccn[bca]; Pccn [bca]
+pbcm; Pbcm
+p2/b2_1/c2_1/m; P 2/b 2_1/c 2_1/m
+p2_1/c2/a2_1/m; P 2_1/c 2/a 2_1/m
+pbcm(ba-c); Pbcm (ba-c)
+pbcm[ba-c]; Pbcm [ba-c]
+p2_1/m2/c2_1/a; P 2_1/m 2/c 2_1/a
+pbcm(cab); Pbcm (cab)
+pbcm[cab]; Pbcm [cab]
+p2_1/m2_1/a2/b; P 2_1/m 2_1/a 2/b
+pbcm(-cba); Pbcm (-cba)
+pbcm[-cba]; Pbcm [-cba]
+p2_1/b2_1/m2/a; P 2_1/b 2_1/m 2/a
+pbcm(bca); Pbcm (bca)
+pbcm[bca]; Pbcm [bca]
+p2/c2_1/m2_1/b; P 2/c 2_1/m 2_1/b
+pbcm(a-cb); Pbcm (a-cb)
+pbcm[a-cb]; Pbcm [a-cb]
+pnnm; Pnnm
+p2_1/n2_1/n2/m; P 2_1/n 2_1/n 2/m
+p2/m2_1/n2_1/n; P 2/m 2_1/n 2_1/n
+pnnm(cab); Pnnm (cab)
+pnnm[cab]; Pnnm [cab]
+p2_1/n2/m2_1/n; P 2_1/n 2/m 2_1/n
+pnnm(bca); Pnnm (bca)
+pnnm[bca]; Pnnm [bca]
+pmmn; Pmmn
+p2_1/m2_1/m2/n; P 2_1/m 2_1/m 2/n
+pmmn(1abc); Pmmn (1abc)
+pmmn[1abc]; Pmmn [1abc]
+pmmn(2abc); Pmmn (2abc)
+pmmn[2abc]; Pmmn [2abc]
+p2/n2_1/m2_1/m; P 2/n 2_1/m 2_1/m
+pmmn(1cab); Pmmn (1cab)
+pmmn[1cab]; Pmmn [1cab]
+pmmn(2cab); Pmmn (2cab)
+pmmn[2cab]; Pmmn [2cab]
+p2_1/m2/n2_1/m; P 2_1/m 2/n 2_1/m
+pmmn(1bca); Pmmn (1bca)
+pmmn[1bca]; Pmmn [1bca]
+pmmn(2bca); Pmmn (2bca)
+pmmn[2bca]; Pmmn [2bca]
+pbcn; Pbcn
+p2_1/b2/c2_1/n; P 2_1/b 2/c 2_1/n
+p2/c2_1/a2_1/n; P 2/c 2_1/a 2_1/n
+pbcn(ba-c); Pbcn (ba-c)
+pbcn[ba-c]; Pbcn [ba-c]
+p2_1/n2_1/c2/a; P 2_1/n 2_1/c 2/a
+pbcn(cab); Pbcn (cab)
+pbcn[cab]; Pbcn [cab]
+p2_1/n2/a2_1/b; P 2_1/n 2/a 2_1/b
+pbcn(-cba); Pbcn (-cba)
+pbcn[-cba]; Pbcn [-cba]
+p2/b2_1/n2_1/a; P 2/b 2_1/n 2_1/a
+pbcn(bca); Pbcn (bca)
+pbcn[bca]; Pbcn [bca]
+p2_1/c2_1/n2/b; P 2_1/c 2_1/n 2/b
+pbcn(a-cb); Pbcn (a-cb)
+pbcn[a-cb]; Pbcn [a-cb]
+pbca; Pbca
+p2_1/b2_1/c2_1/a; P 2_1/b 2_1/c 2_1/a
+p2_1/c2_1/a2_1/b; P 2_1/c 2_1/a 2_1/b
+pbca(ba-c); Pbca (ba-c)
+pbca[ba-c]; Pbca [ba-c]
+pnma; Pnma
+p2_1/n2_1/m2_1/a; P 2_1/n 2_1/m 2_1/a
+p2_1/m2_1/n2_1/b; P 2_1/m 2_1/n 2_1/b
+pnma(ba-c); Pnma (ba-c)
+pnma[ba-c]; Pnma [ba-c]
+p2_1/b2_1/n2_1/m; P 2_1/b 2_1/n 2_1/m
+pnma(cab); Pnma (cab)
+pnma[cab]; Pnma [cab]
+p2_1/c2_1/m2_1/n; P 2_1/c 2_1/m 2_1/n
+pnma(-cba); Pnma (-cba)
+pnma[-cba]; Pnma [-cba]
+p2_1/m2_1/c2_1/n; P 2_1/m 2_1/c 2_1/n
+pnma(bca); Pnma (bca)
+pnma[bca]; Pnma [bca]
+p2_1/n2_1/a2_1/m; P 2_1/n 2_1/a 2_1/m
+pnma(a-cb); Pnma (a-cb)
+pnma[a-cb]; Pnma [a-cb]
+cmcm; Cmcm
+c2/m2/c2_1/m; C 2/m 2/c 2_1/m
+c2/c2/m2_1/m; C 2/c 2/m 2_1/m
+cmcm(ba-c); Cmcm (ba-c)
+cmcm[ba-c]; Cmcm [ba-c]
+a2_1/m2/m2/a; A 2_1/m 2/m 2/a
+cmcm(cab); Cmcm (cab)
+cmcm[cab]; Cmcm [cab]
+a2_1/m2/a2/m; A 2_1/m 2/a 2/m
+cmcm(-cba); Cmcm (-cba)
+cmcm[-cba]; Cmcm [-cba]
+b2/b2_1/m2/m; B 2/b 2_1/m 2/m
+cmcm(bca); Cmcm (bca)
+cmcm[bca]; Cmcm [bca]
+b2/m2_1/m2/b; B 2/m 2_1/m 2/b
+cmcm(a-cb); Cmcm (a-cb)
+cmcm[a-cb]; Cmcm [a-cb]
+cmce; Cmce
+c2/m2/c2_1/e; C 2/m 2/c 2_1/e
+c2/c2/m2_1/e; C 2/c 2/m 2_1/e
+cmce(ba-c); Cmce (ba-c)
+cmce[ba-c]; Cmce [ba-c]
+a2_1/e2/m2/a; A 2_1/e 2/m 2/a
+cmce(cab); Cmce (cab)
+cmce[cab]; Cmce [cab]
+a2_1/e2/a2/m; A 2_1/e 2/a 2/m
+cmce(-cba); Cmce (-cba)
+cmce[-cba]; Cmce [-cba]
+b2/b2_1/e2/m; B 2/b 2_1/e 2/m
+cmce(bca); Cmce (bca)
+cmce[bca]; Cmce [bca]
+b2/m2_1/e2/b; B 2/m 2_1/e 2/b
+cmce(a-cb); Cmce (a-cb)
+cmce[a-cb]; Cmce [a-cb]
+cmmm; Cmmm
+c2/m2/m2/m; C 2/m 2/m 2/m
+a2/m2/m2/m; A 2/m 2/m 2/m
+cmmm(cab); Cmmm (cab)
+cmmm[cab]; Cmmm [cab]
+b2/m2/m2/m; B 2/m 2/m 2/m
+cmmm(bca); Cmmm (bca)
+cmmm[bca]; Cmmm [bca]
+cccm; Cccm
+c2/c2/c2/m; C 2/c 2/c 2/m
+a2/m2/a2/a; A 2/m 2/a 2/a
+cccm(cab); Cccm (cab)
+cccm[cab]; Cccm [cab]
+b2/b2/m2/b; B 2/b 2/m 2/b
+cccm(bca); Cccm (bca)
+cccm[bca]; Cccm [bca]
+cmme; Cmme
+c2/m2/m2/e; C 2/m 2/m 2/e
+c2/m2/m2/e(ba-c); C 2/m 2/m 2/e (ba-c)
+c2/m2/m2/e[ba-c]; C 2/m 2/m 2/e [ba-c]
+cmme(ba-c); Cmme (ba-c)
+cmme[ba-c]; Cmme [ba-c]
+a2/e2/m2/m; A 2/e 2/m 2/m
+a2/e2/m2/m(cab); A 2/e 2/m 2/m (cab)
+a2/e2/m2/m[cab]; A 2/e 2/m 2/m [cab]
+cmme(cab); Cmme (cab)
+cmme[cab]; Cmme [cab]
+a2/e2/m2/m(-cba); A 2/e 2/m 2/m (-cba)
+a2/e2/m2/m[-cba]; A 2/e 2/m 2/m [-cba]
+cmme(-cba); Cmme (-cba)
+cmme[-cba]; Cmme [-cba]
+b2/m2/e2/m; B 2/m 2/e 2/m
+b2/m2/e2/m(bca); B 2/m 2/e 2/m (bca)
+b2/m2/e2/m[bca]; B 2/m 2/e 2/m [bca]
+cmme(bca); Cmme (bca)
+cmme[bca]; Cmme [bca]
+b2/m2/e2/m(a-cb); B 2/m 2/e 2/m (a-cb)
+b2/m2/e2/m[a-cb]; B 2/m 2/e 2/m [a-cb]
+cmme(a-cb); Cmme (a-cb)
+cmme[a-cb]; Cmme [a-cb]
+ccce; Ccce
+c2/c2/c2/e; C 2/c 2/c 2/e
+ccce(1abc); Ccce (1abc)
+ccce[1abc]; Ccce [1abc]
+ccce(2abc); Ccce (2abc)
+ccce[2abc]; Ccce [2abc]
+ccce(1ba-c); Ccce (1ba-c)
+ccce[1ba-c]; Ccce [1ba-c]
+c2/c2/c2/e(ba-c); C 2/c 2/c 2/e (ba-c)
+c2/c2/c2/e[ba-c]; C 2/c 2/c 2/e [ba-c]
+ccce(2ba-c); Ccce (2ba-c)
+ccce[2ba-c]; Ccce [2ba-c]
+a2/e2/a2/a; A 2/e 2/a 2/a
+ccce(1cab); Ccce (1cab)
+ccce[1cab]; Ccce [1cab]
+a2/e2/a2/a(cab); A 2/e 2/a 2/a (cab)
+a2/e2/a2/a[cab]; A 2/e 2/a 2/a [cab]
+ccce(2cab); Ccce (2cab)
+ccce[2cab]; Ccce [2cab]
+ccce(1-cba); Ccce (1-cba)
+ccce[1-cba]; Ccce [1-cba]
+a2/e2/a2/a(-cba); A 2/e 2/a 2/a (-cba)
+a2/e2/a2/a[-cba]; A 2/e 2/a 2/a [-cba]
+ccce(2-cba); Ccce (2-cba)
+ccce[2-cba]; Ccce [2-cba]
+b2/b2/e2/b; B 2/b 2/e 2/b
+ccce(1bca); Ccce (1bca)
+ccce[1bca]; Ccce [1bca]
+b2/b2/e2/b(bca); B 2/b 2/e 2/b (bca)
+b2/b2/e2/b[bca]; B 2/b 2/e 2/b [bca]
+ccce(2bca); Ccce (2bca)
+ccce[2bca]; Ccce [2bca]
+ccce(1a-cb); Ccce (1a-cb)
+ccce[1a-cb]; Ccce [1a-cb]
+b2/b2/e2/b(a-cb); B 2/b 2/e 2/b (a-cb)
+b2/b2/e2/b[a-cb]; B 2/b 2/e 2/b [a-cb]
+ccce(2a-cb); Ccce (2a-cb)
+ccce[2a-cb]; Ccce [2a-cb]
+fmmm; Fmmm
+f2/m2/m2/m; F 2/m 2/m 2/m
+fddd; Fddd
+f2/d2/d2/d; F 2/d 2/d 2/d
+f2/d2/d2/d:1; F 2/d 2/d 2/d : 1
+fddd(1); Fddd (1)
+fddd[1]; Fddd [1]
+f2/d2/d2/d:2; F 2/d 2/d 2/d : 2
+fddd(2); Fddd (2)
+fddd[2]; Fddd [2]
+immm; Immm
+i2/m2/m2/m; I 2/m 2/m 2/m
+ibam; Ibam
+i2/b2/a2/m; I 2/b 2/a 2/m
+i2/m2/c2/b; I 2/m 2/c 2/b
+ibam(cab); Ibam (cab)
+ibam[cab]; Ibam [cab]
+i2/c2/m2/a; I 2/c 2/m 2/a
+ibam(bca); Ibam (bca)
+ibam[bca]; Ibam [bca]
+ibca; Ibca
+i2/b2/c2/a; I 2/b 2/c 2/a
+i2/c2/a2/b; I 2/c 2/a 2/b
+ibca(ba-c); Ibca (ba-c)
+ibca[ba-c]; Ibca [ba-c]
+imma; Imma
+i2/m2/m2/a; I 2/m 2/m 2/a
+i2/m2/m2/b; I 2/m 2/m 2/b
+imma(ba-c); Imma (ba-c)
+imma[ba-c]; Imma [ba-c]
+i2/b2/m2/m; I 2/b 2/m 2/m
+imma(cab); Imma (cab)
+imma[cab]; Imma [cab]
+i2/c2/m2/m; I 2/c 2/m 2/m
+imma(-cba); Imma (-cba)
+imma[-cba]; Imma [-cba]
+i2/m2/c2/m; I 2/m 2/c 2/m
+imma(bca); Imma (bca)
+imma[bca]; Imma [bca]
+i2/m2/a2/m; I 2/m 2/a 2/m
+imma(a-cb); Imma (a-cb)
+imma[a-cb]; Imma [a-cb]
+p4; P 4
+p4_1; P 4_1
+p4_2; P 4_2
+p4_3; P 4_3
+i4; I 4
+i4_1; I 4_1
+p-4; P -4
+i-4; I -4
+p4/m; P 4/m
+p4_2/m; P 4_2/m
+p4/n; P 4/n
+p4/n:1; P 4/n : 1
+p4/n(1); P4/n (1)
+p4/n[1]; P4/n [1]
+p4/n:2; P 4/n : 2
+p4/n(2); P4/n (2)
+p4/n[2]; P4/n [2]
+p4_2/n; P 4_2/n
+p4_2/n:1; P 4_2/n : 1
+p4_2/n(1); P4_2/n (1)
+p4_2/n[1]; P4_2/n [1]
+p4_2/n:2; P 4_2/n : 2
+p4_2/n(2); P4_2/n (2)
+p4_2/n[2]; P4_2/n [2]
+i4/m; I 4/m
+i4_1/a; I 4_1/a
+i4_1/a:1; I 4_1/a : 1
+i4_1/a(1); I4_1/a (1)
+i4_1/a[1]; I4_1/a [1]
+i4_1/a:2; I 4_1/a : 2
+i4_1/a(2); I4_1/a (2)
+i4_1/a[2]; I4_1/a [2]
+p422; P 4 2 2
+p42_12; P 4 2_1 2
+p4_122; P 4_1 2 2
+p4_12_12; P 4_1 2_1 2
+p4_222; P 4_2 2 2
+p4_22_12; P 4_2 2_1 2
+p4_322; P 4_3 2 2
+p4_32_12; P 4_3 2_1 2
+i422; I 4 2 2
+i4_122; I 4_1 2 2
+p4mm; P 4 m m
+p4bm; P 4 b m
+p4_2cm; P 4_2 c m
+p4_2nm; P 4_2 n m
+p4cc; P 4 c c
+p4nc; P 4 n c
+p4_2mc; P 4_2 m c
+p4_2bc; P 4_2 b c
+i4mm; I 4 m m
+i4cm; I 4 c m
+i4_1md; I 4_1 m d
+i4_1cd; I 4_1 c d
+p-42m; P -4 2 m
+p-42c; P -4 2 c
+p-42_1m; P -4 2_1 m
+p-42_1c; P -4 2_1 c
+p-4m2; P -4 m 2
+p-4c2; P -4 c 2
+p-4b2; P -4 b 2
+p-4n2; P -4 n 2
+i-4m2; I -4 m 2
+i-4c2; I -4 c 2
+i-42m; I -4 2 m
+i-42d; I -4 2 d
+p4/mmm; P4/mmm
+p4/m2/m2/m; P 4/m 2/m 2/m
+p4/mcc; P4/mcc
+p4/m2/c2/c; P 4/m 2/c 2/c
+p4/nbm; P4/nbm
+p4/n2/b2/m; P 4/n 2/b 2/m
+p4/n2/b2/m:1; P 4/n 2/b 2/m : 1
+p4/nbm(1); P4/nbm (1)
+p4/nbm[1]; P4/nbm [1]
+p4/n2/b2/m:2; P 4/n 2/b 2/m : 2
+p4/nbm(2); P4/nbm (2)
+p4/nbm[2]; P4/nbm [2]
+p4/nnc; P4/nnc
+p4/n2/n2/c; P 4/n 2/n 2/c
+p4/n2/n2/c:1; P 4/n 2/n 2/c : 1
+p4/nnc(1); P4/nnc (1)
+p4/nnc[1]; P4/nnc [1]
+p4/n2/n2/c:2; P 4/n 2/n 2/c : 2
+p4/nnc(2); P4/nnc (2)
+p4/nnc[2]; P4/nnc [2]
+p4/mbm; P4/mbm
+p4/m2_1/bm; P 4/m 2_1/b m
+p4/mnc; P4/mnc
+p4/m2_1/nc; P 4/m 2_1/n c
+p4/nmm; P4/nmm
+p4/n2_1/mm; P 4/n 2_1/m m
+p4/n2_1/mm:1; P 4/n 2_1/m m : 1
+p4/nmm(1); P4/nmm (1)
+p4/nmm[1]; P4/nmm [1]
+p4/n2_1/mm:2; P 4/n 2_1/m m : 2
+p4/nmm(2); P4/nmm (2)
+p4/nmm[2]; P4/nmm [2]
+p4/ncc; P4/ncc
+p4/n2_1/cc; P 4/n 2_1/c c
+p4/n2_1/cc:1; P 4/n 2_1/c c : 1
+p4/ncc(1); P4/ncc (1)
+p4/ncc[1]; P4/ncc [1]
+p4/n2_1/cc:2; P 4/n 2_1/c c : 2
+p4/ncc(2); P4/ncc (2)
+p4/ncc[2]; P4/ncc [2]
+p4_2/mmc; P4_2/mmc
+p4_2/m2/m2/c; P 4_2/m 2/m 2/c
+p4_2/mcm; P4_2/mcm
+p4_2/m2/c2/m; P 4_2/m 2/c 2/m
+p4_2/nbc; P4_2/nbc
+p4_2/n2/b2/c; P 4_2/n 2/b 2/c
+p4_2/n2/b2/c:1; P 4_2/n 2/b 2/c : 1
+p4_2/nbc(1); P4_2/nbc (1)
+p4_2/nbc[1]; P4_2/nbc [1]
+p4_2/n2/b2/c:2; P 4_2/n 2/b 2/c : 2
+p4_2/nbc(2); P4_2/nbc (2)
+p4_2/nbc[2]; P4_2/nbc [2]
+p4_2/nnm; P4_2/nnm
+p4_2/n2/n2/m; P 4_2/n 2/n 2/m
+p4_2/n2/n2/m:1; P 4_2/n 2/n 2/m : 1
+p4_2/nnm(1); P4_2/nnm (1)
+p4_2/nnm[1]; P4_2/nnm [1]
+p4_2/n2/n2/m:2; P 4_2/n 2/n 2/m : 2
+p4_2/nnm(2); P4_2/nnm (2)
+p4_2/nnm[2]; P4_2/nnm [2]
+p4_2/mbc; P4_2/mbc
+p4_2/m2_1/b2/c; P 4_2/m 2_1/b 2/c
+p4_2/mnm; P4_2/mnm
+p4_2/m2_1/n2/m; P 4_2/m 2_1/n 2/m
+p4_2/nmc; P4_2/nmc
+p4_2/n2_1/m2/c; P 4_2/n 2_1/m 2/c
+p4_2/n2_1/m2/c:1; P 4_2/n 2_1/m 2/c : 1
+p4_2/nmc(1); P4_2/nmc (1)
+p4_2/nmc[1]; P4_2/nmc [1]
+p4_2/n2_1/m2/c:2; P 4_2/n 2_1/m 2/c : 2
+p4_2/nmc(2); P4_2/nmc (2)
+p4_2/nmc[2]; P4_2/nmc [2]
+p4_2/ncm; P4_2/ncm
+p4_2/n2_1/c2/m; P 4_2/n 2_1/c 2/m
+p4_2/n2_1/c2/m:1; P 4_2/n 2_1/c 2/m : 1
+p4_2/ncm(1); P4_2/ncm (1)
+p4_2/ncm[1]; P4_2/ncm [1]
+p4_2/n2_1/c2/m:2; P 4_2/n 2_1/c 2/m : 2
+p4_2/ncm(2); P4_2/ncm (2)
+p4_2/ncm[2]; P4_2/ncm [2]
+i4/mmm; I4/mmm
+i4/m2/m2/m; I 4/m 2/m 2/m
+i4/mcm; I4/mcm
+i4/m2/c2/m; I 4/m 2/c 2/m
+i4_1/amd; I4_1/amd
+i4_1/a2/m2/d; I 4_1/a 2/m 2/d
+i4_1/a2/m2/d:1; I 4_1/a 2/m 2/d : 1
+i4_1/amd(1); I4_1/amd (1)
+i4_1/amd[1]; I4_1/amd [1]
+i4_1/a2/m2/d:2; I 4_1/a 2/m 2/d : 2
+i4_1/amd(2); I4_1/amd (2)
+i4_1/amd[2]; I4_1/amd [2]
+i4_1/acd; I4_1/acd
+i4_1/a2/c2/d; I 4_1/a 2/c 2/d
+i4_1/a2/c2/d:1; I 4_1/a 2/c 2/d : 1
+i4_1/acd(1); I4_1/acd (1)
+i4_1/acd[1]; I4_1/acd [1]
+i4_1/a2/c2/d:2; I 4_1/a 2/c 2/d : 2
+i4_1/acd(2); I4_1/acd (2)
+i4_1/acd[2]; I4_1/acd [2]
+p3; P 3
+p3_1; P 3_1
+p3_2; P 3_2
+r3; R 3
+r3h; R 3 H
+r3(h); R3 (H)
+r3[h]; R3 [H]
+r3r; R 3 R
+r3(r); R3 (R)
+r3[r]; R3 [R]
+p-3; P -3
+r-3; R -3
+r-3h; R -3 H
+r-3(h); R-3 (H)
+r-3[h]; R-3 [H]
+r-3r; R -3 R
+r-3(r); R-3 (R)
+r-3[r]; R-3 [R]
+p312; P 3 1 2
+p321; P 3 2 1
+p3_112; P 3_1 1 2
+p3_121; P 3_1 2 1
+p3_212; P 3_2 1 2
+p3_221; P 3_2 2 1
+r32; R 3 2
+r32h; R 3 2 H
+r32(h); R32 (H)
+r32[h]; R32 [H]
+r32r; R 3 2 R
+r32(r); R32 (R)
+r32[r]; R32 [R]
+p3m1; P 3 m 1
+p31m; P 3 1 m
+p3c1; P 3 c 1
+p31c; P 3 1 c
+r3m; R 3 m
+r3mh; R 3 m H
+r3m(h); R3m (H)
+r3m[h]; R3m [H]
+r3mr; R 3 m R
+r3m(r); R3m (R)
+r3m[r]; R3m [R]
+r3c; R 3 c
+r3ch; R 3 c H
+r3c(h); R3c (H)
+r3c[h]; R3c [H]
+r3cr; R 3 c R
+r3c(r); R3c (R)
+r3c[r]; R3c [R]
+p-31m; P-31m
+p-312/m; P -3 1 2/m
+p-31c; P-31c
+p-312/c; P -3 1 2/c
+p-3m1; P-3m1
+p-32/m1; P -3 2/m 1
+p-3c1; P-3c1
+p-32/c1; P -3 2/c 1
+r-3m; R-3m
+r-32/m; R -3 2/m
+r-32/mh; R -3 2/m H
+r-3mh; R-3m H
+r-3m(h); R-3m (H)
+r-3m[h]; R-3m [H]
+r-32/mr; R -3 2/m R
+r-3mr; R-3m R
+r-3m(r); R-3m (R)
+r-3m[r]; R-3m [R]
+r-3c; R-3c
+r-32/c; R -3 2/c
+r-32/ch; R -3 2/c H
+r-3ch; R-3c H
+r-3c(h); R-3c (H)
+r-3c[h]; R-3c [H]
+r-32/cr; R -3 2/c R
+r-3cr; R-3c R
+r-3c(r); R-3c (R)
+r-3c[r]; R-3c [R]
+p6; P 6
+p6_1; P 6_1
+p6_5; P 6_5
+p6_2; P 6_2
+p6_4; P 6_4
+p6_3; P 6_3
+p-6; P -6
+p6/m; P 6/m
+p6_3/m; P 6_3/m
+p622; P 6 2 2
+p6_122; P 6_1 2 2
+p6_522; P 6_5 2 2
+p6_222; P 6_2 2 2
+p6_422; P 6_4 2 2
+p6_322; P 6_3 2 2
+p6mm; P 6 m m
+p6cc; P 6 c c
+p6_3cm; P 6_3 c m
+p6_3mc; P 6_3 m c
+p-6m2; P -6 m 2
+p-6c2; P -6 c 2
+p-62m; P -6 2 m
+p-62c; P -6 2 c
+p6/mmm; P6/mmm
+p6/m2/m2/m; P 6/m 2/m 2/m
+p6/mcc; P6/mcc
+p6/m2/c2/c; P 6/m 2/c 2/c
+p6_3/mcm; P6_3/mcm
+p6_3/m2/c2/m; P 6_3/m 2/c 2/m
+p6_3/mmc; P6_3/mmc
+p6_3/m2/m2/c; P 6_3/m 2/m 2/c
+p23; P 2 3
+f23; F 2 3
+i23; I 2 3
+p2_13; P 2_1 3
+i2_13; I 2_1 3
+pm-3; Pm-3
+p2/m-3; P 2/m -3
+pn-3; Pn-3
+p2/n-3; P 2/n -3
+p2/n-3:1; P 2/n -3 : 1
+pn-3(1); Pn-3 (1)
+pn-3[1]; Pn-3 [1]
+p2/n-3:2; P 2/n -3 : 2
+pn-3(2); Pn-3 (2)
+pn-3[2]; Pn-3 [2]
+fm-3; Fm-3
+f2/m-3; F 2/m -3
+fd-3; Fd-3
+f2/d-3; F 2/d -3
+f2/d-3:1; F 2/d -3 : 1
+fd-3(1); Fd-3 (1)
+fd-3[1]; Fd-3 [1]
+f2/d-3:2; F 2/d -3 : 2
+fd-3(2); Fd-3 (2)
+fd-3[2]; Fd-3 [2]
+im-3; Im-3
+i2/m-3; I 2/m -3
+pa-3; Pa-3
+p2_1/a-3; P 2_1/a -3
+ia-3; Ia-3
+i2_1/a-3; I 2_1/a -3
+p432; P 4 3 2
+p4_232; P 4_2 3 2
+f432; F 4 3 2
+f4_132; F 4_1 3 2
+i432; I 4 3 2
+p4_332; P 4_3 3 2
+p4_132; P 4_1 3 2
+i4_132; I 4_1 3 2
+p-43m; P -4 3 m
+f-43m; F -4 3 m
+i-43m; I -4 3 m
+p-43n; P -4 3 n
+f-43c; F -4 3 c
+i-43d; I -4 3 d
+pm-3m; Pm-3m
+p4/m-32/m; P 4/m -3 2/m
+pn-3n; Pn-3n
+p4/n-32/n; P 4/n -3 2/n
+p4/n-32/n:1; P 4/n -3 2/n : 1
+pn-3n(1); Pn-3n (1)
+pn-3n[1]; Pn-3n [1]
+p4/n-32/n:2; P 4/n -3 2/n : 2
+pn-3n(2); Pn-3n (2)
+pn-3n[2]; Pn-3n [2]
+pm-3n; Pm-3n
+p4_2/m-32/n; P 4_2/m -3 2/n
+pn-3m; Pn-3m
+p4_2/n-32/m; P 4_2/n -3 2/m
+p4_2/n-32/m:1; P 4_2/n -3 2/m : 1
+pn-3m(1); Pn-3m (1)
+pn-3m[1]; Pn-3m [1]
+p4_2/n-32/m:2; P 4_2/n -3 2/m : 2
+pn-3m(2); Pn-3m (2)
+pn-3m[2]; Pn-3m [2]
+fm-3m; Fm-3m
+f4/m-32/m; F 4/m -3 2/m
+fm-3c; Fm-3c
+f4/m-32/c; F 4/m -3 2/c
+fd-3m; Fd-3m
+f4_1/d-32/m; F 4_1/d -3 2/m
+f4_1/d-32/m:1; F 4_1/d -3 2/m : 1
+fd-3m(1); Fd-3m (1)
+fd-3m[1]; Fd-3m [1]
+f4_1/d-32/m:2; F 4_1/d -3 2/m : 2
+fd-3m(2); Fd-3m (2)
+fd-3m[2]; Fd-3m [2]
+fd-3c; Fd-3c
+f4_1/d-32/c; F 4_1/d -3 2/c
+f4_1/d-32/c:1; F 4_1/d -3 2/c : 1
+fd-3c(1); Fd-3c (1)
+fd-3c[1]; Fd-3c [1]
+f4_1/d-32/c:2; F 4_1/d -3 2/c : 2
+fd-3c(2); Fd-3c (2)
+fd-3c[2]; Fd-3c [2]
+im-3m; Im-3m
+i4/m-32/m; I 4/m -3 2/m
+ia-3d; Ia-3d
+i4_1/a-32/d; I 4_1/a -3 2/d

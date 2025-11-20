@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from spglib import spglib
 
 from pyspinw.symmetry.settings import Setting, UniqueAxis, RhombohedralOrHexagonal, AxisPermutation
-
+from pyspinw.symmetry.canonise import canonise_string
 
 @dataclass
 class SettingExpander:
@@ -186,20 +186,61 @@ def build_spacegroup_lookup(target_directory: str):
         raise Exception("Preferred name collision (two or more groups/settings have the"
                         "same name)")
 
+    # Check for collisions
+    short_name_list = [set([canonise_string(name)
+                            for name in full_lookup[number]])
+                       for number in full_lookup]
+
+    ## Check pairs
+    for i, set1 in enumerate(short_name_list):
+        for set2 in short_name_list[:i]:
+            if not set1.isdisjoint(set2):
+                collisions = set1.intersection(set2)
+                raise ValueError(f"Found collisions between {collisions}")
+
+
+
     # Write out the preferred names
     with open(os.path.join(target_directory, "preferred_spacegroup_names.txt"), 'w') as file:
         for i in range(1, 531):
-            file.write(f"{i-1}: ")
+            file.write(f"{i}; ")
             file.write(preferred_names[i])
             file.write("\n")
 
-
-    with open(os.path.join(target_directory, "spacegroup_name_lookup.txt"), 'w') as file:
+    # Write out the full name list
+    with open(os.path.join(target_directory, "spacegroup_aliases_formatted.txt"), 'w') as file:
         for i in range(1, 531):
             group_data = spglib.get_spacegroup_type(i)
             file.write(f"{i}; {group_data.number}; ")
             file.write("; ".join(full_lookup[i]))
             file.write("\n")
+
+    # Write out the full name list
+    with open(os.path.join(target_directory, "spacegroup_aliases_canonised.txt"), 'w') as file:
+        for i in range(1, 531):
+            canonised_names = set(canonise_string(name) for name in full_lookup[i])
+            group_data = spglib.get_spacegroup_type(i)
+            file.write(f"{i}; {group_data.number}; ")
+            file.write("; ".join(canonised_names))
+            file.write("\n")
+
+    # Map every name to a canonised name, choose the longest one if there are multiple options
+    # this is so we can give readable suggestions if name matches don't work
+    potential_mappings = defaultdict(list)
+    for i in range(1, 531):
+        for name in full_lookup[i]:
+            short = canonise_string(name)
+            potential_mappings[short].append(name)
+
+    short_to_long = {}
+    for short, longs in potential_mappings.items():
+        longs_sorted = sorted(longs, key=len) # shortest to longest
+        short_to_long[short] = longs_sorted[-1]
+
+    with open(os.path.join(target_directory, "spacegroup_canonised_to_formatted.txt"), 'w') as file:
+        for short, long in short_to_long.items():
+            file.write(f"{short}; {long}\n")
+
 
 
 if __name__ == "__main__":
