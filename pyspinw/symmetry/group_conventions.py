@@ -15,40 +15,6 @@ def canonise_string(name: str):
     # make lowercase
     return name.lower()
 
-def spacegroup_lookups():
-    """
-    Create lookup tables for getting spacegroups from strings
-
-    See ADR 010 for requirements.
-    """
-
-
-    defaults = {}
-    full_names = {}
-    bracket_names = {}
-
-    for i in range(1, 531):
-        group_data = spglib.get_spacegroup_type(i)
-
-        # First group by number should be the default
-        if group_data.number not in defaults:
-            defaults[group_data.number] = i
-
-        # Add full name, for the first entry only
-        if group_data.international_full not in full_names:
-            full_names[group_data.international_full] = i
-
-        # Groups 67 and 68 need some special treatment because of permuations
-        if group_data.number == 67 or group_data.number == 68:
-            setting = Setting.from_string(group_data.choice)
-            bracket_names[group_data.international_full + f" ({setting.permutation.to_string()})"]
-            bracket_names[group_data.international_full + f" [{setting.permutation.to_string()}]"]
-
-        # Add short name with choice in brackets
-        if group_data.choice != "":
-            bracket_names[group_data.international_short + f" ({group_data.choice})"] = i
-            bracket_names[group_data.international_short + f" [{group_data.choice}]"] = i
-
 def spacegroup_conventions():
     """ Get naming data from the spglib database that can be used for looking up spacegroups."""
     group_name_to_index = {}

@@ -12,7 +12,7 @@ Beyond this, we need to consider the following setting descriptions:
 Unique axis choices
 -------------------
 
-The unique axis is specified by in long form, and never needed explicitly.
+The unique axis is specified by the position of terms in long form, and never needed explicitly.
 
 Numeric Choices
 ---------------
