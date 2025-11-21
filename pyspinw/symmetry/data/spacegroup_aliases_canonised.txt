@@ -1,351 +1,351 @@
 1; 1; p1
 2; 2; p-1
-3; 3; p2; p2[b]; p2(b); p121
-4; 3; p2[c]; p2(c); p112
-5; 3; p2[a]; p211; p2(a)
-6; 4; p12_11; p2_1(b); p2_1; p2_1[b]
-7; 4; p2_1(c); p112_1; p2_1[c]
-8; 4; p2_1[a]; p2_1(a); p2_111
-9; 5; c2; c2(b1); c121; c2[b1]
-10; 5; a121; c2(b2); c2[b2]
-11; 5; i121; c2[b3]; c2(b3)
-12; 5; a112; c2[c1]; c2(c1)
-13; 5; c2[c2]; c2(c2); b112
-14; 5; c2[c3]; c2(c3); i112
-15; 5; c2(a1); b211; c2[a1]
-16; 5; c2(a2); c2[a2]; c211
+3; 3; p2[b]; p2; p2(b); p121
+4; 3; p112; p2(c); p2[c]
+5; 3; p211; p2[a]; p2(a)
+6; 4; p2_1[b]; p2_1(b); p12_11; p2_1
+7; 4; p112_1; p2_1(c); p2_1[c]
+8; 4; p2_1[a]; p2_111; p2_1(a)
+9; 5; c121; c2(b1); c2[b1]; c2
+10; 5; c2[b2]; a121; c2(b2)
+11; 5; i121; c2(b3); c2[b3]
+12; 5; c2(c1); c2[c1]; a112
+13; 5; c2(c2); b112; c2[c2]
+14; 5; i112; c2[c3]; c2(c3)
+15; 5; c2[a1]; b211; c2(a1)
+16; 5; c211; c2(a2); c2[a2]
 17; 5; i211; c2[a3]; c2(a3)
-18; 6; pm(b); p1m1; pm[b]; pm
-19; 6; p11m; pm[c]; pm(c)
-20; 6; pm(a); pm11; pm[a]
-21; 7; pc; p1c1; pc[b1]; pc(b1)
-22; 7; pc(b2); pc[b2]; p1n1
-23; 7; pc[b3]; p1a1; pc(b3)
-24; 7; p11a; pc[c1]; pc(c1)
-25; 7; pc[c2]; p11n; pc(c2)
+18; 6; pm; pm[b]; p1m1; pm(b)
+19; 6; p11m; pm(c); pm[c]
+20; 6; pm(a); pm[a]; pm11
+21; 7; pc; pc(b1); p1c1; pc[b1]
+22; 7; pc[b2]; pc(b2); p1n1
+23; 7; pc[b3]; pc(b3); p1a1
+24; 7; pc[c1]; pc(c1); p11a
+25; 7; pc(c2); p11n; pc[c2]
 26; 7; p11b; pc(c3); pc[c3]
-27; 7; pb11; pc(a1); pc[a1]
-28; 7; pn11; pc[a2]; pc(a2)
-29; 7; pc(a3); pc11; pc[a3]
-30; 8; cm; cm(b1); c1m1; cm[b1]
-31; 8; cm(b2); cm[b2]; a1m1
-32; 8; cm[b3]; i1m1; cm(b3)
-33; 8; a11m; cm[c1]; cm(c1)
-34; 8; cm[c2]; b11m; cm(c2)
-35; 8; cm[c3]; i11m; cm(c3)
-36; 8; bm11; cm[a1]; cm(a1)
-37; 8; cm(a2); cm11; cm[a2]
+27; 7; pb11; pc[a1]; pc(a1)
+28; 7; pc[a2]; pc(a2); pn11
+29; 7; pc11; pc(a3); pc[a3]
+30; 8; cm; cm[b1]; c1m1; cm(b1)
+31; 8; cm[b2]; cm(b2); a1m1
+32; 8; i1m1; cm(b3); cm[b3]
+33; 8; cm(c1); a11m; cm[c1]
+34; 8; cm(c2); cm[c2]; b11m
+35; 8; i11m; cm(c3); cm[c3]
+36; 8; cm(a1); bm11; cm[a1]
+37; 8; cm[a2]; cm11; cm(a2)
 38; 8; cm(a3); cm[a3]; im11
-39; 9; cc[b1]; cc(b1); c1c1; cc
+39; 9; cc(b1); c1c1; cc[b1]; cc
 40; 9; a1n1; cc(b2); cc[b2]
-41; 9; i1a1; cc(b3); cc[b3]
-42; 9; cc(-b1); cc[-b1]; a1a1
-43; 9; cc(-b2); cc[-b2]; c1n1
-44; 9; i1c1; cc[-b3]; cc(-b3)
-45; 9; cc[c1]; a11a; cc(c1)
-46; 9; cc[c2]; cc(c2); b11n
-47; 9; cc[c3]; cc(c3); i11b
-48; 9; cc(-c1); b11b; cc[-c1]
+41; 9; i1a1; cc[b3]; cc(b3)
+42; 9; cc[-b1]; cc(-b1); a1a1
+43; 9; cc(-b2); c1n1; cc[-b2]
+44; 9; cc[-b3]; i1c1; cc(-b3)
+45; 9; a11a; cc[c1]; cc(c1)
+46; 9; b11n; cc[c2]; cc(c2)
+47; 9; i11b; cc[c3]; cc(c3)
+48; 9; cc[-c1]; cc(-c1); b11b
 49; 9; cc(-c2); cc[-c2]; a11n
-50; 9; cc[-c3]; i11a; cc(-c3)
-51; 9; cc[a1]; cc(a1); bb11
-52; 9; cn11; cc[a2]; cc(a2)
-53; 9; ic11; cc[a3]; cc(a3)
+50; 9; cc[-c3]; cc(-c3); i11a
+51; 9; bb11; cc(a1); cc[a1]
+52; 9; cn11; cc(a2); cc[a2]
+53; 9; cc(a3); cc[a3]; ic11
 54; 9; cc[-a1]; cc(-a1); cc11
-55; 9; cc(-a2); cc[-a2]; bn11
-56; 9; cc[-a3]; cc(-a3); ib11
-57; 10; p2/m[b]; p12/m1; p2/m(b); p2/m
-58; 10; p2/m[c]; p2/m(c); p112/m
+55; 9; cc[-a2]; cc(-a2); bn11
+56; 9; ib11; cc(-a3); cc[-a3]
+57; 10; p2/m(b); p2/m; p12/m1; p2/m[b]
+58; 10; p2/m[c]; p112/m; p2/m(c)
 59; 10; p2/m11; p2/m(a); p2/m[a]
-60; 11; p12_1/m1; p2_1/m; p2_1/m[b]; p2_1/m(b)
+60; 11; p2_1/m[b]; p12_1/m1; p2_1/m(b); p2_1/m
 61; 11; p112_1/m; p2_1/m[c]; p2_1/m(c)
-62; 11; p2_1/m(a); p2_1/m[a]; p2_1/m11
-63; 12; c12/m1; c2/m(b1); c2/m[b1]; c2/m
-64; 12; c2/m[b2]; c2/m(b2); a12/m1
-65; 12; c2/m[b3]; c2/m(b3); i12/m1
-66; 12; a112/m; c2/m[c1]; c2/m(c1)
-67; 12; c2/m(c2); c2/m[c2]; b112/m
-68; 12; c2/m[c3]; i112/m; c2/m(c3)
-69; 12; c2/m(a1); c2/m[a1]; b2/m11
-70; 12; c2/m(a2); c2/m11; c2/m[a2]
-71; 12; i2/m11; c2/m(a3); c2/m[a3]
-72; 13; p2/c(b1); p2/c; p2/c[b1]; p12/c1
-73; 13; p2/c(b2); p2/c[b2]; p12/n1
-74; 13; p12/a1; p2/c(b3); p2/c[b3]
+62; 11; p2_1/m[a]; p2_1/m11; p2_1/m(a)
+63; 12; c2/m(b1); c2/m; c2/m[b1]; c12/m1
+64; 12; c2/m(b2); c2/m[b2]; a12/m1
+65; 12; i12/m1; c2/m[b3]; c2/m(b3)
+66; 12; c2/m[c1]; c2/m(c1); a112/m
+67; 12; c2/m(c2); b112/m; c2/m[c2]
+68; 12; i112/m; c2/m[c3]; c2/m(c3)
+69; 12; b2/m11; c2/m(a1); c2/m[a1]
+70; 12; c2/m(a2); c2/m[a2]; c2/m11
+71; 12; i2/m11; c2/m[a3]; c2/m(a3)
+72; 13; p12/c1; p2/c; p2/c(b1); p2/c[b1]
+73; 13; p2/c(b2); p12/n1; p2/c[b2]
+74; 13; p2/c(b3); p2/c[b3]; p12/a1
 75; 13; p2/c[c1]; p2/c(c1); p112/a
-76; 13; p112/n; p2/c(c2); p2/c[c2]
+76; 13; p2/c(c2); p112/n; p2/c[c2]
 77; 13; p112/b; p2/c[c3]; p2/c(c3)
-78; 13; p2/c(a1); p2/b11; p2/c[a1]
-79; 13; p2/n11; p2/c(a2); p2/c[a2]
-80; 13; p2/c[a3]; p2/c(a3); p2/c11
-81; 14; p2_1/c; p12_1/c1; p2_1/c(b1); p2_1/c[b1]
-82; 14; p2_1/c(b2); p2_1/c[b2]; p12_1/n1
-83; 14; p12_1/a1; p2_1/c(b3); p2_1/c[b3]
-84; 14; p2_1/c[c1]; p2_1/c(c1); p112_1/a
-85; 14; p2_1/c[c2]; p112_1/n; p2_1/c(c2)
-86; 14; p2_1/c[c3]; p112_1/b; p2_1/c(c3)
-87; 14; p2_1/c[a1]; p2_1/c(a1); p2_1/b11
-88; 14; p2_1/c[a2]; p2_1/n11; p2_1/c(a2)
-89; 14; p2_1/c(a3); p2_1/c[a3]; p2_1/c11
-90; 15; c12/c1; c2/c[b1]; c2/c(b1); c2/c
-91; 15; a12/n1; c2/c[b2]; c2/c(b2)
-92; 15; i12/a1; c2/c[b3]; c2/c(b3)
+78; 13; p2/c[a1]; p2/b11; p2/c(a1)
+79; 13; p2/c[a2]; p2/c(a2); p2/n11
+80; 13; p2/c[a3]; p2/c11; p2/c(a3)
+81; 14; p12_1/c1; p2_1/c; p2_1/c[b1]; p2_1/c(b1)
+82; 14; p2_1/c[b2]; p2_1/c(b2); p12_1/n1
+83; 14; p2_1/c[b3]; p2_1/c(b3); p12_1/a1
+84; 14; p112_1/a; p2_1/c(c1); p2_1/c[c1]
+85; 14; p2_1/c(c2); p112_1/n; p2_1/c[c2]
+86; 14; p2_1/c(c3); p2_1/c[c3]; p112_1/b
+87; 14; p2_1/b11; p2_1/c[a1]; p2_1/c(a1)
+88; 14; p2_1/c[a2]; p2_1/c(a2); p2_1/n11
+89; 14; p2_1/c[a3]; p2_1/c(a3); p2_1/c11
+90; 15; c2/c[b1]; c2/c; c12/c1; c2/c(b1)
+91; 15; c2/c[b2]; a12/n1; c2/c(b2)
+92; 15; c2/c[b3]; i12/a1; c2/c(b3)
 93; 15; a12/a1; c2/c(-b1); c2/c[-b1]
-94; 15; c12/n1; c2/c[-b2]; c2/c(-b2)
+94; 15; c2/c[-b2]; c12/n1; c2/c(-b2)
 95; 15; c2/c(-b3); i12/c1; c2/c[-b3]
-96; 15; a112/a; c2/c[c1]; c2/c(c1)
-97; 15; c2/c(c2); b112/n; c2/c[c2]
-98; 15; i112/b; c2/c(c3); c2/c[c3]
-99; 15; c2/c[-c1]; b112/b; c2/c(-c1)
-100; 15; a112/n; c2/c(-c2); c2/c[-c2]
-101; 15; i112/a; c2/c(-c3); c2/c[-c3]
+96; 15; c2/c[c1]; a112/a; c2/c(c1)
+97; 15; c2/c[c2]; b112/n; c2/c(c2)
+98; 15; i112/b; c2/c[c3]; c2/c(c3)
+99; 15; b112/b; c2/c[-c1]; c2/c(-c1)
+100; 15; c2/c(-c2); a112/n; c2/c[-c2]
+101; 15; c2/c(-c3); i112/a; c2/c[-c3]
 102; 15; c2/c(a1); b2/b11; c2/c[a1]
-103; 15; c2/c(a2); c2/n11; c2/c[a2]
-104; 15; c2/c(a3); c2/c[a3]; i2/c11
-105; 15; c2/c(-a1); c2/c[-a1]; c2/c11
-106; 15; b2/n11; c2/c[-a2]; c2/c(-a2)
-107; 15; c2/c[-a3]; i2/b11; c2/c(-a3)
+103; 15; c2/c[a2]; c2/n11; c2/c(a2)
+104; 15; i2/c11; c2/c(a3); c2/c[a3]
+105; 15; c2/c[-a1]; c2/c(-a1); c2/c11
+106; 15; c2/c(-a2); c2/c[-a2]; b2/n11
+107; 15; i2/b11; c2/c(-a3); c2/c[-a3]
 108; 16; p222
 109; 17; p222_1
-110; 17; p222_1[cab]; p2_122; p222_1(cab)
-111; 17; p22_12; p222_1[bca]; p222_1(bca)
+110; 17; p222_1[cab]; p222_1(cab); p2_122
+111; 17; p22_12; p222_1(bca); p222_1[bca]
 112; 18; p2_12_12
 113; 18; p22_12_1; p2_12_12(cab); p2_12_12[cab]
-114; 18; p2_12_12(bca); p2_122_1; p2_12_12[bca]
+114; 18; p2_12_12[bca]; p2_122_1; p2_12_12(bca)
 115; 19; p2_12_12_1
 116; 20; c222_1
 117; 20; c222_1[cab]; a2_122; c222_1(cab)
-118; 20; c222_1(bca); b22_12; c222_1[bca]
+118; 20; c222_1[bca]; b22_12; c222_1(bca)
 119; 21; c222
-120; 21; a222; c222[cab]; c222(cab)
-121; 21; c222[bca]; c222(bca); b222
+120; 21; c222[cab]; c222(cab); a222
+121; 21; c222(bca); b222; c222[bca]
 122; 22; f222
 123; 23; i222
 124; 24; i2_12_12_1
 125; 25; pmm2
-126; 25; pmm2(cab); pmm2[cab]; p2mm
+126; 25; pmm2(cab); p2mm; pmm2[cab]
 127; 25; pmm2[bca]; pmm2(bca); pm2m
 128; 26; pmc2_1
 129; 26; pmc2_1[ba-c]; pmc2_1(ba-c); pcm2_1
-130; 26; pmc2_1[cab]; p2_1ma; pmc2_1(cab)
-131; 26; p2_1am; pmc2_1(-cba); pmc2_1[-cba]
-132; 26; pmc2_1(bca); pmc2_1[bca]; pb2_1m
-133; 26; pm2_1b; pmc2_1[a-cb]; pmc2_1(a-cb)
+130; 26; pmc2_1(cab); pmc2_1[cab]; p2_1ma
+131; 26; pmc2_1(-cba); pmc2_1[-cba]; p2_1am
+132; 26; pmc2_1(bca); pb2_1m; pmc2_1[bca]
+133; 26; pmc2_1[a-cb]; pmc2_1(a-cb); pm2_1b
 134; 27; pcc2
 135; 27; pcc2[cab]; pcc2(cab); p2aa
-136; 27; pb2b; pcc2(bca); pcc2[bca]
+136; 27; pcc2(bca); pb2b; pcc2[bca]
 137; 28; pma2
-138; 28; pma2[ba-c]; pma2(ba-c); pbm2
-139; 28; pma2(cab); p2mb; pma2[cab]
-140; 28; p2cm; pma2[-cba]; pma2(-cba)
-141; 28; pc2m; pma2[bca]; pma2(bca)
+138; 28; pma2[ba-c]; pbm2; pma2(ba-c)
+139; 28; p2mb; pma2[cab]; pma2(cab)
+140; 28; pma2(-cba); p2cm; pma2[-cba]
+141; 28; pma2(bca); pma2[bca]; pc2m
 142; 28; pma2(a-cb); pm2a; pma2[a-cb]
 143; 29; pca2_1
-144; 29; pca2_1(ba-c); pca2_1[ba-c]; pbc2_1
-145; 29; pca2_1[cab]; pca2_1(cab); p2_1ab
-146; 29; pca2_1[-cba]; pca2_1(-cba); p2_1ca
-147; 29; pca2_1[bca]; pc2_1b; pca2_1(bca)
-148; 29; pca2_1[a-cb]; pb2_1a; pca2_1(a-cb)
+144; 29; pbc2_1; pca2_1(ba-c); pca2_1[ba-c]
+145; 29; pca2_1(cab); pca2_1[cab]; p2_1ab
+146; 29; p2_1ca; pca2_1[-cba]; pca2_1(-cba)
+147; 29; pc2_1b; pca2_1(bca); pca2_1[bca]
+148; 29; pb2_1a; pca2_1[a-cb]; pca2_1(a-cb)
 149; 30; pnc2
-150; 30; pcn2; pnc2[ba-c]; pnc2(ba-c)
+150; 30; pnc2[ba-c]; pcn2; pnc2(ba-c)
 151; 30; pnc2(cab); pnc2[cab]; p2na
-152; 30; pnc2[-cba]; p2an; pnc2(-cba)
-153; 30; pnc2(bca); pb2n; pnc2[bca]
-154; 30; pn2b; pnc2[a-cb]; pnc2(a-cb)
+152; 30; pnc2(-cba); p2an; pnc2[-cba]
+153; 30; pb2n; pnc2(bca); pnc2[bca]
+154; 30; pnc2[a-cb]; pnc2(a-cb); pn2b
 155; 31; pmn2_1
-156; 31; pmn2_1[ba-c]; pnm2_1; pmn2_1(ba-c)
-157; 31; pmn2_1(cab); p2_1mn; pmn2_1[cab]
-158; 31; p2_1nm; pmn2_1(-cba); pmn2_1[-cba]
+156; 31; pmn2_1[ba-c]; pmn2_1(ba-c); pnm2_1
+157; 31; pmn2_1[cab]; p2_1mn; pmn2_1(cab)
+158; 31; p2_1nm; pmn2_1[-cba]; pmn2_1(-cba)
 159; 31; pn2_1m; pmn2_1(bca); pmn2_1[bca]
-160; 31; pmn2_1(a-cb); pmn2_1[a-cb]; pm2_1n
+160; 31; pm2_1n; pmn2_1[a-cb]; pmn2_1(a-cb)
 161; 32; pba2
-162; 32; pba2(cab); pba2[cab]; p2cb
-163; 32; pba2(bca); pba2[bca]; pc2a
+162; 32; p2cb; pba2[cab]; pba2(cab)
+163; 32; pc2a; pba2(bca); pba2[bca]
 164; 33; pna2_1
-165; 33; pna2_1(ba-c); pna2_1[ba-c]; pbn2_1
-166; 33; p2_1nb; pna2_1(cab); pna2_1[cab]
-167; 33; pna2_1[-cba]; pna2_1(-cba); p2_1cn
-168; 33; pc2_1n; pna2_1[bca]; pna2_1(bca)
-169; 33; pna2_1[a-cb]; pn2_1a; pna2_1(a-cb)
+165; 33; pbn2_1; pna2_1(ba-c); pna2_1[ba-c]
+166; 33; pna2_1(cab); pna2_1[cab]; p2_1nb
+167; 33; p2_1cn; pna2_1[-cba]; pna2_1(-cba)
+168; 33; pna2_1[bca]; pc2_1n; pna2_1(bca)
+169; 33; pna2_1(a-cb); pn2_1a; pna2_1[a-cb]
 170; 34; pnn2
-171; 34; pnn2[cab]; pnn2(cab); p2nn
-172; 34; pnn2(bca); pnn2[bca]; pn2n
+171; 34; p2nn; pnn2(cab); pnn2[cab]
+172; 34; pn2n; pnn2(bca); pnn2[bca]
 173; 35; cmm2
-174; 35; cmm2(cab); cmm2[cab]; a2mm
-175; 35; bm2m; cmm2(bca); cmm2[bca]
+174; 35; cmm2[cab]; a2mm; cmm2(cab)
+175; 35; cmm2(bca); bm2m; cmm2[bca]
 176; 36; cmc2_1
-177; 36; cmc2_1[ba-c]; cmc2_1(ba-c); ccm2_1
-178; 36; cmc2_1[cab]; cmc2_1(cab); a2_1ma
-179; 36; cmc2_1[-cba]; cmc2_1(-cba); a2_1am
-180; 36; bb2_1m; cmc2_1(bca); cmc2_1[bca]
-181; 36; bm2_1b; cmc2_1[a-cb]; cmc2_1(a-cb)
+177; 36; cmc2_1[ba-c]; ccm2_1; cmc2_1(ba-c)
+178; 36; a2_1ma; cmc2_1[cab]; cmc2_1(cab)
+179; 36; cmc2_1[-cba]; a2_1am; cmc2_1(-cba)
+180; 36; bb2_1m; cmc2_1[bca]; cmc2_1(bca)
+181; 36; cmc2_1[a-cb]; bm2_1b; cmc2_1(a-cb)
 182; 37; ccc2
-183; 37; ccc2[cab]; ccc2(cab); a2aa
-184; 37; ccc2(bca); ccc2[bca]; bb2b
+183; 37; ccc2(cab); a2aa; ccc2[cab]
+184; 37; ccc2[bca]; ccc2(bca); bb2b
 185; 38; amm2
-186; 38; amm2(ba-c); amm2[ba-c]; bmm2
-187; 38; b2mm; amm2[cab]; amm2(cab)
-188; 38; amm2(-cba); c2mm; amm2[-cba]
-189; 38; amm2[bca]; cm2m; amm2(bca)
-190; 38; amm2(a-cb); am2m; amm2[a-cb]
+186; 38; bmm2; amm2[ba-c]; amm2(ba-c)
+187; 38; amm2(cab); b2mm; amm2[cab]
+188; 38; amm2(-cba); amm2[-cba]; c2mm
+189; 38; amm2[bca]; amm2(bca); cm2m
+190; 38; amm2(a-cb); amm2[a-cb]; am2m
 191; 39; aem2
-192; 39; aem2[ba-c]; aem2(ba-c); bme2
-193; 39; aem2[cab]; b2em; aem2(cab)
-194; 39; c2me; aem2(-cba); aem2[-cba]
+192; 39; bme2; aem2[ba-c]; aem2(ba-c)
+193; 39; aem2[cab]; aem2(cab); b2em
+194; 39; aem2[-cba]; aem2(-cba); c2me
 195; 39; aem2[bca]; aem2(bca); cm2e
 196; 39; aem2[a-cb]; ae2m; aem2(a-cb)
 197; 40; ama2
-198; 40; bbm2; ama2[ba-c]; ama2(ba-c)
-199; 40; b2mb; ama2[cab]; ama2(cab)
-200; 40; ama2[-cba]; ama2(-cba); c2cm
-201; 40; cc2m; ama2[bca]; ama2(bca)
-202; 40; ama2[a-cb]; ama2(a-cb); am2a
+198; 40; ama2(ba-c); ama2[ba-c]; bbm2
+199; 40; ama2[cab]; b2mb; ama2(cab)
+200; 40; ama2(-cba); ama2[-cba]; c2cm
+201; 40; ama2[bca]; cc2m; ama2(bca)
+202; 40; ama2[a-cb]; am2a; ama2(a-cb)
 203; 41; aea2
-204; 41; bbe2; aea2[ba-c]; aea2(ba-c)
-205; 41; b2eb; aea2(cab); aea2[cab]
-206; 41; aea2(-cba); aea2[-cba]; c2ce
-207; 41; aea2(bca); aea2[bca]; cc2e
-208; 41; ae2a; aea2(a-cb); aea2[a-cb]
+204; 41; aea2(ba-c); aea2[ba-c]; bbe2
+205; 41; aea2[cab]; b2eb; aea2(cab)
+206; 41; aea2(-cba); c2ce; aea2[-cba]
+207; 41; cc2e; aea2(bca); aea2[bca]
+208; 41; aea2(a-cb); ae2a; aea2[a-cb]
 209; 42; fmm2
-210; 42; fmm2[cab]; fmm2(cab); f2mm
-211; 42; fm2m; fmm2(bca); fmm2[bca]
+210; 42; fmm2[cab]; f2mm; fmm2(cab)
+211; 42; fmm2(bca); fmm2[bca]; fm2m
 212; 43; fdd2
-213; 43; fdd2(cab); f2dd; fdd2[cab]
+213; 43; fdd2[cab]; f2dd; fdd2(cab)
 214; 43; fd2d; fdd2(bca); fdd2[bca]
 215; 44; imm2
-216; 44; imm2[cab]; imm2(cab); i2mm
-217; 44; imm2[bca]; imm2(bca); im2m
+216; 44; i2mm; imm2[cab]; imm2(cab)
+217; 44; im2m; imm2[bca]; imm2(bca)
 218; 45; iba2
-219; 45; iba2[cab]; i2cb; iba2(cab)
-220; 45; iba2(bca); ic2a; iba2[bca]
+219; 45; i2cb; iba2[cab]; iba2(cab)
+220; 45; iba2[bca]; iba2(bca); ic2a
 221; 46; ima2
-222; 46; ibm2; ima2[ba-c]; ima2(ba-c)
-223; 46; i2mb; ima2[cab]; ima2(cab)
-224; 46; ima2[-cba]; ima2(-cba); i2cm
+222; 46; ima2(ba-c); ibm2; ima2[ba-c]
+223; 46; i2mb; ima2(cab); ima2[cab]
+224; 46; ima2(-cba); i2cm; ima2[-cba]
 225; 46; ima2(bca); ic2m; ima2[bca]
 226; 46; im2a; ima2[a-cb]; ima2(a-cb)
 227; 47; pmmm; p2/m2/m2/m
-228; 48; pnnn[1]; pnnn; p2/n2/n2/n; pnnn(1); p2/n2/n2/n:1
-229; 48; pnnn(2); pnnn[2]; p2/n2/n2/n:2
-230; 49; pccm; p2/c2/c2/m
-231; 49; pccm[cab]; p2/m2/a2/a; pccm(cab)
-232; 49; pccm[bca]; p2/b2/m2/b; pccm(bca)
-233; 50; pban(1abc); pban[1abc]; p2/b2/a2/n; pban
-234; 50; pban(2abc); pban[2abc]
-235; 50; pban[1cab]; pban(1cab); p2/n2/c2/b
+228; 48; pnnn; pnnn(1); pnnn:1; pnnn[1]; p2/n2/n2/n:1; p2/n2/n2/n
+229; 48; pnnn[2]; pnnn(2); pnnn:2; p2/n2/n2/n:2
+230; 49; p2/c2/c2/m; pccm
+231; 49; p2/m2/a2/a; pccm(cab); pccm[cab]
+232; 49; pccm[bca]; pccm(bca); p2/b2/m2/b
+233; 50; pban; pban[1abc]; pban(1abc); p2/b2/a2/n
+234; 50; pban[2abc]; pban(2abc)
+235; 50; p2/n2/c2/b; pban(1cab); pban[1cab]
 236; 50; pban(2cab); pban[2cab]
-237; 50; pban[1bca]; pban(1bca); p2/c2/n2/a
-238; 50; pban(2bca); pban[2bca]
-239; 51; pmma; p2_1/m2/m2/a
-240; 51; p2/m2_1/m2/b; pmma[ba-c]; pmma(ba-c)
-241; 51; pmma[cab]; p2/b2_1/m2/m; pmma(cab)
-242; 51; pmma(-cba); p2/c2/m2_1/m; pmma[-cba]
-243; 51; p2/m2/c2_1/m; pmma(bca); pmma[bca]
-244; 51; pmma[a-cb]; p2_1/m2/a2/m; pmma(a-cb)
-245; 52; pnna; p2/n2_1/n2/a
-246; 52; p2_1/n2/n2/b; pnna[ba-c]; pnna(ba-c)
-247; 52; pnna(cab); pnna[cab]; p2/b2/n2_1/n
-248; 52; p2/c2_1/n2/n; pnna(-cba); pnna[-cba]
-249; 52; pnna(bca); p2_1/n2/c2/n; pnna[bca]
-250; 52; pnna(a-cb); pnna[a-cb]; p2/n2/a2_1/n
-251; 53; pmna; p2/m2/n2_1/a
-252; 53; pmna[ba-c]; p2/n2/m2_1/b; pmna(ba-c)
+237; 50; pban(1bca); pban[1bca]; p2/c2/n2/a
+238; 50; pban[2bca]; pban(2bca)
+239; 51; p2_1/m2/m2/a; pmma
+240; 51; pmma[ba-c]; p2/m2_1/m2/b; pmma(ba-c)
+241; 51; p2/b2_1/m2/m; pmma(cab); pmma[cab]
+242; 51; p2/c2/m2_1/m; pmma(-cba); pmma[-cba]
+243; 51; pmma[bca]; p2/m2/c2_1/m; pmma(bca)
+244; 51; p2_1/m2/a2/m; pmma[a-cb]; pmma(a-cb)
+245; 52; p2/n2_1/n2/a; pnna
+246; 52; pnna(ba-c); pnna[ba-c]; p2_1/n2/n2/b
+247; 52; p2/b2/n2_1/n; pnna[cab]; pnna(cab)
+248; 52; p2/c2_1/n2/n; pnna[-cba]; pnna(-cba)
+249; 52; pnna(bca); pnna[bca]; p2_1/n2/c2/n
+250; 52; p2/n2/a2_1/n; pnna(a-cb); pnna[a-cb]
+251; 53; p2/m2/n2_1/a; pmna
+252; 53; pmna(ba-c); p2/n2/m2_1/b; pmna[ba-c]
 253; 53; pmna[cab]; p2_1/b2/m2/n; pmna(cab)
-254; 53; pmna(-cba); p2_1/c2/n2/m; pmna[-cba]
-255; 53; pmna(bca); pmna[bca]; p2/n2_1/c2/m
-256; 53; p2/m2_1/a2/n; pmna[a-cb]; pmna(a-cb)
-257; 54; pcca; p2_1/c2/c2/a
-258; 54; pcca(ba-c); p2/c2_1/c2/b; pcca[ba-c]
-259; 54; pcca[cab]; p2/b2_1/a2/a; pcca(cab)
-260; 54; pcca[-cba]; p2/c2/a2_1/a; pcca(-cba)
-261; 54; pcca[bca]; pcca(bca); p2/b2/c2_1/b
-262; 54; pcca[a-cb]; p2_1/b2/a2/b; pcca(a-cb)
+254; 53; p2_1/c2/n2/m; pmna[-cba]; pmna(-cba)
+255; 53; pmna[bca]; p2/n2_1/c2/m; pmna(bca)
+256; 53; pmna(a-cb); pmna[a-cb]; p2/m2_1/a2/n
+257; 54; p2_1/c2/c2/a; pcca
+258; 54; pcca[ba-c]; p2/c2_1/c2/b; pcca(ba-c)
+259; 54; p2/b2_1/a2/a; pcca[cab]; pcca(cab)
+260; 54; pcca[-cba]; pcca(-cba); p2/c2/a2_1/a
+261; 54; pcca[bca]; p2/b2/c2_1/b; pcca(bca)
+262; 54; pcca(a-cb); p2_1/b2/a2/b; pcca[a-cb]
 263; 55; p2_1/b2_1/a2/m; pbam
-264; 55; p2/m2_1/c2_1/b; pbam(cab); pbam[cab]
-265; 55; p2_1/c2/m2_1/a; pbam[bca]; pbam(bca)
-266; 56; p2_1/c2_1/c2/n; pccn
-267; 56; pccn(cab); pccn[cab]; p2/n2_1/a2_1/a
+264; 55; pbam[cab]; p2/m2_1/c2_1/b; pbam(cab)
+265; 55; pbam[bca]; p2_1/c2/m2_1/a; pbam(bca)
+266; 56; pccn; p2_1/c2_1/c2/n
+267; 56; p2/n2_1/a2_1/a; pccn[cab]; pccn(cab)
 268; 56; pccn[bca]; p2_1/b2/n2_1/b; pccn(bca)
 269; 57; p2/b2_1/c2_1/m; pbcm
-270; 57; pbcm[ba-c]; pbcm(ba-c); p2_1/c2/a2_1/m
+270; 57; pbcm[ba-c]; p2_1/c2/a2_1/m; pbcm(ba-c)
 271; 57; pbcm(cab); pbcm[cab]; p2_1/m2/c2_1/a
-272; 57; pbcm(-cba); pbcm[-cba]; p2_1/m2_1/a2/b
-273; 57; p2_1/b2_1/m2/a; pbcm[bca]; pbcm(bca)
-274; 57; p2/c2_1/m2_1/b; pbcm[a-cb]; pbcm(a-cb)
+272; 57; pbcm[-cba]; p2_1/m2_1/a2/b; pbcm(-cba)
+273; 57; pbcm(bca); pbcm[bca]; p2_1/b2_1/m2/a
+274; 57; pbcm(a-cb); p2/c2_1/m2_1/b; pbcm[a-cb]
 275; 58; p2_1/n2_1/n2/m; pnnm
-276; 58; pnnm(cab); p2/m2_1/n2_1/n; pnnm[cab]
-277; 58; pnnm(bca); pnnm[bca]; p2_1/n2/m2_1/n
-278; 59; p2_1/m2_1/m2/n; pmmn; pmmn[1abc]; pmmn(1abc)
+276; 58; pnnm(cab); pnnm[cab]; p2/m2_1/n2_1/n
+277; 58; p2_1/n2/m2_1/n; pnnm(bca); pnnm[bca]
+278; 59; pmmn(1abc); pmmn[1abc]; p2_1/m2_1/m2/n; pmmn
 279; 59; pmmn(2abc); pmmn[2abc]
-280; 59; pmmn[1cab]; p2/n2_1/m2_1/m; pmmn(1cab)
-281; 59; pmmn[2cab]; pmmn(2cab)
-282; 59; pmmn(1bca); pmmn[1bca]; p2_1/m2/n2_1/m
-283; 59; pmmn[2bca]; pmmn(2bca)
-284; 60; pbcn; p2_1/b2/c2_1/n
-285; 60; pbcn(ba-c); p2/c2_1/a2_1/n; pbcn[ba-c]
-286; 60; p2_1/n2_1/c2/a; pbcn[cab]; pbcn(cab)
-287; 60; pbcn(-cba); pbcn[-cba]; p2_1/n2/a2_1/b
-288; 60; pbcn[bca]; pbcn(bca); p2/b2_1/n2_1/a
-289; 60; pbcn[a-cb]; p2_1/c2_1/n2/b; pbcn(a-cb)
-290; 61; p2_1/b2_1/c2_1/a; pbca
+280; 59; pmmn(1cab); pmmn[1cab]; p2/n2_1/m2_1/m
+281; 59; pmmn(2cab); pmmn[2cab]
+282; 59; pmmn(1bca); p2_1/m2/n2_1/m; pmmn[1bca]
+283; 59; pmmn(2bca); pmmn[2bca]
+284; 60; p2_1/b2/c2_1/n; pbcn
+285; 60; pbcn[ba-c]; pbcn(ba-c); p2/c2_1/a2_1/n
+286; 60; p2_1/n2_1/c2/a; pbcn(cab); pbcn[cab]
+287; 60; pbcn[-cba]; p2_1/n2/a2_1/b; pbcn(-cba)
+288; 60; pbcn(bca); pbcn[bca]; p2/b2_1/n2_1/a
+289; 60; p2_1/c2_1/n2/b; pbcn[a-cb]; pbcn(a-cb)
+290; 61; pbca; p2_1/b2_1/c2_1/a
 291; 61; p2_1/c2_1/a2_1/b; pbca[ba-c]; pbca(ba-c)
-292; 62; p2_1/n2_1/m2_1/a; pnma
+292; 62; pnma; p2_1/n2_1/m2_1/a
 293; 62; p2_1/m2_1/n2_1/b; pnma(ba-c); pnma[ba-c]
 294; 62; pnma(cab); pnma[cab]; p2_1/b2_1/n2_1/m
-295; 62; pnma[-cba]; pnma(-cba); p2_1/c2_1/m2_1/n
-296; 62; p2_1/m2_1/c2_1/n; pnma[bca]; pnma(bca)
-297; 62; pnma[a-cb]; pnma(a-cb); p2_1/n2_1/a2_1/m
+295; 62; pnma(-cba); p2_1/c2_1/m2_1/n; pnma[-cba]
+296; 62; pnma[bca]; p2_1/m2_1/c2_1/n; pnma(bca)
+297; 62; pnma(a-cb); pnma[a-cb]; p2_1/n2_1/a2_1/m
 298; 63; c2/m2/c2_1/m; cmcm
-299; 63; cmcm(ba-c); cmcm[ba-c]; c2/c2/m2_1/m
-300; 63; a2_1/m2/m2/a; cmcm[cab]; cmcm(cab)
-301; 63; a2_1/m2/a2/m; cmcm[-cba]; cmcm(-cba)
-302; 63; cmcm(bca); b2/b2_1/m2/m; cmcm[bca]
-303; 63; b2/m2_1/m2/b; cmcm(a-cb); cmcm[a-cb]
+299; 63; cmcm(ba-c); c2/c2/m2_1/m; cmcm[ba-c]
+300; 63; cmcm[cab]; cmcm(cab); a2_1/m2/m2/a
+301; 63; cmcm(-cba); cmcm[-cba]; a2_1/m2/a2/m
+302; 63; cmcm(bca); cmcm[bca]; b2/b2_1/m2/m
+303; 63; cmcm(a-cb); cmcm[a-cb]; b2/m2_1/m2/b
 304; 64; c2/m2/c2_1/e; cmce
 305; 64; cmce(ba-c); cmce[ba-c]; c2/c2/m2_1/e
-306; 64; cmce(cab); a2_1/e2/m2/a; cmce[cab]
-307; 64; cmce[-cba]; a2_1/e2/a2/m; cmce(-cba)
-308; 64; cmce(bca); b2/b2_1/e2/m; cmce[bca]
-309; 64; b2/m2_1/e2/b; cmce[a-cb]; cmce(a-cb)
+306; 64; a2_1/e2/m2/a; cmce[cab]; cmce(cab)
+307; 64; a2_1/e2/a2/m; cmce(-cba); cmce[-cba]
+308; 64; cmce(bca); cmce[bca]; b2/b2_1/e2/m
+309; 64; cmce(a-cb); b2/m2_1/e2/b; cmce[a-cb]
 310; 65; c2/m2/m2/m; cmmm
-311; 65; a2/m2/m2/m; cmmm[cab]; cmmm(cab)
-312; 65; cmmm(bca); b2/m2/m2/m; cmmm[bca]
-313; 66; cccm; c2/c2/c2/m
-314; 66; cccm[cab]; a2/m2/a2/a; cccm(cab)
-315; 66; b2/b2/m2/b; cccm[bca]; cccm(bca)
-316; 67; cmme; c2/m2/m2/e
-317; 67; cmme[ba-c]; c2/m2/m2/e[ba-c]; c2/m2/m2/e(ba-c); cmme(ba-c)
-318; 67; cmme(cab); a2/e2/m2/m; a2/e2/m2/m(cab); a2/e2/m2/m[cab]; cmme[cab]
-319; 67; cmme(-cba); a2/e2/m2/m[-cba]; a2/e2/m2/m(-cba); cmme[-cba]
-320; 67; b2/m2/e2/m; cmme(bca); b2/m2/e2/m(bca); b2/m2/e2/m[bca]; cmme[bca]
-321; 67; b2/m2/e2/m(a-cb); b2/m2/e2/m[a-cb]; cmme[a-cb]; cmme(a-cb)
-322; 68; ccce[1abc]; ccce(1abc); ccce; c2/c2/c2/e
+311; 65; cmmm[cab]; a2/m2/m2/m; cmmm(cab)
+312; 65; cmmm(bca); cmmm[bca]; b2/m2/m2/m
+313; 66; c2/c2/c2/m; cccm
+314; 66; a2/m2/a2/a; cccm(cab); cccm[cab]
+315; 66; cccm(bca); b2/b2/m2/b; cccm[bca]
+316; 67; c2/m2/m2/e; cmme
+317; 67; c2/m2/m2/e(ba-c); cmme(ba-c); cmme[ba-c]; c2/m2/m2/e[ba-c]
+318; 67; cmme(cab); a2/e2/m2/m; cmme[cab]; a2/e2/m2/m[cab]; a2/e2/m2/m(cab)
+319; 67; cmme(-cba); cmme[-cba]; a2/e2/m2/m[-cba]; a2/e2/m2/m(-cba)
+320; 67; b2/m2/e2/m(bca); cmme[bca]; b2/m2/e2/m; cmme(bca); b2/m2/e2/m[bca]
+321; 67; b2/m2/e2/m[a-cb]; b2/m2/e2/m(a-cb); cmme[a-cb]; cmme(a-cb)
+322; 68; ccce(1abc); ccce[1abc]; c2/c2/c2/e; ccce
 323; 68; ccce(2abc); ccce[2abc]
 324; 68; ccce(1ba-c); ccce[1ba-c]
-325; 68; c2/c2/c2/e[ba-c]; ccce(2ba-c); c2/c2/c2/e(ba-c); ccce[2ba-c]
-326; 68; ccce(1cab); a2/e2/a2/a; ccce[1cab]
-327; 68; ccce(2cab); a2/e2/a2/a(cab); a2/e2/a2/a[cab]; ccce[2cab]
-328; 68; ccce(1-cba); ccce[1-cba]
-329; 68; ccce[2-cba]; ccce(2-cba); a2/e2/a2/a[-cba]; a2/e2/a2/a(-cba)
-330; 68; ccce[1bca]; b2/b2/e2/b; ccce(1bca)
-331; 68; ccce(2bca); ccce[2bca]; b2/b2/e2/b[bca]; b2/b2/e2/b(bca)
-332; 68; ccce[1a-cb]; ccce(1a-cb)
-333; 68; b2/b2/e2/b[a-cb]; b2/b2/e2/b(a-cb); ccce[2a-cb]; ccce(2a-cb)
+325; 68; ccce[2ba-c]; ccce(2ba-c); c2/c2/c2/e[ba-c]; c2/c2/c2/e(ba-c)
+326; 68; a2/e2/a2/a; ccce(1cab); ccce[1cab]
+327; 68; a2/e2/a2/a(cab); a2/e2/a2/a[cab]; ccce[2cab]; ccce(2cab)
+328; 68; ccce[1-cba]; ccce(1-cba)
+329; 68; ccce(2-cba); a2/e2/a2/a(-cba); ccce[2-cba]; a2/e2/a2/a[-cba]
+330; 68; b2/b2/e2/b; ccce(1bca); ccce[1bca]
+331; 68; ccce(2bca); ccce[2bca]; b2/b2/e2/b(bca); b2/b2/e2/b[bca]
+332; 68; ccce(1a-cb); ccce[1a-cb]
+333; 68; b2/b2/e2/b[a-cb]; ccce(2a-cb); b2/b2/e2/b(a-cb); ccce[2a-cb]
 334; 69; fmmm; f2/m2/m2/m
-335; 70; fddd(1); f2/d2/d2/d:1; fddd[1]; f2/d2/d2/d; fddd
-336; 70; fddd[2]; f2/d2/d2/d:2; fddd(2)
+335; 70; fddd[1]; fddd; fddd(1); f2/d2/d2/d; f2/d2/d2/d:1; fddd:1
+336; 70; fddd:2; f2/d2/d2/d:2; fddd[2]; fddd(2)
 337; 71; i2/m2/m2/m; immm
-338; 72; i2/b2/a2/m; ibam
-339; 72; ibam[cab]; ibam(cab); i2/m2/c2/b
-340; 72; ibam(bca); ibam[bca]; i2/c2/m2/a
+338; 72; ibam; i2/b2/a2/m
+339; 72; i2/m2/c2/b; ibam[cab]; ibam(cab)
+340; 72; ibam[bca]; ibam(bca); i2/c2/m2/a
 341; 73; ibca; i2/b2/c2/a
-342; 73; i2/c2/a2/b; ibca(ba-c); ibca[ba-c]
+342; 73; i2/c2/a2/b; ibca[ba-c]; ibca(ba-c)
 343; 74; imma; i2/m2/m2/a
 344; 74; i2/m2/m2/b; imma(ba-c); imma[ba-c]
-345; 74; i2/b2/m2/m; imma[cab]; imma(cab)
-346; 74; i2/c2/m2/m; imma(-cba); imma[-cba]
+345; 74; imma[cab]; i2/b2/m2/m; imma(cab)
+346; 74; i2/c2/m2/m; imma[-cba]; imma(-cba)
 347; 74; imma[bca]; imma(bca); i2/m2/c2/m
-348; 74; i2/m2/a2/m; imma(a-cb); imma[a-cb]
+348; 74; imma(a-cb); i2/m2/a2/m; imma[a-cb]
 349; 75; p4
 350; 76; p4_1
 351; 77; p4_2
@@ -356,13 +356,13 @@
 356; 82; i-4
 357; 83; p4/m
 358; 84; p4_2/m
-359; 85; p4/n:1; p4/n[1]; p4/n; p4/n(1)
-360; 85; p4/n[2]; p4/n(2); p4/n:2
-361; 86; p4_2/n[1]; p4_2/n:1; p4_2/n(1); p4_2/n
-362; 86; p4_2/n(2); p4_2/n:2; p4_2/n[2]
+359; 85; p4/n; p4/n(1); p4/n:1; p4/n[1]
+360; 85; p4/n[2]; p4/n:2; p4/n(2)
+361; 86; p4_2/n; p4_2/n[1]; p4_2/n:1; p4_2/n(1)
+362; 86; p4_2/n:2; p4_2/n[2]; p4_2/n(2)
 363; 87; i4/m
-364; 88; i4_1/a; i4_1/a[1]; i4_1/a(1); i4_1/a:1
-365; 88; i4_1/a:2; i4_1/a[2]; i4_1/a(2)
+364; 88; i4_1/a:1; i4_1/a; i4_1/a[1]; i4_1/a(1)
+365; 88; i4_1/a:2; i4_1/a(2); i4_1/a[2]
 366; 89; p422
 367; 90; p42_12
 368; 91; p4_122
@@ -397,68 +397,68 @@
 397; 120; i-4c2
 398; 121; i-42m
 399; 122; i-42d
-400; 123; p4/m2/m2/m; p4/mmm
+400; 123; p4/mmm; p4/m2/m2/m
 401; 124; p4/m2/c2/c; p4/mcc
-402; 125; p4/n2/b2/m; p4/nbm(1); p4/n2/b2/m:1; p4/nbm[1]; p4/nbm
-403; 125; p4/n2/b2/m:2; p4/nbm[2]; p4/nbm(2)
-404; 126; p4/nnc; p4/n2/n2/c:1; p4/nnc(1); p4/nnc[1]; p4/n2/n2/c
-405; 126; p4/n2/n2/c:2; p4/nnc[2]; p4/nnc(2)
-406; 127; p4/mbm; p4/m2_1/bm
-407; 128; p4/m2_1/nc; p4/mnc
-408; 129; p4/n2_1/mm; p4/nmm[1]; p4/n2_1/mm:1; p4/nmm; p4/nmm(1)
-409; 129; p4/nmm[2]; p4/n2_1/mm:2; p4/nmm(2)
-410; 130; p4/ncc(1); p4/ncc; p4/ncc[1]; p4/n2_1/cc:1; p4/n2_1/cc
-411; 130; p4/ncc[2]; p4/ncc(2); p4/n2_1/cc:2
+402; 125; p4/nbm:1; p4/nbm; p4/nbm[1]; p4/nbm(1); p4/n2/b2/m; p4/n2/b2/m:1
+403; 125; p4/nbm:2; p4/n2/b2/m:2; p4/nbm(2); p4/nbm[2]
+404; 126; p4/nnc:1; p4/nnc; p4/nnc[1]; p4/nnc(1); p4/n2/n2/c:1; p4/n2/n2/c
+405; 126; p4/nnc:2; p4/nnc(2); p4/nnc[2]; p4/n2/n2/c:2
+406; 127; p4/m2_1/bm; p4/mbm
+407; 128; p4/mnc; p4/m2_1/nc
+408; 129; p4/n2_1/mm:1; p4/nmm[1]; p4/n2_1/mm; p4/nmm:1; p4/nmm; p4/nmm(1)
+409; 129; p4/n2_1/mm:2; p4/nmm[2]; p4/nmm(2); p4/nmm:2
+410; 130; p4/n2_1/cc; p4/ncc(1); p4/ncc[1]; p4/n2_1/cc:1; p4/ncc:1; p4/ncc
+411; 130; p4/ncc:2; p4/ncc[2]; p4/n2_1/cc:2; p4/ncc(2)
 412; 131; p4_2/m2/m2/c; p4_2/mmc
-413; 132; p4_2/mcm; p4_2/m2/c2/m
-414; 133; p4_2/nbc[1]; p4_2/n2/b2/c; p4_2/nbc(1); p4_2/n2/b2/c:1; p4_2/nbc
-415; 133; p4_2/nbc(2); p4_2/nbc[2]; p4_2/n2/b2/c:2
-416; 134; p4_2/nnm[1]; p4_2/n2/n2/m; p4_2/n2/n2/m:1; p4_2/nnm(1); p4_2/nnm
-417; 134; p4_2/nnm[2]; p4_2/nnm(2); p4_2/n2/n2/m:2
+413; 132; p4_2/m2/c2/m; p4_2/mcm
+414; 133; p4_2/n2/b2/c:1; p4_2/nbc:1; p4_2/nbc; p4_2/n2/b2/c; p4_2/nbc[1]; p4_2/nbc(1)
+415; 133; p4_2/nbc[2]; p4_2/nbc(2); p4_2/nbc:2; p4_2/n2/b2/c:2
+416; 134; p4_2/nnm:1; p4_2/nnm; p4_2/nnm(1); p4_2/n2/n2/m; p4_2/nnm[1]; p4_2/n2/n2/m:1
+417; 134; p4_2/nnm[2]; p4_2/nnm(2); p4_2/n2/n2/m:2; p4_2/nnm:2
 418; 135; p4_2/mbc; p4_2/m2_1/b2/c
 419; 136; p4_2/m2_1/n2/m; p4_2/mnm
-420; 137; p4_2/n2_1/m2/c:1; p4_2/nmc; p4_2/n2_1/m2/c; p4_2/nmc[1]; p4_2/nmc(1)
-421; 137; p4_2/nmc[2]; p4_2/n2_1/m2/c:2; p4_2/nmc(2)
-422; 138; p4_2/n2_1/c2/m; p4_2/n2_1/c2/m:1; p4_2/ncm[1]; p4_2/ncm; p4_2/ncm(1)
-423; 138; p4_2/ncm(2); p4_2/n2_1/c2/m:2; p4_2/ncm[2]
-424; 139; i4/m2/m2/m; i4/mmm
+420; 137; p4_2/nmc:1; p4_2/nmc[1]; p4_2/nmc; p4_2/n2_1/m2/c; p4_2/n2_1/m2/c:1; p4_2/nmc(1)
+421; 137; p4_2/nmc[2]; p4_2/nmc(2); p4_2/n2_1/m2/c:2; p4_2/nmc:2
+422; 138; p4_2/n2_1/c2/m; p4_2/n2_1/c2/m:1; p4_2/ncm[1]; p4_2/ncm; p4_2/ncm(1); p4_2/ncm:1
+423; 138; p4_2/ncm(2); p4_2/ncm[2]; p4_2/n2_1/c2/m:2; p4_2/ncm:2
+424; 139; i4/mmm; i4/m2/m2/m
 425; 140; i4/m2/c2/m; i4/mcm
-426; 141; i4_1/amd; i4_1/amd[1]; i4_1/a2/m2/d; i4_1/a2/m2/d:1; i4_1/amd(1)
-427; 141; i4_1/amd[2]; i4_1/amd(2); i4_1/a2/m2/d:2
-428; 142; i4_1/acd[1]; i4_1/acd(1); i4_1/acd; i4_1/a2/c2/d:1; i4_1/a2/c2/d
-429; 142; i4_1/acd[2]; i4_1/acd(2); i4_1/a2/c2/d:2
+426; 141; i4_1/a2/m2/d; i4_1/amd[1]; i4_1/amd:1; i4_1/amd(1); i4_1/a2/m2/d:1; i4_1/amd
+427; 141; i4_1/amd(2); i4_1/amd[2]; i4_1/a2/m2/d:2; i4_1/amd:2
+428; 142; i4_1/acd[1]; i4_1/a2/c2/d; i4_1/acd; i4_1/acd:1; i4_1/a2/c2/d:1; i4_1/acd(1)
+429; 142; i4_1/acd[2]; i4_1/a2/c2/d:2; i4_1/acd:2; i4_1/acd(2)
 430; 143; p3
 431; 144; p3_1
 432; 145; p3_2
-433; 146; r3; r3h; r3(h); r3[h]
-434; 146; r3(r); r3[r]; r3r
+433; 146; r3(h); r3[h]; r3h; r3
+434; 146; r3r; r3(r); r3[r]
 435; 147; p-3
-436; 148; r-3[h]; r-3; r-3h; r-3(h)
-437; 148; r-3(r); r-3r; r-3[r]
+436; 148; r-3(h); r-3[h]; r-3h; r-3
+437; 148; r-3[r]; r-3r; r-3(r)
 438; 149; p312
 439; 150; p321
 440; 151; p3_112
 441; 152; p3_121
 442; 153; p3_212
 443; 154; p3_221
-444; 155; r32[h]; r32(h); r32h; r32
-445; 155; r32(r); r32[r]; r32r
+444; 155; r32; r32h; r32[h]; r32(h)
+445; 155; r32[r]; r32(r); r32r
 446; 156; p3m1
 447; 157; p31m
 448; 158; p3c1
 449; 159; p31c
-450; 160; r3m(h); r3mh; r3m; r3m[h]
-451; 160; r3mr; r3m(r); r3m[r]
-452; 161; r3ch; r3c; r3c[h]; r3c(h)
-453; 161; r3c[r]; r3cr; r3c(r)
+450; 160; r3m; r3mh; r3m[h]; r3m(h)
+451; 160; r3m(r); r3mr; r3m[r]
+452; 161; r3ch; r3c; r3c(h); r3c[h]
+453; 161; r3c(r); r3cr; r3c[r]
 454; 162; p-312/m; p-31m
-455; 163; p-31c; p-312/c
-456; 164; p-32/m1; p-3m1
-457; 165; p-3c1; p-32/c1
-458; 166; r-32/mh; r-32/m; r-3m[h]; r-3m(h); r-3mh; r-3m
-459; 166; r-3m[r]; r-3mr; r-32/mr; r-3m(r)
-460; 167; r-3c; r-32/c; r-32/ch; r-3c[h]; r-3c(h); r-3ch
-461; 167; r-3c[r]; r-3c(r); r-32/cr; r-3cr
+455; 163; p-312/c; p-31c
+456; 164; p-3m1; p-32/m1
+457; 165; p-32/c1; p-3c1
+458; 166; r-3m[h]; r-3m; r-3m(h); r-32/mh; r-3mh; r-32/m
+459; 166; r-3m(r); r-3m[r]; r-32/mr; r-3mr
+460; 167; r-32/ch; r-32/c; r-3c(h); r-3ch; r-3c[h]; r-3c
+461; 167; r-3cr; r-3c(r); r-3c[r]; r-32/cr
 462; 168; p6
 463; 169; p6_1
 464; 170; p6_5
@@ -482,24 +482,24 @@
 482; 188; p-6c2
 483; 189; p-62m
 484; 190; p-62c
-485; 191; p6/mmm; p6/m2/m2/m
-486; 192; p6/mcc; p6/m2/c2/c
+485; 191; p6/m2/m2/m; p6/mmm
+486; 192; p6/m2/c2/c; p6/mcc
 487; 193; p6_3/m2/c2/m; p6_3/mcm
-488; 194; p6_3/mmc; p6_3/m2/m2/c
+488; 194; p6_3/m2/m2/c; p6_3/mmc
 489; 195; p23
 490; 196; f23
 491; 197; i23
 492; 198; p2_13
 493; 199; i2_13
 494; 200; p2/m-3; pm-3
-495; 201; p2/n-3:1; pn-3(1); p2/n-3; pn-3[1]; pn-3
-496; 201; pn-3[2]; pn-3(2); p2/n-3:2
+495; 201; pn-3(1); pn-3:1; pn-3[1]; p2/n-3:1; pn-3; p2/n-3
+496; 201; p2/n-3:2; pn-3(2); pn-3[2]; pn-3:2
 497; 202; fm-3; f2/m-3
-498; 203; fd-3(1); fd-3; fd-3[1]; f2/d-3; f2/d-3:1
-499; 203; fd-3(2); fd-3[2]; f2/d-3:2
+498; 203; fd-3; fd-3(1); f2/d-3; f2/d-3:1; fd-3[1]; fd-3:1
+499; 203; fd-3(2); fd-3:2; fd-3[2]; f2/d-3:2
 500; 204; im-3; i2/m-3
 501; 205; pa-3; p2_1/a-3
-502; 206; ia-3; i2_1/a-3
+502; 206; i2_1/a-3; ia-3
 503; 207; p432
 504; 208; p4_232
 505; 209; f432
@@ -514,17 +514,17 @@
 514; 218; p-43n
 515; 219; f-43c
 516; 220; i-43d
-517; 221; pm-3m; p4/m-32/m
-518; 222; pn-3n; pn-3n(1); pn-3n[1]; p4/n-32/n:1; p4/n-32/n
-519; 222; pn-3n(2); p4/n-32/n:2; pn-3n[2]
-520; 223; pm-3n; p4_2/m-32/n
-521; 224; p4_2/n-32/m; p4_2/n-32/m:1; pn-3m(1); pn-3m; pn-3m[1]
-522; 224; pn-3m(2); p4_2/n-32/m:2; pn-3m[2]
+517; 221; p4/m-32/m; pm-3m
+518; 222; pn-3n(1); pn-3n:1; pn-3n; pn-3n[1]; p4/n-32/n:1; p4/n-32/n
+519; 222; pn-3n:2; p4/n-32/n:2; pn-3n[2]; pn-3n(2)
+520; 223; p4_2/m-32/n; pm-3n
+521; 224; p4_2/n-32/m:1; pn-3m:1; pn-3m[1]; p4_2/n-32/m; pn-3m; pn-3m(1)
+522; 224; pn-3m[2]; pn-3m(2); pn-3m:2; p4_2/n-32/m:2
 523; 225; fm-3m; f4/m-32/m
-524; 226; fm-3c; f4/m-32/c
-525; 227; fd-3m[1]; fd-3m; f4_1/d-32/m; fd-3m(1); f4_1/d-32/m:1
-526; 227; f4_1/d-32/m:2; fd-3m[2]; fd-3m(2)
-527; 228; f4_1/d-32/c:1; f4_1/d-32/c; fd-3c; fd-3c[1]; fd-3c(1)
-528; 228; f4_1/d-32/c:2; fd-3c[2]; fd-3c(2)
-529; 229; i4/m-32/m; im-3m
-530; 230; ia-3d; i4_1/a-32/d
+524; 226; f4/m-32/c; fm-3c
+525; 227; fd-3m:1; fd-3m[1]; f4_1/d-32/m; fd-3m; fd-3m(1); f4_1/d-32/m:1
+526; 227; fd-3m:2; fd-3m[2]; fd-3m(2); f4_1/d-32/m:2
+527; 228; fd-3c; f4_1/d-32/c:1; f4_1/d-32/c; fd-3c(1); fd-3c[1]; fd-3c:1
+528; 228; f4_1/d-32/c:2; fd-3c(2); fd-3c[2]; fd-3c:2
+529; 229; im-3m; i4/m-32/m
+530; 230; i4_1/a-32/d; ia-3d

@@ -11,7 +11,7 @@ from difflib import get_close_matches
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
-from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonised_to_formatted, preferred_names
+from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_formatted, preferred_names
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
@@ -301,16 +301,16 @@ class SpacegroupDatabase:
         """ Get a spacegroup by name"""
         canonised_input = canonise_string(name)
 
-        if canonised_input in self._canonical_spacegroup_name_to_index:
-            index = self._canonical_spacegroup_name_to_index[canonised_input]
+        if canonised_input in canonical_aliases:
+            index = canonical_aliases[canonised_input]
             return self.spacegroups[index-1]
 
         # Failure branch...
         # We want to get names that are similar in their input text form, but report the standard form
-        similar = get_close_matches(name, self._canonincal_name_to_group_name.keys(), n=3, cutoff=0.4)
+        similar = get_close_matches(name, canonical_aliases.keys(), n=3, cutoff=0.4)
 
         if similar:
-            suggestion_string = ", ".join([f"'{self._canonincal_name_to_group_name[s]}'" for s in similar])
+            suggestion_string = ", ".join([f"'{canonical_to_formatted[s]}'" for s in similar])
             message_string = (f"Unknown space group '{name}', "
                               f"perhaps you meant {suggestion_string} or something similar.")
 
@@ -348,7 +348,7 @@ class SpacegroupDatabase:
 database = SpacegroupDatabase()
 
 if __name__ == "__main__":
-    print(database.spacegroup_by_name("b2/m"))
+    # print(database.spacegroup_by_name("b2/m"))
     print(database.spacegroup_by_name("c2/m"))
 
     print(database.spacegroup_by_name("pnnn:1"))

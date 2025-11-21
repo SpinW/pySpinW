@@ -75,5 +75,5 @@ def load_preferred_names() -> dict[int, str]:
 
 formatted_aliases = load_formatted_aliases()
 canonical_aliases = load_canonical_aliases()
-canonised_to_formatted = load_canonised_to_formatted()
+canonical_to_formatted = load_canonised_to_formatted()
 preferred_names = load_preferred_names()

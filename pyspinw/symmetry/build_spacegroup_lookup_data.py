@@ -127,6 +127,7 @@ def build_spacegroup_lookup(target_directory: str):
             expanded_setting.rhombohedral_or_hexagonal is None):
 
             full_names[group_data.international_full + " : "+str(setting.choice_number)] = i
+            full_names[group_data.international_short + " : "+str(setting.choice_number)] = i
             has_non_default = True
 
         # Add names with R or H suffix
