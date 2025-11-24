@@ -4,6 +4,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Callable
 
+from abc import ABC, abstractmethod
+
 import numpy as np
 import spglib
 from difflib import get_close_matches
@@ -22,9 +24,17 @@ from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup,
 from pyspinw.tolerances import tolerances
 
 
+class SymmetryGroup(ABC, SPWSerialisable):
+    """ Base class for symmetry group and magnetic symmetry group """
+
+    @abstractmethod
+    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+        """ Find all the sites that are required by symmetry by the input site """
 
 
-class MagneticSpaceGroup(SPWSerialisable):
+
+
+class MagneticSpaceGroup(SymmetryGroup):
     """ Representation of a magnetic space group"""
 
     serialisation_name = "MagneticGroup"
@@ -38,8 +48,11 @@ class MagneticSpaceGroup(SPWSerialisable):
         """repr"""
         return f"MagneticSpaceGroup({self.number}, {self.symbol})"
 
-    def duplicates(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
+
+        # TODO: Transform moments in the correct coordinate system
+
         coordinates = site.values.reshape(1, -1)
 
         new_coordinates = []
@@ -75,7 +88,7 @@ class MagneticSpaceGroup(SPWSerialisable):
 
 
 
-class SpaceGroup(SPWSerialisable):
+class SpaceGroup(SymmetryGroup):
     """ Representation of a space group"""
 
     serialisation_name = "SpaceGroup"
@@ -121,6 +134,48 @@ class SpaceGroup(SPWSerialisable):
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         pass
 
+
+    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+        """ Find "duplicate" sites of a given site """
+        coordinates = site.ijk.reshape(1, -1)
+
+        new_coordinates = []
+        for operation in self.operations:
+
+            candidate = operation(coordinates)
+
+            # If it's not the input, continue
+            if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
+                continue
+
+            # Is it one we've already found
+            new = True
+            for ijkm in new_coordinates:
+                if np.all(np.abs(candidate - ijkm) < tolerances.SAME_SITE_ABS_TOL):
+                    new = False
+                    break
+
+            if new:
+                new_coordinates.append(candidate)
+
+
+        new_sites = []
+        for i, ijkm in enumerate(new_coordinates):
+            new_site = ImpliedLatticeSite.from_coordinates(
+                coordinates=ijkm.reshape(-1),
+                parent_site=site,
+                name=site.name + f" [{i+1}]"
+                )
+
+            new_sites.append(new_site)
+
+        return new_sites
+
+#
+#
+# Database stuff
+#
+#
 
 class ExactMatch:
     """ Result for exact matches in database searches"""

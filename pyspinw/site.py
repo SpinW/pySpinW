@@ -3,7 +3,8 @@
 import numpy as np
 from scipy.stats import goodness_of_fit
 
-from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext
+from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
+    numpy_deserialise, numpy_serialise
 
 _id_counter = -1
 def _generate_unique_id():
@@ -46,7 +47,7 @@ class LatticeSite(SPWSerialisable):
 
         else:
             if mi is not None or mj is not None or mk is not None:
-                raise ValueError("You need to specify at least one of 'mi', 'mj', 'mk' or 'supercell_moments'")
+                raise ValueError("You need to specify either 'mi', 'mj' and 'mk', or 'supercell_moments'")
 
             good_shape = True
 
@@ -143,9 +144,7 @@ class LatticeSite(SPWSerialisable):
                 "i": self.i,
                 "j": self.j,
                 "k": self.k,
-                "mi": self.mi,
-                "mj": self.mj,
-                "mk": self.mk,
+                "supercell_moments": numpy_serialise(self._moment_data),
                 "name": self.name
             }
 
@@ -172,18 +171,14 @@ class LatticeSite(SPWSerialisable):
                     i=json["i"],
                     j=json["j"],
                     k=json["k"],
-                    mi=json["mi"],
-                    mj=json["mj"],
-                    mk=json["mk"],
+                    supercell_moments=numpy_deserialise(json["supercell_moments"]),
                     name=json["name"])
             else:
                 site = LatticeSite(
                     i=json["i"],
                     j=json["j"],
                     k=json["k"],
-                    mi=json["mi"],
-                    mj=json["mj"],
-                    mk=json["mk"],
+                    supercell_moments=numpy_deserialise(json["supercell_moments"]),
                     name=json["name"])
 
             context.sites.put(response.id, site)
@@ -197,12 +192,18 @@ class ImpliedLatticeSite(LatticeSite):
     def __init__(self,
                  parent_site: LatticeSite,
                  i: float, j: float, k: float,
-                 mi: float = 0, mj: float = 0, mk: float = 0,
+                 mi: float | None = None,
+                 mj: float | None = None,
+                 mk: float | None = None,
+                 supercell_moments: np.ndarray | None = None,
                  name: str | None = None):
 
         self._parent_site = parent_site
 
-        super().__init__(i=i, j=j, k=k, mi=mi, mj=mj, mk=mk, name=name)
+        super().__init__(i=i, j=j, k=k,
+                         mi=mi, mj=mj, mk=mk,
+                         supercell_moments=supercell_moments,
+                         name=name)
 
     @property
     def parent_site(self):
@@ -216,9 +217,7 @@ class ImpliedLatticeSite(LatticeSite):
                 "i": self.i,
                 "j": self.j,
                 "k": self.k,
-                "mi": self.mi,
-                "mj": self.mj,
-                "mk": self.mk,
+                "supercell_moments": numpy_serialise(self._moment_data),
                 "name": self.name,
                 "parent": parent_ref
             }

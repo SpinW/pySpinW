@@ -284,7 +284,7 @@ class SiteTable(QTableWidget):
 
         count = 0
         for site_index, site in enumerate(self._sites):
-            extra_sites = self.symmetry.magnetic_group.duplicates(site)
+            extra_sites = self.symmetry.magnetic_group.implied_sites_for(site)
 
             end_count = count + len(extra_sites)
 
