@@ -1,8 +1,13 @@
 """ Helper functions for python interface """
+import math
+
 import numpy as np
 from numpy._typing import ArrayLike
 
+from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
+from pyspinw.coupling import Coupling
+from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
@@ -161,7 +166,7 @@ def rotation_supercell(
 
 
 @check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
-def summartion_supercell(
+def summation_supercell(
         directions: np.ndarray,
         phases: np.ndarray | None = None,
         scaling: tuple[int, int, int]=(1,1,1)):
@@ -242,4 +247,99 @@ def spacegroup(search_string: str):
         # Try to get by name
         return database.spacegroup_by_name(search_string)
 
+@check_sizes(direction=(3,), force_numpy=True)
+def filter(direction: ArrayLike, perpendicular: bool=False, max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
+    if perpendicular:
+        return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
+    else:
+        return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
+
+def couplings(sites: list[LatticeSite],
+              unit_cell: UnitCell,
+              coupling_type: type[Coupling],
+              max_distance: float,
+              min_distance: float = 0.0,
+              direction_filter: DirectionalityFilter | None = None,
+              max_order: int | None = None,
+              j: float | None = None,
+              j_x: float | None = None,
+              j_y: float | None = None,
+              j_xy: float | None = None,
+              j_z: float | None = None,
+              d_x: float | None = None,
+              d_y: float | None = None,
+              d_z: float | None = None,
+              coupling_parameters: dict | None = None,
+              naming_pattern: str | None = None,):
+
+    """ Automatically creates a list of couplings
+
+    :param sites: *required* List of sites to make couplings between
+    :param unit_cell: *required* Unit cell (needed for working out the Cartesian coordinates of sites)
+    :param coupling_type: *required* Type of coupling
+    :param max_distance: *required* Maximum Cartesian distance at which couplings are made
+    :param min_distance: Minimum Cartesian distance at which couplings are made
+    :param direction_filter: Supply a DirectionalityFilter object (e.g. using `filter`)
+                             to only create couplings in certain directions
+    :param max_order: Maximum "order" of couplings
+    :param j" Constant for scalar valued Heisenberg couplings (only needed for Heisenberg)
+    :param j_x" Constant for x component of Heisenberg-like couplings (only needed for Diagonal)
+    :param j_y" Constant for y component of Heisenberg-like couplings (only needed for Diagonal)
+    :param j_z" Constant for z component of Heisenberg-like couplings (only needed for Diagonal, Ising and XY)
+    :param j_xy" Constant for x and y components of Heisenberg-like couplings (only needed for XY and XXZ)
+    :param d_x" Constant for x component of Dzyaloshinskii-Moriya coupling (DM)
+    :param d_y" Constant for y component of Dzyaloshinskii-Moriya coupling (DM)
+    :param d_z" Constant for z component of Dzyaloshinskii-Moriya coupling (DM)
+    :param coupling_parameters: Parameters can be supplied in a dictionary instead
+    :param naming_pattern: String used to assign names to couplings, see `apply_naming_convention`
+
+    :returns: list of couplings
+    """
+
+    if coupling_parameters is None:
+        coupling_parameters = {}
+
+    if j is not None:
+        coupling_parameters["j"] = j
+
+    if j_x is not None:
+        coupling_parameters["j_x"] = j_x
+
+    if j_y is not None:
+        coupling_parameters["j_y"] = j_y
+
+    if j_z is not None:
+        coupling_parameters["j_z"] = j_z
+
+    if j_xy is not None:
+        coupling_parameters["j_xy"] = j_xy
+
+    if d_x is not None:
+        coupling_parameters["d_x"] = d_x
+
+    if d_y is not None:
+        coupling_parameters["d_y"] = d_y
+
+    if d_z is not None:
+        coupling_parameters["d_z"] = d_z
+
+    # Only want parameters that apply to the specific type
+    used_parameters = {}
+    for parameter, default in zip(coupling_type.parameters, coupling_type.parameter_defaults):
+        if parameter in coupling_parameters:
+            used_parameters[parameter] = coupling_parameters[parameter]
+        else:
+            used_parameters[parameter] = default
+
+    group = CouplingGroup(
+        name = "<unnamed group>",
+        min_distance = min_distance,
+        max_distance = max_distance,
+        max_order = max_order,
+        naming_pattern = default_naming_pattern if naming_pattern is None else naming_pattern,
+        coupling_type = coupling_type,
+        coupling_parameters = used_parameters,
+        direction_filter = direction_filter)
+
+    return group.couplings(sites, unit_cell)
