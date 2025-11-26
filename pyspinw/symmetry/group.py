@@ -150,8 +150,8 @@ class SpaceGroup(SymmetryGroup):
 
             # Is it one we've already found
             new = True
-            for ijkm in new_coordinates:
-                if np.all(np.abs(candidate - ijkm) < tolerances.SAME_SITE_ABS_TOL):
+            for coordinates in new_coordinates:
+                if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
                     new = False
                     break
 
@@ -160,10 +160,14 @@ class SpaceGroup(SymmetryGroup):
 
 
         new_sites = []
-        for i, ijkm in enumerate(new_coordinates):
-            new_site = ImpliedLatticeSite.from_coordinates(
-                coordinates=ijkm.reshape(-1),
+        for i, coordinates in enumerate(new_coordinates):
+
+            new_site = ImpliedLatticeSite(
                 parent_site=site,
+                i=coordinates[0][0],
+                j=coordinates[0][1],
+                k=coordinates[0][2],
+                supercell_moments=site._moment_data,
                 name=site.name + f" [{i+1}]"
                 )
 
