@@ -45,6 +45,23 @@ class InDirectionFilter(DirectionalityFilter):
         else:
             return np.dot(self.direction, vector) / np.sqrt(sq_mag) > self.in_direction_dev_num
 
+class SymmetricInDirectionFilter(DirectionalityFilter):
+    """ Selects vectors in a given direction """
+
+    def __init__(self, direction: ArrayLike, max_dev_angle_deg: float = 0.01):
+        direction = np.array(direction, dtype=float)
+        self.direction = direction / np.sqrt(np.sum(direction**2))
+        self.in_direction_dev_num = np.cos((np.pi/180) * max_dev_angle_deg)
+
+    def accept(self, vector):
+        """ DirectionalityFilter implementation: return True if in a similar direction"""
+        sq_mag = np.sum(vector**2)
+        if sq_mag == 0:
+            return False
+        else:
+            return np.abs(np.dot(self.direction, vector) / np.sqrt(sq_mag)) > self.in_direction_dev_num
+
+
 class InPlaneFilter(DirectionalityFilter):
     """ Selects vectors in a given plane (specified by normal)"""
 

@@ -7,8 +7,10 @@ from numpy._typing import ArrayLike
 from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
-from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup
+from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
+    SymmetricInDirectionFilter
 from pyspinw.site import LatticeSite
+from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
     TransformationSupercell, SummationSupercell
@@ -173,7 +175,7 @@ def summation_supercell(
 
     """ Create a supercell based on the propagation vectors and partial moments
 
-    i.e. $m = \sum_j mu_j exp(2 \pi i d_j.r + \phi_j)$
+    i.e. $m = \\sum_j mu_j exp(2 \\pi i d_j.r + \\phi_j)$
 
     :param directions: propagation vector directions
     :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
@@ -248,15 +250,31 @@ def spacegroup(search_string: str):
         return database.spacegroup_by_name(search_string)
 
 @check_sizes(direction=(3,), force_numpy=True)
-def filter(direction: ArrayLike, perpendicular: bool=False, max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
+def filter(direction: ArrayLike, perpendicular: bool=False, symmetric: bool=False, max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
+    """ Create a filter for directions (helper method for couplings)
+
+    :param direction: If not perpendicular, allowed direction of coupling
+                      If perpendicular, normal to plane containing coupling
+    :param perpendicular: Constrain to a line (perpendicular=False) or a plane (perpendicular=True)
+    :param symmetric: In the not perpendicular case, symmetric True generates couplings in both directions
+    :param max_dev_angle_deg: Angular tolerance for the direction/normal in degrees
+
+    :returns: A DirectionalityFilter object that can be used to select couplings in particular directions
+    """
+
+
+
     if perpendicular:
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
     else:
-        return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
+        if symmetric:
+            return SymmetricInDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
+        else:
+            return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
 
 def couplings(sites: list[LatticeSite],
-              unit_cell: UnitCell,
+              unit_cell: UnitCell | Structure,
               coupling_type: type[Coupling],
               max_distance: float,
               min_distance: float = 0.0,
@@ -296,6 +314,9 @@ def couplings(sites: list[LatticeSite],
 
     :returns: list of couplings
     """
+
+    if isinstance(unit_cell, Structure):
+        unit_cell = unit_cell.unit_cell
 
     if coupling_parameters is None:
         coupling_parameters = {}
