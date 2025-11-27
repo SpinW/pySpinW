@@ -193,7 +193,6 @@ def batch_couplings(sites: list[LatticeSite],
                 else:
                     site_2_name = site_2.name
 
-
                 cell_offset = CellOffset(i=cell_offset_raw[0], j=cell_offset_raw[1], k=cell_offset_raw[2])
 
                 name = apply_naming_convention(naming_pattern,
