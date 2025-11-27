@@ -103,6 +103,12 @@ class Path:
         """ x-axis tick labels corresponding to tick positions """
         return self._labels
 
+    def format_plot(self, plt_or_fig=None):
+        if plt_or_fig is None:
+            import matplotlib.pyplot as plt_or_fig
+
+        plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
+
 
 if __name__ == "__main__":
 
