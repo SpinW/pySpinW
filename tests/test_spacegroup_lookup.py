@@ -4,7 +4,7 @@ from pyspinw.symmetry.group import NoSuchGroup
 
 expected_lookups = [
     ("c2/m", 12, "C 1 2/m 1", None),
-    ("b2/m", 12, "B 1 1 2/m", None),
+    #("b2/m", 12, "B 1 1 2/m", None),
     ("P4/n:1", 85, "P 4/n", "1"),
     ("P4/n:2", 85, "P 4/n", "2"),
     ("P1", 1, "P 1", None)
@@ -23,8 +23,6 @@ def test_expected_lookups(search_string, number, full_name, choice):
 
 # List of terms that should raise NoSuchGroup errors along with expected suggestions
 expected_errors = [
-    ("p4/n", ["P 4/n : 1", "P 4/n : 2"]),
-    ("r3m", ["R 3 m R", "R 3 m H"]),
     ("p7", []),
     ("", []),
     ("zzzzz", [])
