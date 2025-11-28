@@ -1,8 +1,6 @@
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.coupling import HeisenbergCoupling
-from pyspinw.couplinggroup import CouplingGroup
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import spacegroup, couplings, filter
 from pyspinw.path import Path
@@ -24,7 +22,7 @@ if __name__ == "__main__":
     s = Structure([only_site],
         unit_cell=unit_cell,
         spacegroup=group,
-        supercell=TrivialSupercell(scaling=(3,3,3)))
+        supercell=TrivialSupercell())
 
 
     exchanges = couplings(sites=[only_site],

@@ -18,5 +18,7 @@ def debug_plot(structure: Structure, couplings: list[Coupling], show=True):
     for coupling in couplings:
         pass
 
+    ax.axis("equal")
+
     if show:
         plt.show()

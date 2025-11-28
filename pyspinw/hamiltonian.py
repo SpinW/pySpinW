@@ -78,6 +78,8 @@ class Hamiltonian(SPWSerialisable):
         rotations = site_rotations(moments)
         magnitudes = np.sqrt(np.sum(moments**2, axis=1))
 
+        rotations = [rotations[i, :, :] for i in range(rotations.shape[0])]
+
         # Convert the couplings
         couplings: list[Coupling] = []
         for input_coupling in self._couplings:
@@ -89,10 +91,6 @@ class Hamiltonian(SPWSerialisable):
             )
 
             couplings.append(coupling)
-
-        print("WHAT?")
-        print(rotations.shape)
-        print(magnitudes.shape)
 
         energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
 
