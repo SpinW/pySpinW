@@ -1,12 +1,27 @@
 """Utility functions for the raw calculation examples."""
 
+from dataclasses import dataclass
 from typing import Callable
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+from pyspinw.calculations.spinwave import (
+    spinwave_calculation as py_spinwave,
+    Coupling as PyCoupling,
+    MagneticField as PyField,
+)
+
+@dataclass
+class InternalClasses:
+    """A system of internal classes."""
+
+    coupling: object
+    field: object
+
+py_classes = InternalClasses(coupling=PyCoupling, field=PyField)
 
 
 def run_example(
-    example: Callable[[int, object], tuple[list, "np.array", "np.array", list]], use_rust=False
+    example: Callable[[int, object], tuple[list, "np.array", "np.array", list]],
+    use_rust: bool = False,
 ) -> (tuple, "np.array"):
     """Run an example.
 
@@ -37,18 +52,18 @@ def run_example(
 
     """
     try:
-        from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
+        from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling, MagneticField as RsField
 
         RUST_AVAILABLE = True
     except ModuleNotFoundError:
         RUST_AVAILABLE = False
 
     # default to Python unless Rust is requested (which it is by default) and available
-    coupling_class = PyCoupling
+    classes = py_classes
     spinwave_calculation = py_spinwave
     if use_rust:
         if RUST_AVAILABLE:
-            coupling_class = RsCoupling
+            classes = InternalClasses(coupling=RsCoupling, field=RsField)
             spinwave_calculation = rs_spinwave
         else:
             print(
@@ -57,7 +72,7 @@ def run_example(
                 "pass 'python' as an argument to the Python script in the terminal."
             )
 
-    structure = example(coupling_class=coupling_class)
+    structure = example(classes=classes)
     energies = spinwave_calculation(*structure)
 
     return structure, energies
