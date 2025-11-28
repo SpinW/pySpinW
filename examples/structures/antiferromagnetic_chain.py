@@ -28,20 +28,12 @@ if __name__ == "__main__":
         supercell=TrivialSupercell())
 
 
-    exchanges = []
-    exchanges += couplings(sites=sites,
-                           unit_cell=unit_cell,
-                           max_distance=1.1,
-                           coupling_type=HeisenbergCoupling,
-                           j=1,
-                           direction_filter=filter([1,0,0], symmetric=True))
-
-    exchanges += couplings(sites=sites[::-1],
-                           unit_cell=unit_cell,
-                           max_distance=1.1,
-                           coupling_type=HeisenbergCoupling,
-                           j=1,
-                           direction_filter=filter([1, 0, 0], symmetric=True))
+    exchanges = couplings(sites=sites,
+                          unit_cell=unit_cell,
+                          max_distance=1.1,
+                          coupling_type=HeisenbergCoupling,
+                          j=1,
+                          direction_filter=filter([1,0,0], symmetric=True))
 
     print("Sites:")
     for site in sites:
