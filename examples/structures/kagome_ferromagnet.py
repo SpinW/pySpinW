@@ -26,25 +26,12 @@ if __name__ == "__main__":
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(3,3,1)))
 
-    exchanges = []
-    exchanges += couplings(sites=[x,y],
-                          unit_cell=unit_cell,
-                          max_distance=0.6,
-                          coupling_type=HeisenbergCoupling,
-                          j=-1)
 
-    exchanges += couplings(sites=[y, z],
+    exchanges = couplings(sites=[x, y, z],
                            unit_cell=unit_cell,
                            max_distance=0.6,
                            coupling_type=HeisenbergCoupling,
                            j=-1)
-
-    exchanges += couplings(sites=[z, x],
-                           unit_cell=unit_cell,
-                           max_distance=0.6,
-                           coupling_type=HeisenbergCoupling,
-                           j=-1)
-
 
     debug_plot(s, exchanges, show=False)
 
