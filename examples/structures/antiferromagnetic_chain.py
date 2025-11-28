@@ -17,15 +17,11 @@ if __name__ == "__main__":
     freeze_support()
 
     unit_cell = UnitCell(2,1,1)
-    group = spacegroup("p1")
 
     sites = [LatticeSite(0, 0, 0, 0,0,1, name="X"),
              LatticeSite(0.5,0,0, 0,0, -1, name="Y")]
 
-    s = Structure(sites,
-        unit_cell=unit_cell,
-        spacegroup=group,
-        supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell)
 
 
     exchanges = couplings(sites=sites,
