@@ -4,8 +4,8 @@
 import numpy as np
 
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup
-from pyspinw.symmetry.supercell import Supercell
+from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
+from pyspinw.symmetry.supercell import Supercell, TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import connected_components, arraylike_equality
@@ -16,14 +16,16 @@ class Structure:
 
     def __init__(self,
                  sites: list[LatticeSite],
-                 spacegroup: SymmetryGroup,
                  unit_cell: UnitCell,
-                 supercell: Supercell):
+                 spacegroup: SymmetryGroup | None = None,
+                 supercell: Supercell | None = None):
 
         self._input_sites = sites
-        self._spacegroup = spacegroup
         self._unit_cell = unit_cell
-        self._supercell = supercell
+
+
+        self._spacegroup = database.spacegroups[1] if spacegroup is None else spacegroup
+        self._supercell = TrivialSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
 

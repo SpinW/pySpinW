@@ -15,14 +15,10 @@ if __name__ == "__main__":
     freeze_support()
 
     unit_cell = UnitCell(1,1,1)
-    group = spacegroup("p1")
 
     only_site = LatticeSite(0, 0, 0, 0,0,1, name="X")
 
-    s = Structure([only_site],
-        unit_cell=unit_cell,
-        spacegroup=group,
-        supercell=TrivialSupercell())
+    s = Structure([only_site], unit_cell=unit_cell)
 
 
     exchanges = couplings(sites=[only_site],

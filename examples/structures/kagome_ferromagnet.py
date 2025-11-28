@@ -17,7 +17,6 @@ if __name__ == "__main__":
     freeze_support()
 
     unit_cell = UnitCell(1,1,1, gamma=60)
-    group = spacegroup("p1")
 
     x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
     y = LatticeSite(0.5, 0, 0, 0, 0, 1, name="Y")
@@ -25,10 +24,7 @@ if __name__ == "__main__":
 
     sites = [x, y, z]
 
-    s = Structure(sites,
-        unit_cell=unit_cell,
-        spacegroup=group,
-        supercell=TrivialSupercell(scaling=(3,3,1)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(3,3,1)))
 
     exchanges = []
     exchanges += couplings(sites=[x,y],
