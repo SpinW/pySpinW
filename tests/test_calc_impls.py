@@ -9,17 +9,22 @@ of examples.
 import numpy as np
 import pytest
 
+from examples.raw_calculations.utils import py_classes, InternalClasses
+
 try:
-    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
+    from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling, MagneticField as RsField
+    rs_classes = InternalClasses(coupling=RsCoupling, field=RsField)
 except ImportError:
     # we can use the --runxfail option for pytest to then ensure
     # that the Rust tests run and pass if we're expecting Rust to be installed
     pytestmark = pytest.mark.xfail(raises=NameError, reason="Rust module not installed.")
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling, MagneticField as PyField
 
 from examples.raw_calculations.ferromagnetic_chain import heisenberg_ferromagnet
+from examples.raw_calculations.ferromagnet_gtensor import ferromagnet_gtensor
 from examples.raw_calculations.antiferro_chain import antiferro_chain
+from examples.raw_calculations.antiferro_ef import antiferro_ef
 from examples.raw_calculations.kagome import kagome_ferromagnet
 from examples.raw_calculations.kagome_antiferro import kagome_antiferromagnet
 from examples.raw_calculations.kagome_supercell import kagome_supercell
@@ -27,14 +32,16 @@ from examples.raw_calculations.kagome_supercell import kagome_supercell
 @pytest.mark.rust
 @pytest.mark.parametrize("example",
                          [heisenberg_ferromagnet,
+                          ferromagnet_gtensor,
                           antiferro_chain,
+                          antiferro_ef,
                           kagome_ferromagnet,
                           kagome_antiferromagnet,
                           kagome_supercell,])
 def test_calc_impls(example):
     """Compare Rust and Python spinwave calculation implementations."""
-    rs_results = rs_spinwave(*example(coupling_class=RsCoupling))
-    py_results = py_spinwave(*example(coupling_class=PyCoupling))
+    rs_results = rs_spinwave(*example(classes=rs_classes))
+    py_results = py_spinwave(*example(classes=py_classes))
 
     # we test to an absolute tolerance of 1e-6 in line with the MATLAB
     np.testing.assert_allclose(np.sort(rs_results), np.sort(py_results), atol=1e-6, rtol=0)
