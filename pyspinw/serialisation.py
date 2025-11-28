@@ -4,6 +4,7 @@ See design document 004 for details.
 
 """
 import inspect
+from fractions import Fraction
 from functools import wraps
 
 import numpy as np
@@ -248,3 +249,39 @@ def numpy_deserialise(json: dict) -> np.ndarray:
                                     f"but found {actual_length} values") from ve
 
     return data
+
+def serialise_fraction(fraction: Fraction) -> dict:
+    """ Serialise a Fraction """
+    return {
+        "numerator": fraction.numerator,
+        "denominator": fraction.denominator
+    }
+
+@expects_keys("numerator, denominator")
+def deserialise_fraction(json: dict) -> Fraction:
+    """ Deserialise a Fraction """
+    return Fraction(json["numerator"], json["denominator"])
+
+def serialise_fraction_or_builtin(value: int | float | Fraction):
+    """ Serialise a union type of fraction or builtin number to pre-json"""
+    if isinstance(value, Fraction):
+        return {
+            "type": "fraction",
+            "data": serialise_fraction(value)
+        }
+    else:
+        return {
+            "type": "builtin",
+            "data": value
+        }
+
+@expects_keys("type, data")
+def deserialise_fraction_or_builtin(json: dict) -> int | float | Fraction:
+    """ Deserialise the pre-json representation of a fraction or builtin"""
+    match json["type"]:
+        case "fraction":
+            return deserialise_fraction(json["data"])
+        case "builtin":
+            return json["data"]
+        case _:
+            raise SPWSerialisationError("Expected number type to be 'fraction' or 'builtin")

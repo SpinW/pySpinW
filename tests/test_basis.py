@@ -24,7 +24,6 @@ zeros = [np.zeros((10, 3), dtype=float)] # Sometimes we want to check length zer
 @pytest.mark.parametrize("vectors", test_vectors + zeros)
 def test_find_aligned_basis_normality(vectors):
     """ Check length of all basis vectors is 1 within tolerance"""
-
     for basis_vector in find_aligned_basis(vectors):
         lengths = np.sqrt(np.sum(basis_vector**2, axis=1))
         errors = lengths - 1
@@ -62,7 +61,6 @@ def test_find_aligned_basis_matches(vectors):
 
 def test_find_aligned_basis_zero_is_z():
     """ Check that a sensible error is thrown if any vector """
-
     e1, e2, e3 = find_aligned_basis(zeros[0])
 
     assert np.all(e1[:, 0] == 0)

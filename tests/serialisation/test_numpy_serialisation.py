@@ -36,7 +36,6 @@ def test_numpy_serialisation_forwards_backwards(mat: np.ndarray):
 @pytest.mark.parametrize("mat", examples)
 def test_numpy_serialisation_bad_size_error(mat):
     """ Numpy serialisations, check that incorrect sizes throw errors """
-
     serialised = numpy_serialise(mat)
     serialised["data"].append(serialised["data"][-1])
 

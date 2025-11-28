@@ -155,7 +155,6 @@ def test_any_matrix(function, a, b):
 @pytest.mark.parametrize('n', [1,2,3,4])
 def test_any_matrix_dimensionality(n):
     """ Check that only 2D is allowed"""
-
     m = np.zeros(tuple([3]*n)) # 3, 3x3, 3x3x3 ...
 
     if n == 2:

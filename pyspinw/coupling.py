@@ -108,7 +108,7 @@ class Coupling(SPWSerialisable):
 
     def distance(self, unit_cell: UnitCell):
         """ Distance between sites """
-        return np.sqrt(np.sum(self.vector(unit_cell)))
+        return np.sqrt(np.sum(self.vector(unit_cell)**2))
 
     def _base_serialisation(self, context: SPWSerialisationContext):
         return {

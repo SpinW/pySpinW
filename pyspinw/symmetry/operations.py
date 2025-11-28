@@ -301,7 +301,10 @@ class MagneticOperation:
         momenta = np.array(momenta)
 
         new_points = (point_operation @ points.T + translation).T % 1
-        new_momenta = momenta * self.time_reversal
+
+        # TODO: Work out which one of these is right
+        # new_momenta = momenta * self.time_reversal
+        new_momenta = ((point_operation @ momenta.T) * self.time_reversal).T
 
         return np.concatenate((new_points, new_momenta), axis=1)
 

@@ -39,7 +39,6 @@ def cif_float(string: str) -> float:
 
 def extract_cell_data(block: StarBlock) -> CellData:
     """ Extract the data describing the unit cell from a cif file block"""
-
     a = block["_cell_length_a"]
     b = block["_cell_length_b"]
     c = block["_cell_length_c"]
@@ -95,7 +94,6 @@ def load_mcif(filename: str, block_name: str | None = None):
     :param filename: string with filename to be opened
     :param block_name: optional string, name of dataset within file, if not present, this method will give the first one
     """
-
     data: CifFile = ReadCif(filename)
 
     # Get the appropriate block
