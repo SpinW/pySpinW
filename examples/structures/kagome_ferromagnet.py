@@ -49,23 +49,6 @@ if __name__ == "__main__":
                            coupling_type=HeisenbergCoupling,
                            j=-1)
 
-    exchanges += couplings(sites=[y, x],
-                           unit_cell=unit_cell,
-                           max_distance=0.6,
-                           coupling_type=HeisenbergCoupling,
-                           j=-1)
-
-    exchanges += couplings(sites=[z, y],
-                           unit_cell=unit_cell,
-                           max_distance=0.6,
-                           coupling_type=HeisenbergCoupling,
-                           j=-1)
-
-    exchanges += couplings(sites=[x, z],
-                           unit_cell=unit_cell,
-                           max_distance=0.6,
-                           coupling_type=HeisenbergCoupling,
-                           j=-1)
 
     debug_plot(s, exchanges, show=False)
 

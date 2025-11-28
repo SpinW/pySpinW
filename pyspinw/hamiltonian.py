@@ -92,6 +92,16 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(coupling)
 
+
+            coupling = coupling_class(
+                unique_id_to_index[input_coupling.site_2._unique_id],
+                unique_id_to_index[input_coupling.site_1._unique_id],
+                np.array(input_coupling.coupling_matrix.T, **rust_kw),
+                input_coupling.vector(self.structure.unit_cell)
+            )
+
+            couplings.append(coupling)
+
         energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
 
         return energies
