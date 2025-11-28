@@ -14,7 +14,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.util import rotation_matrix
 
 
-def _coerce_numeric_input(value: Fraction | float, max_denom=1000_000):
+def _coerce_numeric_input(value: Fraction | float, max_denom=1_000):
     """ Convert floats or fractions into the form needed for a propagation vector"""
     if not isinstance(value, Fraction):
         value = Fraction(value).limit_denominator(max_denominator=max_denom)

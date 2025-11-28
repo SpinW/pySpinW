@@ -30,7 +30,7 @@ That is, the couplings of sites defined by a symmetry group (the sites, and thos
 same as between a list of sites defined in P1 symmetry.
 
 The implementation of this is rather trivial, but it suggests a design choice. That is that the `CouplingGroup` object
-acts a list of all equivalent sites according to the symmetry group - as opposed to, for example,
+acts on a list of all equivalent sites according to the symmetry group - as opposed to, for example,
 creating couplings then applying a symmetry. It also means that the `CouplingGroup` object needs to be designed in
 such a way that it is insensitive to symmetry.
 
@@ -44,4 +44,7 @@ of the cross product characteristic of DM couplings).
 Do we check this, or just ignore it? It's better to check, but maybe this is impractical. TBD.
 
 
+Status
+------
 
+In progress
