@@ -33,7 +33,6 @@ expected_errors = [
 @pytest.mark.parametrize("search_string, required_suggestions", expected_errors)
 def test_expected_errors(search_string, required_suggestions):
     """ Check that ambiguous or wrong names throw errors, with appropriate suggestions in the error"""
-
     if expected_errors:
         for term in required_suggestions:
             with pytest.raises(NoSuchGroup, match=term):

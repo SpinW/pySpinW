@@ -1,7 +1,7 @@
+""" Paths through q-space"""
+
 import numpy as np
 from numpy._typing import ArrayLike
-
-from pyspinw.checks import check_sizes
 
 
 class Path:
@@ -104,6 +104,10 @@ class Path:
         return self._labels
 
     def format_plot(self, plt_or_fig=None):
+        """ Apply formatting to a matplotlib plot/figure/axis
+
+        If None, it will import matplotlib.pyplot and work on that
+        """
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
 

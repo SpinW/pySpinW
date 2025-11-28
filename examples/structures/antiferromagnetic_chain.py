@@ -1,8 +1,8 @@
+""" Antiferromagnetic chain example """
+
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.coupling import HeisenbergCoupling
-from pyspinw.couplinggroup import CouplingGroup
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import spacegroup, couplings, filter
 from pyspinw.path import Path

@@ -50,7 +50,6 @@ class MagneticSpaceGroup(SymmetryGroup):
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
-
         # TODO: Transform moments in the correct coordinate system
 
         coordinates = site.values.reshape(1, -1)

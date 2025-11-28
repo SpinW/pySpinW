@@ -13,8 +13,11 @@ from pyspinw.symmetry.canonise import canonise_string
 
 @dataclass
 class SettingExpander:
-    """ This object is used to convert choices as specified in spglib, where
-    defaults are just ommited, to ones where the defaults are explicit"""
+    """ This object is used to convert choices as specified in spglib
+
+    Where defaults are just ommited, to ones where the defaults are explicit
+    """
+
     choice_number: bool = False
     permutation: bool = False
     unique_axis: bool = False
@@ -54,7 +57,8 @@ def build_expanded_settings() -> dict[int, Setting]:
 
     If they're part of a group with alternate choices, make sure that there
     is an entry for that kind of choice (e.g. permutation, unique axis) rather than
-    None"""
+    None
+    """
     # Collect together settings for each group
     settings_lists = defaultdict(list)
     for i in range(1, 531):
@@ -83,12 +87,10 @@ def build_expanded_settings() -> dict[int, Setting]:
     return expanded_settings
 
 def build_spacegroup_lookup(target_directory: str):
-    """
-    Create lookup tables for getting spacegroups from strings
+    """Create lookup tables for getting spacegroups from strings
 
     See ADR 010 for requirements.
     """
-
     default_names = {}
     default_setting_index = {}
     full_names = {}

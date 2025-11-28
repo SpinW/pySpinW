@@ -1,8 +1,9 @@
-from collections import defaultdict
+""" Magnetic structures """
+
 
 import numpy as np
 
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.unitcell import UnitCell
@@ -11,6 +12,8 @@ from pyspinw.util import connected_components, arraylike_equality
 
 
 class Structure:
+    """ Representation of the magnetic structure """
+
     def __init__(self,
                  sites: list[LatticeSite],
                  spacegroup: SymmetryGroup,
@@ -25,7 +28,7 @@ class Structure:
         self._sites: list[LatticeSite] = self._extended_sites()
 
     def full_structure_site_list(self):
-
+        """ All the sites in the structure"""
         all_sites = []
 
         # unit cell stuff
@@ -44,12 +47,14 @@ class Structure:
         return all_sites
 
     def matplotlib_site_data(self):
+        """ Data for making matplotlib scatter plots of sites """
         array_data = np.array([self.unit_cell.fractional_to_cartesian(site._ijk)
                          for site in self.full_structure_site_list()])
 
         return array_data[:,0], array_data[:, 1], array_data[:, 2]
 
     def _extended_sites(self)  -> list[LatticeSite]:
+        """ All the sites, including those implied by symmetry """
         site_list = self._input_sites.copy()
         for site in self._input_sites:
             site_list += self._spacegroup.implied_sites_for(site)
@@ -130,40 +135,49 @@ class Structure:
 
 
     def _build_sites(self):
+        """ Updates the site variable on parameter changes"""
         self._sites = self._extended_sites()
 
     @property
     def sites(self) -> list[LatticeSite]:
-        return self._sites.copy()
+        """ Get the sites used to define the structure (but implied by symmetry) """
+        return self._input_sites.copy()
 
     @sites.setter
     def sites(self, sites):
+        """ Set the input sites """
         self._input_sites = sites
         self._sites = self._build_sites()
 
     @property
     def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:
+        """ Get the spacegroup"""
         return self._spacegroup
 
     @spacegroup.setter
     def spacegroup(self, spacegroup: SpaceGroup | MagneticSpaceGroup):
+        """ Set the spacegroup"""
         self._spacegroup = spacegroup
         self._build_sites()
 
     @property
     def unit_cell(self) -> UnitCell:
+        """ Get the unit cell"""
         return self._unit_cell
 
     @unit_cell.setter
     def unit_cell(self, unit_cell: UnitCell):
+        """ Set the unit cell"""
         self._unit_cell = unit_cell
         self._build_sites()
 
     @property
     def supercell(self) -> Supercell:
+        """ Get the supercell """
         return self._supercell
 
     @supercell.setter
     def supercell(self, supercell: Supercell):
+        """ Set the supercell """
         self._supercell = supercell
         self._build_sites()

@@ -4,7 +4,6 @@ from importlib import resources
 
 def load_formatted_aliases() -> dict[int, list[str]]:
     """ Load the aliases for all the spacegroup settings """
-
     output = {}
 
     with resources.open_text(
@@ -22,7 +21,6 @@ def load_formatted_aliases() -> dict[int, list[str]]:
 
 def load_canonical_aliases() -> dict[str, int]:
     """ Load the aliases for all the spacegroup settings in the form used for searching """
-
     output = {}
 
     with resources.open_text(

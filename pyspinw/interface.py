@@ -21,7 +21,6 @@ def sites(positions: ArrayLike,
           moments: ArrayLike | None = None,
           names: list[str] | None=None,
           convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
-
     """ Create lattice site
 
     :param positions: positions of the sites
@@ -33,7 +32,6 @@ def sites(positions: ArrayLike,
                                 if instead it is a unit cell, we assume the coordinates are cartesian,
                                 and the positions will be converted into lattice units
     """
-
     # check the positions are n-by-3, or 1d
     positions = np.array(positions)
     match len(positions.shape):
@@ -118,7 +116,12 @@ def propagation_vectors(
         directions: np.ndarray,
         phases: np.ndarray | None = None,
         incommensurate: bool=False) -> list[PropagationVector]:
+    """ Create list of propagation vectors
 
+    :param directions: n-by-3 matrix of directions (in lattice units)
+    :param phases: n vector of phases
+    :param incommensurate: Whether or not to set them to be incommensuate
+    """
     if phases is None:
         phases = [0.0 for _ in range(directions.shape[0])]
 
@@ -145,7 +148,6 @@ def rotation_supercell(
         axes: ArrayLike,
         phases: ArrayLike | None = None,
         scaling: tuple[int, int, int]=(1,1,1)):
-
     """ Create a supercell that rotates spins as we move along the propagation vector
 
     :param directions: propagation vector directions
@@ -154,7 +156,6 @@ def rotation_supercell(
     :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
-
     # Check that the axes match up
 
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
@@ -172,7 +173,6 @@ def summation_supercell(
         directions: np.ndarray,
         phases: np.ndarray | None = None,
         scaling: tuple[int, int, int]=(1,1,1)):
-
     """ Create a supercell based on the propagation vectors and partial moments
 
     i.e. $m = \\sum_j mu_j exp(2 \\pi i d_j.r + \\phi_j)$
@@ -181,7 +181,6 @@ def summation_supercell(
     :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
-
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
     vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
 
@@ -250,7 +249,10 @@ def spacegroup(search_string: str):
         return database.spacegroup_by_name(search_string)
 
 @check_sizes(direction=(3,), force_numpy=True)
-def filter(direction: ArrayLike, perpendicular: bool=False, symmetric: bool=False, max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
+def filter(direction: ArrayLike,
+           perpendicular: bool=False,
+           symmetric: bool=False,
+           max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
     """ Create a filter for directions (helper method for couplings)
 
     :param direction: If not perpendicular, allowed direction of coupling
@@ -261,9 +263,6 @@ def filter(direction: ArrayLike, perpendicular: bool=False, symmetric: bool=Fals
 
     :returns: A DirectionalityFilter object that can be used to select couplings in particular directions
     """
-
-
-
     if perpendicular:
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
     else:
@@ -290,7 +289,6 @@ def couplings(sites: list[LatticeSite],
               d_z: float | None = None,
               coupling_parameters: dict | None = None,
               naming_pattern: str | None = None,):
-
     """ Automatically creates a list of couplings
 
     :param sites: *required* List of sites to make couplings between
@@ -314,7 +312,6 @@ def couplings(sites: list[LatticeSite],
 
     :returns: list of couplings
     """
-
     if isinstance(unit_cell, Structure):
         unit_cell = unit_cell.unit_cell
 

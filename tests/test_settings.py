@@ -21,7 +21,6 @@ perms = ["".join(perm) for perm in perms]
 @pytest.mark.parametrize("string", perms)
 def test_permutation(string):
     """ Test that perutations convert to and from strings consistently"""
-
     test_string = AxisPermutation.from_string(string).to_string()
 
     assert test_string == string

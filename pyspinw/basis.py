@@ -53,7 +53,6 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
 
 def site_rotations(vectors: np.ndarray, rcond: float | None = None):
     """ Return an aligned basis as an n-by-3-by-3 matrix """
-
     e1, e2, e3 = find_aligned_basis(vectors, rcond)
 
     return np.stack([e3, e2, e1], axis=2)

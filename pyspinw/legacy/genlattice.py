@@ -24,7 +24,6 @@ def genlattice(
         angle: ArrayLike | None = None,
         angled: ArrayLike | None = None,
         spgr: SpaceGroup | str = "P1"):
-
     """ pySpinW version of MATLAB spinW's genlattice
 
     This works similarly, though the definition of spacegroups is a little different.
@@ -36,7 +35,6 @@ def genlattice(
 
     :return: GenLatticeResult, an object that holds the information generated, which can be fed to genmagstr
     """
-
     if isinstance(spgr, str):
         spacegroup = lookup_spacegroup(spgr)
 

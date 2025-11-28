@@ -7,6 +7,7 @@ from pyspinw.structures import Structure
 
 
 def debug_plot(structure: Structure, couplings: list[Coupling], show=True):
+    """ Plotting """
     fig = plt.figure()
 
     ax = fig.add_subplot(projection='3d')

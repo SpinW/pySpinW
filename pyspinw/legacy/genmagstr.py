@@ -28,6 +28,8 @@ class UnitSystem(Enum):
 
 @dataclass
 class GenMagStrResult:
+    """ Result of calling genmagstr """
+
     sites: list[LatticeSite]
 
 

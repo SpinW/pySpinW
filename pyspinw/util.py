@@ -82,7 +82,6 @@ def connected_components(adjacency_matrix: np.ndarray) -> list[list[int]]:
     :param adjacency_matrix: n-by-n numpy array of dtype bool representing the adjacency matrix
     :returns: list of subgraphs, themselves lists of indices for the adjacency matrix
     """
-
     assert len(adjacency_matrix.shape) == 2
     assert adjacency_matrix.shape[0] == adjacency_matrix.shape[1]
 

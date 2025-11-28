@@ -32,16 +32,16 @@ class Hamiltonian(SPWSerialisable):
 
     @property
     def structure(self):
+        """ Get the magnetic structure """
         return self._structure
 
     @property
     def couplings(self):
+        """ Get the couplings """
         return self._couplings
 
     def energies(self, q_vectors: np.ndarray, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
-
-
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
         spinwave_calculation = py_spinwave

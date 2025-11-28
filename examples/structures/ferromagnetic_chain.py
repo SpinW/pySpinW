@@ -1,3 +1,5 @@
+""" Ferromagnetic chain example """
+
 from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
@@ -8,8 +10,6 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-
-from pyspinw.debug_plot import debug_plot
 
 if __name__ == "__main__":
     freeze_support()

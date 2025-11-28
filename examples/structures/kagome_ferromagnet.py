@@ -1,3 +1,5 @@
+""" Kagome Ferromagnet example """
+
 from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling

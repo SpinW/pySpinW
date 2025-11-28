@@ -1,29 +1,39 @@
+""" Classes for working with spacegroup settings """
+
 import re
 from dataclasses import dataclass
 from enum import Enum
 
 
 class RhombohedralOrHexagonal(Enum):
+    """ Rhombohedral or hexagonal choice """
+
     RHOMBOHEDRAL = "R"
     HEXAGONAL = "H"
 
 class CrystalAxis(Enum):
+    """ A crystal axis"""
+
     A = "a"
     B = "b"
     C = "c"
 
 @dataclass
 class UniqueAxis:
+    """ Description of the unique axis of spacegroup"""
+
     axis: CrystalAxis
     negated: bool = False
 
     def to_string(self):
+        """ Convert to spglib type string """
         s = "-" if self.negated else ""
         s += self.axis.value
         return s
 
     @staticmethod
     def from_string(string: str):
+        """ Create from spglib type string"""
         negated = string.startswith("-")
 
         axis_string = string[1] if negated else string[0]
@@ -35,6 +45,8 @@ class UniqueAxis:
 
 
 class AxisPermutation:
+    """ Description of a permutation of a unit cell """
+
     def __init__(self,
                  first_axis: CrystalAxis,
                  second_axis: CrystalAxis,
@@ -67,7 +79,6 @@ class AxisPermutation:
     @staticmethod
     def from_string(string: str):
         """ Convert a string e.g. "b-ca" to a permutation representation """
-
         axes = []
         flip = False
         # Parse the string
@@ -93,9 +104,11 @@ class AxisPermutation:
 
 @dataclass
 class Setting:
+    """ Spacegroup setting descriptor in a form that can be easily worked with """
+
     _re_pattern = (
         r'^(?P<rhombhex>[RH])?'  # Rhombohedral or Hexagonal
-        r'(?P<unique>-?[abc])?'  # Unique Axis       
+        r'(?P<unique>-?[abc])?'  # Unique Axis
         r'(?P<choice>\d)?'  # Choice (single digit)
         r'(?P<perm>(?:-?c|[ab]){3})?$'  # Permutation
     )
@@ -107,6 +120,7 @@ class Setting:
 
     @staticmethod
     def from_optional_string(string: str | None):
+        """ Convert from spglib database string, or default setting if None"""
         if string is None:
             return Setting()
         else:
@@ -114,7 +128,7 @@ class Setting:
 
     @staticmethod
     def from_string(string: str):
-
+        """ Convert from spglib database string"""
         m = re.match(Setting._re_pattern, string)
 
         if not m:
@@ -128,6 +142,7 @@ class Setting:
         return Setting(choice, permutation, unique, rhombohedral_or_hexagonal=rhombhex)
 
     def to_string(self):
+        """ Convert this setting to a string like it is in the spglib database """
         s = "" if self.rhombohedral_or_hexagonal is None else self.rhombohedral_or_hexagonal.value
         s += "" if self.unique_axis is None else self.unique_axis.to_string()
         s += "" if self.choice_number is None else str(self.choice_number)
