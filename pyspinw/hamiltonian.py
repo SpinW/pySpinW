@@ -101,12 +101,17 @@ class Hamiltonian(SPWSerialisable):
         """ Create a spaghetti diagram """
         energy = self.energies(path.q_points())
 
+        # Sort the energies
+        energy = np.sort(energy.real, axis=1)
+
         if new_figure:
             plt.figure("Energy")
 
+        n_energies = energy.shape[1]
+
         x_values = path.x_values()
-        for energy_series in energy.T:
-            plt.plot(x_values, energy_series)
+        for i in range(n_energies//2):
+            plt.plot(x_values, energy[:, n_energies-i-1], 'k')
 
         path.format_plot(plt)
 
