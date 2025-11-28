@@ -9,6 +9,7 @@ from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, nump
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.tolerances import tolerances
 from pyspinw.util import triple_product_matrix
 
 
@@ -91,11 +92,14 @@ class Coupling(SPWSerialisable):
         return ", ".join(substrings)
 
     def __repr__(self):
+
+        direction_string = "<->" if self.is_symmetric() else "->"
+        
         return "".join([
             self.__class__.__name__,
-            f"['{self.name}', '{self.site_1.name}'->'{self.site_2.name}' offset={self.cell_offset}, ",
+            f"('{self.name}', {self.site_1.name} {direction_string} {self.site_2.name}, offset={self.cell_offset}, ",
             self.parameter_string,
-            "]"])
+            ")"])
 
     @property
     def lattice_vector(self):
@@ -157,6 +161,8 @@ class Coupling(SPWSerialisable):
             name=base.name,
             coupling_matrix=numpy_deserialise(data["matrix"]))
 
+    def is_symmetric(self):
+        return np.all(np.abs(self.coupling_matrix - self.coupling_matrix.T) < tolerances.IS_ZERO_TOL)
 
 
 class HeisenbergCoupling(Coupling):
@@ -212,7 +218,8 @@ class HeisenbergCoupling(Coupling):
             name=base.name,
             j = data["j"])
 
-
+    def is_symmetric(self):
+        return True
 
 
 class DiagonalCoupling(Coupling):
@@ -287,6 +294,9 @@ class DiagonalCoupling(Coupling):
             j_y = data["j_y"],
             j_z = data["j_z"])
 
+    def is_symmetric(self):
+        return True
+
 class XYCoupling(Coupling):
     """ "XY"  coupling, which takes the form
 
@@ -339,7 +349,8 @@ class XYCoupling(Coupling):
             name=base.name,
             j = data["j"])
 
-
+    def is_symmetric(self):
+        return True
 
 class XXZCoupling(Coupling):
     """ "XXZ" coupling, which takes the form
@@ -405,6 +416,10 @@ class XXZCoupling(Coupling):
             j_xy = data["j_xy"],
             j_z = data["j_z"])
 
+
+    def is_symmetric(self):
+        return True
+
 class IsingCoupling(Coupling):
     """Ising coupling (z component only), which takes the form
 
@@ -458,6 +473,8 @@ class IsingCoupling(Coupling):
             j_z = data["j_z"])
 
 
+    def is_symmetric(self):
+        return True
 
 class DMCoupling(Coupling):
     """Dzyaloshinskii–Moriya coupling, which takes the form
@@ -497,17 +514,17 @@ class DMCoupling(Coupling):
 
 
     @property
-    def j_x(self):
+    def d_x(self):
         """ DM coupling constant for x """
         return self._d_x
 
     @property
-    def j_y(self):
+    def d_y(self):
         """ DM coupling constant for y """
         return self._d_y
 
     @property
-    def j_z(self):
+    def d_z(self):
         """ DM coupling constant for z """
         return self._d_z
 
@@ -530,6 +547,9 @@ class DMCoupling(Coupling):
             d_x = data["d_x"],
             d_y = data["d_y"],
             d_z = data["d_z"])
+
+    def is_symmetric(self):
+        return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
 
 couplings = [HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling]
