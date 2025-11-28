@@ -94,7 +94,7 @@ class Coupling(SPWSerialisable):
     def __repr__(self):
 
         direction_string = "<->" if self.is_symmetric() else "->"
-        
+
         return "".join([
             self.__class__.__name__,
             f"('{self.name}', {self.site_1.name} {direction_string} {self.site_2.name}, offset={self.cell_offset}, ",
@@ -162,6 +162,7 @@ class Coupling(SPWSerialisable):
             coupling_matrix=numpy_deserialise(data["matrix"]))
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return np.all(np.abs(self.coupling_matrix - self.coupling_matrix.T) < tolerances.IS_ZERO_TOL)
 
 
@@ -219,6 +220,7 @@ class HeisenbergCoupling(Coupling):
             j = data["j"])
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return True
 
 
@@ -295,6 +297,7 @@ class DiagonalCoupling(Coupling):
             j_z = data["j_z"])
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return True
 
 class XYCoupling(Coupling):
@@ -350,6 +353,7 @@ class XYCoupling(Coupling):
             j = data["j"])
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return True
 
 class XXZCoupling(Coupling):
@@ -418,6 +422,7 @@ class XXZCoupling(Coupling):
 
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return True
 
 class IsingCoupling(Coupling):
@@ -474,6 +479,7 @@ class IsingCoupling(Coupling):
 
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return True
 
 class DMCoupling(Coupling):
@@ -549,6 +555,7 @@ class DMCoupling(Coupling):
             d_z = data["d_z"])
 
     def is_symmetric(self):
+        """ Is this a symmetric coupling """
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
 
