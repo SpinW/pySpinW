@@ -90,7 +90,7 @@ class PropagationVector(SPWSerialisable):
         return 2 * np.pi * (self.vector * site.ijk) + self.phase
 
 class CommensuratePropagationVector(PropagationVector):
-    """ Propagation vector with integer values"""
+    """ Propagation vector with rational values"""
 
     def __init__(self,
                  i: Fraction | float,
