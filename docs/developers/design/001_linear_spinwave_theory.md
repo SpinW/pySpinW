@@ -350,7 +350,7 @@ K T = U E^{1/2}.
 The spin-spin correlation function is then calculated from a tensor $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ defined as:
 
 ```math
-S^{\alpha\beta}(\mathbf{q}, \omega) = \frac{1}{2N} \sum_{i=1}^{2N} 
+S'^{\alpha, \beta}(\mathbf{q}, \omega) = \frac{1}{2N} \sum_{i=1}^{2N} 
 [T^* \left[ \begin{array}{cc}
 \mathrm{Y}^{\alpha, \beta}(\mathbf{q}) && \mathrm{Z}^{\alpha, \beta}(\mathbf{q}) \\
 \mathrm{V}^{\alpha, \beta}(\mathbf{q}) && \mathrm{W}^{\alpha, \beta}(\mathbf{q})
@@ -363,14 +363,14 @@ and $`\mathrm{Y}, \mathrm{Z}, \mathrm{V}`$ and $`\mathrm{W}`$ are $`N \times N`$
 
 ```math
 \begin{align}
-\mathrm{Y}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{\alpha} z_j^{*\beta} \\
-\mathrm{Z}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{\alpha} z_j^{\beta} \\
-\mathrm{V}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{*\alpha} z_j^{*\beta} \\
-\mathrm{W}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi(\mathbf{q}) z_i^{*\alpha} z_j^{\beta}
+\mathrm{Y}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{\alpha} z_j^{*\beta} \\
+\mathrm{Z}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{\alpha} z_j^{\beta} \\
+\mathrm{V}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{*\alpha} z_j^{*\beta} \\
+\mathrm{W}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{*\alpha} z_j^{\beta}
 \end{align}
 ```
 
-with $`\phi(\mathbf{q}) = e^{i \mathbf{q} (r_i - r_j)}`$ where $`r_i`$ and $`r_j`$ are the position vectors of spins $i$ and $j$ in the unit cell.
+with $`\phi_{i,j}(\mathbf{q}) = e^{i \mathbf{q} (r_i - r_j)}`$ where $`r_i`$ and $`r_j`$ are the position vectors of spins $i$ and $j$ in the unit cell.
 Note that $`r_i`$ is the position **within the unit cell**, not the absolute position in the lattice!
 
 For the rest of this section, we will denote
@@ -386,11 +386,18 @@ In practice, unless an eigenvalue is repeated, $`S^{\alpha\beta}(\mathbf{q}, \om
 If we denote the $`k`$'th eigenvalue as $`\lambda_k`$, then for the first $`N`$ eigenvalues (which are positive), we get 
 $`S'^{\alpha, \beta}(\mathbf{q}, \lambda_k) = M_{kk}`$,
 and for the last $`N`$ eigenvalues (which are negative), we get
-$`S'^{\alpha, \beta}(\mathbf{q}, \lambda_{k}) = - M_{(k - N) (k - N)}`$.
+$`S'^{\alpha, \beta}(\mathbf{q}, \lambda_{k}) = - M_{(N - k) (N - k)}`$.
 This is because for positive eigenvalues, $`\delta(\omega - g_{ii} \omega_i)`$ is only non-zero when $`\omega = \lambda_k`$, which
 is the case for $`i = k`$,
 and for negative eigenvalues, $`\delta(\omega - g_{ii} \omega_i)`$ is only non-zero when $`\omega = -\lambda_k`$, which it only does
-for $`i = k - N`$.
+for $`i = N - k`$.
 
 Thus for each $`\mathbf{q}`$, we can represent $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ as a list of $`2N`$ values corresponding to each eigenvalue of $`h(\mathbf{q})`$,
 and the full tensor $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ as a $`3 \times 3 \times 2N \times n_q`$ array.
+
+## Projection perpendicular to `q`
+Finally, for neutron output, we take the projection of  perpendicular to the `q` vector. This is
+```math
+\(S_{\perp }(Q,\omega )=\sum _{\alpha \beta }(\delta ^{\alpha \beta }-\^{q}^{\alpha }\^{q}^{\beta })S'^{\alpha \beta }(\mathbf{q}, \omega )\)
+```
+where $`\delta`$ is the Kronecker delta, and $`\hat{q}`$ is the unit vector along $`\mathbf{q}`$.
