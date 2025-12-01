@@ -86,4 +86,7 @@ class CellOffset(SPWSerialisable):
             raise TypeError(f"Could not convert {cell_offset_or_data} to cell offset, should be "
                             f"CellOffset, tuple[int,int,int] or None")
 
+    def __neg__(self):
+        return CellOffset(-self.i, -self.j, -self.k)
+
 CellOffsetCoercible = CellOffset | tuple[int, int, int] | None

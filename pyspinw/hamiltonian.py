@@ -83,6 +83,8 @@ class Hamiltonian(SPWSerialisable):
         # Convert the couplings
         couplings: list[Coupling] = []
         for input_coupling in self._couplings:
+            # Normal coupling
+
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
@@ -92,12 +94,13 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(coupling)
 
+            # Reversed coupling
 
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                input_coupling.vector(self.structure.unit_cell)
+                -input_coupling.vector(self.structure.unit_cell)
             )
 
             couplings.append(coupling)
