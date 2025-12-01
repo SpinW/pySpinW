@@ -111,7 +111,7 @@ class LatticeSystem(ABC):
             if isinstance(entry, (int,float)):
                 value = entry
             else:
-                value = value(unit_cell)
+                value = entry(unit_cell)
 
             if unit_cell.__dict__[key] != value:
                 raise IncompatibleUnitCell(
