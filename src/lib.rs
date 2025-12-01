@@ -4,7 +4,7 @@
 #![allow(non_snake_case)]
 
 use faer::{Col, ColRef, Mat, MatRef};
-use faer_ext::{IntoFaer, IntoNdarray};
+use faer_ext::IntoFaer;
 use num_complex::Complex;
 use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::prelude::*;
@@ -25,6 +25,7 @@ type C64 = Complex<f64>;
 // nicer names for PyO3 output types
 type Energies<'py> = Vec<Bound<'py, PyArray1<f64>>>;
 type SabTensor<'py> = Vec<Vec<Bound<'py, PyArray2<C64>>>>;
+type SQw<'py> = Vec<Bound<'py, PyArray1<f64>>>;
 
 /// Temporary description of the coupling between atoms.
 #[pyclass(frozen)]
@@ -110,7 +111,7 @@ pub fn energies<'py>(
         .collect())
 }
 
-///
+/// Calculate energies and neutron scattering cross-section for a system.
 #[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, field=None))]
 pub fn spinwave_calculation<'py>(
     py: Python<'py>,
@@ -120,7 +121,7 @@ pub fn spinwave_calculation<'py>(
     couplings: Vec<Py<Coupling>>,
     positions: Vec<PyReadonlyArray1<f64>>,
     field: Option<MagneticField>,
-) -> PyResult<(Energies<'py>, SabTensor<'py>)> {
+) -> PyResult<(Energies<'py>, SQw<'py>)> {
     // convert PyO3-friendly array types to faer matrices
     let r: Vec<MatRef<C64>> = rotations
         .into_iter()
@@ -134,23 +135,16 @@ pub fn spinwave_calculation<'py>(
         .map(faer_ext::IntoFaer::into_faer)
         .collect();
 
-    let results = calc_spinwave(r, magnitudes, q_vectors, c, p, field);
+    let (energies, Sab) = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, field);
+    let correlation = neutron(Sab, q_vectors);
     Ok((
-        results
+        energies
             .iter()
-            .map(|result| result.energies.to_pyarray(py))
+            .map(|result| result.to_pyarray(py))
             .collect(),
-        results
+        correlation
             .iter()
-            .map(|result| {
-                result
-                    .correlation
-                    .as_ref()
-                    .unwrap()
-                    .iter()
-                    .map(|v| PyArray2::from_array(py, &v.as_ref().into_ndarray()))
-                    .collect()
-            })
+            .map(|result| result.to_pyarray(py))
             .collect(),
     ))
 }

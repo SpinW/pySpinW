@@ -1,17 +1,12 @@
 use std::f64::consts::PI;
 
-use faer::{linalg::solvers::Solve, unzip, zip, Col, ColRef, Mat, MatRef, Side};
+use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Side, Par};
+use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B};
 use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
-
-/// Result of a spinwave calculation.
-pub struct SpinwaveResult {
-    pub energies: Vec<f64>,
-    pub correlation: Option<Vec<Mat<C64>>>,
-}
 
 /// Calculate the q-independent components of the calculation.
 fn calc_q_independent(
@@ -194,7 +189,7 @@ fn calc_sab_blocks(
             .iter()
             .map(|r_i| (J * (q.transpose() * r_i)).exp()),
     );
-    let phase_factors_matrix = phase_factors.clone() * phase_factors.conjugate().transpose();
+    let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
 
     let coefficients = component_mul(&spin_coefficients, &phase_factors_matrix);
 
@@ -217,7 +212,7 @@ fn calc_sab_blocks(
             // construct the four blocks V, W, Y, Z;
             // note that before we include the phase factors,
             // V is conj(Z) and W is conj(Y)
-            let Yab = z_alphas.clone() * z_betas.conjugate().transpose();
+            let Yab = z_alphas.clone() * z_betas.adjoint();
             let Zab = z_alphas * z_betas.transpose();
             let Vab = Zab.conjugate().to_owned();
             let Wab = Yab.conjugate().to_owned();
@@ -250,7 +245,7 @@ pub fn calc_spinwave(
     couplings: Vec<&Coupling>,
     positions: Vec<ColRef<f64>>,
     field: Option<MagneticField>,
-) -> Vec<SpinwaveResult> {
+) -> (Vec<Vec<f64>>, Vec<Vec<Mat<C64>>>) {
     let n_sites = rotations.len();
 
     let (C, z, spin_coefficients, Az) =
@@ -283,7 +278,7 @@ fn spinwave_single_q(
     couplings: &[&Coupling],
     positions: &[ColRef<f64>],
     Az: &Option<Vec<C64>>,
-) -> SpinwaveResult {
+) -> (Vec<f64>, Vec<Mat<C64>>) {
     let sqrt_hamiltonian =
         calc_sqrt_hamiltonian(q.clone(), C, n_sites, z, spin_coefficients, couplings, Az);
     let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
@@ -317,7 +312,12 @@ fn spinwave_single_q(
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
-    sqrt_hamiltonian.partial_piv_lu().solve_in_place(T.as_mut());
+    solve_lower_triangular_in_place(sqrt_hamiltonian.as_ref(), T.as_mut(), Par::Seq);
+
+    // T is NaN if there are zero eigenvalues; set to zeroes
+    if T.has_nan() {
+        T = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
+    }
 
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
     // and then we just take the diagonal elements as that's all we need for
@@ -345,8 +345,5 @@ fn spinwave_single_q(
         }))
         .collect();
 
-    SpinwaveResult {
-        energies: eigvals.iter().map(|x| x.re).collect(),
-        correlation: Some(Sab),
-    }
+    (eigvals.iter().map(|x| x.re).collect(), Sab)
 }
