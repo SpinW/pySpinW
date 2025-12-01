@@ -33,7 +33,7 @@ def sites(positions: ArrayLike,
                                 and the positions will be converted into lattice units
     """
     # check the positions are n-by-3, or 1d
-    positions = np.array(positions)
+    positions = np.array(positions, dtype=float)
     match len(positions.shape):
         case 1:
             if positions.shape[0] == 3:
@@ -50,7 +50,7 @@ def sites(positions: ArrayLike,
             raise ValueError("Expected positions to be n-by-3, or a single vector of length 3")
 
     # check moment definitions
-    moments = np.array(moments)
+    moments = np.array(moments, dtype=float)
     match len(moments.shape):
         case 1:
             if n_sites != 1:
@@ -62,19 +62,19 @@ def sites(positions: ArrayLike,
             moments = moments.reshape(1,3,1)
 
         case 2:
-            if n_sites != moments.shape[1]:
+            if n_sites != moments.shape[0]:
                 raise ValueError("Expected same number of moments as positions")
 
             if moments.shape[1] != 3:
                 raise ValueError("Expected moments to have three components")
 
-            moments = moments.reshape(-1, 3, 1)
+            moments = moments.reshape(-1, 1, 3)
 
         case 3:
-            if n_sites != moments.shape[1]:
+            if n_sites != moments.shape[0]:
                 raise ValueError("Expected same number of moments as postions")
 
-            if moments.shape[1] != 3:
+            if moments.shape[2] != 3:
                 raise ValueError("Expected moments to have three components")
 
         case _:
