@@ -10,6 +10,9 @@ from typing import Callable
 from pyspinw.symmetry.bravais import PRIMITIVE, BASE_CENTERED, BODY_CENTERED, FACE_CENTERED, RHOMBOHEDRAL
 from pyspinw.symmetry.unitcell import UnitCell
 
+class IncompatibleUnitCell(Exception):
+    """ Exception raised when unit cell does not fit the constraints of the lattice system"""
+
 
 @dataclass
 class FreeParameters:
@@ -61,17 +64,30 @@ class LatticeSystem(ABC):
     name: str = ""
     letter: str = ""
 
-    negative_constraints: dict[str, Callable[UnitCell, bool]] = {}
+    # Note on constraints: the positive constraints describe what is needed
+    #  for the unit cell to count as the given type, the negative constraints
+    #  describe what is needed to not count as a different type instead.
+
+    positive_constraints: dict[str, Callable[[UnitCell], float] | float] = {}
+    """ Values of parameters that should be fixed when using this lattice type """
+
+    negative_constraints: dict[str, Callable[[UnitCell], bool]] = {}
     """ Functions that check whether the unit cell parameters are appropriate """
+
 
     @property
     @abstractmethod
     def free_parameters(self) -> FreeParameters:
         """ List the parameters that should be available to edit"""
 
-    @abstractmethod
     def constrain(self, unit_cell: UnitCell) -> UnitCell:
         """ Constrain the unit cell for this system """
+        evaluated = {
+            key: value if isinstance(value, (int,float)) else value(unit_cell)
+                for key, value in self.positive_constraints.items()
+            }
+
+        return unit_cell.updated(*evaluated)
 
     @property
     @abstractmethod
@@ -86,12 +102,59 @@ class LatticeSystem(ABC):
                 out.append(name)
         return out
 
+    def validate(self, unit_cell: UnitCell):
+        """ Raises an exception if the unit cell is not compatible with this system """
+        # Positive constraints
+
+        for key, entry in self.positive_constraints.items():
+
+            if isinstance(entry, (int,float)):
+                value = entry
+            else:
+                value = entry(unit_cell)
+
+            if unit_cell.__dict__[key] != value:
+                raise IncompatibleUnitCell(
+                    f"Unit cell is not consistent with the lattice type, "
+                    f"expected {key}={value}")
+
+
+        # Negative constraint violations
+
+        violations = self.violated_negative_constraints(unit_cell)
+        if violations:
+
+            # Some grammar
+            if len(violations) >= 2:
+                violation_string = ", ".join(violations[:-1]) + " and " + violations[-1]
+            else:
+                violation_string = violations[0]
+
+            raise IncompatibleUnitCell(f"Unit cell is not consistent with the lattice type, "
+                                       f"it is probably more regular than the lattice type requires. "
+                                       f"Expected {violation_string}")
+
+
+    def create_unit_cell(self):
+        """ Create a unit cell that matches this lattice system """
+        raise NotImplementedError("Create unit cell is only available in derived classes")
+
+    def __repr__(self):
+        return self.name
+
+#
+#
+#   Specific lattice systems
+#
+#
 
 class Triclinic(LatticeSystem):
     """ Triclinic lattice system """
 
     name = "Triclinic"
     letter = "a"
+
+    # No positive constraints
 
     negative_constraints = {
         "a ≠ b": lambda cell: cell.a != cell.b,
@@ -107,15 +170,18 @@ class Triclinic(LatticeSystem):
         """ List the parameters that should be available to edit"""
         return FreeParameters()
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions()
 
+    def create_unit_cell(self, a: float, b: float, c: float,
+                         alpha: float, beta: float, gamma: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, b, c, alpha, beta, gamma)
+        self.validate(cell)
+
+        return cell
 
 
 class Monoclinic(LatticeSystem):
@@ -124,11 +190,16 @@ class Monoclinic(LatticeSystem):
     name = "Monoclinic"
     letter = "m"
 
+    positive_constraints = {
+        "alpha": 90,
+        "gamma": 90
+    }
+
     negative_constraints = {
         "a ≠ b": lambda cell: cell.a != cell.b,
         "b ≠ c": lambda cell: cell.b != cell.c,
         "c ≠ a": lambda cell: cell.c != cell.a,
-        "γ ≠ 90°": lambda cell: cell.gamma != 90
+        "β ≠ 90°": lambda cell: cell.beta != 90
     }
 
     @property
@@ -136,14 +207,19 @@ class Monoclinic(LatticeSystem):
         """ List the parameters that should be available to edit"""
         return FreeParameters(alpha=False, gamma=False)
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell.updated(alpha=90, beta=90)
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(base_centered=True)
+
+    def create_unit_cell(self, a: float, b: float, c: float, beta: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, b, c, 90, beta, 90)
+        self.validate(cell)
+
+        return cell
+
+
 
 
 class Orthorhombic(LatticeSystem):
@@ -152,6 +228,11 @@ class Orthorhombic(LatticeSystem):
     name = "Orthorhombic"
     letter = "o"
 
+    positive_constraints = {
+        "alpha": 90,
+        "beta": 90,
+        "gamma": 90
+    }
 
     negative_constraints = {
         "a ≠ b": lambda cell: cell.a != cell.b,
@@ -164,10 +245,6 @@ class Orthorhombic(LatticeSystem):
         """ List the parameters that should be available to edit"""
         return FreeParameters(alpha=False, beta=False, gamma=False)
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell.updated(alpha=90, beta=90, gamma=90)
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
@@ -176,12 +253,25 @@ class Orthorhombic(LatticeSystem):
             body_centered=True,
             face_centered=True)
 
+    def create_unit_cell(self, a: float, b: float, c: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, b, c, 90, 90, 90)
+        self.validate(cell)
+
+        return cell
 
 class Tetragonal(LatticeSystem):
     """ Tetragonal lattice system"""
 
     name = "Tetragonal"
     letter = "t"
+
+    positive_constraints = {
+        "b": lambda cell: cell.a,
+        "alpha": 90,
+        "beta": 90,
+        "gamma": 90
+    }
 
     negative_constraints = {
         "b ≠ c": lambda cell: cell.b != cell.c,
@@ -192,18 +282,18 @@ class Tetragonal(LatticeSystem):
         """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, alpha=False, beta=False, gamma=False)
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell.updated(
-            b = unit_cell.a,
-            alpha=90,
-            beta=90,
-            gamma=90)
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(body_centered=True)
+
+
+    def create_unit_cell(self, a: float, c: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, a, c, 90, 90, 90)
+        self.validate(cell)
+
+        return cell
 
 
 class Rhombohedral(LatticeSystem):
@@ -211,6 +301,13 @@ class Rhombohedral(LatticeSystem):
 
     name = "Rhombohedral"
     letter = "h"
+
+    positive_constraints = {
+        "b": lambda cell: cell.a,
+        "c": lambda cell: cell.a,
+        "beta": lambda cell: cell.alpha,
+        "gamma": lambda cell: cell.alpha
+    }
 
     negative_constraints = {
         "α ≠ 90°": lambda cell: cell.alpha != 90,
@@ -222,25 +319,30 @@ class Rhombohedral(LatticeSystem):
         """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, c=False, beta=False, gamma=False)
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell.updated(
-            b = unit_cell.a,
-            c = unit_cell.a,
-            beta=unit_cell.alpha,
-            gamma=unit_cell.alpha)
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(primitive=False, rhombohedral=True)
 
+    def create_unit_cell(self, a: float, alpha: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, a, a, alpha, alpha, alpha)
+        self.validate(cell)
+
+        return cell
 
 class Hexagonal(LatticeSystem):
     """ Hexagonal lattice system """
 
     name = "Hexagonal"
     letter = "h"
+
+    positive_constraints = {
+        "b": lambda cell: cell.a,
+        "alpha": 90,
+        "beta": 90,
+        "gamma": 120
+    }
 
     negative_constraints = {
         "a ≠ c": lambda cell: cell.a != cell.c,
@@ -251,19 +353,17 @@ class Hexagonal(LatticeSystem):
         """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, alpha=False, beta=False, gamma=False)
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell.updated(
-            b = unit_cell.a,
-            alpha=90,
-            beta=90,
-            gamma=120)
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions()
 
+    def create_unit_cell(self, a: float, c: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, a, c, 90, 90, 120)
+        self.validate(cell)
+
+        return cell
 
 class Cubic(LatticeSystem):
     """ Cubic lattice system"""
@@ -271,24 +371,33 @@ class Cubic(LatticeSystem):
     name = "Cubic"
     letter = "c"
 
+    positive_constraints = {
+        "b": lambda cell: cell.a,
+        "c": lambda cell: cell.a,
+        "alpha": 90,
+        "beta": 90,
+        "gamma": 90
+    }
+
+    # No negative constraints
+
     @property
     def free_parameters(self) -> FreeParameters:
         """ List the parameters that should be available to edit"""
         return FreeParameters(b=False, c=False, alpha=False, beta=False, gamma=False)
 
-    def constrain(self, unit_cell: UnitCell):
-        """ Constrain the unit cell for this system """
-        return unit_cell.updated(
-            b = unit_cell.a,
-            c = unit_cell.a,
-            alpha=90,
-            beta=90,
-            gamma=90)
-
     @property
     def bravais_options(self) -> BravaisOptions:
         """ Bravais lattices consistent with this kind of cell"""
         return BravaisOptions(body_centered=True, face_centered=True)
+
+
+    def create_unit_cell(self, a: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, a, a, 90, 90, 90)
+        self.validate(cell)
+
+        return cell
 
 # All the possible systems
 lattice_systems: list[LatticeSystem] = [

@@ -14,7 +14,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.util import rotation_matrix
 
 
-def _coerce_numeric_input(value: Fraction | float, max_denom=1000_000):
+def _coerce_numeric_input(value: Fraction | float, max_denom=1_000):
     """ Convert floats or fractions into the form needed for a propagation vector"""
     if not isinstance(value, Fraction):
         value = Fraction(value).limit_denominator(max_denominator=max_denom)
@@ -28,7 +28,6 @@ def _coerce_numeric_input(value: Fraction | float, max_denom=1000_000):
     else:
         return value
 
-
 class PropagationVector(SPWSerialisable):
     """ Propagation vector"""
 
@@ -37,11 +36,13 @@ class PropagationVector(SPWSerialisable):
     def __init__(self,
                 i: Fraction | float,
                 j: Fraction | float,
-                k: Fraction | float):
+                k: Fraction | float,
+                phase: float = 0.0):
 
         self.i = i
         self.j = j
         self.k = k
+        self.phase = phase
 
         self._vector = np.array([self.i, self.j, self.k], dtype=float)
 
@@ -60,37 +61,48 @@ class PropagationVector(SPWSerialisable):
             "i": serialise_fraction_or_builtin(self.i),
             "j": serialise_fraction_or_builtin(self.j),
             "k": serialise_fraction_or_builtin(self.k),
+            "phase": self.phase,
             "assured_commensurate": False
         }
 
     @staticmethod
-    @expects_keys("i,j,k")
+    @expects_keys("i,j,k,phase")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         i = deserialise_fraction_or_builtin(json["i"])
         j = deserialise_fraction_or_builtin(json["j"])
         k = deserialise_fraction_or_builtin(json["k"])
+        phase = json["phase"]
 
         if json["assured_commensurate"]:
-            return CommensuratePropagationVector(i, j, k)
+            return CommensuratePropagationVector(i, j, k, phase=phase)
         else:
-            return PropagationVector(i, j, k)
+            return PropagationVector(i, j, k, phase=phase)
 
     def __eq__(self, other):
         return self.i == other.i and self.j == other.j and self.k == other.k
 
+    def uncorrected_phase_position(self, site: LatticeSite):
+        """ Get the position of a site along the propagation vector, from (0,0,0), ignoring the phase correction"""
+        return 2*np.pi*(self.vector * site.ijk)
+
+    def corrected_phase_position(self, site: LatticeSite):
+        """ Get the position of a site along the propagation vector, from (0,0,0), including the phase correction"""
+        return 2 * np.pi * (self.vector * site.ijk) + self.phase
+
 class CommensuratePropagationVector(PropagationVector):
-    """ Propagation vector with integer values"""
+    """ Propagation vector with rational values"""
 
     def __init__(self,
                  i: Fraction | float,
                  j: Fraction | float,
-                 k: Fraction | float):
+                 k: Fraction | float,
+                 phase: float = 0.0):
 
         i = _coerce_numeric_input(i)
         j = _coerce_numeric_input(j)
         k = _coerce_numeric_input(k)
 
-        super().__init__(i, j, k)
+        super().__init__(i, j, k, phase=phase)
 
         self._vector = np.array([self.i, self.j, self.k], dtype=float)
 
@@ -180,7 +192,7 @@ class RotationTransform(SupercellTransformation):
 
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
         """ Apply this transformation (rotation) to a moment in a specified cell """
-        angle = 2 * np.pi * propagation_vector.dot(cell_offset)
+        angle = 2 * np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase
         return moment @ rotation_matrix(angle, self._axis)
 
 transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, RotationTransform]}
@@ -269,7 +281,7 @@ class TrivialSupercell(Supercell):
     supercell_name = "trivial"
 
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Get the moment for a site with a an offset within the supercell """
+        """ Get the moment for a site with an offset within the supercell """
         return site.base_moment
 
     def cell_size(self) -> tuple[int, int, int]:

@@ -9,9 +9,9 @@ However, this leads to questions about how we treat symmetry. For example,
 a P1 lattice with only one site will have much higher symmetry than P1 in the sense that
 there will be more groups that can leave it invariant than P1.
 
-Once we make the decision that the symmetry group we specify is a "lower bound", 
-there a problem arrises - one that exists in crystallographic group symmetry 
-already - but that becomes more of a general issue: the setting problem. That is to say,
+Once we make the decision that the symmetry group we specify is a "lower bound" a problem arrises - 
+one that exists in crystallographic group symmetry already - 
+but that becomes more of a general issue: the setting problem. That is to say,
 depending on how you translate the crystallographic origin within the unit cell, 
 the definitions of groups can be different. Outside of the abstract categorisation 
 of symmetries, the choice of origin is more significant as we are no longer choosing it

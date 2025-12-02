@@ -1,6 +1,7 @@
 Symmetry Checking Couplings
 ===========================
 
+TODO: Finish this ADR, some more thought needs to go into this once the handling of symmetry is complete
 
 Background
 ----------
@@ -19,3 +20,9 @@ The second of these is important as it shows that
 
 The symmetry
 
+ 
+
+Status
+======
+
+WIP

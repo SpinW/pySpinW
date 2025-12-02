@@ -1,6 +1,7 @@
 """Generally helpful functions that don't obviously live anywhere else in particular"""
 
 import numpy as np
+from numpy._typing import ArrayLike
 
 from pyspinw.checks import check_sizes
 from pyspinw.site import LatticeSite
@@ -74,6 +75,44 @@ def rotation_matrix(angle, axis):
     part3 = s * triple_product_matrix(-axis)
 
     return part1 + part2 + part3
+
+def connected_components(adjacency_matrix: np.ndarray) -> list[list[int]]:
+    """ Get the connected components of a graph specied by an adjacency matrix
+
+    :param adjacency_matrix: n-by-n numpy array of dtype bool representing the adjacency matrix
+    :returns: list of subgraphs, themselves lists of indices for the adjacency matrix
+    """
+    assert len(adjacency_matrix.shape) == 2
+    assert adjacency_matrix.shape[0] == adjacency_matrix.shape[1]
+
+    n = adjacency_matrix.shape[0]
+    visited = np.zeros((n, ), dtype=bool)
+    components = []
+
+    def search(current_node, component):
+        visited[current_node] = True
+        component.append(current_node)
+        for i in range(n):
+            if adjacency_matrix[current_node][i] and not visited[i]:
+                search(i, component)
+
+    for i in range(n):
+        if not visited[i]:
+            component = []
+            search(i, component)
+            components.append(component)
+
+    return components
+
+def arraylike_equality(array_1: ArrayLike, array_2: ArrayLike, abs_tol=1e-8):
+    """ Check for approximate equality of arrays that may or may not have the same shape """
+    array_1 = np.array(array_1)
+    array_2 = np.array(array_2)
+
+    if array_1.shape != array_2.shape:
+        return False
+
+    return np.all(np.abs(array_1 - array_2) < abs_tol)
 
 if __name__ == "__main__":
     demo_triple_product_matrix()

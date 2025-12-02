@@ -1,6 +1,7 @@
 """Tools for checking input shapes"""
 
 import functools
+import inspect
 
 from typing import Callable
 from collections import defaultdict
@@ -12,7 +13,7 @@ class DimensionalityError(ValueError):
     """The dimensions of a numpy array don't match the specification"""
 
 
-def check_sizes(force_numpy: bool = False, **kwargs):
+def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
     """Decorator to check the dimensionality of a given vector
 
     Example usage:
@@ -26,7 +27,8 @@ def check_sizes(force_numpy: bool = False, **kwargs):
         Limitations: can only check dimensions are the same, can't check things like whether sizes are related by
                      some arbitrary formula.
 
-    :param force_numpy: default=True, Convert the named arrays into numpy form if they are not already
+    :param force_numpy: default=False, Convert the named arrays into numpy form if they are not already
+    :param allow_nones: default=False, Allow None to be given for values
 
     """
     # If assertions are not enabled, give a decorator that just return the function as is
@@ -75,11 +77,20 @@ def check_sizes(force_numpy: bool = False, **kwargs):
         # grab the argument names
         variable_names = fun.__code__.co_varnames
 
+        sig = inspect.signature(fun)
+        defaults = {
+            name: param.default
+            for name, param in sig.parameters.items()
+            if param.default is not inspect._empty
+        }
+
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
 
             # shove all the arguments in a dictionary keyed by the variable names
-            all_args = dict(zip(variable_names, args))
+            all_args = defaults.copy()
+            for name, arg in zip(variable_names, args):
+                all_args[name] = arg
             all_args.update(**kwargs)
 
             # Check the sizes, and the type while were at it
@@ -87,9 +98,11 @@ def check_sizes(force_numpy: bool = False, **kwargs):
             #  Note: THIS POTENTIALLY UPDATES all_args
             #
             for name, size in sizes:
+                if allow_nones and all_args[name] is None:
+                    continue
 
                 if name not in all_args:
-                    raise ValueError(f"The numpy array required ('{name}') was not given")
+                    raise ValueError(f"The required numpy array '{name}' was not given")
 
                 if not isinstance(all_args[name], np.ndarray):
                     if force_numpy:
@@ -104,6 +117,10 @@ def check_sizes(force_numpy: bool = False, **kwargs):
             # Check all the constant values
             for name, dimension, size in constants:
                 data = all_args[name]
+
+                if allow_nones and data is None:
+                    continue
+
                 # We have already checked that it's an array and for correct len(shape), so resolving
                 # this should not throw
 
@@ -116,6 +133,9 @@ def check_sizes(force_numpy: bool = False, **kwargs):
                 size = None
                 for name, dimension in equalities[symbol]:
                     data = all_args[name]
+                    if allow_nones and data is None:
+                        continue
+
                     # Again, the validity of this should be checked in len(shape) loop
                     if size is None:
                         size = data.shape[dimension]

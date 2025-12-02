@@ -5,7 +5,7 @@ import numpy as np
 from ase.geometry.cell import cellpar_to_cell
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
-    SPWSerialisationError, numpy_serialise, numpy_deserialise
+    SPWSerialisationError, numpy_serialise, numpy_deserialise, vec3_serialise
 
 
 class BadCellDefinition(Exception):
@@ -19,11 +19,54 @@ class RawUnitCell(SPWSerialisable):
     def __init__(self, xyz):
         self._xyz = xyz
 
+        # Inverse transformation
+
         try:
             self._xyz_inv = np.linalg.inv(xyz)
 
         except np.linalg.LinAlgError as e:
-            raise BadCellDefinition(f"{self._xyz}")
+            raise BadCellDefinition(f"{self._xyz} is not invertible")
+
+        # Matrices to convert moments
+
+        # a_vector = xyz[:, 0]
+        # b_vector = xyz[:, 1]
+        # c_vector = xyz[:, 2]
+
+        # TODO: Tests to make sure we have the right components (think they are right)
+        a_vector = xyz[0, :]
+        b_vector = xyz[1, :]
+        c_vector = xyz[2, :]
+
+        # The fist coordinate only needs to be normalised
+        moment_a = a_vector / np.sqrt(np.sum(a_vector**2))
+
+        # The second component is "in the ab plane and perpendicular to b"
+        #  we want to take away the component of b that is in the direction of a
+
+        b_in_a = np.dot(moment_a, b_vector)    # scalar projection of b into a
+        b_norm = np.sqrt(np.sum(b_vector**2))  # direction of b
+
+        moment_b = b_vector - b_in_a * b_norm    # unnormalised
+        moment_b /= np.sqrt(np.sum(moment_b**2)) # normalise
+
+        # assert np.dot(moment_a, moment_b) < 1e-10, "moment_a and moment_b should be orthogonal"
+
+        # last one should just be the cross product, though we need to be careful about handedness
+        moment_c = np.cross(moment_a, moment_b)
+
+        # assert np.dot(c_vector, moment_c) > 0, "moment c vector should in the direction of input c"
+
+        # build the moment matrix, the row/column format has been checked and is the same as xyz
+        self._xyz_moments = np.array([moment_a, moment_b, moment_c])
+
+        try:
+            self._xyz_moments_inv = np.linalg.inv(self._xyz_moments)
+
+        except np.linalg.LinAlgError as e:
+
+            raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible moment definition")
+
 
     # @check_sizes(points=(-1, 3))
     def fractional_to_cartesian(self, points: np.ndarray):
@@ -32,8 +75,17 @@ class RawUnitCell(SPWSerialisable):
 
     # @check_sizes(points=(-1, 3))
     def cartesian_to_fractional(self, points: np.ndarray):
-        """ Convert a list of points from cartesian (xyz) to  fractional (ijk) """
+        """ Convert a list of points from cartesian (xyz) to fractional (ijk) """
         return points @ self._xyz_inv
+
+    def moment_fractional_to_cartesian(self, moments: np.ndarray):
+        """ Convert a list of moments from fractional (mi, mj, mk) to cartesian (mx, my, mz) """
+        return moments @ self._xyz_moments
+
+    def moment_cartesian_to_fractional(self, moments: np.ndarray):
+        """ Convert a list of moments from cartesian (mx, my, mz) to fractional (mi, mj, mk)"""
+        return moments @ self._xyz_moments_inv
+
 
     @property
     def centre(self):
@@ -152,13 +204,26 @@ class UnitCell(RawUnitCell):
             "alpha": self.alpha,
             "beta": self.beta,
             "gamma": self.gamma,
-
+            "ab_normal": vec3_serialise(*self.ab_normal),
+            "direction": vec3_serialise(*self.direction)
         }
 
     @staticmethod
     @expects_keys("a, b, c, alpha, beta, gamma, ab_normal, direction")
     def _unit_cell_deserialise(json):
-        pass
+        return UnitCell(
+            a=json["a"],
+            b=json["b"],
+            c=json["c"],
+            alpha=json["alpha"],
+            beta=json["beta"],
+            gamma=json["gamma"],
+            ab_normal=json["ab_normal"],
+            direction=json["direction"]
+        )
 
 
 unit_cell_types = {cls._unit_cell_name: cls for cls in [RawUnitCell, UnitCell]}
+
+if __name__ == "__main__":
+    UnitCell(a=1, b=2, c=3, beta=40)

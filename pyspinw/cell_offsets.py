@@ -11,9 +11,9 @@ class CellOffset(SPWSerialisable):
     serialisation_name = "cell_offset"
 
     def __init__(self, i: int, j: int, k: int):
-        self._i = i
-        self._j = j
-        self._k = k
+        self._i = int(i)
+        self._j = int(j)
+        self._k = int(k)
 
         self._vector = np.array([i, j, k], dtype=int)
 
@@ -85,5 +85,8 @@ class CellOffset(SPWSerialisable):
         else:
             raise TypeError(f"Could not convert {cell_offset_or_data} to cell offset, should be "
                             f"CellOffset, tuple[int,int,int] or None")
+
+    def __neg__(self):
+        return CellOffset(-self.i, -self.j, -self.k)
 
 CellOffsetCoercible = CellOffset | tuple[int, int, int] | None
