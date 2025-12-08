@@ -20,6 +20,7 @@ def antiferro_ef(n_q = 100, classes = py_classes):
 
     rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
     magnitudes = np.array([1.0]*2)
+    positions = np.array([[0., 0., 0.], [0., 1., 0.]])
 
     aniso_array = np.diag(np.array([0., 0., -0.1], **rust_kw))
 
@@ -42,7 +43,7 @@ def antiferro_ef(n_q = 100, classes = py_classes):
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 
-    return (rotations, magnitudes, q_vectors, couplings, ext_field)
+    return (rotations, magnitudes, q_vectors, couplings, positions, ext_field)
 
 if __name__ == "__main__":
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     else:
         use_rust = True
 
-    _, energies = run_example(antiferro_ef, use_rust)
+    _, energies, sqw = run_example(antiferro_ef, use_rust)
 
 
     # Note: we get complex data types with real part zero
