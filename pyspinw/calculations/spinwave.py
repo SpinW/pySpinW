@@ -55,7 +55,7 @@ def _calc_q_independent(rotations: list[np.ndarray],
 
     # Create the matrix sqrt(S_i S_j)/2
     root_mags = np.sqrt(0.5*magnitudes) # S_i / sqrt(2)
-    spin_coefficients = np.cross(root_mags, root_mags)
+    spin_coefficients = np.outer(root_mags, root_mags)
 
     # calculate the C matrix for h(q), which is q-independent
     C = np.zeros((n_sites, n_sites), dtype=complex)
@@ -147,7 +147,7 @@ def energies(rotations: list[np.ndarray],
 
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
     """
-    C, z, spin_coefficients, Az = calc_q_independent(rotations, magnitudes, couplings, field)
+    C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
 
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
@@ -193,7 +193,7 @@ def spinwave_calculation(rotations: list[np.ndarray],
                          field: MagneticField | None = None
                          ) -> (np.ndarray, np.ndarray):
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
-    C, z, spin_coefficients, Az = calc_q_independent(rotations, magnitudes, couplings, field)
+    C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
 
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
@@ -208,7 +208,7 @@ def spinwave_calculation(rotations: list[np.ndarray],
     energies = np.concat(tuple(result[0] for result in results))
     sab = [result[1] for result in results]
 
-    return energies, sqw
+    return energies, sab
 
 
 def _calc_chunk_spinwave(q_vectors: np.ndarray,
@@ -223,6 +223,7 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
     sabs = []
+
     for q in q_vectors:
         sqrt_hamiltonian = _calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
 
@@ -242,7 +243,7 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         coefficients = spin_coefficients * phase_factors_matrix
 
         # we store sab_blocks as a 3x3 array of arrays indexed over alpha, beta
-        sab_blocks = np.zeros(3, 3, dtype=object)
+        sab_blocks = np.zeros((3, 3), dtype=object)
 
         # note one can show:
         # Y*[alpha, beta] = Y[beta, alpha]
@@ -256,15 +257,15 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
                 z_betas = z[:,beta]
 
                 # note V is conj(Z) and W is conj(Y) before we multiply by phase factors
-                y_ab = np.cross(z_alphas, np.conj(z_betas))
-                z_ab = np.cross(z_alphas, z_betas)
+                y_ab = np.outer(z_alphas, np.conj(z_betas))
+                z_ab = np.outer(z_alphas, z_betas)
                 v_ab = np.conj(z_ab) * coefficients
                 w_ab = np.conj(y_ab) * coefficients
 
                 y_ab *= coefficients
                 z_ab *= coefficients
 
-                sab_blocks[alpha, beta] = np.block([y_ab, z_ab], [v_ab, w_ab])
+                sab_blocks[alpha, beta] = np.block([[y_ab, z_ab], [v_ab, w_ab]])
 
                 if beta < alpha:
                     y_ba = np.conj(y_ab.T)
@@ -272,7 +273,7 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
                     v_ba = np.conj(z_ab.T)
                     w_ba = np.conj(w_ab.T)
 
-                sab_blocks[beta, alpha] = np.block([y_ba, z_ba], [v_ba, w_ba])
+                    sab_blocks[beta, alpha] = np.block([[y_ba, z_ba], [v_ba, w_ba]])
 
         ## calculate transformation matrix for spin-spin correlation function
         # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
@@ -283,15 +284,15 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         # but sqrt_E has the same values either way (as the eigenvalues have opposite signs in the two
         # halves)
         sqrt_E = eigvals.copy()
-        sqrt_E[:n_sites, :] *= -1
+        sqrt_E[:n_sites] *= -1
         sqrt_E = np.sqrt(sqrt_E)
 
-        # if all eigenvalues are zero, T is just zero
-        if np.all(sqrt_E == 0):
-            T = np.zeros((2*n_sites, 2*n_sites))
-        else:
+        try:
             # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
             T = solve(sqrt_hamiltonian, eigvecs @ np.diag(sqrt_E), assume_a = 'lower triangular')
+        except np.linalg.LinAlgError:
+            # if K is singular, then eigenvalues are all zero, so T is zero
+            T = np.zeros((2*n_sites, 2*n_sites))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
@@ -300,6 +301,6 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         Sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
         Sab /= (2 * n_sites)
 
-        sab.append(Sab)
+        sabs.append(Sab)
 
     return energies, sabs
