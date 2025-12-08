@@ -9,10 +9,24 @@ use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
 /// Calculate the q-independent components of the calculation.
+///
+/// # Parameters
+/// - `rotations`: Rotation matrices for each site.
+/// - `magnitudes`: Magnitudes of the moments at each site.
+/// - `couplings`: Slice of couplings between sites.
+/// - `field`: Optional external magnetic field.
+///
+/// # Returns
+/// A tuple containing:
+/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
+/// - `spin_coefficients`: The spin coefficients matrix.
+/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
+#[inline(always)]
 fn calc_q_independent(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
-    couplings: &Vec<&Coupling>,
+    couplings: &[&Coupling],
     field: Option<MagneticField>,
 ) -> (Mat<C64>, Vec<Col<C64>>, Mat<C64>, Option<Vec<C64>>) {
     let n_sites = rotations.len();
@@ -51,6 +65,18 @@ fn calc_q_independent(
 }
 
 /// Calculate the square root of the Hamiltonian.
+///
+/// # Parameters
+/// - `q`: The q-vector for which to calculate the Hamiltonian.
+/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `n_sites`: The number of sites in the system.
+/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
+/// - `spin_coefficients`: The spin coefficients matrix.
+/// - `couplings`: Slice of couplings between sites.
+/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
+///
+/// # Returns
+/// The "square root" of the Hamiltonian matrix (K such that K K* = h(q)).
 #[inline(always)]
 fn calc_sqrt_hamiltonian(
     q: Col<f64>,
@@ -114,6 +140,17 @@ fn calc_sqrt_hamiltonian(
     sqrt_hamiltonian
 }
 
+/// Calculate energies (eigenvalues of the Hamiltonian) for a set of q-vectors.
+///
+/// # Parameters
+/// - `rotations`: Rotation matrices for each site.
+/// - `magnitudes`: Magnitudes of the moments at each site.
+/// - `q_vectors`: A vector of q-vectors for which to calculate energies.
+/// - `couplings`: Slice of couplings between sites.
+/// - `field`: Optional external magnetic field.
+///
+/// # Returns
+/// A vector of vectors, where each inner vector contains the energies for the corresponding q-vector.
 pub fn calc_energies(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
@@ -143,7 +180,19 @@ pub fn calc_energies(
         .collect()
 }
 
-/// Calculate energies (eigenvalues of the Hamiltonian) for a single q-value
+/// Calculate energies (eigenvalues of the Hamiltonian) for a single q-value.
+///
+/// # Parameters
+/// - `q`: The q-vector for which to calculate energies.
+/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `n_sites`: The number of sites in the system.
+/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
+/// - `spin_coefficients`: The spin coefficients matrix.
+/// - `couplings`: Slice of couplings between sites.
+/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
+///
+///# Returns
+/// A vector containing the energies for the given q-vector.
 fn energies_single_q(
     q: Col<f64>,
     C: &Mat<C64>,
@@ -176,68 +225,22 @@ fn energies_single_q(
         .expect("Could not calculate eigendecomposition of the Hamiltonian.")
 }
 
-/// Calculate the block matrices for S'^alpha, beta
-/// That is, the matrix [ Y Z ; V W ] for each alpha, beta pair
-fn calc_sab_blocks(
-    z: &[Col<C64>],
-    q: Col<f64>,
-    spin_coefficients: &Mat<C64>,
-    positions: &[ColRef<f64>],
-) -> Mat<Mat<C64>> {
-    let phase_factors = Col::<C64>::from_iter(
-        positions
-            .iter()
-            .map(|r_i| (J * (q.transpose() * r_i)).exp()),
-    );
-    let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
-
-    let coefficients = component_mul(&spin_coefficients, &phase_factors_matrix);
-
-    // We store S' as a 3x3 matrix of matrices indexed by alpha, beta
-    // where each element is an 2 * n_sites x 2 * n_sites matrix
-    // later on we will sum over the diagonal elements to get S'^alpha,beta(k, omega)
-    let mut blocks = Mat::<Mat<C64>>::full(3, 3, Mat::<C64>::new());
-
-    // note one can show:
-    // Y*[alpha, beta] = Y[beta, alpha]
-    // Z*[alpha, beta] = V[beta, alpha]
-    // V*[alpha, beta] = Z[beta, alpha]
-    // W*[alpha, beta] = W[beta, alpha]
-    // thus we only need to calculate one triangle and can fill in the rest by conjugation
-    for alpha in 0..3 {
-        for beta in 0..=alpha {
-            let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
-            let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
-
-            // construct the four blocks V, W, Y, Z;
-            // note that before we include the phase factors,
-            // V is conj(Z) and W is conj(Y)
-            let Yab = z_alphas.clone() * z_betas.adjoint();
-            let Zab = z_alphas * z_betas.transpose();
-            let Vab = Zab.conjugate().to_owned();
-            let Wab = Yab.conjugate().to_owned();
-
-            component_mul(&Yab, &coefficients);
-            component_mul(&Zab, &coefficients);
-            component_mul(&Vab, &coefficients);
-            component_mul(&Wab, &coefficients);
-
-            blocks[(alpha, beta)] = block_matrix(&Yab, &Zab, &Vab, &Wab);
-
-            if beta < alpha {
-                let Yba = Yab.adjoint().to_owned();
-                let Zba = Vab.adjoint().to_owned();
-                let Vba = Zab.adjoint().to_owned();
-                let Wba = Wab.adjoint().to_owned();
-
-                blocks[(beta, alpha)] = block_matrix(&Yba, &Zba, &Vba, &Wba);
-            }
-        }
-    }
-
-    blocks
-}
-
+/// Calculate energies and correlation S'^{alpha, beta} for a set of q-vectors.
+///
+/// # Parameters
+/// - `rotations`: Rotation matrices for each site.
+/// - `magnitudes`: Magnitudes of the moments at each site.
+/// - `q_vectors`: A vector of q-vectors for which to calculate energies and intensities.
+/// - `couplings`: Slice of couplings between sites.
+/// - `positions`: The relative positions of each site within the unit cell.
+/// - `field`: Optional external magnetic field.
+///
+///# Returns
+/// A tuple containing:
+/// - A vector of vectors, where each inner vector contains the energies for the corresponding
+/// q-vector.
+/// - A vector of vectors, where each inner vector contains S'^{alpha, beta} matrices for each
+/// eigenvalue at the corresponding q-vector.
 pub fn calc_spinwave(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
@@ -268,7 +271,22 @@ pub fn calc_spinwave(
         .collect()
 }
 
-/// Calculate energies and intensities for a single q-point.
+/// Calculate energies and intensities for a single q-vector.
+///
+/// # Parameters
+/// - `q`: The q-vector for which to calculate energies and intensities.
+/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `n_sites`: The number of sites in the system.
+/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
+/// - `spin_coefficients`: The spin coefficients matrix.
+/// - `couplings`: Slice of couplings between sites.
+/// - `positions`: The relative positions of each site within the unit cell.
+/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
+///
+///# Returns
+/// A tuple containing:
+/// - A vector containing the energies for the given q-vector.
+/// - A vector of S'^{alpha, beta} matrices for each eigenvalue at the given q-vector.
 fn spinwave_single_q(
     q: Col<f64>,
     C: &Mat<C64>,
@@ -285,7 +303,63 @@ fn spinwave_single_q(
     let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
     negative_half *= -1.;
 
-    let sab_blocks = calc_sab_blocks(z, q, spin_coefficients, positions);
+    // calculate block matrices [ Y Z ; V W ] for S'^alpha, beta
+    //
+    // The calculation includes the phase factors exp(i q (r_i - r_j)) for each
+    // pair of sites i, j; to calculate these efficiently we calculate 
+    // exp(i q r_i) for each site i and then the outer product of this with its conjugate 
+    // gives us the full matrix of phase factors.
+    let phase_factors = Col::<C64>::from_iter(
+        positions
+            .iter()
+            .map(|r_i| (J * (q.transpose() * r_i)).exp()),
+    );
+    let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
+
+    let coefficients = component_mul(spin_coefficients, &phase_factors_matrix);
+
+    // We store S' as a 3x3 matrix of matrices indexed by alpha, beta
+    // where each element is an 2 * n_sites x 2 * n_sites matrix
+    // later on we will sum over the diagonal elements to get S'^alpha,beta(k, omega)
+    let mut sab_blocks = Mat::<Mat<C64>>::full(3, 3, Mat::<C64>::new());
+
+    // note one can show:
+    // Y*[alpha, beta] = Y[beta, alpha]
+    // Z*[alpha, beta] = V[beta, alpha]
+    // V*[alpha, beta] = Z[beta, alpha]
+    // W*[alpha, beta] = W[beta, alpha]
+    // thus we only need to calculate one triangle and can fill in the rest by conjugation
+    for alpha in 0..3 {
+        for beta in 0..=alpha {
+            let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
+            let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
+
+            // construct the four blocks V, W, Y, Z;
+            // note that before we include the phase factors,
+            // V is conj(Z) and W is conj(Y)
+            let Yab = z_alphas.clone() * z_betas.adjoint();
+            let Zab = z_alphas * z_betas.transpose();
+            let Vab = Zab.conjugate().to_owned();
+            let Wab = Yab.conjugate().to_owned();
+
+            component_mul(&Yab, &coefficients);
+            component_mul(&Zab, &coefficients);
+            component_mul(&Vab, &coefficients);
+            component_mul(&Wab, &coefficients);
+
+            sab_blocks[(alpha, beta)] = block_matrix(&Yab, &Zab, &Vab, &Wab);
+
+            if beta < alpha {
+                let Yba = Yab.adjoint().to_owned();
+                let Zba = Vab.adjoint().to_owned();
+                let Vba = Zab.adjoint().to_owned();
+                let Wba = Wab.adjoint().to_owned();
+
+                sab_blocks[(beta, alpha)] = block_matrix(&Yba, &Zba, &Vba, &Wba);
+            }
+        }
+    }
+
 
     let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
         .self_adjoint_eigen(Side::Lower)
@@ -300,10 +374,12 @@ fn spinwave_single_q(
     // this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
     // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
     // for the eigenvalues of the Hamiltonian
-    // we use `reverse_rows()` to sort eigvals in nonincreasing order (default is nondecreasing order)
-    // as Toth & Lake (2015) assumes eigenvalues are nonincreasing
-    let mut sqrt_E = eigvals.reverse_rows().to_owned();
-    let mut negative_half = sqrt_E.subrows_mut(n_sites, n_sites);
+    // note that eigvals are 'backwards' compared to the order we want for sqrt_E 
+    // so we invert the first half of the eigenvalues here rather than the second,
+    // but sqrt_E has the same values either way (as the eigenvalues have opposite signs in the two
+    // halves)
+    let mut sqrt_E = eigvals.to_owned();
+    let mut negative_half = sqrt_E.subrows_mut(0, n_sites);
     negative_half *= -1.;
     sqrt_E.iter_mut().for_each(|x| *x = x.sqrt());
 
@@ -322,27 +398,20 @@ fn spinwave_single_q(
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
     // and then we just take the diagonal elements as that's all we need for
     // S'^alpha,beta(k, omega) at each eigenvalue
+    // We do the division required by 2 * n_sites here to save doing it later
     let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
         let mat = T.adjoint() * sab_blocks[(alpha, beta)].as_ref() * T.as_ref();
-        mat.diagonal().column_vector().to_owned()
+        mat.diagonal().column_vector().to_owned() / (2 * n_sites) as f64
     });
 
     // now create S' for each eigenvalue (the only places where there are non-zero intensities)
-    let Sab: Vec<Mat<C64>> = (0..n_sites)
+    let Sab: Vec<Mat<C64>> = (0..2 * n_sites)
         .map(|i| {
             // each element of S' over alpha, beta is created from an index over 2 * n_sites
             Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
-                let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
-                diag[i] / (2 * n_sites) as f64
+                block_diags[(alpha, beta)].as_ref()[i]
             })
         })
-        .chain((0..n_sites).map(|i| {
-            // negative energy modes
-            Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
-                let diag: ColRef<C64> = block_diags[(alpha, beta)].as_ref();
-                diag[n_sites - i] / (2 * n_sites) as f64
-            })
-        }))
         .collect();
 
     (eigvals.iter().map(|x| x.re).collect(), Sab)

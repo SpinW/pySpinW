@@ -86,7 +86,6 @@ impl MagneticField {
 ///
 /// # Returns
 /// A list of 1D numpy arrays, each containing the energies for the corresponding q-vector.
-///
 #[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, field=None))]
 pub fn energies<'py>(
     py: Python<'py>,
@@ -112,6 +111,21 @@ pub fn energies<'py>(
 }
 
 /// Calculate energies and neutron scattering cross-section for a system.
+///
+/// # Parameters
+/// - `rotations`: A list of 2D numpy arrays representing rotation matrices for each atom.
+/// - `magnitudes`: A list of magnitudes for each atom.
+/// - `q_vectors`: A list of q-vectors where the calculations should be performed.
+/// - `couplings`: A list of `Coupling` objects representing the interactions between atoms.
+/// - `positions`: A list of 1D numpy arrays representing the relative positions of each atom
+///  in the unit cell.
+/// - `field`: An optional `MagneticField` object representing an external magnetic field.
+///
+/// # Returns
+/// A tuple containing:
+/// - A list of 1D numpy arrays, each containing the energies for the corresponding q-vector.
+/// - A list of 1D numpy arrays, each containing the neutron scattering cross-section
+///   for the corresponding q-vector (indexed over omega).
 #[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, field=None))]
 pub fn spinwave_calculation<'py>(
     py: Python<'py>,
