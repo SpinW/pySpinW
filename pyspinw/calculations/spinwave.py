@@ -4,6 +4,7 @@ import multiprocessing
 from concurrent.futures import wait, ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 import numpy as np
 from scipy.linalg import ldl, solve
@@ -106,7 +107,6 @@ def _calc_sqrt_hamiltonian(q: np.ndarray,
 
     hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
 
-    #
     # We need to enforce the bosonic commutation properties, we do this
     # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
     # and then negating the second half.
@@ -122,11 +122,10 @@ def _calc_sqrt_hamiltonian(q: np.ndarray,
     # We can also do this via an LDL decomposition, but the method is very slightly different
     try:
         sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
-
     except np.linalg.LinAlgError: # Catch postive definiteness errors
         # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
         # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
-        l, d, _ = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
+        l, d, p = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
         sqrt_hamiltonian = l @ np.sqrt(d)
 
     return sqrt_hamiltonian
@@ -190,8 +189,9 @@ def spinwave_calculation(rotations: list[np.ndarray],
                          q_vectors: np.ndarray,
                          couplings: list[Coupling],
                          positions: list[np.ndarray],
-                         field: MagneticField | None = None
-                         ) -> (np.ndarray, np.ndarray):
+                         field: MagneticField | None = None,
+                         save_sab: bool = False
+                         ) -> (np.ndarray, np.ndarray, Optional[np.ndarray]):
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
@@ -201,14 +201,17 @@ def spinwave_calculation(rotations: list[np.ndarray],
     n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
     with ProcessPoolExecutor() as executor:
         q_calculations = [executor.submit(_calc_chunk_spinwave, q, C, n_sites, z,
-                                          spin_coefficients, couplings, positions, Az)
+                                          spin_coefficients, couplings, positions, Az, save_sab)
                           for q in _get_q_chunks(q_vectors, n_proc)]
     wait(q_calculations)
     results = [future.result() for future in q_calculations]
     energies = np.concat(tuple(result[0] for result in results))
-    sab = [result[1] for result in results]
+    intensities = np.concat([result[1] for result in results])
+    if save_sab:
+        sab = [result[2] for result in results]
+        return energies, intensities, sab
 
-    return energies, sab
+    return energies, intensities
 
 
 def _calc_chunk_spinwave(q_vectors: np.ndarray,
@@ -218,10 +221,12 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
                          spin_coefficients: np.ndarray,
                          couplings: list[Coupling],
                          positions: list[np.ndarray],
-                         Az: np.ndarray | None = None
-                         ) -> (np.ndarray, np.ndarray):
+                         Az: np.ndarray | None = None,
+                         save_sab: bool = False
+                         ) -> (np.ndarray, np.ndarray, Optional[np.ndarray]):
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
+    intensities = []
     sabs = []
 
     for q in q_vectors:
@@ -235,12 +240,17 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         eigvals, eigvecs = np.linalg.eig(to_diagonalise)
         energies.append(eigvals)
 
+        # sort eigenvalues and eigenvectors in decreasing order of eigenvalue
+        sort_indices = np.argsort(eigvals)[::-1]
+        eigvals = eigvals[sort_indices]
+        eigvecs = eigvecs[:, sort_indices]
+
         ## calculate block matrices [ Y Z ; V W ] for S'^alpha,beta
         # first we get phase factor matrix where `phase_factors_matrix[i,j] = exp(i q (r_i - r_j))`
-        phase_factors = np.array([np.exp(1j * q @ pos) for pos in positions])
-        phase_factors_matrix = phase_factors.reshape(-1, 1) * np.conj(phase_factors.reshape(1, -1))
+        phase_factors = np.array([np.exp(1j * (q @ pos)) for pos in positions])
+        phase_factors_matrix = np.outer(phase_factors, np.conj(phase_factors))
 
-        coefficients = spin_coefficients * phase_factors_matrix
+        coefficients = 2 * spin_coefficients * phase_factors_matrix
 
         # we store sab_blocks as a 3x3 array of arrays indexed over alpha, beta
         sab_blocks = np.zeros((3, 3), dtype=object)
@@ -279,12 +289,8 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
         # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
         # for the eigenvalues of the Hamiltonian
-        # note that eigvals are 'backwards' compared to the order we want for sqrt_E
-        # so we invert the first half of the eigenvalues here rather than the second,
-        # but sqrt_E has the same values either way (as the eigenvalues have opposite signs in the two
-        # halves)
         sqrt_E = eigvals.copy()
-        sqrt_E[:n_sites] *= -1
+        sqrt_E[n_sites:] *= -1
         sqrt_E = np.sqrt(sqrt_E)
 
         try:
@@ -297,10 +303,21 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
         # S'^alpha,beta(k, omega) at each eigenvalue
-        # this is a 3D array indexed by [alpha, beta, omega]
-        Sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
-        Sab /= (2 * n_sites)
+        # this is a 3x3x2N array indexed by [alpha, beta, omega]
+        sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
+        sab /= (2 * n_sites)
 
-        sabs.append(Sab)
+        # take perpendicular component s_perp of sab
+        if (q_mag := np.linalg.norm(q)) == 0:
+            norm_q = np.array([0, 0, 0])
+        else:
+            norm_q = q / q_mag
+        perp_factor = np.eye(3) - np.outer(norm_q, norm_q)
+        # the einsum here performs elementwise multiplication and then sums over alpha, beta
+        s_perp = np.einsum('ijk,ij->k', sab, perp_factor)
+        intensities.append(s_perp)
 
-    return energies, sabs
+
+    if save_sab:
+        return energies, intensities, sabs
+    return energies, intensities
