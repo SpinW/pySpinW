@@ -1,12 +1,37 @@
 use std::f64::consts::PI;
 
-use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Side, Par};
 use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
+use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B};
 use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
+
+/// The result of a single-Q spinwave calculation.
+///
+/// Fields:
+/// - `energies`: The energies of the spinwave modes at this q-vector.
+/// - `sab`: Optional spin-spin correlation tensors S'^{alpha, beta} for each mode.
+/// - `intensities`: The neutron scattering intensities (S_perp) for each mode.
+pub struct SpinwaveResult {
+    pub energies: Vec<f64>,
+    pub sab: Option<Vec<Mat<C64>>>,
+    pub intensities: Vec<f64>,
+}
+
+/// The q-independent components of the calculation.
+/// Fields:
+/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
+/// - `spin_coefficients`: The spin coefficients matrix.
+/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
+struct QIndependentComponents {
+    C: Mat<C64>,
+    z: Vec<Col<C64>>,
+    spin_coefficients: Mat<C64>,
+    Az: Option<Vec<C64>>,
+}
 
 /// Calculate the q-independent components of the calculation.
 ///
@@ -17,18 +42,14 @@ use crate::{Coupling, MagneticField, C64};
 /// - `field`: Optional external magnetic field.
 ///
 /// # Returns
-/// A tuple containing:
-/// - `C`: The q-independent component of the Hamiltonian matrix.
-/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
-/// - `spin_coefficients`: The spin coefficients matrix.
-/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
+/// The q-independent components of the calculation.
 #[inline(always)]
 fn calc_q_independent(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
     couplings: &[&Coupling],
     field: Option<MagneticField>,
-) -> (Mat<C64>, Vec<Col<C64>>, Mat<C64>, Option<Vec<C64>>) {
+) -> QIndependentComponents {
     let n_sites = rotations.len();
 
     // decompose rotation matrices
@@ -61,7 +82,13 @@ fn calc_q_independent(
         ),
         None => None,
     };
-    (C, z, spin_coefficients, Az)
+
+    QIndependentComponents {
+        C,
+        z,
+        spin_coefficients,
+        Az,
+    }
 }
 
 /// Calculate the square root of the Hamiltonian.
@@ -80,13 +107,16 @@ fn calc_q_independent(
 #[inline(always)]
 fn calc_sqrt_hamiltonian(
     q: Col<f64>,
-    C: &Mat<C64>,
+    q_indepepdent_components: &QIndependentComponents,
     n_sites: usize,
-    z: &[Col<C64>],
-    spin_coefficients: &Mat<C64>,
     couplings: &[&Coupling],
-    Az: &Option<Vec<C64>>,
 ) -> Mat<C64> {
+    // unpack q-independent components
+    let C = &q_indepepdent_components.C;
+    let z = &q_indepepdent_components.z;
+    let spin_coefficients = &q_indepepdent_components.spin_coefficients;
+    let Az = &q_indepepdent_components.Az;
+
     // create A and B matrices for the Hamiltonian
 
     let mut A = Mat::<C64>::zeros(n_sites, n_sites);
@@ -160,8 +190,7 @@ pub fn calc_energies(
 ) -> Vec<Vec<f64>> {
     let n_sites = rotations.len();
 
-    let (C, z, spin_coefficients, Az) =
-        calc_q_independent(rotations, magnitudes, &couplings, field);
+    let q_independent_components = calc_q_independent(rotations, magnitudes, &couplings, field);
 
     // now perform the calculation for each q-vector in parallel
     q_vectors
@@ -169,12 +198,9 @@ pub fn calc_energies(
         .map(|q| {
             energies_single_q(
                 Col::from_iter(q),
-                &C,
+                &q_independent_components,
                 n_sites,
-                &z,
-                &spin_coefficients,
                 &couplings,
-                &Az,
             )
         })
         .collect()
@@ -195,15 +221,11 @@ pub fn calc_energies(
 /// A vector containing the energies for the given q-vector.
 fn energies_single_q(
     q: Col<f64>,
-    C: &Mat<C64>,
+    q_independent_components: &QIndependentComponents,
     n_sites: usize,
-    z: &[Col<C64>],
-    spin_coefficients: &Mat<C64>,
     couplings: &[&Coupling],
-    Az: &Option<Vec<C64>>,
 ) -> Vec<f64> {
-    let sqrt_hamiltonian =
-        calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az);
+    let sqrt_hamiltonian = calc_sqrt_hamiltonian(q, q_independent_components, n_sites, couplings);
     // 'shc' is "square root of Hamiltonian with commutation"`
     // We need to enforce the bosonic commutation properties, we do this
     // by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
@@ -238,9 +260,9 @@ fn energies_single_q(
 ///# Returns
 /// A tuple containing:
 /// - A vector of vectors, where each inner vector contains the energies for the corresponding
-/// q-vector.
+///   q-vector.
 /// - A vector of vectors, where each inner vector contains S'^{alpha, beta} matrices for each
-/// eigenvalue at the corresponding q-vector.
+///   eigenvalue at the corresponding q-vector.
 pub fn calc_spinwave(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
@@ -248,24 +270,22 @@ pub fn calc_spinwave(
     couplings: Vec<&Coupling>,
     positions: Vec<ColRef<f64>>,
     field: Option<MagneticField>,
-) -> (Vec<Vec<f64>>, Vec<Vec<Mat<C64>>>) {
+    save_Sab: bool,
+) -> Vec<SpinwaveResult> {
     let n_sites = rotations.len();
 
-    let (C, z, spin_coefficients, Az) =
-        calc_q_independent(rotations, magnitudes, &couplings, field);
+    let QIndependentComponents = calc_q_independent(rotations, magnitudes, &couplings, field);
 
     q_vectors
         .into_par_iter()
         .map(|q| {
             spinwave_single_q(
                 Col::from_iter(q),
-                &C,
+                &QIndependentComponents,
                 n_sites,
-                &z,
-                &spin_coefficients,
                 &couplings,
                 &positions,
-                &Az,
+                save_Sab,
             )
         })
         .collect()
@@ -275,13 +295,10 @@ pub fn calc_spinwave(
 ///
 /// # Parameters
 /// - `q`: The q-vector for which to calculate energies and intensities.
-/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `q_independent_components`: The q-independent components for the calculation.
 /// - `n_sites`: The number of sites in the system.
-/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
-/// - `spin_coefficients`: The spin coefficients matrix.
 /// - `couplings`: Slice of couplings between sites.
 /// - `positions`: The relative positions of each site within the unit cell.
-/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
 ///
 ///# Returns
 /// A tuple containing:
@@ -289,16 +306,17 @@ pub fn calc_spinwave(
 /// - A vector of S'^{alpha, beta} matrices for each eigenvalue at the given q-vector.
 fn spinwave_single_q(
     q: Col<f64>,
-    C: &Mat<C64>,
+    q_independent_components: &QIndependentComponents,
     n_sites: usize,
-    z: &[Col<C64>],
-    spin_coefficients: &Mat<C64>,
     couplings: &[&Coupling],
     positions: &[ColRef<f64>],
-    Az: &Option<Vec<C64>>,
-) -> (Vec<f64>, Vec<Mat<C64>>) {
+    save_Sab: bool,
+) -> SpinwaveResult {
+    let z = &q_independent_components.z;
+    let spin_coefficients = &q_independent_components.spin_coefficients;
+
     let sqrt_hamiltonian =
-        calc_sqrt_hamiltonian(q.clone(), C, n_sites, z, spin_coefficients, couplings, Az);
+        calc_sqrt_hamiltonian(q.clone(), q_independent_components, n_sites, couplings);
     let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
     let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
     negative_half *= -1.;
@@ -306,8 +324,8 @@ fn spinwave_single_q(
     // calculate block matrices [ Y Z ; V W ] for S'^alpha, beta
     //
     // The calculation includes the phase factors exp(i q (r_i - r_j)) for each
-    // pair of sites i, j; to calculate these efficiently we calculate 
-    // exp(i q r_i) for each site i and then the outer product of this with its conjugate 
+    // pair of sites i, j; to calculate these efficiently we calculate
+    // exp(i q r_i) for each site i and then the outer product of this with its conjugate
     // gives us the full matrix of phase factors.
     let phase_factors = Col::<C64>::from_iter(
         positions
@@ -316,7 +334,7 @@ fn spinwave_single_q(
     );
     let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
 
-    let coefficients = component_mul(spin_coefficients, &phase_factors_matrix);
+    let coefficients = component_mul(&(2. * spin_coefficients), &phase_factors_matrix);
 
     // We store S' as a 3x3 matrix of matrices indexed by alpha, beta
     // where each element is an 2 * n_sites x 2 * n_sites matrix
@@ -360,7 +378,6 @@ fn spinwave_single_q(
         }
     }
 
-
     let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
         .self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
@@ -374,7 +391,7 @@ fn spinwave_single_q(
     // this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
     // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
     // for the eigenvalues of the Hamiltonian
-    // note that eigvals are 'backwards' compared to the order we want for sqrt_E 
+    // note that eigvals are 'backwards' compared to the order we want for sqrt_E
     // so we invert the first half of the eigenvalues here rather than the second,
     // but sqrt_E has the same values either way (as the eigenvalues have opposite signs in the two
     // halves)
@@ -414,5 +431,28 @@ fn spinwave_single_q(
         })
         .collect();
 
-    (eigvals.iter().map(|x| x.re).collect(), Sab)
+    // and finally, calculate the perpendicular component of Sab
+    let intensities = {
+        let mut norm_q: Col<C64> = (q.as_ref() / q.norm_l2()).iter().map(C64::from).collect();
+        if norm_q.has_nan() {
+            norm_q = Col::<C64>::from_iter([C64::ZERO, C64::ZERO, C64::ZERO]);
+        }
+        let perp_factor = Mat::<C64>::identity(3, 3) - (norm_q.as_ref() * norm_q.adjoint());
+        Sab.iter()
+            .map(|Sab_w| -> f64 { component_mul(Sab_w, &perp_factor).sum().re })
+            .collect()
+    };
+
+    match save_Sab {
+        true => SpinwaveResult {
+            energies: eigvals.iter().map(|x| x.re).collect(),
+            sab: Some(Sab),
+            intensities,
+        },
+        false => SpinwaveResult {
+            energies: eigvals.iter().map(|x| x.re).collect(),
+            sab: None,
+            intensities,
+        },
+    }
 }

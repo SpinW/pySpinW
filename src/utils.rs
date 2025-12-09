@@ -19,8 +19,8 @@ pub fn get_rotation_components(rotations: Vec<MatRef<C64>>) -> (Vec<Col<C64>>, V
     // r.col(index) gets the components of the rotation matrix
     // and then in the map we compile the x and y components into z, and the other into eta
     // so this function returns (z, eta).
-    // Note that z is a Col<C64> while eta is a ColRef<C64>. 
-    // This is because eta is only read, so we can just read from the original Numpy matrix, 
+    // Note that z is a Col<C64> while eta is a ColRef<C64>.
+    // This is because eta is only read, so we can just read from the original Numpy matrix,
     // while z is constructed so we need to own the memory.
     rotations
         .into_par_iter()

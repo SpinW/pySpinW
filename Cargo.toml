@@ -12,6 +12,6 @@ crate-type = ["cdylib"]
 pyo3 = {version="0.26", features=["num-complex"]}
 numpy = "0.26.0"
 faer = "0.23.1"
-faer-ext = {version="0.7.1", features=["numpy"]}
+faer-ext = {version="0.7.1", features=["numpy", "ndarray"]}
 num-complex = "0.4.6"
 rayon = "1.11.0"
