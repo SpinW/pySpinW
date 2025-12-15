@@ -316,10 +316,21 @@ which is more transparent with respects to the equations in the paper.
 The next step is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$ to find the magnon energies (the eigenvalues of $`h(\mathbf{q})`$,
 and more importantly to find the linear combination of boson operators $`b_i(\mathbf{q})`$ corresponding to these energies so as to compute the neutron structure factor.
 Because the (new) boson operators (also) have to obey the commutation relation we cannot simply use the standard eigenvalue decomposition algorithms.
-Instead we need to compute
+Instead we need to compute the matrix $`KgK^*`$, where g is the commutation matrix defined as:
 
+```math
+g = \left[ \begin{array}{cc}
+I_{N} && 0 \\
+0 && -I_{N}
+\end{array} \right]
+```
 
-Instead SpinW uses one of two algorithms:
+and $`K`$ is the 'square root' of $`h(\mathbf{q})`$, i.e. $`K^* K = h(\mathbf{q})`$.
+
+If h(\mathbf{q}) is positive definite, then K can be computed using the Cholesky decomposition. Otherwise, there are other methods. Toth and Lake (2015) add
+a small factor to the diagonal to make it positive definite, and PySpinW instead uses the $`LDL^*`$ (Bunch-Kaufman) decomposition and takes $`K = L \sqrt{D}`$.
+
+The MATLAB SpinW uses one of two algorithms:
 
 * That of [Colpa](http://dx.doi.org/10.1016/0378-4371%2878%2990160-7) if the $`h(\mathbf{q})`$ matrix is explicitly treated as Hermitian.
   Note that this algorithm will give an [error](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L993-L996)
@@ -334,7 +345,7 @@ which is directly related to the inelastic neutron scattering cross-section.
 
 Note that this calculation assumes that the eigenvalues (and their associated eigenvectors) are in decreasing order.
 
-For a matrix of eigenvectors $`U`$ and a $`2N \times 2N`$ diagonal matrix $`E = gL`$ where $`L`$ is the diagonal matrix of eigenvalues (the magnon energies),
+For a matrix of eigenvectors $`U`$ and the matrix $`E = gL`$ where $`L`$ is the diagonal matrix of eigenvalues (the magnon energies),
 we define the transformation matrix as
 
 ```math
@@ -370,7 +381,7 @@ and $`\mathrm{Y}, \mathrm{Z}, \mathrm{V}`$ and $`\mathrm{W}`$ are $`N \times N`$
 \end{align}
 ```
 
-Finally, we see that $`\delta(\omega - g_{ii}))`$ means the function is non-zero only at eigenvalues, so we can represent it as an array
+Finally, we see that $`\delta(\omega - g_{ii} \omega_i))`$ means the function is non-zero only at eigenvalues, so we can represent it as an array
 over $`\omega`$. In the code, this is given as the tensor `Sab`, which is a $`3 \times 3 \times 2N \times q`$ array.
 
 ## Projection perpendicular to `q`

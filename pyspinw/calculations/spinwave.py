@@ -262,8 +262,8 @@ def _calc_chunk_spinwave(q_vectors: np.ndarray,
         # W*[alpha, beta] = W[beta, alpha]
         # thus we only need to calculate one triangle and can fill in the rest by conjugation
         for alpha in range(3):
+            z_alphas = z[:,alpha]
             for beta in range(alpha + 1):
-                z_alphas = z[:,alpha]
                 z_betas = z[:,beta]
 
                 # note V is conj(Z) and W is conj(Y) before we multiply by phase factors

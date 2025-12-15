@@ -45,7 +45,9 @@ def kagome_antiferromagnet(n_q = 100, classes = py_classes):
         rotation(-2 * np.pi / 3)
     ]
     magnitudes = np.array([1.0]*3)  # spin-1
-    positions = [np.array([0., 0., 0.]), np.array([1., 0., 0.,]), np.array([0., 1., 0.])]
+    positions = [np.array([0., 0., 0.]),
+                 np.array([1., 0., 0.,]),
+                 np.array([0., 1., 0.]),]
 
     rust_kw = {'dtype':complex, 'order':'F'}
     Coupling = classes.coupling

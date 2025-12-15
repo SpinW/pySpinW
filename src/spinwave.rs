@@ -348,15 +348,15 @@ fn spinwave_single_q(
     // W*[alpha, beta] = W[beta, alpha]
     // thus we only need to calculate one triangle and can fill in the rest by conjugation
     for alpha in 0..3 {
+        let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
         for beta in 0..=alpha {
-            let z_alphas = Col::<C64>::from_iter(z.iter().map(|zi| zi[alpha]));
             let z_betas = Col::<C64>::from_iter(z.iter().map(|zi| zi[beta]));
 
             // construct the four blocks V, W, Y, Z;
             // note that before we include the phase factors,
             // V is conj(Z) and W is conj(Y)
             let Yab = z_alphas.clone() * z_betas.adjoint();
-            let Zab = z_alphas * z_betas.transpose();
+            let Zab = z_alphas.clone() * z_betas.transpose();
             let Vab = Zab.conjugate().to_owned();
             let Wab = Yab.conjugate().to_owned();
 
