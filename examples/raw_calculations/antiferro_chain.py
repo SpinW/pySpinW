@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 def antiferro_chain(n_q = 100, classes = py_classes):
     """Antiferromagnetic chain.
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # Note: we get complex data types with real part zero
 
-    plt.plot(np.linspace(0, 1, 100).reshape(-1, 1), energies)
+    plot(np.linspace(0, 1, 100).reshape(-1, 1), energies, sqw)
 
     # plt.savefig("fig.png")
     # Compare with tutorial 2, second last figure (https://spinw.org/tutorial2_05.png)

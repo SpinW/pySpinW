@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 # define our rotation matrices
 def rotation(theta):
@@ -123,9 +123,7 @@ if __name__ == "__main__":
     energies = [np.sort(energy.real) for energy in energies]
     positive_energies = [energy[energy>0] for energy in energies]
 
-    plt.plot(indices, positive_energies)
-    # plt.plot(indices, [method.value for method in result.method])
-    plt.xticks(label_indices, labels)
+    plot(indices, plot, sqw)
 
     # Compare with tutorial 7, 2nd last figure (https://spinw.org/tutorial7_05.png)
     # It looks slightly assymmetric because Matlab-SpinW adjusts the aspect-ratio

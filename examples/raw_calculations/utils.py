@@ -49,6 +49,8 @@ def run_example(
         The structure from the example callable.
     energies: np.array
         The result from the spinwave calculation.
+    sqw: np.ndarray
+        The spin-spin correlation function from the spinwave calculation.
 
     """
     try:
@@ -73,6 +75,26 @@ def run_example(
             )
 
     structure = example(classes=classes)
-    energies, sab = spinwave_calculation(*structure)
+    energies, sqw = spinwave_calculation(*structure)
 
-    return structure, energies, sab
+    return structure, energies, sqw
+
+
+def plot(q, energies, sqw):
+    """Plot energies and sqw."""
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(8, 6))
+
+    plt.subplot(2, 1, 1)
+    plt.plot(q, energies)
+    plt.xlabel("Wavevector (r.l.u.)")
+    plt.ylabel("Energy (meV)")
+
+    plt.subplot(2, 1, 2)
+    plt.plot(q, sqw)
+    plt.xlabel("Wavevector (r.l.u.)")
+    plt.ylabel("S(q,ω) (arb. units)")
+
+    plt.tight_layout()
+    plt.show()

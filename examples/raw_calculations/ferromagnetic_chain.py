@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 def heisenberg_ferromagnet(n_q = 100, classes = py_classes):
     """Basic ferromagnet."""
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     _, energies, sqw = run_example(heisenberg_ferromagnet, use_rust)
 
     # Note: we get complex data types with real part zero
-    plt.plot(q_mags, energies)
+    plot(q_mags, energies, sqw)
 
     # Compare with tutorial 1, 3rd last figure (https://spinw.org/tutorial1_05.png)
     plt.show()

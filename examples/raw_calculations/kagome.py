@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 def kagome_ferromagnet(n_q = 100, classes = py_classes):
     """Basic ferromagnet on a kagome lattice."""
@@ -79,9 +79,8 @@ if __name__ == "__main__":
     q_vectors = structure[2]
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
 
-    plt.plot(indices, sqw)
+    plot(indices, energies, sqw)
     # plt.plot(indices, [method.value for method in result.method])
-    plt.xticks(label_indices, labels)
 
     # Compare with tutorial 5, 3rd last figure (https://spinw.org/tutorial5_05.png)
     plt.show()

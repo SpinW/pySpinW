@@ -7,7 +7,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 # define our rotation matrices
 def rotation(theta):
@@ -162,9 +162,8 @@ if __name__ == "__main__":
 
     # Note: we get complex data types with real part zero
 
-    plt.plot(indices, translated_energies)
+    plot(indices, translated_energies, sqw)
     # plt.plot(indices, [method.value for method in result.method])
-    plt.xticks(label_indices, labels)
 
     #plt.savefig("fig.png")
     plt.show()
