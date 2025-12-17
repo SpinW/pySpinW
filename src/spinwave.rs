@@ -8,6 +8,9 @@ use crate::constants::{J, MU_B};
 use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
+/// Minimum energy that isn't just set for zero (in meV)
+const ZERO_ENERGY_TOL: f64 = 5e-4;
+
 /// The result of a single-Q spinwave calculation.
 ///
 /// Fields:
@@ -398,7 +401,12 @@ fn spinwave_single_q(
     let mut sqrt_E = eigvals.to_owned();
     let mut negative_half = sqrt_E.subrows_mut(0, n_sites);
     negative_half *= -1.;
-    sqrt_E.iter_mut().for_each(|x| *x = x.sqrt());
+    sqrt_E.iter_mut().for_each(|x| {
+        *x = match *x {
+            x if x.re < ZERO_ENERGY_TOL => C64::ZERO,
+            _ => x.sqrt(),
+        }
+    });
 
     // instead of inverting K and calculating T = K^-1 U sqrt(E),
     // it's faster and more stable to solve the linear system K T = U sqrt(E)
