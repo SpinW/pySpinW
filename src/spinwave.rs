@@ -358,15 +358,15 @@ fn spinwave_single_q(
             // construct the four blocks V, W, Y, Z;
             // note that before we include the phase factors,
             // V is conj(Z) and W is conj(Y)
-            let Yab = z_alphas.clone() * z_betas.adjoint();
-            let Zab = z_alphas.clone() * z_betas.transpose();
-            let Vab = Zab.conjugate().to_owned();
-            let Wab = Yab.conjugate().to_owned();
+            let mut Yab = z_alphas.clone() * z_betas.adjoint();
+            let mut Zab = z_alphas.clone() * z_betas.transpose();
+            let mut Vab = Zab.conjugate().to_owned();
+            let mut Wab = Yab.conjugate().to_owned();
 
-            component_mul(&Yab, &coefficients);
-            component_mul(&Zab, &coefficients);
-            component_mul(&Vab, &coefficients);
-            component_mul(&Wab, &coefficients);
+            Yab = component_mul(&Yab, &coefficients);
+            Zab = component_mul(&Zab, &coefficients);
+            Vab = component_mul(&Vab, &coefficients);
+            Wab = component_mul(&Wab, &coefficients);
 
             sab_blocks[(alpha, beta)] = block_matrix(&Yab, &Zab, &Vab, &Wab);
 
@@ -385,7 +385,7 @@ fn spinwave_single_q(
         .self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
-    let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
+    let eigvals: ColRef<C64> = eigendecomp.S().column_vector().reverse_rows();
 
     // we reverse the rows of U to match the nonincreasing order of eigenvalues in sqrt_E
     let eigvecs: MatRef<C64> = eigendecomp.U().reverse_rows();
@@ -394,12 +394,8 @@ fn spinwave_single_q(
     // this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
     // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
     // for the eigenvalues of the Hamiltonian
-    // note that eigvals are 'backwards' compared to the order we want for sqrt_E
-    // so we invert the first half of the eigenvalues here rather than the second,
-    // but sqrt_E has the same values either way (as the eigenvalues have opposite signs in the two
-    // halves)
     let mut sqrt_E = eigvals.to_owned();
-    let mut negative_half = sqrt_E.subrows_mut(0, n_sites);
+    let mut negative_half = sqrt_E.subrows_mut(n_sites, n_sites);
     negative_half *= -1.;
     sqrt_E.iter_mut().for_each(|x| {
         *x = match *x {
