@@ -269,7 +269,6 @@ Now, often we speak of $`\mathrm{h}(\mathbf{q})`$ as the "Hamiltonian" but stric
 is $`\mathcal{H}`$ which is the sum of $`\mathrm{h}(\mathbf{q})`$ over all $`\mathbf{q}`$ in the Brillouin zone.
 Nonetheless, in order to calculate the inelastic neutron spectra, the quantity we need to calculate (and diagonalise) is $`\mathrm{h}(\mathbf{q})`$.
 
-
 ### Code for calculating the "Hamiltonian" matrix
 
 Despite the disclaimer above, in the rest of the text we will use "Hamiltonian matrix" to refer to the hermitian matrix $`\mathrm{h}(\mathbf{q})`$.
@@ -312,28 +311,86 @@ As an alternative to the vectorized Matlab code, there is an independent impleme
 [uses a loop over the sites of the unit cell](https://github.com/ILLGrenoble/magpie/blob/master/tlibs2/libs/magdyn/hamilton.h#L175-L264)
 which is more transparent with respects to the equations in the paper.
 
-<!--
-
-## The spin-spin correlation function
-
-The logical next step (and the one taken by most treatment) is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$
-to find the magnon energies $`E(\mathbf{q})`$ at each $`\mathbf{q}`$ point.
-However,
-
--->
-
 ## The Bogoliubov transformation
 
 The next step is to diagonalise the "Hamiltonian" matrix $`h(\mathbf{q})`$ to find the magnon energies (the eigenvalues of $`h(\mathbf{q})`$,
 and more importantly to find the linear combination of boson operators $`b_i(\mathbf{q})`$ corresponding to these energies so as to compute the neutron structure factor.
 Because the (new) boson operators (also) have to obey the commutation relation we cannot simply use the standard eigenvalue decomposition algorithms.
-Instead we need to compute
+Instead we need to compute the matrix $`KgK^*`$, where g is the commutation matrix defined as:
 
+```math
+g = \left[ \begin{array}{cc}
+I_{N} && 0 \\
+0 && -I_{N}
+\end{array} \right]
+```
 
-Instead SpinW uses one of two algorithms:
+and $`K`$ is the 'square root' of $`h(\mathbf{q})`$, i.e. $`K^* K = h(\mathbf{q})`$.
+
+If h(\mathbf{q}) is positive definite, then K can be computed using the Cholesky decomposition. Otherwise, there are other methods. Toth and Lake (2015) add
+a small factor to the diagonal to make it positive definite, and PySpinW instead uses the $`LDL^*`$ (Bunch-Kaufman) decomposition and takes $`K = L \sqrt{D}`$.
+
+The MATLAB SpinW uses one of two algorithms:
 
 * That of [Colpa](http://dx.doi.org/10.1016/0378-4371%2878%2990160-7) if the $`h(\mathbf{q})`$ matrix is explicitly treated as Hermitian.
   Note that this algorithm will give an [error](https://github.com/SpinW/spinw/blob/73f604ab4d84084d872d1f5fdf46dbc54e14cdd7/swfiles/%40spinw/spinwave.m#L993-L996)
   if the $`h(\mathbf{q})`$ matrix is not only Hermitian but also positive definite.
 * That of [White et al.](https://doi.org/10.1103/PhysRev.139.A450) for a general $`h(\mathbf{q})`$ matrix.
   Note that in this case SpinW can return (unphysical) imaginary magnon energies.
+
+## The spin-spin correlation function
+
+Once the Hamiltonian matrix has been diagonalised, the eigenvalues and eigenvectors can be used to compute the spin-spin correlation function
+which is directly related to the inelastic neutron scattering cross-section.
+
+Note that this calculation assumes that the eigenvalues (and their associated eigenvectors) are in decreasing order.
+
+For a matrix of eigenvectors $`U`$ and the matrix $`E = gL`$ where $`L`$ is the diagonal matrix of eigenvalues (the magnon energies),
+we define the transformation matrix as
+
+```math
+T = K^{-1} U E^{1/2}.
+```
+
+Note for computational precision and efficiency it is preferable to compute $`T`$ implicitly as the solution to the linear system
+
+```math
+K T = U E^{1/2}.
+```
+
+The spin-spin correlation function is then calculated from a tensor $`S'^{\alpha, \beta}(\mathbf{q}, \omega)`$ defined as:
+
+```math
+S'^{\alpha, \beta}(\mathbf{q}, \omega) = \frac{1}{2N} \sum_{i=1}^{2N} 
+[T^* \left[ \begin{array}{cc}
+\mathrm{Y}^{\alpha, \beta}(\mathbf{q}) && \mathrm{Z}^{\alpha, \beta}(\mathbf{q}) \\
+\mathrm{V}^{\alpha, \beta}(\mathbf{q}) && \mathrm{W}^{\alpha, \beta}(\mathbf{q})
+\end{array} \right] T]_{ii} \delta(\omega - g_{ii} \omega_i) (n(\omega) - \frac{1}{2}(1 - g_{ii}))
+```
+
+where $`N`$ is the number of spins in the magnetic unit cell, $`\omega_i`$ is the $`i`$th entry of $`E`$ (which is the **absolute value** of the $`i`$'th eigenvalue!),
+$`n(\omega)`$ is the Bose factor of $`\omega`$ (which in this calculation is 1, as we are calculating the limit at temperature zero),
+and $`\mathrm{Y}, \mathrm{Z}, \mathrm{V}`$ and $`\mathrm{W}`$ are $`N \times N`$ matrices with elements:
+
+```math
+\begin{align}
+\mathrm{Y}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{\alpha} z_j^{*\beta} \\
+\mathrm{Z}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{\alpha} z_j^{\beta} \\
+\mathrm{V}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{*\alpha} z_j^{*\beta} \\
+\mathrm{W}^{\alpha, \beta}_{ij}(\mathbf{q}) & = \sqrt{S_i S_j} \phi_{i,j}(\mathbf{q}) z_i^{*\alpha} z_j^{\beta}
+\end{align}
+```
+
+Finally, we see that $`\delta(\omega - g_{ii} \omega_i))`$ means the function is non-zero only at eigenvalues, so we can represent it as an array
+over $`\omega`$. In the code, this is given as the tensor `Sab`, which is a $`3 \times 3 \times 2N \times q`$ array.
+
+## Projection perpendicular to `q`
+Finally, for neutron output, we take the projection of  perpendicular to the `q` vector. This is
+```math
+S_{\perp }(Q,\omega )=\sum _{\alpha \beta }(\delta ^{\alpha \beta}-\hat{q}^{\alpha }\hat{q}^{\beta })S'^{\alpha \beta }(\mathbf{q}, \omega )
+```
+where $`\delta`$ is the Kronecker delta, and $`\hat{q}`$ is the unit vector along $`\mathbf{q}`$.
+If we see $`S'`$ as a $`3 \times 3`$ matrix over $`\alpha, \beta`$ for each $`(\mathbf{q}, \omega)`$ point, then this is
+```math
+S_{\perp}(Q, \omega) = (I - \hat{q} \times \hat{q}) S'(\mathbf{q}, \omega).
+```

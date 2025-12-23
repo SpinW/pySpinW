@@ -45,6 +45,7 @@ for use_rust in rust_option:
     for n_q in [100, 1000, 5000]:
         times = []
         for example in examples:
+            print(f"Benchmarking {example} with n_q={n_q}, rust={use_rust}")
             times.append(
                 timeit(
                     f"{spinwave_calculation}(*structure)",

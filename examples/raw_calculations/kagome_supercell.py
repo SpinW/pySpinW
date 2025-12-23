@@ -7,7 +7,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 # define our rotation matrices
 def rotation(theta):
@@ -83,6 +83,16 @@ def kagome_supercell(n_q = 100, classes = py_classes):
             up(),
         ]
     magnitudes = np.array([1] * 27)  # spin 1
+    unit_cell_positions = [np.array([0., 0., 0.]), np.array([0., 1., 0.]), np.array([1., 0., 0.])]
+    positions = (unit_cell_positions  # unit cell 0
+                + [pos + np.array([1., 0., 0.]) for pos in unit_cell_positions]  # unit cell 1
+                + [pos + np.array([2., 0., 0.]) for pos in unit_cell_positions]  # unit cell 2
+                + [pos + np.array([0., 1., 0.]) for pos in unit_cell_positions]  # unit cell 3
+                + [pos + np.array([1., 1., 0.]) for pos in unit_cell_positions]  # unit cell 4
+                + [pos + np.array([2., 1., 0.]) for pos in unit_cell_positions]  # unit cell 5
+                + [pos + np.array([0., 2., 0.]) for pos in unit_cell_positions]  # unit cell 6
+                + [pos + np.array([1., 2., 0.]) for pos in unit_cell_positions]  # unit cell 7
+                + [pos + np.array([2., 2., 0.]) for pos in unit_cell_positions]) # unit cell 8
 
     # The inter_site_vector is actually the vector between unit cells (see eq 10 and eq 14 in Toth+Lake)
     # So we define the pairs within each cell first - there are 2 for each cell
@@ -128,7 +138,7 @@ def kagome_supercell(n_q = 100, classes = py_classes):
 
     # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
 
-    return (rotations, magnitudes, q_vectors, couplings)
+    return rotations, magnitudes, q_vectors, couplings, positions
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -138,7 +148,7 @@ if __name__ == "__main__":
     else:
         use_rust = True
 
-    structure, energies = run_example(kagome_supercell, use_rust)
+    structure, energies, sqw = run_example(kagome_supercell, use_rust)
 
     q_vectors = structure[2]
     indices = np.arange(201)
@@ -152,9 +162,8 @@ if __name__ == "__main__":
 
     # Note: we get complex data types with real part zero
 
-    plt.plot(indices, translated_energies)
+    plot(indices, translated_energies, sqw)
     # plt.plot(indices, [method.value for method in result.method])
-    plt.xticks(label_indices, labels)
 
     #plt.savefig("fig.png")
     plt.show()

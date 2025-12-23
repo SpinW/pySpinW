@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 def kagome_ferromagnet(n_q = 100, classes = py_classes):
     """Basic ferromagnet on a kagome lattice."""
@@ -16,6 +16,9 @@ def kagome_ferromagnet(n_q = 100, classes = py_classes):
     # Three sites, otherwise identical
     rotations = [np.eye(3, **rust_kw) for _ in range(3)]
     magnitudes = np.array([1.0]*3)  # spin-1
+    positions = np.array([[0., 0., 0.],
+                          [0.5, 0., 0.],
+                          [0.5, 0.5, 0.]])
 
     # Each site coupled to two of each of the others, so there are 6 couplings,
     # And we need to add the other direction, so 12 entries in total
@@ -57,7 +60,7 @@ def kagome_ferromagnet(n_q = 100, classes = py_classes):
     ))
 
     # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
-    return rotations, magnitudes, q_vectors, couplings
+    return rotations, magnitudes, q_vectors, couplings, positions
 
 
 if __name__ == "__main__":
@@ -69,16 +72,15 @@ if __name__ == "__main__":
     else:
         use_rust = True
 
-    structure, energies = run_example(kagome_ferromagnet, use_rust)
+    structure, energies, sqw = run_example(kagome_ferromagnet, use_rust)
 
     indices = np.arange(201)
     label_indices = [0, 100, 200]
     q_vectors = structure[2]
     labels = [str(q_vectors[idx,:]) for idx in label_indices]
 
-    plt.plot(indices, np.real(energies))
+    plot(indices, energies, sqw)
     # plt.plot(indices, [method.value for method in result.method])
-    plt.xticks(label_indices, labels)
 
     # Compare with tutorial 5, 3rd last figure (https://spinw.org/tutorial5_05.png)
     plt.show()

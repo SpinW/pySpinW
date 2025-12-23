@@ -28,7 +28,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 def ferromagnet_gtensor(n_q = 100, classes = py_classes):
     """Basic ferromagnet with magnetic field and g-tensor."""
@@ -38,6 +38,7 @@ def ferromagnet_gtensor(n_q = 100, classes = py_classes):
 
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
+    positions = [np.array([0., 0., 0.])]
 
     # external field
     g_tensor = [np.array([[2., 1., 1.],
@@ -51,7 +52,7 @@ def ferromagnet_gtensor(n_q = 100, classes = py_classes):
     couplings = [Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
                  Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])), ]
 
-    return (rotations, magnitudes, q_vectors, couplings, ext_field)
+    return rotations, magnitudes, q_vectors, couplings, positions, ext_field
 
 if __name__ == "__main__":
 
@@ -64,10 +65,10 @@ if __name__ == "__main__":
 
     q_mags = np.linspace(0, 1, 100)
 
-    _, energies = run_example(ferromagnet_gtensor, use_rust)
+    _, energies, sqw = run_example(ferromagnet_gtensor, use_rust)
 
     # Note: we get complex data types with real part zero
-    plt.plot(q_mags, energies)
+    plot(q_mags, energies, sqw)
 
     # Compare with tutorial 1, 3rd last figure (https://spinw.org/tutorial1_05.png)
     plt.show()

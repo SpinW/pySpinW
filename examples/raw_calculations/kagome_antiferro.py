@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from examples.raw_calculations.utils import run_example, py_classes
+from examples.raw_calculations.utils import run_example, plot, py_classes
 
 # define our rotation matrices
 def rotation(theta):
@@ -45,6 +45,9 @@ def kagome_antiferromagnet(n_q = 100, classes = py_classes):
         rotation(-2 * np.pi / 3)
     ]
     magnitudes = np.array([1.0]*3)  # spin-1
+    positions = [np.array([0., 0., 0.]),
+                 np.array([1., 0., 0.,]),
+                 np.array([0., 1., 0.]),]
 
     rust_kw = {'dtype':complex, 'order':'F'}
     Coupling = classes.coupling
@@ -98,7 +101,7 @@ def kagome_antiferromagnet(n_q = 100, classes = py_classes):
             q_mags[1:].reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
     ))
 
-    return (rotations, magnitudes, q_vectors, couplings)
+    return rotations, magnitudes, q_vectors, couplings, positions
 
 if __name__ == "__main__":
 
@@ -109,7 +112,7 @@ if __name__ == "__main__":
     else:
         use_rust = True
 
-    structure, energies = run_example(kagome_antiferromagnet, use_rust)
+    structure, energies, sqw = run_example(kagome_antiferromagnet, use_rust)
 
     indices = np.arange(201)
     label_indices = [0, 100, 200]
@@ -120,9 +123,7 @@ if __name__ == "__main__":
     energies = [np.sort(energy.real) for energy in energies]
     positive_energies = [energy[energy>0] for energy in energies]
 
-    plt.plot(indices, positive_energies)
-    # plt.plot(indices, [method.value for method in result.method])
-    plt.xticks(label_indices, labels)
+    plot(indices, plot, sqw)
 
     # Compare with tutorial 7, 2nd last figure (https://spinw.org/tutorial7_05.png)
     # It looks slightly assymmetric because Matlab-SpinW adjusts the aspect-ratio

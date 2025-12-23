@@ -10,4 +10,3 @@ pub static SCALAR_J: Scale<C64> = Scale(J);
 
 // Bohr magneton in units meV/T
 pub static MU_B: f64 = 0.05788382;
-
