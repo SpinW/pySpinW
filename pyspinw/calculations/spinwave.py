@@ -253,7 +253,7 @@ def _calc_chunk_spinwave(
 
         to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
 
-        eigvals, eigvecs = np.linalg.eig(to_diagonalise)
+        eigvals, eigvecs = np.linalg.eigh(to_diagonalise + np.diag(np.array(range(to_diagonalise.shape[0]))*1e-12))
         energies.append(eigvals)
 
         # sort eigenvalues and eigenvectors in decreasing order of eigenvalue

@@ -381,7 +381,10 @@ fn spinwave_single_q(
         }
     }
 
-    let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
+    // Adds a small delta to diagonal to ensure we don't have an exact degeneracies
+    let diag_delta = Mat::<C64>::from_fn(shc.nrows(), shc.ncols(),
+        |i,j| if i == j { C64::from((i as f64)*1e-12) } else { C64::ZERO } );
+    let eigendecomp = ((sqrt_hamiltonian.adjoint() * shc) + diag_delta)
         .self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
