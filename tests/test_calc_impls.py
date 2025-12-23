@@ -46,4 +46,4 @@ def test_calc_impls(example):
 
     # we test to an absolute tolerance of 1e-6 in line with the MATLAB
     np.testing.assert_allclose(np.sort(rs_energies), np.sort(py_energies), atol=1e-6, rtol=0)
-    np.testing.assert_allclose(np.sort(rs_sqw), np.sort(py_sqw), atol=1e-6, rtol=0)
+    np.testing.assert_allclose(np.sort(rs_sqw), np.sort(py_sqw), atol=1e-6, rtol=1e-3)

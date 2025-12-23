@@ -1,7 +1,8 @@
 use std::f64::consts::PI;
 
 use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
-use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
+use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm};
+use faer::mat::{AsMatRef, AsMatMut};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B};
@@ -153,24 +154,25 @@ fn calc_sqrt_hamiltonian(
 
     // take square root of Hamiltonian using Cholesky if possible; if this fails,
     // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
-    let sqrt_hamiltonian = {
-        if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
-            chol.L().to_owned()
+    if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
+        chol.L().to_owned()
+    } else {
+        if let Ok(ldl) = hamiltonian.ldlt(Side::Lower) {
+            let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
+            zip!(&mut sqrt_d, ldl.D().column_vector()).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
+            ldl.L() * sqrt_d.as_diagonal()
         } else {
             let ldl = hamiltonian.lblt(Side::Lower);
             let l = ldl.L();
             let d = ldl.B_diag().column_vector(); // we're ignoring off-diagonals... this may be
                                                   // dangerous
-
-            // we use the zip and unzip to map over d and allocate to sqrt_d
-            let mut sqrt_d = Col::<C64>::zeros(d.nrows());
+            let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
             zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
-
             // need to apply permutations: in Python scipy does this for you
-            ldl.P().inverse() * l * sqrt_d.as_diagonal()
-        }
-    };
-    sqrt_hamiltonian
+            let mut shm = Mat::<C64>::zeros(l.nrows(), l.ncols());
+            perm::permute_cols(shm.as_mat_mut(), (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(), ldl.P().inverse());
+            shm
+        }} 
 }
 
 /// Calculate energies (eigenvalues of the Hamiltonian) for a set of q-vectors.
@@ -388,17 +390,19 @@ fn spinwave_single_q(
         .self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
-    let eigvals: ColRef<C64> = eigendecomp.S().column_vector().reverse_rows();
+    let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
 
-    // we reverse the rows of U to match the nonincreasing order of eigenvalues in sqrt_E
-    let eigvecs: MatRef<C64> = eigendecomp.U().reverse_rows();
+    // we reverse the columns of U to match the nonincreasing order of eigenvalues in sqrt_E
+    let eigvecs: MatRef<C64> = eigendecomp.U().reverse_cols();
 
     // calculate transformation matrix for spin-spin correlation function
     // this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
     // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
     // for the eigenvalues of the Hamiltonian
+    // these should be in nonincreasing order but it doesn't matter as the array comes out
+    // the same once we apply the commutation sign flips
     let mut sqrt_E = eigvals.to_owned();
-    let mut negative_half = sqrt_E.subrows_mut(n_sites, n_sites);
+    let mut negative_half = sqrt_E.subrows_mut(0, n_sites);
     negative_half *= -1.;
     sqrt_E.iter_mut().for_each(|x| {
         *x = match *x {
