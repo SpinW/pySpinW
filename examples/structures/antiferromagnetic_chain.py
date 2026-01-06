@@ -31,16 +31,9 @@ if __name__ == "__main__":
                           j=1,
                           direction_filter=filter([1,0,0], symmetric=True))
 
-    print("Sites:")
-    for site in sites:
-        print(site)
-
-    print("Couplings:")
-    for exchange in exchanges:
-        print(exchange, " vector =",exchange.vector(unit_cell=unit_cell))
 
     hamiltonian = Hamiltonian(s, exchanges)
+    hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])
-
     hamiltonian.energy_plot(path)

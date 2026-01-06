@@ -37,17 +37,9 @@ if __name__ == "__main__":
 
     hamiltonian = Hamiltonian(s, exchanges)
 
+    hamiltonian.print_summary()
+
     path = Path([[-0.5,0,0], [0,0,0], [0,0.5,0.5]])
-
-    print("Sites:")
-    for site in sites:
-        print(site)
-
-    print("Couplings:")
-    for exchange in exchanges:
-        print(exchange, " vector =",exchange.vector(unit_cell=unit_cell))
-
-
     hamiltonian.energy_plot(path)
 
 
