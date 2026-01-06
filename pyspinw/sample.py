@@ -26,9 +26,8 @@ class Sample(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _energies(self, q_values: np.ndarray, use_rust: bool=True):
+    def _energies(self, q_values: np.ndarray, magnetic_field: ArrayLike | None, use_rust: bool=True):
         """ Get the energies as a function of the q samples"""
-        return self.hamiltonian.energies(q_values, use_rust=use_rust)
 
     @abstractmethod
     def _q_energy_intensity_samples(self) -> np.ndarray:
@@ -37,33 +36,24 @@ class Sample(ABC):
 
 class Sample3D(Sample):
     """ Sample where the direction of q matters"""
-    @abstractmethod
+
+    @check_sizes(field=(3,), allow_nones=True)
     def energies(self,
                  path: Path,
                  field: ArrayLike | None = None,
-                 use_rust: bool=True) -> list[np.ndarray]:
-
+                 use_rust: bool = True) -> list[np.ndarray]:
         """ Get the energies along a specified path """
 
+        return self._energies(path, field, use_rust)
 
 class Sample1D(Sample):
-    """ Sample where the direction of q does not matter"""
-    def energies(self, path: Path1D, field: ArrayLike | None = None, use_rust: bool=True):
-        pass
+    """ Sample where the direction of q does not matter
 
+    An important difference from Sample3D is there's no option to just get energies,
+    this is because they will form a continuum in 1D. The 3D q-energy curves can
+    be obtained from the Hamiltonian, they're just not exposed at this level
+    """
 
-class SingleCrystal(Sample3D):
-    """Specifies a single crystal sample"""
-    def __init__(self, hamiltonian: Hamiltonian):
-
-        super().__init__(hamiltonian=hamiltonian)
-
-    def energies(self,
-                 path: Path,
-                 field: ArrayLike | None = None,
-                 use_rust: bool=True):
-
-        return self._energies(path.q_points())
 
 
 class CrystalDomain:
@@ -93,6 +83,20 @@ def _domain_like_to_domain(domain_like: CrystalDomainLike) -> CrystalDomain:
         return CrystalDomain(*domain_like)
 
 
+class SingleCrystal(Sample3D):
+    """Specifies a single crystal sample"""
+    def __init__(self, hamiltonian: Hamiltonian):
+
+        super().__init__(hamiltonian=hamiltonian)
+
+    def _energies(self,
+                 path: Path,
+                 field: ArrayLike | None = None,
+                 use_rust: bool=True):
+
+        return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
+
+
 class Multidomain(Sample3D):
     """Sample consisting of multiple domains"""
 
@@ -110,8 +114,8 @@ class Multidomain(Sample3D):
 
         super().__init__(hamiltonian=hamiltonian)
 
-    @check_sizes(field=(3,), allow_nones=True)
-    def energies(self,
+
+    def _energies(self,
                  path: Path,
                  field: ArrayLike | None = None,
                  use_rust: bool=True) -> list[np.ndarray]:
@@ -124,7 +128,10 @@ class Multidomain(Sample3D):
             transformed_q = transformation @ q_vectors
             transformed_field = None if field is None else transformation @ field
 
-            output += self.hamiltonian.energies(transformed_q, field=transformed_field, use_rust=use_rust)
+            output += self.hamiltonian.sorted_positive_energies(
+                        transformed_q,
+                        field=transformed_field,
+                        use_rust=use_rust)
 
         return output
 

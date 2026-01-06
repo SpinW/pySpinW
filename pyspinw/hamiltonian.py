@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 import matplotlib.pyplot as plt
+from numpy._typing import ArrayLike
 
 from pyspinw.calculations.spinwave import (
     spinwave_calculation as py_spinwave,
@@ -12,6 +13,7 @@ from pyspinw.calculations.spinwave import (
     MagneticField as PyMagneticField)
 
 from pyspinw.cell_offsets import CellOffset
+from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable
@@ -43,7 +45,8 @@ class Hamiltonian(SPWSerialisable):
         """ Get the couplings """
         return self._couplings
 
-    def energies(self, q_vectors: np.ndarray, field: np.ndarray | None, use_rust: bool=True):
+    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True)
+    def energies(self, q_vectors: np.ndarray, field: ArrayLike | None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
@@ -68,8 +71,9 @@ class Hamiltonian(SPWSerialisable):
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
-        # Get the rotations for the sites
+        # Get the positions, rotations, moments for the sites
         moments = []
+        positions = []
         unique_id_to_index: dict[int, int] = {}
         for index, site in enumerate(self._structure.sites):
             # TODO: Sort out moments for supercells
@@ -79,6 +83,9 @@ class Hamiltonian(SPWSerialisable):
                     cell_offset=CellOffset(0,0,0)
                 )
             )
+
+            positions.append(
+                self._structure.unit_cell.fractional_to_cartesian(site.ijk))
 
             unique_id_to_index[site._unique_id] = index
 
@@ -90,11 +97,11 @@ class Hamiltonian(SPWSerialisable):
             for site in self._structure.sites:
                 g_tensors.append(site.g)
 
-            magnetic_field = magnetic_field_class(vector=field, g_tensors=g_tensors)
+            magnetic_field = magnetic_field_class(vector=np.array(field), g_tensors=g_tensors)
 
         moments = np.array(moments, dtype=float)
         rotations = site_rotations(moments)
-        magnitudes = np.sqrt(np.sum(moments**2, axis=1))
+        magnitudes = np.array(positions, dtype=float)
 
         rotations = [rotations[i, :, :] for i in range(rotations.shape[0])]
 
@@ -123,26 +130,50 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(coupling)
 
-        energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings, field=magnetic_field)
+        energies = spinwave_calculation(
+                    rotations=rotations,
+                    magnitudes=magnitudes,
+                    q_vectors=q_vectors,
+                    couplings=couplings,
+                    positions=positions,
+                    field=magnetic_field)
 
         return energies
 
+    def sorted_positive_energies(self,
+                                 path: Path,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool = True) -> list[np.ndarray]:
 
-    def energy_plot(self, path: Path, show=True, new_figure=True):
-        """ Create a spaghetti diagram """
-        energy = self.energies(path.q_points())
+        """ Return energies as series corresponding to q, sorted by energy """
+        energy = self.energies(path.q_points(), field=field, use_rust=use_rust)
 
         # Sort the energies
         energy = np.sort(energy.real, axis=1)
 
+        # return the top half (positive)
+        n_energies = energy.shape[1]
+        energies = [energy[:, n_energies - i - 1] for i in range(n_energies//2)]
+
+        return energies
+
+    def energy_plot(self,
+                    path: Path,
+                    field: ArrayLike | None = None,
+                    show: bool=True,
+                    new_figure: bool=True,
+                    use_rust: bool=True):
+
+        """ Create a spaghetti diagram """
+
         if new_figure:
             plt.figure("Energy")
 
-        n_energies = energy.shape[1]
 
         x_values = path.x_values()
-        for i in range(n_energies//2):
-            plt.plot(x_values, energy[:, n_energies-i-1], 'k')
+
+        for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust):
+            plt.plot(x_values, series, 'k')
 
         path.format_plot(plt)
 
