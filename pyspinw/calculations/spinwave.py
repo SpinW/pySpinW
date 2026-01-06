@@ -1,6 +1,7 @@
 """Spinwave Calculations"""
 
 import multiprocessing
+import traceback
 from concurrent.futures import wait, ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
@@ -222,8 +223,16 @@ def spinwave_calculation(
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
+
     wait(q_calculations)
-    results = [future.result() for future in q_calculations]
+
+    results = []
+    for future in q_calculations:
+        try:
+            results.append(future.result())
+        except Exception as e:
+            traceback.print_exception(type(e), e, e.__traceback__)
+
     energies = np.concat(tuple(result[0] for result in results))
     intensities = np.concat([result[1] for result in results])
     if save_sab:
