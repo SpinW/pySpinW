@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
+use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm};
 use faer::mat::{AsMatRef, AsMatMut};
 use indicatif::ParallelProgressIterator;
@@ -337,10 +337,11 @@ fn spinwave_single_q(
     // pair of sites i, j; to calculate these efficiently we calculate
     // exp(i q r_i) for each site i and then the outer product of this with its conjugate
     // gives us the full matrix of phase factors.
+    let J2PI = 2. * J * PI;
     let phase_factors = Col::<C64>::from_iter(
         positions
             .iter()
-            .map(|r_i| (J * (q.transpose() * r_i)).exp()),
+            .map(|r_i| (J2PI * (q.transpose() * r_i)).exp()),
     );
     let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
 
@@ -421,7 +422,7 @@ fn spinwave_single_q(
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
-    solve_lower_triangular_in_place(sqrt_hamiltonian.as_ref(), T.as_mut(), Par::Seq);
+    solve_upper_triangular_in_place(sqrt_hamiltonian.transpose().as_ref(), T.as_mut(), Par::Seq);
 
     // T is NaN if there are zero eigenvalues; set to zeroes
     if T.has_nan() {
