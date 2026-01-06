@@ -113,6 +113,8 @@ class Path:
 
         plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
 
+class Path1D():
+    pass
 
 if __name__ == "__main__":
 

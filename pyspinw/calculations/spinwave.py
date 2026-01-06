@@ -46,8 +46,11 @@ class SpinwaveResult:
 
 
 def _calc_q_independent(
-    rotations: list[np.ndarray], magnitudes: np.ndarray, couplings: list[Coupling], field: MagneticField | None = None
-):
+        rotations: list[np.ndarray],
+        magnitudes: np.ndarray,
+        couplings: list[Coupling],
+        field: MagneticField | None = None):
+
     """Calculate the q-independent matrices for the spinwave calculation.
 
     Returns the C matrix, the z-components of rotations, the spin coefficients matrix,
@@ -82,14 +85,14 @@ def _calc_q_independent(
 
 
 def _calc_sqrt_hamiltonian(
-    q: np.ndarray,
-    C: np.ndarray,
-    n_sites: int,
-    z: np.ndarray,
-    spin_coefficients: np.ndarray,
-    couplings: list[Coupling],
-    Az: np.ndarray | None = None,
-):
+        q: np.ndarray,
+        C: np.ndarray,
+        n_sites: int,
+        z: np.ndarray,
+        spin_coefficients: np.ndarray,
+        couplings: list[Coupling],
+        Az: np.ndarray | None = None):
+
     """Calculate the square root of the 'Hamiltonian' h(q) for a single q-value."""
     A = np.zeros((n_sites, n_sites), dtype=complex)
     B = np.zeros((n_sites, n_sites), dtype=complex)
@@ -143,12 +146,13 @@ def _get_q_chunks(q_vectors: np.ndarray, n_proc: int):
 
 
 def energies(
-    rotations: list[np.ndarray],
-    magnitudes: np.ndarray,
-    q_vectors: np.ndarray,
-    couplings: list[Coupling],
-    field: MagneticField | None = None,
-) -> np.ndarray:
+        rotations: list[np.ndarray],
+        magnitudes: np.ndarray,
+        q_vectors: np.ndarray,
+        couplings: list[Coupling],
+        field: MagneticField | None = None) \
+            -> np.ndarray:
+
     """Calculate the spinwave energies for a set of q-vectors.
 
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
@@ -172,14 +176,14 @@ def energies(
 
 
 def _calc_chunk_energies(
-    q_vectors: np.ndarray,
-    C: np.ndarray,
-    n_sites: int,
-    z: np.ndarray,
-    spin_coefficients: np.ndarray,
-    couplings: list[Coupling],
-    Az: np.ndarray | None = None,
-):
+        q_vectors: np.ndarray,
+        C: np.ndarray,
+        n_sites: int,
+        z: np.ndarray,
+        spin_coefficients: np.ndarray,
+        couplings: list[Coupling],
+        Az: np.ndarray | None = None):
+
     """Calculate the energies for a set of q-values."""
     energies = []
     for q in q_vectors:
@@ -196,14 +200,14 @@ def _calc_chunk_energies(
 
 
 def spinwave_calculation(
-    rotations: list[np.ndarray],
-    magnitudes: np.ndarray,
-    q_vectors: np.ndarray,
-    couplings: list[Coupling],
-    positions: list[np.ndarray],
-    field: MagneticField | None = None,
-    save_sab: bool = False,
-) -> (np.ndarray, np.ndarray, Optional[np.ndarray]):
+        rotations: list[np.ndarray],
+        magnitudes: np.ndarray,
+        q_vectors: np.ndarray,
+        couplings: list[Coupling],
+        positions: list[np.ndarray],
+        field: MagneticField | None = None,
+        save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
@@ -230,16 +234,17 @@ def spinwave_calculation(
 
 
 def _calc_chunk_spinwave(
-    q_vectors: np.ndarray,
-    C: np.ndarray,
-    n_sites: int,
-    z: np.ndarray,
-    spin_coefficients: np.ndarray,
-    couplings: list[Coupling],
-    positions: list[np.ndarray],
-    Az: np.ndarray | None = None,
-    save_sab: bool = False,
-) -> (np.ndarray, np.ndarray, Optional[np.ndarray]):
+        q_vectors: np.ndarray,
+        C: np.ndarray,
+        n_sites: int,
+        z: np.ndarray,
+        spin_coefficients: np.ndarray,
+        couplings: list[Coupling],
+        positions: list[np.ndarray],
+        Az: np.ndarray | None = None,
+        save_sab: bool = False) \
+            -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
     intensities = []

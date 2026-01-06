@@ -6,7 +6,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+from pyspinw.calculations.spinwave import (
+    spinwave_calculation as py_spinwave,
+    Coupling as PyCoupling,
+    MagneticField as PyMagneticField)
 
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.coupling import Coupling
@@ -40,18 +43,23 @@ class Hamiltonian(SPWSerialisable):
         """ Get the couplings """
         return self._couplings
 
-    def energies(self, q_vectors: np.ndarray, use_rust: bool=True):
+    def energies(self, q_vectors: np.ndarray, field: np.ndarray | None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
         spinwave_calculation = py_spinwave
+        magnetic_field_class = PyMagneticField
 
         if use_rust:
             try:
-                from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
+                from pyspinw.rust import (
+                    spinwave_calculation as rs_spinwave,
+                    Coupling as RsCoupling,
+                    MagneticField as RsMagneticField)
 
                 coupling_class = RsCoupling
                 spinwave_calculation = rs_spinwave
+                magnetic_field_class = RsMagneticField
 
 
             except ModuleNotFoundError:
@@ -73,6 +81,16 @@ class Hamiltonian(SPWSerialisable):
             )
 
             unique_id_to_index[site._unique_id] = index
+
+        # Get the field object
+        if field is None:
+            magnetic_field = None
+        else:
+            g_tensors = []
+            for site in self._structure.sites:
+                g_tensors.append(site.g)
+
+            magnetic_field = magnetic_field_class(vector=field, g_tensors=g_tensors)
 
         moments = np.array(moments, dtype=float)
         rotations = site_rotations(moments)
@@ -105,7 +123,7 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(coupling)
 
-        energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
+        energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings, field=magnetic_field)
 
         return energies
 
