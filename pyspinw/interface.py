@@ -4,6 +4,7 @@ import math
 import numpy as np
 from numpy._typing import ArrayLike
 
+from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
@@ -361,3 +362,24 @@ def couplings(sites: list[LatticeSite],
         direction_filter = direction_filter)
 
     return group.couplings(sites, unit_cell)
+
+
+@check_sizes(axis=(3, ), force_numpy=True)
+def axis_anisotropies(
+        sites: list[LatticeSite],
+        a: float,
+        axis: ArrayLike = [0, 0, 1]):
+
+    """ Create anisotropy objects with magnitude `a` in direction `axis` for each site """
+
+    return [AxisMagnitudeAnisotropy(site, a, axis) for site in sites]
+
+
+@check_sizes(matrix=(3,3), force_numpy=True)
+def matrix_anisotropies(
+        sites: list[LatticeSite],
+        matrix: ArrayLike):
+
+    """ Create anisotropy objects specified by a matrix, the same for each site """
+
+    return [Anisotropy(site, matrix) for site in sites]

@@ -43,8 +43,9 @@ class SpinwaveResult:
     """Results from a spinwave calculation"""
 
     q_vectors: np.ndarray
-    raw_energies: list[np.ndarray]
-
+    raw_energies: np.ndarray
+    intensities: Optional[np.ndarray] = None
+    sab: Optional[np.ndarray] = None
 
 def _calc_q_independent(
         rotations: list[np.ndarray],
@@ -130,6 +131,9 @@ def _calc_sqrt_hamiltonian(
     # of the decomposition
     #
     # We can also do this via an LDL decomposition, but the method is very slightly different
+
+    # assert np.sum(np.imag(np.linalg.eig(hamiltonian_matrix)[0])) < 1e-6, 'Non hermitian Hamiltonian!'
+
     try:
         sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
     except np.linalg.LinAlgError:  # Catch postive definiteness errors
@@ -235,12 +239,14 @@ def spinwave_calculation(
 
     energies = np.concat(tuple(result[0] for result in results))
     intensities = np.concat([result[1] for result in results])
+
     if save_sab:
         sab = [result[2] for result in results]
+        # return SpinwaveResult(q_vectors, energies, intensities, sab)
         return energies, intensities, sab
 
+    # return SpinwaveResult(q_vectors, energies, intensities)
     return energies, intensities
-
 
 def _calc_chunk_spinwave(
         q_vectors: np.ndarray,
@@ -350,4 +356,5 @@ def _calc_chunk_spinwave(
 
     if save_sab:
         return energies, intensities, sabs
+
     return energies, intensities

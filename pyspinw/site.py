@@ -4,6 +4,7 @@ import numpy as np
 from numpy._typing import ArrayLike
 from scipy.stats import goodness_of_fit
 
+from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
     numpy_deserialise, numpy_serialise
 
@@ -73,7 +74,7 @@ class LatticeSite(SPWSerialisable):
 
         # Get the g tensor
         if g is None:
-            self._g = 2.00231930436092 * np.eye(3)
+            self._g = ELECTRON_G * np.eye(3)
         else:
             g = np.array(g)
 

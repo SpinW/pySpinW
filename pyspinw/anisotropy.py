@@ -19,6 +19,11 @@ class Anisotropy(SPWSerialisable):
         self._anisotropy_matrix = anisotropy_matrix
 
     @property
+    def site(self):
+        """ Get the site for this anisotropy """
+        return self._site
+
+    @property
     def anisotropy_matrix(self) -> np.ndarray:
         """Matrix spefifying the anisotropy - `A` term in the Hamiltonian"""
         if self._anisotropy_matrix is None:
@@ -37,11 +42,15 @@ class Anisotropy(SPWSerialisable):
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
         return Anisotropy(site, anisotropy_matrix)
 
+    def __repr__(self):
+        m = self.anisotropy_matrix.reshape(-1)
+        return (f"Anisotropy({self.site.name}, "
+                f"[[{m[0]}, {m[1]}, {m[2]}], [{m[3]}, {m[4]}, {m[5]}], [{m[6]}, {m[7]}, {m[8]}]])")
 
-class DiagonalAnisotropy(Anisotropy):
+class AxisMagnitudeAnisotropy(Anisotropy):
     """Anisotropy oriented with axes, but variable amount in x, y and z"""
 
-    @check_sizes(v=(3,), a=(1,), force_numpy=True)
+    @check_sizes(v=(3,), force_numpy=True)
     def __init__(self, site: LatticeSite, a: float, v: np.ndarray = np.array([0, 0, 1])):
         mag = np.sqrt(np.sum(v))
 
@@ -65,6 +74,9 @@ class DiagonalAnisotropy(Anisotropy):
         """ The principal direction of the anisotropy"""
         return self._vector
 
+    def __repr__(self):
+        return (f"Anisotropy({self.site.name}, a={self.constant}, axis={self.direction})")
+
     def _serialise(self, context: SPWSerialisationContext):
         return {
             "site": self._site._serialise(context),
@@ -74,7 +86,7 @@ class DiagonalAnisotropy(Anisotropy):
 
     @staticmethod
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        return DiagonalAnisotropy(
+        return AxisMagnitudeAnisotropy(
             LatticeSite._deserialise(json["site"], context),
             json["a"],
             numpy_deserialise(json["vector"]),

@@ -51,3 +51,5 @@ if __name__ == "__main__":
     hamiltonian.energy_plot(path)
 
 
+
+

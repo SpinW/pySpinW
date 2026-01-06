@@ -7,18 +7,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy._typing import ArrayLike
 
+from pyspinw.anisotropy import Anisotropy
 from pyspinw.calculations.spinwave import (
     spinwave_calculation as py_spinwave,
     Coupling as PyCoupling,
     MagneticField as PyMagneticField)
 
+from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.path import Path
-from pyspinw.serialisation import SPWSerialisable
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.structures import Structure
-from pyspinw.basis import find_aligned_basis, site_rotations
+from pyspinw.basis import site_rotations
 
 
 # pylint: disable=R0903
@@ -30,10 +32,12 @@ class Hamiltonian(SPWSerialisable):
 
     def __init__(self,
                  structure: Structure,
-                 couplings: list[Coupling]):
+                 couplings: list[Coupling],
+                 anisotropies: list[Anisotropy] | None = None):
 
         self._structure = structure
         self._couplings = couplings
+        self._anisotropies = [] if anisotropies is None else anisotropies
 
     @property
     def structure(self):
@@ -45,7 +49,35 @@ class Hamiltonian(SPWSerialisable):
         """ Get the couplings """
         return self._couplings
 
-    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True)
+    @property
+    def anisotropies(self):
+        """ Get the anisotropies """
+        return self._anisotropies
+
+    @property
+    def text_summary(self) -> str:
+        """ String giving details of the system """
+
+        lines = ["Sites:"]
+        for site in self.structure.sites:
+            lines.append(f"  {site}")
+
+        lines.append("Couplings:")
+        for exchange in self.couplings:
+            lines.append(f"  {exchange}") # vector =", exchange.vector(unit_cell=unit_cell))
+
+        if self.anisotropies:
+            lines.append("Anisotropies:")
+            for anisotropy in self.anisotropies:
+                lines.append(f"  {anisotropy}")
+
+        return "\n".join(lines)
+
+    def print_summary(self):
+        """ Print a textual summary to stdout"""
+        print(self.text_summary)
+
+    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def energies(self, q_vectors: np.ndarray, field: ArrayLike | None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
         # default to Python unless Rust is requested (which it is by default) and available
@@ -101,8 +133,7 @@ class Hamiltonian(SPWSerialisable):
 
         moments = np.array(moments, dtype=float)
         rotations = site_rotations(moments)
-        magnitudes = np.array(positions, dtype=float)
-
+        magnitudes = np.sqrt(np.sum(moments**2, axis=1))
         rotations = [rotations[i, :, :] for i in range(rotations.shape[0])]
 
         # Convert the couplings
@@ -130,15 +161,27 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(coupling)
 
-        energies = spinwave_calculation(
-                    rotations=rotations,
-                    magnitudes=magnitudes,
-                    q_vectors=q_vectors,
-                    couplings=couplings,
-                    positions=positions,
-                    field=magnetic_field)
+        # Add in anisotropies as spinwave_calculation couplings
+        for input_anisotropy in self._anisotropies:
 
-        return energies
+            anisotropy = coupling_class(
+                unique_id_to_index[input_anisotropy.site._unique_id],
+                unique_id_to_index[input_anisotropy.site._unique_id],
+                np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw),
+                inter_site_vector=np.array([0,0,0], dtype=float)
+            )
+
+            couplings.append(anisotropy)
+
+        result = spinwave_calculation(
+                        rotations=rotations,
+                        magnitudes=magnitudes,
+                        q_vectors=q_vectors,
+                        couplings=couplings,
+                        positions=positions,
+                        field=magnetic_field)
+
+        return result[0]
 
     def sorted_positive_energies(self,
                                  path: Path,
@@ -180,7 +223,16 @@ class Hamiltonian(SPWSerialisable):
         if show:
             plt.show()
 
-    def _serialise(self) -> dict:
-        return {"magnetic_structure": self.structure._serialise(),
-                "couplings": [coupling._serialise() for coupling in self.couplings]}
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {"magnetic_structure": self.structure._serialise(context),
+                "couplings": [coupling._serialise(context) for coupling in self.couplings],
+                "anisotropies": [anisotropy._serialise(context) for anisotropy in self.anisotopies]}
 
+    @staticmethod
+    @expects_keys("magnetic_structure, couplings, anisotropies")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        structure = Structure._deserialise(json["magnetic_structure"], context)
+        couplings = [Coupling._deserialise(coupling, context) for coupling in json["couplings"]]
+        anisotropies = [Anisotropy._deserialise(anisotropy, context) for anisotropy in json["anisotropies"]]
+
+        return Hamiltonian(structure, couplings, anisotropies)

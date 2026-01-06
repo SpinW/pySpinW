@@ -3,6 +3,7 @@
 
 import numpy as np
 
+from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.supercell import Supercell, TrivialSupercell
@@ -11,7 +12,7 @@ from pyspinw.tolerances import tolerances
 from pyspinw.util import connected_components, arraylike_equality
 
 
-class Structure:
+class Structure(SPWSerialisable):
     """ Representation of the magnetic structure """
 
     def __init__(self,
