@@ -21,7 +21,7 @@ class Experiment(SPWSerialisable):
     def calculate(self, input_q: list[np.ndarray], n_q: int, field: None = None) -> np.ndarray:
         """Calculate energies for the experiment."""
         generated_q = self.sample.generate_q(input_q, n_q, field, self.instrument.resolution)
-        energies = self.sample.hamiltonian.energies(generated_q)
+        energies = self.sample.hamiltonian.energies_and_intensities(generated_q)
 
         return energies
 

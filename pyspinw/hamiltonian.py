@@ -78,7 +78,7 @@ class Hamiltonian(SPWSerialisable):
         print(self.text_summary)
 
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
-    def energies(self, q_vectors: np.ndarray, field: ArrayLike | None, use_rust: bool=True):
+    def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
@@ -181,7 +181,7 @@ class Hamiltonian(SPWSerialisable):
                         positions=positions,
                         field=magnetic_field)
 
-        return result[0]
+        return result[0], result[1]
 
     def sorted_positive_energies(self,
                                  path: Path,
@@ -189,7 +189,7 @@ class Hamiltonian(SPWSerialisable):
                                  use_rust: bool = True) -> list[np.ndarray]:
 
         """ Return energies as series corresponding to q, sorted by energy """
-        energy = self.energies(path.q_points(), field=field, use_rust=use_rust)
+        energy, _ = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
 
         # Sort the energies
         energy = np.sort(energy.real, axis=1)

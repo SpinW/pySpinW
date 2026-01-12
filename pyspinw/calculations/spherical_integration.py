@@ -112,7 +112,7 @@ class RandomSphericalPointGenerator(SphericalPointGenerator):
 
     method_name = SphericalPointGeneratorType.RANDOM.value.capitalize()
 
-    def __init__(self, n_points_minimum: int, *args, seed: int = 1984, **kwargs):
+    def __init__(self, n_points_minimum: int, *args, seed: int | None = None, **kwargs):
         super().__init__(n_points_minimum)
 
         rng = np.random.default_rng(seed)

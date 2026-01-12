@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy._typing import ArrayLike
 
-from docs.developers.workflow_example_prototype import hamiltonian
+from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType, point_generator
 from pyspinw.checks import check_sizes
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.path import Path, Path1D
@@ -20,19 +20,13 @@ class Sample(ABC):
     def __init__(self, hamiltonian: Hamiltonian):
         self.hamiltonian = hamiltonian
 
-    @abstractmethod
-    def generate_q(self, input_q: list[np.ndarray], n_q: int, resolution, field):
-        """Generate a sample of q-vectors for a given magnetic field and resolution."""
-        raise NotImplementedError()
+    def _energies(self,
+                 path: Path,
+                 field: ArrayLike | None = None,
+                 use_rust: bool=True):
 
-    @abstractmethod
-    def _energies(self, q_values: np.ndarray, magnetic_field: ArrayLike | None, use_rust: bool=True):
-        """ Get the energies as a function of the q samples"""
+        return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
 
-    @abstractmethod
-    def _q_energy_intensity_samples(self) -> np.ndarray:
-        """Returns a list of sampled intensities along with the q value and energy it corresponds to"""
-        raise NotImplementedError()
 
 class Sample3D(Sample):
     """ Sample where the direction of q matters"""
@@ -89,12 +83,6 @@ class SingleCrystal(Sample3D):
 
         super().__init__(hamiltonian=hamiltonian)
 
-    def _energies(self,
-                 path: Path,
-                 field: ArrayLike | None = None,
-                 use_rust: bool=True):
-
-        return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
 
 
 class Multidomain(Sample3D):
@@ -167,9 +155,89 @@ class Powder(Sample1D):
 
         super().__init__(hamiltonian)
 
-    def spectrum(self, path: Path1D, n_samples: int=100):
+    def spectrum(self,
+                 path: Path1D,
+                 n_samples: int=100,
+                 method: SphericalPointGeneratorType | str = "fibonacci",
+                 min_energy: float | None = None,
+                 max_energy: float | None = None,
+                 n_energy_bins: int | None = None,
+                 random_seed: int | None = None,
+                 use_rust: bool = True):
 
-        pass
+        """ Get the powder spectrum """
+
+        generator = point_generator(method)(n_samples, seed = random_seed)
+
+        chunk_size = generator.actual_n_points
+        qs = path.q_values()
+        points = np.concatenate([generator.points*q for q in qs], axis=0)
+
+        energies, intensities = self.hamiltonian.energies_and_intensities(points)
+
+        positive_energies = energies > 0
+
+
+        # Historgramming parameters
+        min_energy = np.min(energies[positive_energies]) if min_energy is None else min_energy
+        max_energy = np.max(energies[positive_energies]) if max_energy is None else max_energy
+        n_energy_bins = n_samples // 4 if n_energy_bins is None else n_energy_bins
+
+        energy_bin_edges = np.linspace(min_energy, max_energy, n_energy_bins + 1)
+        energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
+
+        # Output map
+        output = np.zeros((path.resolution, n_energy_bins))
+
+        # at each q, bin the energies with weights of the intensities, but ignore the negative ones
+        for i, q in enumerate(path.q_values()):
+
+            # Get the part of the data that's relevant
+            energy = energies[i*chunk_size:(i+1)*chunk_size]
+            intensity = intensities[i*chunk_size:(i+1)*chunk_size]
+            positives = positive_energies[i*chunk_size:(i+1)*chunk_size]
+
+            energy = energy[positives]
+            intensity = intensity[positives]
+
+            # Do the binning
+            binned, bin_edges = np.histogram(energy, bins=energy_bin_edges, weights=intensity)
+
+            output[i, :] = binned
+
+        return path.q_values(), energy_bin_centres, output
+
+    def show_spectrum(self,
+                      path: Path1D,
+                      n_samples: int = 100,
+                      method: SphericalPointGeneratorType | str = "fibonacci",
+                      min_energy: float | None = None,
+                      max_energy: float | None = None,
+                      n_energy_bins: int | None = None,
+                      random_seed: int | None = None,
+                      show_plot: bool = True,
+                      new_figure: bool = True,
+                      use_rust: bool = True):
+
+        q, e, data = self.spectrum(path, n_samples, method, min_energy, max_energy, n_energy_bins, random_seed, use_rust)
+
+        import matplotlib.pyplot as plt
+
+        if new_figure:
+            plt.figure("Powder Spectrum")
+
+        ax = plt.gca()
+
+        plt.imshow(data, extent=(q[0], q[-1], e[0], e[-1]))
+        ax.set_aspect(0.2)
+
+        if show_plot:
+            plt.show()
+
+
+
+class MagneticFieldPowder(Sample1D):
+    pass
 
 class TwoMagnon(Sample3D):
     """ Two magnon excitations in a single crystal"""
