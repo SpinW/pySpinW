@@ -79,8 +79,8 @@ class Fibonacci:
         phi = (2 * np.pi * F_prime / F) * j
 
 
-        weights = 2*(np.pi*delta_z) * (1 + np.cos(np.pi * z))
-
+        # weights = 2*(np.pi*delta_z) * (1 + np.cos(np.pi * z))
+        weights = np.ones((F, )) * (4*np.pi / F)
 
         return phi, z, weights
 
