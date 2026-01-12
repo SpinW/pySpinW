@@ -43,11 +43,11 @@ def f1(x,y,z):
     return x*y*z
 
 def f2(x,y,z):
-    """ Integrates to pi/35 """
+    """ Integrates to 4 pi / 105 """
     return (x*y*z)**2
 
 def f3(x,y,z):
-    """ Integrates to 41 pi / 15"""
+    """ Integrates to 12 pi / 5"""
     return x**4 + y**4 + z**4
 
 test_functions = [
