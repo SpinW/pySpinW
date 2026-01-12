@@ -158,9 +158,18 @@ class Twin(Multidomain):
             domains=[CrystalDomain(np.eye(3), first_twin_fraction),
                      CrystalDomain(relative_rotation, second_twin_fraction)])
 
+
+
 class Powder(Sample1D):
     """Sample is a powder"""
 
+    def __init__(self, hamiltonian: Hamiltonian):
+
+        super().__init__(hamiltonian)
+
+    def spectrum(self, path: Path1D, n_samples: int=100):
+
+        pass
 
 class TwoMagnon(Sample3D):
     """ Two magnon excitations in a single crystal"""
