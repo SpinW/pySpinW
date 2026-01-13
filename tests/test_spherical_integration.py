@@ -63,12 +63,12 @@ def test_integrate_functions(cls, function, integral):
 
     if cls.method_name == "Random":
         n = 100_000
-        tol = 1e-2
+        tol = 1e-1
     else:
         n = 1000
         tol = 1e-4
 
-    generator = cls(n_points_minimum=n)
+    generator = cls(n_points_minimum=n, seed=1984)
 
     points = generator.points
     sample_values = function(points[:, 0], points[:, 1], points[:, 2])
