@@ -99,6 +99,7 @@ class Hamiltonian(SPWSerialisable):
                 target_site_2 = mapping[(coupling.site_2, lookup_value)]
 
                 # Create the new coupling
+
                 
 
 
