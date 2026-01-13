@@ -52,7 +52,6 @@ def _calc_q_independent(
         magnitudes: np.ndarray,
         couplings: list[Coupling],
         field: MagneticField | None = None):
-
     """Calculate the q-independent matrices for the spinwave calculation.
 
     Returns the C matrix, the z-components of rotations, the spin coefficients matrix,
@@ -94,7 +93,6 @@ def _calc_sqrt_hamiltonian(
         spin_coefficients: np.ndarray,
         couplings: list[Coupling],
         Az: np.ndarray | None = None):
-
     """Calculate the square root of the 'Hamiltonian' h(q) for a single q-value."""
     A = np.zeros((n_sites, n_sites), dtype=complex)
     B = np.zeros((n_sites, n_sites), dtype=complex)
@@ -157,7 +155,6 @@ def energies(
         couplings: list[Coupling],
         field: MagneticField | None = None) \
             -> np.ndarray:
-
     """Calculate the spinwave energies for a set of q-vectors.
 
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
@@ -188,7 +185,6 @@ def _calc_chunk_energies(
         spin_coefficients: np.ndarray,
         couplings: list[Coupling],
         Az: np.ndarray | None = None):
-
     """Calculate the energies for a set of q-values."""
     energies = []
     for q in q_vectors:
@@ -212,7 +208,6 @@ def spinwave_calculation(
         positions: list[np.ndarray],
         field: MagneticField | None = None,
         save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
@@ -259,7 +254,6 @@ def _calc_chunk_spinwave(
         Az: np.ndarray | None = None,
         save_sab: bool = False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
     intensities = []

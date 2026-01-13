@@ -26,9 +26,7 @@ class Fibonacci:
 
     @staticmethod
     def fibonacci_to_index(fibonacci_number: float):
-        """ Get the first index of the fibonacci series corresponding greater than a given number
-        """
-
+        """ Get the first index of the fibonacci series corresponding greater than a given number """
         if fibonacci_number < 1:
             raise ValueError("Fibonacci numbers are all bigger than one")
 
@@ -47,7 +45,6 @@ class Fibonacci:
     @staticmethod
     def fibonacci_by_index(i):
         """ Get the ith term of the Fibonacci series"""
-
         # Two options, Binet's formula or evaluate series,
         # Binets formula gives errors pretty quickly, so might
         # as well use a series
@@ -66,7 +63,6 @@ class Fibonacci:
     @staticmethod
     def _phi_z_and_weights(n_points_requested):
         """ Calculate the points and weights for a given requested points"""
-
         # Notation used in paper, see class docstring
 
         F_prime, F = Fibonacci.straddling_fibonaccis(n_points_requested)
@@ -87,7 +83,6 @@ class Fibonacci:
     @staticmethod
     def points_and_weights(n_points_requested):
         """ Get points on sphere and weights """
-
         # Get points and weights in phi, z coordinates
         phi, z, weights = Fibonacci._phi_z_and_weights(n_points_requested)
 

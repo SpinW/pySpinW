@@ -37,7 +37,6 @@ class Sample3D(Sample):
                  field: ArrayLike | None = None,
                  use_rust: bool = True) -> list[np.ndarray]:
         """ Get the energies along a specified path """
-
         return self._energies(path, field, use_rust)
 
 class Sample1D(Sample):
@@ -52,6 +51,7 @@ class Sample1D(Sample):
 
 class CrystalDomain:
     """ Orientation and amount of crystalline domain (e.g. one of a twin, or a domain in the traditional sense) """
+
     @check_sizes(transformation=(3,3), force_numpy=True)
     def __init__(self, transformation: ArrayLike, weighting: float):
 
@@ -70,7 +70,6 @@ CrystalDomainLike = CrystalDomain | tuple[ArrayLike, float]
 
 def _domain_like_to_domain(domain_like: CrystalDomainLike) -> CrystalDomain:
     """ Converts CrystalDomainLike to CrystalDomain """
-
     if isinstance(domain_like, CrystalDomain):
         return domain_like
     else:
@@ -79,6 +78,7 @@ def _domain_like_to_domain(domain_like: CrystalDomainLike) -> CrystalDomain:
 
 class SingleCrystal(Sample3D):
     """Specifies a single crystal sample"""
+
     def __init__(self, hamiltonian: Hamiltonian):
 
         super().__init__(hamiltonian=hamiltonian)
@@ -164,9 +164,7 @@ class Powder(Sample1D):
                  n_energy_bins: int | None = None,
                  random_seed: int | None = None,
                  use_rust: bool = True):
-
         """ Get the powder spectrum """
-
         generator = point_generator(method)(n_samples, seed = random_seed)
 
         chunk_size = generator.actual_n_points
@@ -218,8 +216,10 @@ class Powder(Sample1D):
                       show_plot: bool = True,
                       new_figure: bool = True,
                       use_rust: bool = True):
-
-        q, e, data = self.spectrum(path, n_samples, method, min_energy, max_energy, n_energy_bins, random_seed, use_rust)
+        """ Show the powder spectrum """
+        q, e, data = self.spectrum(path, n_samples, method,
+                                   min_energy, max_energy, n_energy_bins,
+                                   random_seed, use_rust)
 
         import matplotlib.pyplot as plt
 
@@ -237,7 +237,7 @@ class Powder(Sample1D):
 
 
 class MagneticFieldPowder(Sample1D):
-    pass
+    """ Powder in magnetic field (slightly different parallelisation method to Powder)"""
 
 class TwoMagnon(Sample3D):
     """ Two magnon excitations in a single crystal"""

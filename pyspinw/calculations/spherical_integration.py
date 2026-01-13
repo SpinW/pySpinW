@@ -1,3 +1,5 @@
+""" Support for spherical integration """
+
 from enum import Enum
 
 import numpy as np
@@ -6,6 +8,8 @@ from pyspinw.calculations.fibonacci import Fibonacci
 from pyspinw.calculations.geodesic import Geodesic
 
 class SphericalPointGenerator:
+    """ Base classes for methods of generating points on spheres"""
+
     method_name = "<base class>"
 
     def __init__(self, n_points_minimum: int, *args, **kwargs):
@@ -16,28 +20,30 @@ class SphericalPointGenerator:
 
     @property
     def actual_n_points(self) -> int:
+        """ Actual number of points produced, always at least as many as requested"""
         return self._actual_n_points
 
     @property
     def requested_n_points(self) -> int:
+        """ Number of points requested """
         return self._requested_n_points
 
     @property
     def points(self) -> np.ndarray:
+        """ 3D Cartesian coordinates of points on sphere"""
         return self._points
 
     @property
     def weights(self) -> np.ndarray:
+        """ weights (dOmega) associated with each point, for integration"""
         return self._weights
 
     def show_points_lambert(self, new_fig=True, do_show=True):
+        """ Show the sample points in the Lambert equal area projection """
         import matplotlib.pyplot as plt
 
         if new_fig:
-            fig = plt.figure("Sample points (Lambert Equal Area) - " + self.method_name)
-        else:
-            fig = plt.gcf()
-
+            plt.figure("Sample points (Lambert Equal Area) - " + self.method_name)
 
         # Draw equator and pole
 
@@ -68,6 +74,7 @@ class SphericalPointGenerator:
 
 
     def show_points_3d(self, new_fig=True, do_show=True):
+        """ Show sample points in 3D"""
         import matplotlib.pyplot as plt
 
         if new_fig:
@@ -92,11 +99,18 @@ class SphericalPointGenerator:
 
 
 class SphericalPointGeneratorType(Enum):
+    """ Different kinds of point generators for spherical integration """
+
     FIBONACCI = "fibonacci"
     RANDOM = "random"
     GEODESIC = "geodesic"
 
 class FibonacciSphericalPointGenerator(SphericalPointGenerator):
+    """ Generate points on sphere using the Fibonacci method
+
+    See: J H Hannay and J F Nye 2004 J. Phys. A: Math. Gen. 37 11591
+    DOI: 10.1088/0305-4470/37/48/005
+    """
 
     method_name = SphericalPointGeneratorType.FIBONACCI.value.capitalize()
 
@@ -109,6 +123,7 @@ class FibonacciSphericalPointGenerator(SphericalPointGenerator):
 
 
 class RandomSphericalPointGenerator(SphericalPointGenerator):
+    """ Random points on sphere """
 
     method_name = SphericalPointGeneratorType.RANDOM.value.capitalize()
 
@@ -124,6 +139,7 @@ class RandomSphericalPointGenerator(SphericalPointGenerator):
 
 
 class GeodesicSphericalPointGenerator(SphericalPointGenerator):
+    """ Generate points on sphere based on a geodesic geometry"""
 
     method_name = SphericalPointGeneratorType.GEODESIC.value.capitalize()
 
@@ -143,12 +159,13 @@ _spherical_point_generator_lookup = {
 
 
 def _names_string():
+    """ Formatted names """
     all_names = [f"'{name}'" for name in _spherical_point_generator_lookup.keys()]
     return ", ".join(all_names[:-1]) + f" or {all_names[-1]}"
 
 
 def point_generator(name: SphericalPointGeneratorType | str):
-
+    """ Get a point generator by name / enum value"""
     if isinstance(name, SphericalPointGeneratorType):
         return _spherical_point_generator_lookup[name.value.lower()]
 

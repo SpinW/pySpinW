@@ -1,3 +1,5 @@
+"""Methods for geodesic sampling"""
+
 from collections import defaultdict
 
 import numpy as np
@@ -83,14 +85,14 @@ class Geodesic:
     @staticmethod
     def points_for_division_amount(n_divisions):
         """ Get the number of points on the sphere for a given number of geodesic divisions
-        by which I mean how many sections is each edge of the initial icosahedron split into
+
+        In other words, how many sections is each edge of the initial icosahedron split into
         (not how many times it is divided in half, which might be what you think given some other
         geodesic generation methods)
 
         Icosahedron counts as 1 division
 
         """
-
         return 10*n_divisions*n_divisions + 2
 
 
@@ -101,29 +103,27 @@ class Geodesic:
 
         rounded (ciel) inverse of points_for_division_amount
         """
-
         n_ish = np.sqrt((n_points - 2)/10)
 
         return int(max([1.0, np.ceil(n_ish)]))
 
     @staticmethod
-    def by_point_count(self, n_points) -> tuple[np.ndarray, np.ndarray]:
+    def by_point_count(n_points) -> tuple[np.ndarray, np.ndarray]:
         """ Get point sample on a unit geodesic sphere, *at least* n_points will be returned
 
         Weights of each point are calculated by fractional spherical area of dual polyhedron, and total weight = 4pi
         """
-
-        return self.by_divisions(self.minimal_divisions_for_points(n_points))
+        return Geodesic.by_divisions(Geodesic.minimal_divisions_for_points(n_points))
 
     @staticmethod
     def by_divisions(n_divisions) -> tuple[np.ndarray, np.ndarray]:
+        """ Get point sample on a unit geodesic sphere
 
-        """ Get point sample on a unit geodesic sphere, points are creating by dividing each
-        face of an icosahedron into smaller triangles so that each edge is split into n_divisions pieces
+        Points are created by dividing each face of an icosahedron into smaller triangles
+        so that each edge is split into n_divisions pieces
 
         Weights of each point are calculated by fractional spherical area of dual polyhedron, and total weight = 4pi
         """
-
         # Check cache for pre-existing data
         if n_divisions in Geodesic._cache:
             return Geodesic._cache[n_divisions]
@@ -182,10 +182,7 @@ class Geodesic:
 
     @staticmethod
     def _calculate_weights(points) -> np.ndarray:
-        """
-        Calculate the anular area associated with each point
-        """
-
+        """Calculate the angular area associated with each point"""
         z = np.array([0.0, 0.0, 1.0]) # Used in area calculation
 
         # Calculate convex hull to get the triangles, because it's easy
@@ -254,7 +251,6 @@ class Geodesic:
     @staticmethod
     def _rotation_matrix_to_z_vector(point_on_sphere: np.ndarray) -> np.ndarray:
         """ Calculate *a* rotation matrix that moves a given point onto the z axis"""
-
         # Find the rotation around the x axis
         y = point_on_sphere[1]
         z = point_on_sphere[2]

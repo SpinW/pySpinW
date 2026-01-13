@@ -57,7 +57,6 @@ class Hamiltonian(SPWSerialisable):
     @property
     def text_summary(self) -> str:
         """ String giving details of the system """
-
         lines = ["Sites:"]
         for site in self.structure.sites:
             lines.append(f"  {site}")
@@ -187,7 +186,6 @@ class Hamiltonian(SPWSerialisable):
                                  path: Path,
                                  field: ArrayLike | None = None,
                                  use_rust: bool = True) -> list[np.ndarray]:
-
         """ Return energies as series corresponding to q, sorted by energy """
         energy, _ = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
 
@@ -206,9 +204,7 @@ class Hamiltonian(SPWSerialisable):
                     show: bool=True,
                     new_figure: bool=True,
                     use_rust: bool=True):
-
         """ Create a spaghetti diagram """
-
         if new_figure:
             plt.figure("Energy")
 

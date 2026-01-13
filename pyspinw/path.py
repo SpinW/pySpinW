@@ -129,7 +129,6 @@ class Path1D():
 
     def q_values(self):
         """ Get q magnitudes """
-
         base = np.linspace(0, 1, self.resolution)
 
         if self.avoid_endpoints:

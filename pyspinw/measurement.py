@@ -1,17 +1,21 @@
+""" Description of measurements """
+
 class Measurement:
     """ Provides the q and E parameters specific to a given measurement """
 
     def q_points(self):
-        pass
+        """ Q positions """
 
     def q_energy_centroids(self):
-        pass
+        """ Centres of the bins in q-Energy space"""
 
 
 
 class Slice(Measurement):
-    pass
+    """ A slice in 4D space"""
 
 class OrthogonalSlice(Slice):
+    """ A slice in 4D space with energy and q independent """
+
     def __init__(self, path: Path, energies):
         pass

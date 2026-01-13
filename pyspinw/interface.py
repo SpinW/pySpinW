@@ -369,9 +369,7 @@ def axis_anisotropies(
         sites: list[LatticeSite],
         a: float,
         axis: ArrayLike = [0, 0, 1]):
-
     """ Create anisotropy objects with magnitude `a` in direction `axis` for each site """
-
     return [AxisMagnitudeAnisotropy(site, a, axis) for site in sites]
 
 
@@ -379,7 +377,5 @@ def axis_anisotropies(
 def matrix_anisotropies(
         sites: list[LatticeSite],
         matrix: ArrayLike):
-
     """ Create anisotropy objects specified by a matrix, the same for each site """
-
     return [Anisotropy(site, matrix) for site in sites]
