@@ -134,7 +134,7 @@ class Structure(SPWSerialisable):
 
         return unique_sites
 
-    def expand_with_mapping(self):
+    def expansion_site_mapping(self):
         """ Expand supercell into a single, bigger cell """
 
         # Calculate new cell
@@ -160,14 +160,14 @@ class Structure(SPWSerialisable):
                     g=site.g,
                     name=site.name)
 
-                mapping[(site, offset.as_tuple)] = new_site
+                mapping[(site._unique_id, offset.as_tuple)] = new_site
 
         return big_cell, mapping
 
     def expand(self):
         """ Expand supercell into a single, bigger cell """
 
-        cell, mapping = self.expand_with_mapping()
+        cell, mapping = self.expansion_site_mapping()
 
 
         return Structure(

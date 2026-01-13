@@ -75,7 +75,33 @@ class Hamiltonian(SPWSerialisable):
     def expand(self):
         """ Expand the supercell structure into a single cell structure """
 
-        bigger_cell = self.unit_cell
+        bigger_cell, mapping = self.structure.expansion_site_mapping()
+
+        for offset in self.structure.supercell.cells():
+            for coupling in self.couplings:
+                # Convert the offset in the coupling, into
+                #  1) an offset in the supercell, and
+                #  2) an offset between supercells
+                # basically just a divmod
+
+                oi, oj, ok = coupling.cell_offset.as_tuple
+                si, sj, sk = self.structure.supercell.cell_size()
+
+
+                ni, ri = divmod(oi, si)
+                nj, rj = divmod(oj, sj)
+                nk, rk = divmod(ok, sk)
+
+                new_cell_offset = CellOffset(ni, nj, nk)
+                lookup_value = (ri, rj, rk)
+
+                target_site_1 = mapping[(coupling.site_1, lookup_value)]
+                target_site_2 = mapping[(coupling.site_2, lookup_value)]
+
+                # Create the new coupling
+                
+
+
 
     def print_summary(self):
         """ Print a textual summary to stdout"""
