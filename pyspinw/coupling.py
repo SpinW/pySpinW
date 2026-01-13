@@ -129,7 +129,7 @@ class Coupling(SPWSerialisable):
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 coupling_matrix: np.ndarray | None = None):
-        
+
         """ Get version of this site with specified parameters updated"""
         return Coupling(
             site_1=self.site_1 if site_1 is None else site_1,

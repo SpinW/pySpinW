@@ -77,6 +77,7 @@ class Hamiltonian(SPWSerialisable):
 
         bigger_cell, mapping = self.structure.expansion_site_mapping()
 
+        new_couplings = []
         for offset in self.structure.supercell.cells():
             for coupling in self.couplings:
                 # Convert the offset in the coupling, into
@@ -98,10 +99,17 @@ class Hamiltonian(SPWSerialisable):
                 target_site_1 = mapping[(coupling.site_1, lookup_value)]
                 target_site_2 = mapping[(coupling.site_2, lookup_value)]
 
-                # Create the new coupling
+                # Create the new coupling using their update method, which copies everything not specified
+                new_couplings.append(
+                    coupling.updated(
+                        site_1=target_site_1,
+                        site_2=target_site_2,
+                        cell_offset=new_cell_offset))
 
-                
+            for anisotropy in self.anisotropies:
+                target_site = mapping[(anisotropy.site, offset.as_tuple)]
 
+                # Copy anisotropy
 
 
     def print_summary(self):
