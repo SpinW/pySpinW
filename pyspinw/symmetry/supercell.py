@@ -4,6 +4,7 @@ from fractions import Fraction
 from math import lcm
 
 import numpy as np
+from numpy._typing import ArrayLike
 
 from pyspinw.checks import check_sizes
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, \
@@ -242,6 +243,14 @@ class Supercell(ABC, SPWSerialisable):
     def summation_form(self) -> "Supercell":
         """Get a summation type supercell"""
 
+    def fractional_in_supercell(self, position_in_cell: ArrayLike, cell_offset: CellOffset):
+        """ Get the fractional position within a supercell """
+        position = cell_offset.vector + np.array(position_in_cell, dtype=float)
+        scaling = np.array(self._scaling, dtype=float)
+
+        return position / scaling
+
+
     @abstractmethod
     def _serialise_supercell(self, context: SPWSerialisationContext):
         """ Serialise this supercell """
@@ -273,6 +282,8 @@ class Supercell(ABC, SPWSerialisable):
         except KeyError as ke:
             expected_names = ", ".join([f"'{key}'" for key in supercell_types])
             raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
+
+
 
 
 class TrivialSupercell(Supercell):

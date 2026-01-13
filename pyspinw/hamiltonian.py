@@ -72,6 +72,11 @@ class Hamiltonian(SPWSerialisable):
 
         return "\n".join(lines)
 
+    def expand(self):
+        """ Expand the supercell structure into a single cell structure """
+
+        bigger_cell = self.unit_cell
+
     def print_summary(self):
         """ Print a textual summary to stdout"""
         print(self.text_summary)
