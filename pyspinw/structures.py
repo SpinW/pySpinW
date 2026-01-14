@@ -136,7 +136,6 @@ class Structure(SPWSerialisable):
 
     def expansion_site_mapping(self):
         """ Expand supercell into a single, bigger cell """
-
         # Calculate new cell
         scale = self.supercell.cell_size()
 
@@ -166,7 +165,6 @@ class Structure(SPWSerialisable):
 
     def expand(self):
         """ Expand supercell into a single, bigger cell """
-
         cell, mapping = self.expansion_site_mapping()
 
 

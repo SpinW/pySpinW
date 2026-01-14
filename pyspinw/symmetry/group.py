@@ -136,7 +136,6 @@ class SpaceGroup(SymmetryGroup):
 
     def for_supercell(self, supercell: Supercell):
         """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
-
         return database.spacegroup_by_name("p1")
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:

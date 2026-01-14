@@ -75,7 +75,6 @@ class Hamiltonian(SPWSerialisable):
 
     def expand(self):
         """ Expand the supercell structure into a single cell structure """
-
         bigger_cell, mapping = self.structure.expansion_site_mapping()
 
         new_couplings = []

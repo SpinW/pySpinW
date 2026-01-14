@@ -129,7 +129,6 @@ class Coupling(SPWSerialisable):
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 coupling_matrix: np.ndarray | None = None):
-
         """ Get version of this site with specified parameters updated"""
         return Coupling(
             site_1=self.site_1 if site_1 is None else site_1,
@@ -245,9 +244,7 @@ class HeisenbergCoupling(Coupling):
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j: float | None = None):
-
         """ Get version of this coupling with specified parameters updated"""
-
         return HeisenbergCoupling(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
@@ -343,9 +340,7 @@ class DiagonalCoupling(Coupling):
                 j_y: float | None = None,
                 j_z: float | None = None,
                 ):
-
         """ Get version of this coupling with specified parameters updated"""
-
         return DiagonalCoupling(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
@@ -417,9 +412,7 @@ class XYCoupling(Coupling):
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j: float | None = None):
-
         """ Get version of this coupling with specified parameters updated"""
-
         return XYCoupling(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -500,9 +493,7 @@ class XXZCoupling(Coupling):
                 j_xy: float | None = None,
                 j_z: float | None = None,
                 ):
-
         """ Get version of this coupling with specified parameters updated"""
-
         return XXZCoupling(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -573,9 +564,7 @@ class IsingCoupling(Coupling):
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j_z: float | None = None):
-
         """ Get version of this coupling with specified parameters updated"""
-
         return IsingCoupling(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -668,9 +657,7 @@ class DMCoupling(Coupling):
                 d_x: float | None = None,
                 d_y: float | None = None,
                 d_z: float | None = None):
-
         """ Get version of this coupling with specified parameters updated"""
-
         return DMCoupling(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,

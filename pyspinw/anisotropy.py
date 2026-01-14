@@ -50,7 +50,6 @@ class Anisotropy(SPWSerialisable):
 
     def updated(self, site: LatticeSite | None = None, anisotropy_matrix: ArrayLike | None = None):
         """ Return a copy of this anisotropy term with variables replaced"""
-
         return Anisotropy(
             site=self.site if site is None else site,
             anisotropy_matrix = self.anisotropy_matrix if anisotropy_matrix is None else np.array(anisotropy_matrix))
@@ -107,7 +106,6 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     def updated(self, site: LatticeSite | None = None, a: float | None = None, direction: ArrayLike | None = None):
         """ Return a copy of this anisotropy term with variables replaced"""
-
         return AxisMagnitudeAnisotropy(
             site=self.site if site is None else site,
             a=self.a if a is None else a,
