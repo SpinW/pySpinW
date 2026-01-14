@@ -135,6 +135,11 @@ class Hamiltonian(SPWSerialisable):
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
+
+        #
+        # Set up choice of calculation
+        #
+
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
         spinwave_calculation = py_spinwave
@@ -158,21 +163,22 @@ class Hamiltonian(SPWSerialisable):
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
+        #
+        # Set up the system
+        #
+
+        expanded = self.expand()
+
         # Get the positions, rotations, moments for the sites
         moments = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
-        for index, site in enumerate(self._structure.sites):
+        for index, site in enumerate(expanded._structure.sites):
             # TODO: Sort out moments for supercells
-            moments.append(
-                self._structure.supercell.moment(
-                    site,
-                    cell_offset=CellOffset(0,0,0)
-                )
-            )
+            moments.append(site.base_moment)
 
             positions.append(
-                self._structure.unit_cell.fractional_to_cartesian(site.ijk))
+                expanded.structure.unit_cell.fractional_to_cartesian(site.ijk))
 
             unique_id_to_index[site._unique_id] = index
 
@@ -181,7 +187,7 @@ class Hamiltonian(SPWSerialisable):
             magnetic_field = None
         else:
             g_tensors = []
-            for site in self._structure.sites:
+            for site in expanded.structure.sites:
                 g_tensors.append(site.g)
 
             magnetic_field = magnetic_field_class(vector=np.array(field), g_tensors=g_tensors)
@@ -193,14 +199,14 @@ class Hamiltonian(SPWSerialisable):
 
         # Convert the couplings
         couplings: list[Coupling] = []
-        for input_coupling in self._couplings:
+        for input_coupling in expanded.couplings:
             # Normal coupling
 
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 np.array(input_coupling.coupling_matrix, **rust_kw),
-                input_coupling.vector(self.structure.unit_cell)
+                input_coupling.vector(expanded.structure.unit_cell)
             )
 
             couplings.append(coupling)
@@ -211,13 +217,13 @@ class Hamiltonian(SPWSerialisable):
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                -input_coupling.vector(self.structure.unit_cell)
+                -input_coupling.vector(expanded.structure.unit_cell)
             )
 
             couplings.append(coupling)
 
         # Add in anisotropies as spinwave_calculation couplings
-        for input_anisotropy in self._anisotropies:
+        for input_anisotropy in expanded.anisotropies:
 
             anisotropy = coupling_class(
                 unique_id_to_index[input_anisotropy.site._unique_id],
