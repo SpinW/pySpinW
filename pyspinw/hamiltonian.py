@@ -80,26 +80,31 @@ class Hamiltonian(SPWSerialisable):
 
         new_couplings = []
         new_anisotropies = []
-        for offset in self.structure.supercell.cells():
+
+        si, sj, sk = self.structure.supercell.cell_size()
+
+        for first_site_offset in self.structure.supercell.cells():
             for coupling in self.couplings:
                 # Convert the offset in the coupling, into
                 #  1) an offset in the supercell, and
                 #  2) an offset between supercells
                 # basically just a divmod
 
-                oi, oj, ok = coupling.cell_offset.as_tuple
-                si, sj, sk = self.structure.supercell.cell_size()
+                # Convert offsets into "absolute offsets"
 
+                second_site_offset = coupling.cell_offset.vector + first_site_offset.vector
+
+                oi, oj, ok = second_site_offset
 
                 ni, ri = divmod(oi, si)
                 nj, rj = divmod(oj, sj)
                 nk, rk = divmod(ok, sk)
 
                 new_cell_offset = CellOffset(ni, nj, nk)
-                lookup_value = (ri, rj, rk)
+                second_site_lookup_value = (ri, rj, rk)
 
-                target_site_1 = mapping[(coupling.site_1, lookup_value)]
-                target_site_2 = mapping[(coupling.site_2, lookup_value)]
+                target_site_1 = mapping[(coupling.site_1._unique_id, first_site_offset.as_tuple)]
+                target_site_2 = mapping[(coupling.site_2._unique_id, second_site_lookup_value)]
 
                 # Create the new coupling using their update method, which copies everything not specified
                 new_couplings.append(
@@ -109,7 +114,7 @@ class Hamiltonian(SPWSerialisable):
                         cell_offset=new_cell_offset))
 
             for anisotropy in self.anisotropies:
-                target_site = mapping[(anisotropy.site, offset.as_tuple)]
+                target_site = mapping[(anisotropy.site._unique_id, first_site_offset.as_tuple)]
 
                 # Copy anisotropy
                 new_anisotropies.append(anisotropy.updated(site=target_site))

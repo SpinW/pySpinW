@@ -135,8 +135,8 @@ class Coupling(SPWSerialisable):
             site_1=self.site_1 if site_1 is None else site_1,
             site_2=self.site_2 if site_2 is None else site_2,
             cell_offset=self.cell_offset if cell_offset is None else cell_offset,
-            name=self.name if name is not None else name,
-            coupling_matrix=self.coupling_matrix if coupling_matrix is not None else coupling_matrix)
+            name=self.name if name is None else name,
+            coupling_matrix=self.coupling_matrix if coupling_matrix is None else coupling_matrix)
 
     @staticmethod
     @expects_keys("name, site_1, site_2, cell_offset")
@@ -252,8 +252,8 @@ class HeisenbergCoupling(Coupling):
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
                 cell_offset = self.cell_offset if cell_offset is None else cell_offset,
-                name = self.name if name is not None else name,
-                j = self.j if j is not None else j)
+                name = self.name if name is None else name,
+                j = self.j if j is None else j)
 
 
 
@@ -350,10 +350,10 @@ class DiagonalCoupling(Coupling):
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
                 cell_offset = self.cell_offset if cell_offset is None else cell_offset,
-                name = self.name if name is not None else name,
-                j_x = self.j_x if j_x is not None else j_x,
-                j_y = self.j_y if j_y is not None else j_y,
-                j_z = self.j_z if j_z is not None else j_z)
+                name = self.name if name is None else name,
+                j_x = self.j_x if j_x is None else j_x,
+                j_y = self.j_y if j_y is None else j_y,
+                j_z = self.j_z if j_z is None else j_z)
 
 class XYCoupling(Coupling):
     """ "XY"  coupling, which takes the form
@@ -424,8 +424,8 @@ class XYCoupling(Coupling):
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
-                name=self.name if name is not None else name,
-                j=self.j if j is not None else j)
+                name=self.name if name is None else name,
+                j=self.j if j is None else j)
 
 class XXZCoupling(Coupling):
     """ "XXZ" coupling, which takes the form
@@ -507,9 +507,9 @@ class XXZCoupling(Coupling):
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
-                name=self.name if name is not None else name,
-                j_xy=self.j_xy if j_xy is not None else j_xy,
-                j_z=self.j_z if j_z is not None else j_z)
+                name=self.name if name is None else name,
+                j_xy=self.j_xy if j_xy is None else j_xy,
+                j_z=self.j_z if j_z is None else j_z)
     def is_symmetric(self):
         """ Is this a symmetric coupling """
         return True
@@ -580,8 +580,8 @@ class IsingCoupling(Coupling):
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
-                name=self.name if name is not None else name,
-                j_z=self.j_z if j_z is not None else j_z)
+                name=self.name if name is None else name,
+                j_z=self.j_z if j_z is None else j_z)
 
     def is_symmetric(self):
         """ Is this a symmetric coupling """
@@ -676,9 +676,9 @@ class DMCoupling(Coupling):
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
                 name=self.name if name is not None else name,
-                d_x=self.d_x if d_x is not None else d_x,
-                d_y=self.d_y if d_y is not None else d_y,
-                d_z=self.d_z if d_z is not None else d_z)
+                d_x=self.d_x if d_x is None else d_x,
+                d_y=self.d_y if d_y is None else d_y,
+                d_z=self.d_z if d_z is None else d_z)
 
 
     def is_symmetric(self):

@@ -58,7 +58,7 @@ class Anisotropy(SPWSerialisable):
 class AxisMagnitudeAnisotropy(Anisotropy):
     """Anisotropy oriented with axes, but variable amount in x, y and z"""
 
-    @check_sizes(v=(3,), force_numpy=True)
+    @check_sizes(direction=(3,), force_numpy=True)
     def __init__(self, site: LatticeSite, a: float, direction: np.ndarray = np.array([0, 0, 1])):
         mag = np.sqrt(np.sum(direction))
 
@@ -73,8 +73,13 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         self._a = a
 
     @property
-    def constant(self):
+    def a(self):
         """ Amount of anisotropy (anisotropy constant)"""
+        return self._a
+
+    @property
+    def constant(self):
+        """ Amount of anisotropy (anisotropy constant), alias for `a` """
         return self._a
 
     @property
@@ -103,7 +108,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
     def updated(self, site: LatticeSite | None = None, a: float | None = None, direction: ArrayLike | None = None):
         """ Return a copy of this anisotropy term with variables replaced"""
 
-        return Anisotropy(
+        return AxisMagnitudeAnisotropy(
             site=self.site if site is None else site,
             a=self.a if a is None else a,
             direction=self.direction if direction is None else np.array(direction))
