@@ -135,7 +135,6 @@ class Hamiltonian(SPWSerialisable):
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
-
         #
         # Set up choice of calculation
         #
