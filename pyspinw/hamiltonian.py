@@ -21,6 +21,7 @@ from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
+from pyspinw.symmetry.supercell import TrivialSupercell
 
 
 # pylint: disable=R0903
@@ -78,6 +79,7 @@ class Hamiltonian(SPWSerialisable):
         bigger_cell, mapping = self.structure.expansion_site_mapping()
 
         new_couplings = []
+        new_anisotropies = []
         for offset in self.structure.supercell.cells():
             for coupling in self.couplings:
                 # Convert the offset in the coupling, into
@@ -110,6 +112,16 @@ class Hamiltonian(SPWSerialisable):
                 target_site = mapping[(anisotropy.site, offset.as_tuple)]
 
                 # Copy anisotropy
+                new_anisotropies.append(anisotropy.updated(site=target_site))
+
+        structure = Structure(
+            sites=[site for site in mapping.values()],
+            unit_cell=bigger_cell,
+            spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
+            supercell=TrivialSupercell(scaling=(1,1,1))
+        )
+
+        return Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies)
 
 
     def print_summary(self):
