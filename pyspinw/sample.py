@@ -173,6 +173,9 @@ class Powder(Sample1D):
 
         energies, intensities = self.hamiltonian.energies_and_intensities(points)
 
+        energies = np.array(energies)
+        intensities = np.array(intensities)
+
         positive_energies = energies > 0
 
 
