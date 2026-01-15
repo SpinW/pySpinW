@@ -1,5 +1,5 @@
 """Selection of different Hamiltonians"""
-
+import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -25,6 +25,8 @@ from pyspinw.symmetry.supercell import TrivialSupercell
 
 
 # pylint: disable=R0903
+
+logger = logging.Logger("pyspinw.hamiltonian")
 
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
@@ -158,7 +160,10 @@ class Hamiltonian(SPWSerialisable):
 
             except ModuleNotFoundError:
                 # Silently don't use rust, maybe should give a warning though
-                pass
+                logger.warning("Failed to load rust core, falling back to python")
+
+        else:
+            logger.info("Using Python core code")
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
@@ -189,12 +194,14 @@ class Hamiltonian(SPWSerialisable):
             for site in expanded.structure.sites:
                 g_tensors.append(site.g)
 
-            magnetic_field = magnetic_field_class(vector=np.array(field), g_tensors=g_tensors)
+            magnetic_field = magnetic_field_class(
+                                vector=np.array(field, **rust_kw),
+                                g_tensors=np.array(g_tensors, **rust_kw))
 
         moments = np.array(moments, dtype=float)
         rotations = site_rotations(moments)
         magnitudes = np.sqrt(np.sum(moments**2, axis=1))
-        rotations = [rotations[i, :, :] for i in range(rotations.shape[0])]
+        rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
 
         # Convert the couplings
         couplings: list[Coupling] = []
@@ -249,6 +256,8 @@ class Hamiltonian(SPWSerialisable):
                                  use_rust: bool = True) -> list[np.ndarray]:
         """ Return energies as series corresponding to q, sorted by energy """
         energy, _ = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+
+        energy = np.array(energy)
 
         # Sort the energies
         energy = np.sort(energy.real, axis=1)
