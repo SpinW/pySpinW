@@ -1,5 +1,5 @@
 """Selection of different Hamiltonians"""
-
+import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -17,6 +17,8 @@ from pyspinw.basis import find_aligned_basis, site_rotations
 
 
 # pylint: disable=R0903
+
+logger = logging.Logger("pyspinw.hamiltonian")
 
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
@@ -56,7 +58,10 @@ class Hamiltonian(SPWSerialisable):
 
             except ModuleNotFoundError:
                 # Silently don't use rust, maybe should give a warning though
-                pass
+                logger.warning("Failed to load rust core, falling back to python")
+
+        else:
+            logger.info("Using Python core code")
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
