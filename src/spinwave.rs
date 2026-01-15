@@ -3,6 +3,7 @@ use std::f64::consts::PI;
 use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm};
 use faer::mat::{AsMatRef, AsMatMut};
+use indicatif::ParallelProgressIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::constants::{J, MU_B};
@@ -194,12 +195,14 @@ pub fn calc_energies(
     field: Option<MagneticField>,
 ) -> Vec<Vec<f64>> {
     let n_sites = rotations.len();
+    let n_q = q_vectors.len() as u64;
 
     let q_independent_components = calc_q_independent(rotations, magnitudes, &couplings, field);
 
     // now perform the calculation for each q-vector in parallel
     q_vectors
         .into_par_iter()
+        .progress_count(n_q)
         .map(|q| {
             energies_single_q(
                 Col::from_iter(q),
@@ -278,11 +281,13 @@ pub fn calc_spinwave(
     save_Sab: bool,
 ) -> Vec<SpinwaveResult> {
     let n_sites = rotations.len();
+    let n_q = q_vectors.len() as u64;
 
     let QIndependentComponents = calc_q_independent(rotations, magnitudes, &couplings, field);
 
     q_vectors
         .into_par_iter()
+        .progress_count(n_q)
         .map(|q| {
             spinwave_single_q(
                 Col::from_iter(q),
