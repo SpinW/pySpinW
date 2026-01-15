@@ -18,6 +18,7 @@ from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_f
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
 from pyspinw.symmetry.settings import Setting
+from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
     lattice_system_name_lookup
 
@@ -133,6 +134,9 @@ class SpaceGroup(SymmetryGroup):
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         pass
 
+    def for_supercell(self, supercell: Supercell):
+        """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
+        return database.spacegroup_by_name("p1")
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """

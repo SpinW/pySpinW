@@ -122,6 +122,21 @@ class Coupling(SPWSerialisable):
             "cell_offset": self._cell_offset._serialise(context)
         }
 
+    @check_sizes(coupling_matrix=(3,3), force_numpy=True, allow_nones=True)
+    def updated(self,
+                site_1 :LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                coupling_matrix: np.ndarray | None = None):
+        """ Get version of this site with specified parameters updated"""
+        return Coupling(
+            site_1=self.site_1 if site_1 is None else site_1,
+            site_2=self.site_2 if site_2 is None else site_2,
+            cell_offset=self.cell_offset if cell_offset is None else cell_offset,
+            name=self.name if name is None else name,
+            coupling_matrix=self.coupling_matrix if coupling_matrix is None else coupling_matrix)
+
     @staticmethod
     @expects_keys("name, site_1, site_2, cell_offset")
     def _base_deserialisation(json, context: SPWSerialisationContext):
@@ -223,6 +238,22 @@ class HeisenbergCoupling(Coupling):
         """ Is this a symmetric coupling """
         return True
 
+    def updated(self,
+                site_1 :LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                j: float | None = None):
+        """ Get version of this coupling with specified parameters updated"""
+        return HeisenbergCoupling(
+                site_1=self.site_1 if site_1 is None else site_1,
+                site_2 = self.site_2 if site_2 is None else site_2,
+                cell_offset = self.cell_offset if cell_offset is None else cell_offset,
+                name = self.name if name is None else name,
+                j = self.j if j is None else j)
+
+
+
 
 class DiagonalCoupling(Coupling):
     """Diagonal coupling, which takes the form
@@ -300,6 +331,25 @@ class DiagonalCoupling(Coupling):
         """ Is this a symmetric coupling """
         return True
 
+    def updated(self,
+                site_1 :LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                j_x: float | None = None,
+                j_y: float | None = None,
+                j_z: float | None = None,
+                ):
+        """ Get version of this coupling with specified parameters updated"""
+        return DiagonalCoupling(
+                site_1=self.site_1 if site_1 is None else site_1,
+                site_2 = self.site_2 if site_2 is None else site_2,
+                cell_offset = self.cell_offset if cell_offset is None else cell_offset,
+                name = self.name if name is None else name,
+                j_x = self.j_x if j_x is None else j_x,
+                j_y = self.j_y if j_y is None else j_y,
+                j_z = self.j_z if j_z is None else j_z)
+
 class XYCoupling(Coupling):
     """ "XY"  coupling, which takes the form
 
@@ -355,6 +405,20 @@ class XYCoupling(Coupling):
     def is_symmetric(self):
         """ Is this a symmetric coupling """
         return True
+
+    def updated(self,
+                site_1: LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                j: float | None = None):
+        """ Get version of this coupling with specified parameters updated"""
+        return XYCoupling(
+                site_1=self.site_1 if site_1 is None else site_1,
+                site_2=self.site_2 if site_2 is None else site_2,
+                cell_offset=self.cell_offset if cell_offset is None else cell_offset,
+                name=self.name if name is None else name,
+                j=self.j if j is None else j)
 
 class XXZCoupling(Coupling):
     """ "XXZ" coupling, which takes the form
@@ -421,6 +485,22 @@ class XXZCoupling(Coupling):
             j_z = data["j_z"])
 
 
+    def updated(self,
+                site_1: LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                j_xy: float | None = None,
+                j_z: float | None = None,
+                ):
+        """ Get version of this coupling with specified parameters updated"""
+        return XXZCoupling(
+                site_1=self.site_1 if site_1 is None else site_1,
+                site_2=self.site_2 if site_2 is None else site_2,
+                cell_offset=self.cell_offset if cell_offset is None else cell_offset,
+                name=self.name if name is None else name,
+                j_xy=self.j_xy if j_xy is None else j_xy,
+                j_z=self.j_z if j_z is None else j_z)
     def is_symmetric(self):
         """ Is this a symmetric coupling """
         return True
@@ -477,6 +557,20 @@ class IsingCoupling(Coupling):
             name=base.name,
             j_z = data["j_z"])
 
+
+    def updated(self,
+                site_1: LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                j_z: float | None = None):
+        """ Get version of this coupling with specified parameters updated"""
+        return IsingCoupling(
+                site_1=self.site_1 if site_1 is None else site_1,
+                site_2=self.site_2 if site_2 is None else site_2,
+                cell_offset=self.cell_offset if cell_offset is None else cell_offset,
+                name=self.name if name is None else name,
+                j_z=self.j_z if j_z is None else j_z)
 
     def is_symmetric(self):
         """ Is this a symmetric coupling """
@@ -553,6 +647,26 @@ class DMCoupling(Coupling):
             d_x = data["d_x"],
             d_y = data["d_y"],
             d_z = data["d_z"])
+
+
+    def updated(self,
+                site_1: LatticeSite | None = None,
+                site_2: LatticeSite | None = None,
+                cell_offset: CellOffset | None = None,
+                name: str | None = None,
+                d_x: float | None = None,
+                d_y: float | None = None,
+                d_z: float | None = None):
+        """ Get version of this coupling with specified parameters updated"""
+        return DMCoupling(
+                site_1=self.site_1 if site_1 is None else site_1,
+                site_2=self.site_2 if site_2 is None else site_2,
+                cell_offset=self.cell_offset if cell_offset is None else cell_offset,
+                name=self.name if name is not None else name,
+                d_x=self.d_x if d_x is None else d_x,
+                d_y=self.d_y if d_y is None else d_y,
+                d_z=self.d_z if d_z is None else d_z)
+
 
     def is_symmetric(self):
         """ Is this a symmetric coupling """

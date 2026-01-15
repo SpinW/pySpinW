@@ -113,6 +113,29 @@ class Path:
 
         plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
 
+class Path1D():
+    """ 1D Path, i.e. just values in absolute q """
+
+    def __init__(self,
+                 q_min: float = 0.0,
+                 q_max: float = 1.0,
+                 avoid_endpoints=True,
+                 resolution: int = 101):
+
+        self.q_min = q_min
+        self.q_max = q_max
+        self.resolution = resolution
+        self.avoid_endpoints = avoid_endpoints
+
+    def q_values(self):
+        """ Get q magnitudes """
+        base = np.linspace(0, 1, self.resolution)
+
+        if self.avoid_endpoints:
+            base[0] = 1e-8
+            base[-1] = 1 - 1e-8
+
+        return self.q_min + (self.q_max - self.q_min) * base
 
 if __name__ == "__main__":
 

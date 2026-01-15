@@ -21,7 +21,8 @@ def heisenberg_ferromagnet(n_q = 100, classes = py_classes):
     rotations = [np.eye(3, **rust_kw)]
     magnitudes = np.array([1.0])  # spin-1
     couplings = [Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
-                 Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])), ]
+                 Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])),
+                 ]
 
     return (rotations, magnitudes, q_vectors, couplings, positions)
 
