@@ -171,7 +171,7 @@ class Powder(Sample1D):
         qs = path.q_values()
         points = np.concatenate([generator.points*q for q in qs], axis=0)
 
-        energies, intensities = self.hamiltonian.energies_and_intensities(points)
+        energies, intensities = self.hamiltonian.energies_and_intensities(points, use_rust=use_rust)
 
         energies = np.array(energies)
         intensities = np.array(intensities)
