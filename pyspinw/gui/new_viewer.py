@@ -7,7 +7,7 @@ import sys
 
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.load_shaders import load_shaders
-from pyspinw.gui.spheres import Sphere
+from pyspinw.gui.rendering.sphere import Sphere
 
 
 class HamiltonianRenderer:
@@ -19,28 +19,6 @@ class HamiltonianRenderer:
 
     def render(self):
         pass
-
-# Cube vertices
-# vertices = np.array([
-#     # front
-#     -1, -1,  1,  1, -1,  1,  1,  1,  1,
-#     -1, -1,  1,  1,  1,  1, -1,  1,  1,
-#     # back
-#     -1, -1, -1, -1,  1, -1,  1,  1, -1,
-#     -1, -1, -1,  1,  1, -1,  1, -1, -1,
-#     # left
-#     -1, -1, -1, -1, -1,  1, -1,  1,  1,
-#     -1, -1, -1, -1,  1,  1, -1,  1, -1,
-#     # right
-#      1, -1, -1,  1,  1, -1,  1,  1,  1,
-#      1, -1, -1,  1,  1,  1,  1, -1,  1,
-#     # top
-#     -1,  1, -1, -1,  1,  1,  1,  1,  1,
-#     -1,  1, -1,  1,  1,  1,  1,  1, -1,
-#     # bottom
-#     -1, -1, -1,  1, -1, -1,  1, -1,  1,
-#     -1, -1, -1,  1, -1,  1, -1, -1,  1,
-# ], dtype=np.float32)
 
 vertices_and_normals = Sphere(3).vertices_and_normals
 
