@@ -1,3 +1,4 @@
+import logging
 import os.path
 from importlib import resources
 
@@ -6,6 +7,8 @@ from OpenGL.GL import (glCreateShader, glShaderSource, glCompileShader, glGetSha
                        glDeleteShader, GL_COMPILE_STATUS, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, GL_LINK_STATUS)
 
 
+
+logger = logging.Logger("pyspinw.gui.shaders")
 
 def _compile_shader(source, shader_type):
     """ Compile a shader """
@@ -65,6 +68,6 @@ def load_shaders(fragment_filename: str | None = None, vertex_filename: str | No
             with open(vertex_filename, 'r') as file:
                 vertex_code = "".join(file.readlines())
         else:
-            vertex_code = resources.read_text("pyspinw.gui.shaders", fragment_filename + ".glsl")
+            vertex_code = resources.read_text("pyspinw.gui.shaders", vertex_filename + ".glsl")
 
     return _create_shader_program(vertex_code, frag_code)
