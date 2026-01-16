@@ -24,7 +24,6 @@ class Fibonacci:
     @staticmethod
     def straddling_fibonaccis(n):
         "Get the Fibonacci greater than or equal to n, and the one before "
-
         a = 1
         b = 1
 
