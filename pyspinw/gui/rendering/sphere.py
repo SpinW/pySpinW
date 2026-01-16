@@ -2,25 +2,16 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 from pyspinw.calculations.geodesic import Geodesic
+from pyspinw.gui.rendering.model import Model
 
 
-class Sphere:
+class Sphere(Model):
     def __init__(self, divisions: int):
-        self._divisions = divisions
 
-        self.vertices_and_normals = np.array([[]], dtype=float)
-
-        self._recalculate_vertices()
-
-
-
-    def _recalculate_vertices(self):
         # Build list of vertices
-
-        points, _ = Geodesic.by_divisions(self._divisions)
+        points, _ = Geodesic.by_divisions(divisions)
 
         # Need to arrange these into faces
-
         hull = ConvexHull(points)
 
         faces = hull.simplices
@@ -49,15 +40,6 @@ class Sphere:
 
 
         self.vertices_and_normals = np.array(verts, dtype=np.float32).reshape(-1) # Return as float32 for rendering
-
-    @property
-    def divisions(self):
-        return self._divisions
-
-    @divisions.setter
-    def divisions(self, divisions):
-        self._divisions = divisions
-        self._recalculate_vertices()
 
 
 if __name__ == "__main__":
