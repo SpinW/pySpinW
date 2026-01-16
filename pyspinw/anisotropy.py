@@ -59,7 +59,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @check_sizes(direction=(3,), force_numpy=True)
     def __init__(self, site: LatticeSite, a: float, direction: np.ndarray = np.array([0, 0, 1])):
-        mag = np.sqrt(np.sum(direction))
+        mag = np.sqrt(np.sum(direction**2))
 
         if np.isclose(mag, 0, atol=tolerances.VECTOR_TOL):
             self._direction = np.zeros((3,), dtype=float)
