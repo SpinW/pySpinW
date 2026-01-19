@@ -149,6 +149,7 @@ class Twin(Multidomain):
 
 class ScalingMethod(Enum):
     """ Scaling methods for plots"""
+
     LINEAR = 'linear'
     LOG = 'log'
 
