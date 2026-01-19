@@ -8,7 +8,7 @@ from OpenGL.GL import (glCreateShader, glShaderSource, glCompileShader, glGetSha
 
 
 
-logger = logging.Logger("pyspinw.gui.shaders")
+logger = logging.Logger("pyspinw.gui.rendering.shaders")
 
 def _compile_shader(source, shader_type):
     """ Compile a shader """
@@ -50,24 +50,29 @@ def _create_shader_program(vs_src, fs_src):
 def load_shaders(fragment_filename: str | None = None, vertex_filename: str | None = None):
     """ Load shaders from file, or from the shaders directory"""
 
+    print("Loading shaders")
+
     if fragment_filename is None:
-        frag_code = resources.read_text("pyspinw.gui.shaders", "default_fragment.glsl")
+        frag_code = resources.read_text("pyspinw.gui.rendering.shaders", "default_fragment.glsl")
 
     else:
         if os.path.exists(fragment_filename):
             with open(fragment_filename, 'r') as file:
                 frag_code = "".join(file.readlines())
         else:
-            frag_code = resources.read_text("pyspinw.gui.shaders", fragment_filename + ".glsl")
+            frag_code = resources.read_text("pyspinw.gui.rendering.shaders", fragment_filename + ".glsl")
 
     if vertex_filename is None:
-        vertex_code = resources.read_text("pyspinw.gui.shaders", "default_vertex.glsl")
+        vertex_code = resources.read_text("pyspinw.gui.rendering.shaders", "default_vertex.glsl")
 
     else:
         if os.path.exists(vertex_filename):
             with open(vertex_filename, 'r') as file:
                 vertex_code = "".join(file.readlines())
         else:
-            vertex_code = resources.read_text("pyspinw.gui.shaders", vertex_filename + ".glsl")
+            vertex_code = resources.read_text("pyspinw.gui.rendering.shaders", vertex_filename + ".glsl")
+
+    print(vertex_code)
+    print(frag_code)
 
     return _create_shader_program(vertex_code, frag_code)

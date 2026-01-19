@@ -6,7 +6,10 @@ from pyspinw.gui.rendering.model import Model
 
 
 class Sphere(Model):
+
     def __init__(self, divisions: int):
+
+        super().__init__()
 
         # Build list of vertices
         points, _ = Geodesic.by_divisions(divisions)
@@ -40,6 +43,8 @@ class Sphere(Model):
 
 
         self.vertices_and_normals = np.array(verts, dtype=np.float32).reshape(-1) # Return as float32 for rendering
+
+        self.add_vertex_normal_data(self.vertices_and_normals)
 
 
 if __name__ == "__main__":
