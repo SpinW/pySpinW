@@ -1,6 +1,7 @@
 """Spinwave Calculations"""
 
 import multiprocessing
+import traceback
 from concurrent.futures import wait, ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
@@ -42,12 +43,15 @@ class SpinwaveResult:
     """Results from a spinwave calculation"""
 
     q_vectors: np.ndarray
-    raw_energies: list[np.ndarray]
-
+    raw_energies: np.ndarray
+    intensities: Optional[np.ndarray] = None
+    sab: Optional[np.ndarray] = None
 
 def _calc_q_independent(
-    rotations: list[np.ndarray], magnitudes: np.ndarray, couplings: list[Coupling], field: MagneticField | None = None
-):
+        rotations: list[np.ndarray],
+        magnitudes: np.ndarray,
+        couplings: list[Coupling],
+        field: MagneticField | None = None):
     """Calculate the q-independent matrices for the spinwave calculation.
 
     Returns the C matrix, the z-components of rotations, the spin coefficients matrix,
@@ -82,14 +86,13 @@ def _calc_q_independent(
 
 
 def _calc_sqrt_hamiltonian(
-    q: np.ndarray,
-    C: np.ndarray,
-    n_sites: int,
-    z: np.ndarray,
-    spin_coefficients: np.ndarray,
-    couplings: list[Coupling],
-    Az: np.ndarray | None = None,
-):
+        q: np.ndarray,
+        C: np.ndarray,
+        n_sites: int,
+        z: np.ndarray,
+        spin_coefficients: np.ndarray,
+        couplings: list[Coupling],
+        Az: np.ndarray | None = None):
     """Calculate the square root of the 'Hamiltonian' h(q) for a single q-value."""
     A = np.zeros((n_sites, n_sites), dtype=complex)
     B = np.zeros((n_sites, n_sites), dtype=complex)
@@ -126,6 +129,9 @@ def _calc_sqrt_hamiltonian(
     # of the decomposition
     #
     # We can also do this via an LDL decomposition, but the method is very slightly different
+
+    # assert np.sum(np.imag(np.linalg.eig(hamiltonian_matrix)[0])) < 1e-6, 'Non hermitian Hamiltonian!'
+
     try:
         sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
     except np.linalg.LinAlgError:  # Catch postive definiteness errors
@@ -143,12 +149,12 @@ def _get_q_chunks(q_vectors: np.ndarray, n_proc: int):
 
 
 def energies(
-    rotations: list[np.ndarray],
-    magnitudes: np.ndarray,
-    q_vectors: np.ndarray,
-    couplings: list[Coupling],
-    field: MagneticField | None = None,
-) -> np.ndarray:
+        rotations: list[np.ndarray],
+        magnitudes: np.ndarray,
+        q_vectors: np.ndarray,
+        couplings: list[Coupling],
+        field: MagneticField | None = None) \
+            -> np.ndarray:
     """Calculate the spinwave energies for a set of q-vectors.
 
     Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
@@ -172,14 +178,13 @@ def energies(
 
 
 def _calc_chunk_energies(
-    q_vectors: np.ndarray,
-    C: np.ndarray,
-    n_sites: int,
-    z: np.ndarray,
-    spin_coefficients: np.ndarray,
-    couplings: list[Coupling],
-    Az: np.ndarray | None = None,
-):
+        q_vectors: np.ndarray,
+        C: np.ndarray,
+        n_sites: int,
+        z: np.ndarray,
+        spin_coefficients: np.ndarray,
+        couplings: list[Coupling],
+        Az: np.ndarray | None = None):
     """Calculate the energies for a set of q-values."""
     energies = []
     for q in q_vectors:
@@ -196,14 +201,13 @@ def _calc_chunk_energies(
 
 
 def spinwave_calculation(
-    rotations: list[np.ndarray],
-    magnitudes: np.ndarray,
-    q_vectors: np.ndarray,
-    couplings: list[Coupling],
-    positions: list[np.ndarray],
-    field: MagneticField | None = None,
-    save_sab: bool = False,
-) -> (np.ndarray, np.ndarray, Optional[np.ndarray]):
+        rotations: list[np.ndarray],
+        magnitudes: np.ndarray,
+        q_vectors: np.ndarray,
+        couplings: list[Coupling],
+        positions: list[np.ndarray],
+        field: MagneticField | None = None,
+        save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
@@ -218,28 +222,38 @@ def spinwave_calculation(
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
+
     wait(q_calculations)
-    results = [future.result() for future in q_calculations]
+
+    results = []
+    for future in q_calculations:
+        try:
+            results.append(future.result())
+        except Exception as e:
+            traceback.print_exception(type(e), e, e.__traceback__)
+
     energies = np.concat(tuple(result[0] for result in results))
     intensities = np.concat([result[1] for result in results])
+
     if save_sab:
         sab = [result[2] for result in results]
+        # return SpinwaveResult(q_vectors, energies, intensities, sab)
         return energies, intensities, sab
 
+    # return SpinwaveResult(q_vectors, energies, intensities)
     return energies, intensities
 
-
 def _calc_chunk_spinwave(
-    q_vectors: np.ndarray,
-    C: np.ndarray,
-    n_sites: int,
-    z: np.ndarray,
-    spin_coefficients: np.ndarray,
-    couplings: list[Coupling],
-    positions: list[np.ndarray],
-    Az: np.ndarray | None = None,
-    save_sab: bool = False,
-) -> (np.ndarray, np.ndarray, Optional[np.ndarray]):
+        q_vectors: np.ndarray,
+        C: np.ndarray,
+        n_sites: int,
+        z: np.ndarray,
+        spin_coefficients: np.ndarray,
+        couplings: list[Coupling],
+        positions: list[np.ndarray],
+        Az: np.ndarray | None = None,
+        save_sab: bool = False) \
+            -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
     intensities = []
@@ -336,4 +350,5 @@ def _calc_chunk_spinwave(
 
     if save_sab:
         return energies, intensities, sabs
+
     return energies, intensities

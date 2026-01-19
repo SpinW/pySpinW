@@ -1,8 +1,10 @@
 """ Representation of sites (e.g. magnetic atoms) within a magnetic system"""
 
 import numpy as np
+from numpy._typing import ArrayLike
 from scipy.stats import goodness_of_fit
 
+from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
     numpy_deserialise, numpy_serialise
 
@@ -27,7 +29,8 @@ class LatticeSite(SPWSerialisable):
                  mi: float | None = None,
                  mj: float | None = None,
                  mk: float | None = None,
-                 supercell_moments: np.ndarray | None = None,
+                 supercell_moments: ArrayLike | None = None,
+                 g: ArrayLike | None = None,
                  name: str = ""):
 
         self._i = float(i)
@@ -68,6 +71,22 @@ class LatticeSite(SPWSerialisable):
                 raise ValueError("'supercell_moments' should have shape (3,) or (n,3)")
 
             self._moment_data = supercell_moments.reshape((-1, 3))
+
+        # Get the g tensor
+        if g is None:
+            self._g = ELECTRON_G * np.eye(3)
+        else:
+            g = np.array(g)
+
+            flattened = g.reshape(-1)
+            if flattened.shape[0] == 1:
+                self._g = g * np.eye(3)
+            elif flattened.shape[0] == 3:
+                self._g = np.diag(flattened)
+            elif flattened.shape[0] == 9:
+                self._g = g
+            else:
+                raise ValueError("g-factor should be a scalar, a vector of length 3, or a 3-by-3 matrix")
 
         self._base_moment = np.sum(self._moment_data, axis=0)
 
@@ -113,6 +132,11 @@ class LatticeSite(SPWSerialisable):
         return self._moment_data
 
     @property
+    def g(self) -> np.ndarray:
+        """ Magnetic g-factor, a 3x3 matrix/tensor """
+        return self._g
+
+    @property
     def values(self):
         """ ijk and moments as a numpy 6-vector"""
         return self._values
@@ -152,7 +176,8 @@ class LatticeSite(SPWSerialisable):
                 "j": self.j,
                 "k": self.k,
                 "supercell_moments": numpy_serialise(self._moment_data),
-                "name": self.name
+                "name": self.name,
+                "g": numpy_serialise(self.g)
             }
 
             context.sites.put(self._unique_id, json)

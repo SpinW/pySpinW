@@ -2,9 +2,10 @@
 
 from multiprocessing.spawn import freeze_support
 
+from pyspinw.anisotropy import AxisMagnitudeAnisotropy
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import spacegroup, couplings, filter, axis_anisotropies, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import TrivialSupercell
@@ -31,9 +32,11 @@ if __name__ == "__main__":
                           j=1,
                           direction_filter=filter([1,0,0], symmetric=True))
 
+    anisotropies = axis_anisotropies(sites, -0.1)
 
-    hamiltonian = Hamiltonian(s, exchanges)
+    hamiltonian = Hamiltonian(s, exchanges, anisotropies)
+
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])
-    hamiltonian.energy_plot(path)
+    hamiltonian.energy_plot(path, field=[0,0,7])

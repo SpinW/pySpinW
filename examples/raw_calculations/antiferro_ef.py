@@ -19,6 +19,7 @@ def antiferro_ef(n_q = 100, classes = py_classes):
     MagneticField = classes.field
 
     rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
+
     magnitudes = np.array([1.0]*2)
     positions = np.array([[0., 0., 0.], [0., 1., 0.]])
 

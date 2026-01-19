@@ -15,3 +15,4 @@ faer = "0.23.1"
 faer-ext = {version="0.7.1", features=["numpy", "ndarray"]}
 num-complex = "0.4.6"
 rayon = "1.11.0"
+indicatif = {version="*", features=["rayon"]}

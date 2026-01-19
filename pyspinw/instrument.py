@@ -1,27 +1,24 @@
 """Instrument specification"""
 
-from typing import Callable
-from dataclasses import dataclass
+from pyspinw.measurement import Measurement
 
-from numpy.typing import NDArray
 
-@dataclass
 class Instrument:
-    """Defines an instrument
+    """ Instrument Model"""
 
-    This class is responsible for instrument specific details, including resolution, energy and q binning, etc.
-    """
+    def resolution(self):
+        """ Resolution of the instrument"""
 
-    energy: NDArray
-    resolution: Callable[[float], float] = lambda energy: np.max(self.energy)*0.02
+    def required_q_points(self, measurement: Measurement):
+        """Q points required for applying the resolution to a given measurement"""
 
-    @staticmethod
-    def from_ResINS(instrument_name: str) -> 'Instrument':
-        """Instantiate an instrument from ResINS.
+    def create_histogram(self, measurement: Measurement):
+        """ Do binning """
 
-        Parameters
-        ----------
-        instrument_name: str
-            The name of the instrument.
-        """
-        raise NotImplementedError("ResINS compatibility has not yet been implemented.")
+
+class PerfectResolution(Instrument):
+    """ Instrument with perfect resolution"""
+
+    def create_histogram(self, measurement: Measurement):
+        """ Do Binning"""
+

@@ -1,22 +1,32 @@
 """Selection of different Hamiltonians"""
-
+import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
 
 import matplotlib.pyplot as plt
+from numpy._typing import ArrayLike
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave, Coupling as PyCoupling
+from pyspinw.anisotropy import Anisotropy
+from pyspinw.calculations.spinwave import (
+    spinwave_calculation as py_spinwave,
+    Coupling as PyCoupling,
+    MagneticField as PyMagneticField)
 
+from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
+from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.path import Path
-from pyspinw.serialisation import SPWSerialisable
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.structures import Structure
-from pyspinw.basis import find_aligned_basis, site_rotations
+from pyspinw.basis import site_rotations
+from pyspinw.symmetry.supercell import TrivialSupercell
 
 
 # pylint: disable=R0903
+
+logger = logging.Logger("pyspinw.hamiltonian")
 
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
@@ -25,10 +35,12 @@ class Hamiltonian(SPWSerialisable):
 
     def __init__(self,
                  structure: Structure,
-                 couplings: list[Coupling]):
+                 couplings: list[Coupling],
+                 anisotropies: list[Anisotropy] | None = None):
 
         self._structure = structure
         self._couplings = couplings
+        self._anisotropies = [] if anisotropies is None else anisotropies
 
     @property
     def structure(self):
@@ -40,56 +52,167 @@ class Hamiltonian(SPWSerialisable):
         """ Get the couplings """
         return self._couplings
 
-    def energies(self, q_vectors: np.ndarray, use_rust: bool=True):
+    @property
+    def anisotropies(self):
+        """ Get the anisotropies """
+        return self._anisotropies
+
+    @property
+    def text_summary(self) -> str:
+        """ String giving details of the system """
+        lines = ["Sites:"]
+        for site in self.structure.sites:
+            lines.append(f"  {site}")
+
+        lines.append("Couplings:")
+        for exchange in self.couplings:
+            lines.append(f"  {exchange}") # vector =", exchange.vector(unit_cell=unit_cell))
+
+        if self.anisotropies:
+            lines.append("Anisotropies:")
+            for anisotropy in self.anisotropies:
+                lines.append(f"  {anisotropy}")
+
+        return "\n".join(lines)
+
+    def expand(self):
+        """ Expand the supercell structure into a single cell structure """
+        bigger_cell, mapping = self.structure.expansion_site_mapping()
+
+        new_couplings = []
+        new_anisotropies = []
+
+        si, sj, sk = self.structure.supercell.cell_size()
+
+        for first_site_offset in self.structure.supercell.cells():
+            for coupling in self.couplings:
+                # Convert the offset in the coupling, into
+                #  1) an offset in the supercell, and
+                #  2) an offset between supercells
+                # basically just a divmod
+
+                # Convert offsets into "absolute offsets"
+
+                second_site_offset = coupling.cell_offset.vector + first_site_offset.vector
+
+                oi, oj, ok = second_site_offset
+
+                ni, ri = divmod(oi, si)
+                nj, rj = divmod(oj, sj)
+                nk, rk = divmod(ok, sk)
+
+                new_cell_offset = CellOffset(ni, nj, nk)
+                second_site_lookup_value = (ri, rj, rk)
+
+                target_site_1 = mapping[(coupling.site_1._unique_id, first_site_offset.as_tuple)]
+                target_site_2 = mapping[(coupling.site_2._unique_id, second_site_lookup_value)]
+
+                # Create the new coupling using their update method, which copies everything not specified
+                new_couplings.append(
+                    coupling.updated(
+                        site_1=target_site_1,
+                        site_2=target_site_2,
+                        cell_offset=new_cell_offset))
+
+            for anisotropy in self.anisotropies:
+                target_site = mapping[(anisotropy.site._unique_id, first_site_offset.as_tuple)]
+
+                # Copy anisotropy
+                new_anisotropies.append(anisotropy.updated(site=target_site))
+
+        structure = Structure(
+            sites=[site for site in mapping.values()],
+            unit_cell=bigger_cell,
+            spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
+            supercell=TrivialSupercell(scaling=(1,1,1))
+        )
+
+        return Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies)
+
+
+    def print_summary(self):
+        """ Print a textual summary to stdout"""
+        print(self.text_summary)
+
+    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
+    def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
         """Calculate the energy levels of the system for the given q-vectors."""
+        #
+        # Set up choice of calculation
+        #
+
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
         spinwave_calculation = py_spinwave
+        magnetic_field_class = PyMagneticField
 
         if use_rust:
             try:
-                from pyspinw.rust import spinwave_calculation as rs_spinwave, Coupling as RsCoupling
+                from pyspinw.rust import (
+                    spinwave_calculation as rs_spinwave,
+                    Coupling as RsCoupling,
+                    MagneticField as RsMagneticField)
 
                 coupling_class = RsCoupling
                 spinwave_calculation = rs_spinwave
+                magnetic_field_class = RsMagneticField
 
 
             except ModuleNotFoundError:
                 # Silently don't use rust, maybe should give a warning though
-                pass
+                logger.warning("Failed to load rust core, falling back to python")
+
+        else:
+            logger.info("Using Python core code")
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
-        # Get the rotations for the sites
+        #
+        # Set up the system
+        #
+
+        expanded = self.expand()
+
+        # Get the positions, rotations, moments for the sites
         moments = []
+        positions = []
         unique_id_to_index: dict[int, int] = {}
-        for index, site in enumerate(self._structure.sites):
+        for index, site in enumerate(expanded._structure.sites):
             # TODO: Sort out moments for supercells
-            moments.append(
-                self._structure.supercell.moment(
-                    site,
-                    cell_offset=CellOffset(0,0,0)
-                )
-            )
+            moments.append(site.base_moment)
+
+            positions.append(
+                expanded.structure.unit_cell.fractional_to_cartesian(site.ijk))
 
             unique_id_to_index[site._unique_id] = index
+
+        # Get the field object
+        if field is None:
+            magnetic_field = None
+        else:
+            g_tensors = []
+            for site in expanded.structure.sites:
+                g_tensors.append(site.g)
+
+            magnetic_field = magnetic_field_class(
+                                vector=np.array(field, **rust_kw),
+                                g_tensors=np.array(g_tensors, **rust_kw))
 
         moments = np.array(moments, dtype=float)
         rotations = site_rotations(moments)
         magnitudes = np.sqrt(np.sum(moments**2, axis=1))
-
-        rotations = [rotations[i, :, :] for i in range(rotations.shape[0])]
+        rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
 
         # Convert the couplings
         couplings: list[Coupling] = []
-        for input_coupling in self._couplings:
+        for input_coupling in expanded.couplings:
             # Normal coupling
 
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 np.array(input_coupling.coupling_matrix, **rust_kw),
-                input_coupling.vector(self.structure.unit_cell)
+                input_coupling.vector(expanded.structure.unit_cell)
             )
 
             couplings.append(coupling)
@@ -100,38 +223,82 @@ class Hamiltonian(SPWSerialisable):
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                -input_coupling.vector(self.structure.unit_cell)
+                -input_coupling.vector(expanded.structure.unit_cell)
             )
 
             couplings.append(coupling)
 
-        energies = spinwave_calculation(rotations, magnitudes, q_vectors, couplings)
+        # Add in anisotropies as spinwave_calculation couplings
+        for input_anisotropy in expanded.anisotropies:
 
-        return energies
+            anisotropy = coupling_class(
+                unique_id_to_index[input_anisotropy.site._unique_id],
+                unique_id_to_index[input_anisotropy.site._unique_id],
+                np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw),
+                inter_site_vector=np.array([0,0,0], dtype=float)
+            )
 
+            couplings.append(anisotropy)
 
-    def energy_plot(self, path: Path, show=True, new_figure=True):
-        """ Create a spaghetti diagram """
-        energy = self.energies(path.q_points())
+        result = spinwave_calculation(
+                        rotations=rotations,
+                        magnitudes=magnitudes,
+                        q_vectors=q_vectors,
+                        couplings=couplings,
+                        positions=positions,
+                        field=magnetic_field)
+
+        return result[0], result[1]
+
+    def sorted_positive_energies(self,
+                                 path: Path,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool = True) -> list[np.ndarray]:
+        """ Return energies as series corresponding to q, sorted by energy """
+        energy, _ = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+
+        energy = np.array(energy)
 
         # Sort the energies
         energy = np.sort(energy.real, axis=1)
 
+        # return the top half (positive)
+        n_energies = energy.shape[1]
+        energies = [energy[:, n_energies - i - 1] for i in range(n_energies//2)]
+
+        return energies
+
+    def energy_plot(self,
+                    path: Path,
+                    field: ArrayLike | None = None,
+                    show: bool=True,
+                    new_figure: bool=True,
+                    use_rust: bool=True):
+        """ Create a spaghetti diagram """
         if new_figure:
             plt.figure("Energy")
 
-        n_energies = energy.shape[1]
 
         x_values = path.x_values()
-        for i in range(n_energies//2):
-            plt.plot(x_values, energy[:, n_energies-i-1], 'k')
+
+        for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust):
+            plt.plot(x_values, series, 'k')
 
         path.format_plot(plt)
 
         if show:
             plt.show()
 
-    def _serialise(self) -> dict:
-        return {"magnetic_structure": self.structure._serialise(),
-                "couplings": [coupling._serialise() for coupling in self.couplings]}
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {"magnetic_structure": self.structure._serialise(context),
+                "couplings": [coupling._serialise(context) for coupling in self.couplings],
+                "anisotropies": [anisotropy._serialise(context) for anisotropy in self.anisotopies]}
 
+    @staticmethod
+    @expects_keys("magnetic_structure, couplings, anisotropies")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        structure = Structure._deserialise(json["magnetic_structure"], context)
+        couplings = [Coupling._deserialise(coupling, context) for coupling in json["couplings"]]
+        anisotropies = [Anisotropy._deserialise(anisotropy, context) for anisotropy in json["anisotropies"]]
+
+        return Hamiltonian(structure, couplings, anisotropies)

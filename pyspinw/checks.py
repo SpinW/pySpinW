@@ -93,6 +93,11 @@ def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
                 all_args[name] = arg
             all_args.update(**kwargs)
 
+            # Allow skipping of size checks
+            if "skip_size_check" in kwargs and all_args["skip_size_check"]:
+                del all_args["skip_size_check"]
+                return fun(**all_args)
+
             # Check the sizes, and the type while were at it
             #
             #  Note: THIS POTENTIALLY UPDATES all_args
