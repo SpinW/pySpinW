@@ -3,7 +3,7 @@ import numpy as np
 from pyspinw.gui.rendering.model import Model
 
 
-class Tube(Model):
+class Arrow(Model):
     def __init__(self, n_points=51):
         super().__init__()
 

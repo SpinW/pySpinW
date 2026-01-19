@@ -8,6 +8,11 @@ import sys
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.load_shaders import load_shaders
 from pyspinw.gui.rendering.sphere import Sphere
+from pyspinw.gui.rendering.tube import Tube
+
+import logging
+
+logger = logging.Logger(__name__)
 
 
 class HamiltonianRenderer:
@@ -34,53 +39,54 @@ class GLWidget(QOpenGLWidget):
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST)
 
-        print("GL Init")
+        try:
+            #
+            # self.vao = glGenVertexArrays(1)
+            # self.vbo = glGenBuffers(1)
+            #
+            # glBindVertexArray(self.vao)
+            # glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+            # glBufferData(GL_ARRAY_BUFFER, vertices_and_normals.nbytes, vertices_and_normals, GL_STATIC_DRAW)
+            #
+            # stride = 6 * 4  # 6 floats, 4 bytes each
+            #
+            # # position -> location 0
+            # glVertexAttribPointer(
+            #     0, 3, GL_FLOAT, GL_FALSE,
+            #     stride, ctypes.c_void_p(0)
+            # )
+            # glEnableVertexAttribArray(0)
+            #
+            # # normal -> location 1
+            # glVertexAttribPointer(
+            #     1, 3, GL_FLOAT, GL_FALSE,
+            #     stride, ctypes.c_void_p(3 * 4)
+            # )
+            # glEnableVertexAttribArray(1)
+            #
+            # glBindBuffer(GL_ARRAY_BUFFER, 0)
+            # glBindVertexArray(0)
+            #
 
-        #
-        # self.vao = glGenVertexArrays(1)
-        # self.vbo = glGenBuffers(1)
-        #
-        # glBindVertexArray(self.vao)
-        # glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        # glBufferData(GL_ARRAY_BUFFER, vertices_and_normals.nbytes, vertices_and_normals, GL_STATIC_DRAW)
-        #
-        # stride = 6 * 4  # 6 floats, 4 bytes each
-        #
-        # # position -> location 0
-        # glVertexAttribPointer(
-        #     0, 3, GL_FLOAT, GL_FALSE,
-        #     stride, ctypes.c_void_p(0)
-        # )
-        # glEnableVertexAttribArray(0)
-        #
-        # # normal -> location 1
-        # glVertexAttribPointer(
-        #     1, 3, GL_FLOAT, GL_FALSE,
-        #     stride, ctypes.c_void_p(3 * 4)
-        # )
-        # glEnableVertexAttribArray(1)
-        #
-        # glBindBuffer(GL_ARRAY_BUFFER, 0)
-        # glBindVertexArray(0)
-        #
+            self.sphere1 = Sphere(3)
+            self.sphere2 = Sphere(3)
+            self.tube = Tube()
 
-        self.sphere1 = Sphere(3)
-        self.sphere2 = Sphere(3)
+            self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="phong_fragment")
+            # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
+            # self.shader_program = load_shaders()
 
-        self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="phong_fragment")
-        # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
-        # self.shader_program = load_shaders()
+            self.angle = 0.0
 
-        self.angle = 0.0
+            # Animation timer
+            self.timer = QTimer()
+            self.timer.timeout.connect(self.update)
+            self.timer.start(16)
 
-        # Animation timer
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update)
-        self.timer.start(16)
-
+        except Exception as e:
+            logger.exception(e)
 
     def paintGL(self):
-        print("paintGL")
 
         glClearColor(0.05, 0.05, 0.08, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -118,8 +124,10 @@ class GLWidget(QOpenGLWidget):
         glUniform3f(light_color_loc, 1, 1, 1)
         glUniform3f(object_color_loc, 0.7, 0.8, 0.6)
 
-        self.sphere1.render_triangles()
-        self.sphere2.render_triangles()
+        # self.sphere1.render_triangles()
+        # self.sphere2.render_triangles()
+
+        self.tube.render_triangles()
 
         #
         # glBindVertexArray(self.vao)

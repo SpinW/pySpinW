@@ -24,45 +24,39 @@ class Model:
         self.lengths = []
 
     def add_vertex_normal_data(self, vertices_and_normals: np.ndarray):
-        print("Creating vaos/vbos")
-
-        try:
-
-            vao = glGenVertexArrays(1)
-            vbo = glGenBuffers(1)
-
-            glBindVertexArray(vao)
-            glBindBuffer(GL_ARRAY_BUFFER, vbo)
-            glBufferData(GL_ARRAY_BUFFER, vertices_and_normals.nbytes, vertices_and_normals, GL_STATIC_DRAW)
-
-            stride = 6 * 4  # 6 floats, 4 bytes each
-
-            # position -> location 0
-            glVertexAttribPointer(
-                0, 3, GL_FLOAT, GL_FALSE,
-                stride, ctypes.c_void_p(0)
-            )
-            glEnableVertexAttribArray(0)
-
-            # normal -> location 1
-            glVertexAttribPointer(
-                1, 3, GL_FLOAT, GL_FALSE,
-                stride, ctypes.c_void_p(3 * 4)
-            )
-            glEnableVertexAttribArray(1)
-
-            self._vaos.append(vao)
-            self._vbos.append(vbo)
-            self.lengths.append(len(vertices_and_normals))
 
 
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-            glBindVertexArray(0)
+        vao = glGenVertexArrays(1)
+        vbo = glGenBuffers(1)
 
-        except Exception as e:
-            logger.error(e)
+        glBindVertexArray(vao)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo)
+        glBufferData(GL_ARRAY_BUFFER, vertices_and_normals.nbytes, vertices_and_normals, GL_STATIC_DRAW)
 
-        print("done creating vaos/vbos")
+        stride = 6 * 4  # 6 floats, 4 bytes each
+
+        # position -> location 0
+        glVertexAttribPointer(
+            0, 3, GL_FLOAT, GL_FALSE,
+            stride, ctypes.c_void_p(0)
+        )
+        glEnableVertexAttribArray(0)
+
+        # normal -> location 1
+        glVertexAttribPointer(
+            1, 3, GL_FLOAT, GL_FALSE,
+            stride, ctypes.c_void_p(3 * 4)
+        )
+        glEnableVertexAttribArray(1)
+
+        self._vaos.append(vao)
+        self._vbos.append(vbo)
+        self.lengths.append(len(vertices_and_normals))
+
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
+
 
     @property
     def vaos(self):

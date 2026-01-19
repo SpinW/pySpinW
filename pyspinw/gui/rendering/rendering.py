@@ -4,6 +4,10 @@ from pyspinw.gui.rendering.model import Model
 
 
 class Renderer:
-    def render(self, model: Model, transform: np.ndarray):
+    def modelMatrix(self, rotation: np.ndarray, translation: np.ndarray, scale: np.ndarray):
+        pass
+
+
+    def render(self, model: Model, rotation=None, scaling=(1,1,1)):
         pass
 
