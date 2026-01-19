@@ -188,7 +188,7 @@ class Powder(Sample1D):
         energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
 
         # Output map
-        output = np.zeros((path.resolution, n_energy_bins))
+        output = np.zeros((path.n_points, n_energy_bins))
 
         # at each q, bin the energies with weights of the intensities, but ignore the negative ones
         for i, q in enumerate(path.q_values()):

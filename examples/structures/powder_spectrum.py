@@ -38,5 +38,5 @@ if __name__ == "__main__":
 
     sample = Powder(hamiltonian)
 
-    path1D = Path1D(0.1, 0.9, resolution=201)
+    path1D = Path1D(0.1, 0.9, n_points=201)
     sample.show_spectrum(path1D, n_energy_bins=20)
