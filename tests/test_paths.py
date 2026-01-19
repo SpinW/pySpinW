@@ -13,7 +13,7 @@ def test_sizes_match(n_points, avoid_endpoints):
     resolution = 101
     path = Path(point_list[:n_points],
                 avoid_endpoints=avoid_endpoints,
-                resolution=resolution)
+                n_points_per_segment=resolution)
 
     # Check the graph x and q value sizes match
     assert len(path.q_points()) == len(path.x_values())
