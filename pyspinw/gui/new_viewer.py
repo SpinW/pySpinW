@@ -2,6 +2,7 @@
 
 import numpy as np
 from PySide6.QtCore import QTimer
+from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QApplication
 from OpenGL.GL import *
@@ -29,6 +30,12 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.radius = 10.0
         self.camera = Camera()
         self.shader_program = None
+
+        # Set up antialiasing
+        format = self.format()
+        format.setSamples(4)
+        self.setFormat(format)
+
 
     def initializeGL(self):
         """ Qt override, set up the GL rendering """
@@ -68,7 +75,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.tube = Tube()
             self.arrow = Arrow()
 
-            self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="phong_fragment")
+            self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="tailored_fragment")
             # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
             # self.shader_program = load_shaders()
 

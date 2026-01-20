@@ -5,9 +5,7 @@ import logging
 import numpy as np
 from OpenGL.GL import *
 
-logger = logging.Logger("pyspinw.gui.rendering.model")
-
-
+logger = logging.Logger(__name__)
 
 class Model:
     """ Base class for renderable objects """
