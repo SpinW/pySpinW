@@ -1,3 +1,5 @@
+""" Helper methods for loading and compiling shaders """
+
 import logging
 import os.path
 from importlib import resources
@@ -26,7 +28,6 @@ def _compile_shader(source, shader_type):
 
 def _create_shader_program(vs_src, fs_src):
     """ Create a program object with vertex and fragment shaders """
-
     vertex_shader = _compile_shader(vs_src, GL_VERTEX_SHADER)
     fragment_shader = _compile_shader(fs_src, GL_FRAGMENT_SHADER)
 
@@ -49,7 +50,6 @@ def _create_shader_program(vs_src, fs_src):
 
 def load_shaders(fragment_filename: str | None = None, vertex_filename: str | None = None):
     """ Load shaders from file, or from the shaders directory"""
-
     print("Loading shaders")
 
     if fragment_filename is None:

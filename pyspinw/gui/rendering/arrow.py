@@ -1,9 +1,13 @@
+""" Arrow Model """
+
 import numpy as np
 
 from pyspinw.gui.rendering.model import Model
 
 
 class Arrow(Model):
+    """ Model of an arrow """
+
     def __init__(self,
                  n_points=51,
                  r_shaft: float = 0.05,

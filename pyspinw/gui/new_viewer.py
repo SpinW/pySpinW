@@ -1,3 +1,5 @@
+""" Main widget for Qt/GL rendering of magnetic crystal structures"""
+
 import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
@@ -16,18 +18,9 @@ import logging
 logger = logging.Logger(__name__)
 
 
-class HamiltonianRenderer:
-    def set_hamiltonian(self):
-        pass
+class CrystalViewerWidget(QOpenGLWidget):
+    """ Qt widget to show magnetic crystal structures """
 
-    def initialize(self):
-        pass
-
-    def render(self):
-        pass
-
-
-class GLWidget(QOpenGLWidget):
     def __init__(self):
 
         super().__init__()
@@ -38,6 +31,7 @@ class GLWidget(QOpenGLWidget):
         self.shader_program = None
 
     def initializeGL(self):
+        """ Qt override, set up the GL rendering """
         glEnable(GL_DEPTH_TEST)
 
         try:
@@ -89,7 +83,7 @@ class GLWidget(QOpenGLWidget):
             logger.exception(e)
 
     def paintGL(self):
-
+        """ Qt override, paints the GL canvas"""
         glClearColor(0.05, 0.05, 0.08, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -138,18 +132,20 @@ class GLWidget(QOpenGLWidget):
         # glBindVertexArray(0)
 
     def resizeGL(self, w, h):
+        """ Qt override, called when window is resized """
         self.camera.horizontal_pixels = w
         self.camera.vertical_pixels = h
         glViewport(0, 0, w, h)
 
     def mousePressEvent(self, event):
+        """ Qt override, called on mouse press"""
         pos = event.position()
 
     def mouseMoveEvent(self, event):
-        pass
+        """Qt override, called on mouse movement"""
 
 app = QApplication(sys.argv)
-widget = GLWidget()
+widget = CrystalViewerWidget()
 widget.resize(800, 600)
 widget.show()
 sys.exit(app.exec())

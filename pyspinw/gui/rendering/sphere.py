@@ -1,3 +1,5 @@
+""" Sphere Model """
+
 import numpy as np
 from scipy.spatial import ConvexHull
 
@@ -6,6 +8,7 @@ from pyspinw.gui.rendering.model import Model
 
 
 class Sphere(Model):
+    """ 3D Model of a sphere """
 
     def __init__(self, divisions: int):
 
@@ -20,10 +23,10 @@ class Sphere(Model):
         faces = hull.simplices
 
         verts = []
-        for face in faces:
+        for raw_face in faces:
 
             # Dereference faces
-            face = hull.vertices[face]
+            face = hull.vertices[raw_face]
 
 
             # Find orientation

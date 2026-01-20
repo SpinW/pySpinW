@@ -1,3 +1,4 @@
+""" Camera model """
 
 import numpy as np
 
@@ -22,6 +23,7 @@ class Camera:
 
     @property
     def aspect_ratio(self) -> float:
+        """ Aspect ration of this camera """
         return self.horizontal_pixels / self.vertical_pixels
 
     def perspective_matrix(self, near: float = 0.01, far: float = 100):
@@ -32,7 +34,6 @@ class Camera:
 
         :return: 4x4 float32 frustum matrix
         """
-
         f = 1.0 / np.tan(np.radians(self.fov_deg) / 2)
         m = np.zeros((4, 4), dtype=np.float32)
 
@@ -45,10 +46,7 @@ class Camera:
         return m
 
     def view_matrix(self):
-        """
-        Transform from world position to camera relative
-        """
-
+        """Transform from world position to camera relative """
         eye = np.array(self.position, dtype=np.float32)
         target = np.array(self.look_at, dtype=np.float32)
         up = np.array(self.up, dtype=np.float32)

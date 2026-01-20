@@ -1,9 +1,13 @@
+""" Tube Model """
+
 import numpy as np
 
 from pyspinw.gui.rendering.model import Model
 
 
 class Tube(Model):
+    """ 3D Model of hollow tube """
+
     def __init__(self, n_points=51):
         super().__init__()
 
