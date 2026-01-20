@@ -7,6 +7,7 @@ import sys
 
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.load_shaders import load_shaders
+from pyspinw.gui.rendering.arrow import Arrow
 from pyspinw.gui.rendering.sphere import Sphere
 from pyspinw.gui.rendering.tube import Tube
 
@@ -71,6 +72,7 @@ class GLWidget(QOpenGLWidget):
             self.sphere1 = Sphere(3)
             self.sphere2 = Sphere(3)
             self.tube = Tube()
+            self.arrow = Arrow()
 
             self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="phong_fragment")
             # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
@@ -127,7 +129,8 @@ class GLWidget(QOpenGLWidget):
         # self.sphere1.render_triangles()
         # self.sphere2.render_triangles()
 
-        self.tube.render_triangles()
+        # self.tube.render_triangles()
+        self.arrow.render_triangles()
 
         #
         # glBindVertexArray(self.vao)

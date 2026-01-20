@@ -67,6 +67,7 @@ class Model:
         return self._vbos
 
     def render_triangles(self):
+
         for vao, length in zip(self.vaos, self.lengths):
             glBindVertexArray(vao)
             glDrawArrays(GL_TRIANGLES, 0, length)
