@@ -117,9 +117,9 @@ def get_cell_offsets_containing_bounding_box(
     limits = np.ceil(box_sizes)
 
     # Get bounds of the form [-(l+1), l+1], note that arange is not inclusive
-    i_values = np.arange(-(limits[0]+1), limits[0]+2)
-    j_values = np.arange(-(limits[1]+1), limits[1]+2)
-    k_values = np.arange(-(limits[2]+1), limits[2]+2)
+    i_values = np.arange(0, limits[0]+2)
+    j_values = np.arange(0, limits[1]+2)
+    k_values = np.arange(0, limits[2]+2)
 
     i, j, k = np.meshgrid(i_values, j_values, k_values)
 

@@ -181,8 +181,7 @@ class Hamiltonian(SPWSerialisable):
             # TODO: Sort out moments for supercells
             moments.append(site.base_moment)
 
-            positions.append(
-                expanded.structure.unit_cell.fractional_to_cartesian(site.ijk))
+            positions.append(site.ijk)
 
             unique_id_to_index[site._unique_id] = index
 
@@ -212,7 +211,7 @@ class Hamiltonian(SPWSerialisable):
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 np.array(input_coupling.coupling_matrix, **rust_kw),
-                input_coupling.vector(expanded.structure.unit_cell)
+                input_coupling.cell_offset.vector
             )
 
             couplings.append(coupling)
@@ -223,7 +222,7 @@ class Hamiltonian(SPWSerialisable):
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                -input_coupling.vector(expanded.structure.unit_cell)
+                -input_coupling.cell_offset.vector
             )
 
             couplings.append(coupling)
@@ -243,7 +242,7 @@ class Hamiltonian(SPWSerialisable):
         result = spinwave_calculation(
                         rotations=rotations,
                         magnitudes=magnitudes,
-                        q_vectors=q_vectors,
+                        q_vectors=q_vectors * self.structure.supercell.scaling,
                         couplings=couplings,
                         positions=positions,
                         field=magnetic_field)

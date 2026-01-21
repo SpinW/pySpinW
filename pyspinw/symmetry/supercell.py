@@ -246,7 +246,7 @@ class Supercell(ABC, SPWSerialisable):
     def fractional_in_supercell(self, position_in_cell: ArrayLike, cell_offset: CellOffset):
         """ Get the fractional position within a supercell """
         position = cell_offset.vector + np.array(position_in_cell, dtype=float)
-        scaling = np.array(self._scaling, dtype=float)
+        scaling = np.array(self.scaling, dtype=float)
 
         return position / scaling
 
@@ -264,9 +264,9 @@ class Supercell(ABC, SPWSerialisable):
         return {
             "type": self.supercell_name,
             "data": self._serialise_supercell(context),
-            "s_i": self._scaling[0],
-            "s_j": self._scaling[1],
-            "s_k": self._scaling[2]
+            "s_i": self.scaling[0],
+            "s_j": self.scaling[1],
+            "s_k": self.scaling[2]
         }
 
     @staticmethod
@@ -283,7 +283,9 @@ class Supercell(ABC, SPWSerialisable):
             expected_names = ", ".join([f"'{key}'" for key in supercell_types])
             raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
 
-
+    @property
+    def scaling(self):
+        return self._scaling
 
 
 class TrivialSupercell(Supercell):
@@ -344,6 +346,10 @@ class CommensurateSupercell(Supercell):
         """ Number of cells in this supercell """
         a, b, c = self.cell_size()
         return a*b*c
+
+    @property
+    def scaling(self):
+        return self.cell_size()
 
 
 class TransformationSupercell(CommensurateSupercell):
