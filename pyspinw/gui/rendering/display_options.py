@@ -21,4 +21,3 @@ class DisplayOptions:
     coupling_scaling: float = 1.0
     anisotropy_scaling: float = 1.0
 
-    

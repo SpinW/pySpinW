@@ -1,8 +1,8 @@
 """ Main widget for Qt/GL rendering of magnetic crystal structures"""
 
 import numpy as np
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QSurfaceFormat
+from PySide6.QtCore import QTimer, QPoint
+from PySide6.QtGui import QSurfaceFormat, Qt
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QApplication
 from OpenGL.GL import *
@@ -17,6 +17,7 @@ from pyspinw.gui.rendering.tube import Tube
 import logging
 
 logger = logging.Logger(__name__)
+
 
 
 class CrystalViewerWidget(QOpenGLWidget):
@@ -36,39 +37,18 @@ class CrystalViewerWidget(QOpenGLWidget):
         format.setSamples(4)
         self.setFormat(format)
 
+        self.mouse_data: tuple[QPoint, Qt.MouseButton] | None= None
+
+        self.view_origin = np.array([0,0,0], dtype=float)
+        self.view_rotation = np.eye(3)
+
+
 
     def initializeGL(self):
         """ Qt override, set up the GL rendering """
         glEnable(GL_DEPTH_TEST)
 
         try:
-            #
-            # self.vao = glGenVertexArrays(1)
-            # self.vbo = glGenBuffers(1)
-            #
-            # glBindVertexArray(self.vao)
-            # glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-            # glBufferData(GL_ARRAY_BUFFER, vertices_and_normals.nbytes, vertices_and_normals, GL_STATIC_DRAW)
-            #
-            # stride = 6 * 4  # 6 floats, 4 bytes each
-            #
-            # # position -> location 0
-            # glVertexAttribPointer(
-            #     0, 3, GL_FLOAT, GL_FALSE,
-            #     stride, ctypes.c_void_p(0)
-            # )
-            # glEnableVertexAttribArray(0)
-            #
-            # # normal -> location 1
-            # glVertexAttribPointer(
-            #     1, 3, GL_FLOAT, GL_FALSE,
-            #     stride, ctypes.c_void_p(3 * 4)
-            # )
-            # glEnableVertexAttribArray(1)
-            #
-            # glBindBuffer(GL_ARRAY_BUFFER, 0)
-            # glBindVertexArray(0)
-            #
 
             self.sphere1 = Sphere(3)
             self.sphere2 = Sphere(3)
@@ -146,10 +126,22 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def mousePressEvent(self, event):
         """ Qt override, called on mouse press"""
-        pos = event.position()
+
+        if self.mouse_data is None:
+            self.mouse_data = event.position(), event.button()
+
+
+    def mouseReleaseEvent(self, event):
+        """ Qt override, called on mouse up"""
+
+        self.mouse_data = None
+
 
     def mouseMoveEvent(self, event):
         """Qt override, called on mouse movement"""
+
+        if self.mouse_data is not None:
+
 
 app = QApplication(sys.argv)
 widget = CrystalViewerWidget()
