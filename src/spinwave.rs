@@ -422,7 +422,7 @@ fn spinwave_single_q(
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
-    solve_upper_triangular_in_place(sqrt_hamiltonian.transpose().as_ref(), T.as_mut(), Par::Seq);
+    solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
 
     // T is NaN if there are zero eigenvalues; set to zeroes
     if T.has_nan() {
