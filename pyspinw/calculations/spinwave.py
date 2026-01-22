@@ -14,7 +14,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.constants import MU_B
 
 # smallest energy not considered negligible (in meV)
-ZERO_ENERGY_TOL = 5e-4
+ZERO_ENERGY_TOL = 1e-12
 
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
@@ -314,16 +314,18 @@ def _calc_chunk_spinwave(
         # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
         # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
         # for the eigenvalues of the Hamiltonian
-        sqrt_E = np.abs(eigvals.copy())
+        sqrt_E = np.sqrt(np.abs(eigvals.copy()))
         sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
-        sqrt_E = np.sqrt(sqrt_E)
 
         try:
             # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
             T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
         except np.linalg.LinAlgError:
-            # if K is singular, then eigenvalues are all zero, so T is zero
-            T = np.zeros((2 * n_sites, 2 * n_sites))
+            # if K is singular, then add a small amount to the diagonal.
+            kk = sqrt_hamiltonian.conj().T
+            for jj in range(kk.shape[0]):
+                kk[jj, jj] = max(kk[jj, jj], 1e-7)
+            T = solve(kk, eigvecs @ np.diag(sqrt_E))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for

@@ -298,6 +298,8 @@ class Hamiltonian(SPWSerialisable):
             for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust, return_intensities=True):
                 axs[0].plot(x_values, series[0], 'k')
                 axs[1].plot(x_values, series[1])
+            if axs[1].get_ylim()[1] > 1e3:
+                axs[1].set_ylim([0, 10])
         else:
             for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust):
                 plt.plot(x_values, series, 'k')

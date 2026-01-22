@@ -11,7 +11,7 @@ use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
 /// Minimum energy that isn't just set for zero (in meV)
-const ZERO_ENERGY_TOL: f64 = 5e-4;
+const ZERO_ENERGY_TOL: f64 = 1e-12;
 
 /// The result of a single-Q spinwave calculation.
 ///
@@ -422,11 +422,15 @@ fn spinwave_single_q(
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
-    solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
+    let mut kk = sqrt_hamiltonian.clone();
+    solve_upper_triangular_in_place(kk.adjoint().as_ref(), T.as_mut(), Par::Seq);
 
-    // T is NaN if there are zero eigenvalues; set to zeroes
+    // T is NaN if sqrt_hamiltonian is singular; add a delta to the diagonal to avoid this
     if T.has_nan() {
-        T = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
+        kk.diagonal_mut().column_vector_mut().iter_mut().map(|x| {
+            if x.re == 0.0 { C64::from(1e-7) } else { *x } });
+        T = eigvecs * sqrt_E.as_diagonal();
+        solve_upper_triangular_in_place(kk.adjoint().as_ref(), T.as_mut(), Par::Seq);
     }
 
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
