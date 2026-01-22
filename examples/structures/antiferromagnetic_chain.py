@@ -35,10 +35,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])
-    #hamiltonian.energy_plot(path, show_intensities=True)
-    energy, intensities = hamiltonian.energies_and_intensities(path.q_points(), use_rust=False)
-    import matplotlib.pyplot as plt
-    fg, ax = plt.subplots(2, 1)
-    ax[0].plot(energy)
-    ax[1].plot(intensities)
-    plt.show()
+    hamiltonian.energy_plot(path, show_intensities=True)
