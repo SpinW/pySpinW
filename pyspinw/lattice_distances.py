@@ -40,6 +40,7 @@ def find_relative_positions(
 
     Find all sets of fractional coordinates produced by translations of input coordinates by multiples
     of the unit cell, and that differ by a cartesian distance of a most max_distance from (0,0,0)
+    **in the positive quadrant (i>=0, j>=0, k>=0)**
 
     :param fractional_coordinates: Fractional coordinates of the base point
     :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates
@@ -116,7 +117,7 @@ def get_cell_offsets_containing_bounding_box(
 
     limits = np.ceil(box_sizes)
 
-    # Get bounds of the form [-(l+1), l+1], note that arange is not inclusive
+    # Get bounds of the form [0, l+1], note that arange is not inclusive
     i_values = np.arange(0, limits[0]+2)
     j_values = np.arange(0, limits[1]+2)
     k_values = np.arange(0, limits[2]+2)

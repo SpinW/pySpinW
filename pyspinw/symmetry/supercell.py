@@ -264,9 +264,9 @@ class Supercell(ABC, SPWSerialisable):
         return {
             "type": self.supercell_name,
             "data": self._serialise_supercell(context),
-            "s_i": self.scaling[0],
-            "s_j": self.scaling[1],
-            "s_k": self.scaling[2]
+            "s_i": self._scaling[0],
+            "s_j": self._scaling[1],
+            "s_k": self._scaling[2]
         }
 
     @staticmethod

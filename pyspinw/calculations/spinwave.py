@@ -325,7 +325,10 @@ def _calc_chunk_spinwave(
             kk = sqrt_hamiltonian.conj().T
             for jj in range(kk.shape[0]):
                 kk[jj, jj] = max(kk[jj, jj], 1e-7)
-            T = solve(kk, eigvecs @ np.diag(sqrt_E))
+            if np.linalg.cond(kk) > 1e16:
+                T = np.zeros((2 * n_sites, 2 * n_sites)) * np.nan
+            else:
+                T = solve(kk, eigvecs @ np.diag(sqrt_E))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
