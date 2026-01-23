@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
+use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm};
 use faer::mat::{AsMatRef, AsMatMut};
 use indicatif::ParallelProgressIterator;
@@ -11,7 +11,7 @@ use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
 /// Minimum energy that isn't just set for zero (in meV)
-const ZERO_ENERGY_TOL: f64 = 5e-4;
+const ZERO_ENERGY_TOL: f64 = 1e-12;
 
 /// The result of a single-Q spinwave calculation.
 ///
@@ -337,10 +337,11 @@ fn spinwave_single_q(
     // pair of sites i, j; to calculate these efficiently we calculate
     // exp(i q r_i) for each site i and then the outer product of this with its conjugate
     // gives us the full matrix of phase factors.
+    let J2PI = 2. * J * PI;
     let phase_factors = Col::<C64>::from_iter(
         positions
             .iter()
-            .map(|r_i| (J * (q.transpose() * r_i)).exp()),
+            .map(|r_i| (J2PI * (q.transpose() * r_i)).exp()),
     );
     let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
 
@@ -421,11 +422,15 @@ fn spinwave_single_q(
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
-    solve_lower_triangular_in_place(sqrt_hamiltonian.as_ref(), T.as_mut(), Par::Seq);
+    let mut kk = sqrt_hamiltonian.clone();
+    solve_upper_triangular_in_place(kk.adjoint().as_ref(), T.as_mut(), Par::Seq);
 
-    // T is NaN if there are zero eigenvalues; set to zeroes
+    // T is NaN if sqrt_hamiltonian is singular; add a delta to the diagonal to avoid this
     if T.has_nan() {
-        T = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
+        kk.diagonal_mut().column_vector_mut().iter_mut().map(|x| {
+            if x.re == 0.0 { C64::from(1e-7) } else { *x } });
+        T = eigvecs * sqrt_E.as_diagonal();
+        solve_upper_triangular_in_place(kk.adjoint().as_ref(), T.as_mut(), Par::Seq);
     }
 
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
