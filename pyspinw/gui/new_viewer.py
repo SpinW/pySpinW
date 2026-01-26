@@ -16,6 +16,8 @@ from pyspinw.gui.rendering.tube import Tube
 
 import logging
 
+from pyspinw.util import rotation_matrix
+
 logger = logging.Logger(__name__)
 
 
@@ -23,12 +25,15 @@ logger = logging.Logger(__name__)
 class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
 
+    mouse_angle_sensitivity = 0.01
+    mouse_move_sensitivity = 0.005
+    mouse_zoom_sensitivity = 0.002
+    min_view_radius = 0.01
+
     def __init__(self):
 
         super().__init__()
 
-        self.angle = 0.0
-        self.radius = 10.0
         self.camera = Camera()
         self.shader_program = None
 
@@ -37,10 +42,16 @@ class CrystalViewerWidget(QOpenGLWidget):
         format.setSamples(4)
         self.setFormat(format)
 
-        self.mouse_data: tuple[QPoint, Qt.MouseButton] | None= None
-
+        # View details
         self.view_origin = np.array([0,0,0], dtype=float)
         self.view_rotation = np.eye(3)
+        self.view_radius = 10.0
+
+
+        # These variables are used for handling mouse dragging
+        self.mouse_data: tuple[QPoint, Qt.MouseButton] | None= None
+        self.mouse_rotation = np.eye(3)
+        self.mouse_origin = np.array([0,0,0], dtype=float)
 
 
 
@@ -74,15 +85,22 @@ class CrystalViewerWidget(QOpenGLWidget):
         glClearColor(0.05, 0.05, 0.08, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        self.angle += 0.01
+        # Work out camera movement stuff
 
-        camera_x = self.radius * np.sin(self.angle)
-        camera_y = self.radius * np.cos(self.angle)
+        compound_rotation = self.mouse_rotation @ self.view_rotation
 
-        camera_position = (camera_x, camera_y, 4)
+        camera_world = self.view_origin + self.mouse_origin + \
+                       compound_rotation @ np.array([0, 0, self.view_radius], dtype=float)
 
-        self.camera.position = camera_position
+        origin_world = self.view_origin + self.mouse_origin
 
+        up_world = compound_rotation @ np.array([0,1,0], dtype=float)
+
+        self.camera.position = tuple(camera_world)
+        self.camera.up = tuple(up_world)
+        self.camera.look_at = tuple(origin_world)
+
+        # Rendering stuff
 
         view = self.camera.view_matrix()
         proj = self.camera.perspective_matrix(0.01, 100)
@@ -102,7 +120,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
 
         glUniform3f(light_pos_loc, -20,0,0)
-        glUniform3f(view_pos_loc, *camera_position)
+        glUniform3f(view_pos_loc, *camera_world)
 
         glUniform3f(light_color_loc, 1, 1, 1)
         glUniform3f(object_color_loc, 0.7, 0.8, 0.6)
@@ -130,17 +148,60 @@ class CrystalViewerWidget(QOpenGLWidget):
         if self.mouse_data is None:
             self.mouse_data = event.position(), event.button()
 
+            if event.button() == Qt.MouseButton.LeftButton:
+                self.mouse_rotation = np.eye(3)
+
+            elif event.button() == Qt.MouseButton.RightButton:
+                self.mouse_rotation = np.eye(3)
+                self.mouse_origin = np.zeros((3, ), dtype=float)
+
+    def reset_view(self):
+        """ Reset the view to default """
+        self.view_rotation = np.eye(3)
+        self.view_origin = np.zeros((3, ), dtype=float)
 
     def mouseReleaseEvent(self, event):
         """ Qt override, called on mouse up"""
 
         self.mouse_data = None
 
+        self.view_rotation = self.mouse_rotation @ self.view_rotation
+        self.view_origin = self.mouse_origin + self.view_origin
+
+        self.mouse_rotation = np.eye(3, dtype=float)
+        self.mouse_origin = np.zeros((3, ), dtype=float)
+
+    def wheelEvent(self, event):
+        """ Qt override, called when scroll wheel moves """
+        self.view_radius *= 2**(self.mouse_zoom_sensitivity * event.angleDelta().y())
+
+        if self.view_radius < self.min_view_radius:
+            self.view_radius = self.min_view_radius
 
     def mouseMoveEvent(self, event):
         """Qt override, called on mouse movement"""
 
         if self.mouse_data is not None:
+            start, button = self.mouse_data
+            end = event.position()
+
+            dx = end.x() - start.x()
+            dy = end.y() - start.y()
+
+            if button == Qt.MouseButton.LeftButton:
+                self.mouse_rotation = \
+                    rotation_matrix(-self.mouse_angle_sensitivity*dx, (0, 1, 0)) @ \
+                     rotation_matrix(-self.mouse_angle_sensitivity*dy, (1, 0, 0))
+
+
+            if button == Qt.MouseButton.RightButton:
+                #r = np.linalg.inv(self.view_rotation)
+                r = self.view_rotation
+                self.mouse_origin = r @ np.array([
+                    -self.mouse_move_sensitivity*dx,
+                    self.mouse_move_sensitivity*dy,
+                    0.0])
+
 
 
 app = QApplication(sys.argv)

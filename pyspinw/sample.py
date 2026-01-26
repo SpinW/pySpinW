@@ -231,7 +231,7 @@ class Powder(Sample1D):
 
         ax = plt.gca()
 
-        plt.imshow(data, extent=(q[0], q[-1], e[0], e[-1]))
+        plt.imshow((data.T)[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
         ax.set_aspect(0.2)
 
         if show_plot:
