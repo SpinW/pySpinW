@@ -2,7 +2,7 @@
 
 import numpy as np
 from PySide6.QtCore import QTimer, QPoint
-from PySide6.QtGui import QSurfaceFormat, Qt
+from PySide6.QtGui import Qt
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QApplication
 from OpenGL.GL import *
@@ -10,9 +10,9 @@ import sys
 
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.load_shaders import load_shaders
-from pyspinw.gui.rendering.arrow import Arrow
-from pyspinw.gui.rendering.sphere import Sphere
-from pyspinw.gui.rendering.tube import Tube
+from pyspinw.gui.rendering.models.arrow import Arrow
+from pyspinw.gui.rendering.models.sphere import Sphere
+from pyspinw.gui.rendering.models.tube import Tube
 
 import logging
 
@@ -67,6 +67,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.arrow = Arrow()
 
             self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="tailored_fragment")
+            self.default_shader = load_shaders()
             # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
             # self.shader_program = load_shaders()
 
@@ -110,11 +111,19 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         model_loc = glGetUniformLocation(self.shader_program, "model")
         projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
-
         light_pos_loc = glGetUniformLocation(self.shader_program, "lightPos")
         view_pos_loc = glGetUniformLocation(self.shader_program, "viewPos")
         light_color_loc = glGetUniformLocation(self.shader_program, "lightColor")
         object_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
+
+        glUseProgram(self.default_shader)
+
+        model_loc = glGetUniformLocation(self.default_shader, "model")
+        projection_view_loc = glGetUniformLocation(self.default_shader, "projectionView")
+        light_pos_loc = glGetUniformLocation(self.default_shader, "lightPos")
+        view_pos_loc = glGetUniformLocation(self.default_shader, "viewPos")
+        light_color_loc = glGetUniformLocation(self.default_shader, "lightColor")
+        object_color_loc = glGetUniformLocation(self.default_shader, "objectColor")
 
         glUniformMatrix4fv(model_loc, 1, GL_FALSE, np.eye(4, dtype=np.float32))
         glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
@@ -125,11 +134,41 @@ class CrystalViewerWidget(QOpenGLWidget):
         glUniform3f(light_color_loc, 1, 1, 1)
         glUniform3f(object_color_loc, 0.7, 0.8, 0.6)
 
+        self.arrow.render_back_wireframe()
+
+        glUseProgram(self.shader_program)
+
+        model_loc = glGetUniformLocation(self.shader_program, "model")
+        projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
+        light_pos_loc = glGetUniformLocation(self.shader_program, "lightPos")
+        view_pos_loc = glGetUniformLocation(self.shader_program, "viewPos")
+        light_color_loc = glGetUniformLocation(self.shader_program, "lightColor")
+        object_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
+        #
+        # glUseProgram(self.default_shader)
+        #
+        # model_loc = glGetUniformLocation(self.default_shader, "model")
+        # projection_view_loc = glGetUniformLocation(self.default_shader, "projectionView")
+        # light_pos_loc = glGetUniformLocation(self.default_shader, "lightPos")
+        # view_pos_loc = glGetUniformLocation(self.default_shader, "viewPos")
+        # light_color_loc = glGetUniformLocation(self.default_shader, "lightColor")
+        # object_color_loc = glGetUniformLocation(self.default_shader, "objectColor")
+
+        glUniformMatrix4fv(model_loc, 1, GL_FALSE, np.eye(4, dtype=np.float32))
+        glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
+
+        glUniform3f(light_pos_loc, -20,0,0)
+        glUniform3f(view_pos_loc, *camera_world)
+
+        glUniform3f(object_color_loc, 0, 0, 1)
+        glUniform3f(light_color_loc, 1, 0, 1)
+
+        self.arrow.render_triangles()
+
         # self.sphere1.render_triangles()
         # self.sphere2.render_triangles()
 
         # self.tube.render_triangles()
-        self.arrow.render_triangles()
 
         #
         # glBindVertexArray(self.vao)

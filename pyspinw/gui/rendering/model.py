@@ -12,10 +12,17 @@ class Model:
 
     def __init__(self):
         self._vaos = []
+        self._wireframe_vaos = []
         self._vbos = []
-        self.lengths = []
+        self._wireframe_vbos = []
+        self._lengths = []
+        self._wireframe_lengths = []
 
     def add_vertex_normal_data(self, vertices_and_normals: np.ndarray):
+        self._add_vertex_normal_data(vertices_and_normals, self._vaos, self._vbos, self._lengths)
+        self._add_vertex_normal_data(vertices_and_normals, self._wireframe_vaos, self._wireframe_vbos, self._wireframe_lengths)
+
+    def _add_vertex_normal_data(self, vertices_and_normals: np.ndarray, vaos, vbos, lengths):
         """ Add vertex and normal data
 
         Requires an n-by-6 numpy array of float32s
@@ -41,28 +48,30 @@ class Model:
         )
         glEnableVertexAttribArray(1)
 
-        self._vaos.append(vao)
-        self._vbos.append(vbo)
-        self.lengths.append(len(vertices_and_normals))
-
+        vaos.append(vao)
+        vbos.append(vbo)
+        lengths.append(len(vertices_and_normals))
 
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
 
-    @property
-    def vaos(self):
-        """ List of Vertex Array Objects """
-        return self._vaos
-
-    @property
-    def vbos(self):
-        """ List of Vertex Buffer Object """
-        return self._vbos
-
     def render_triangles(self):
         """ Call the GL rendering for the triangles in this model """
-        for vao, length in zip(self.vaos, self.lengths):
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
+        for vao, length in zip(self._vaos, self._lengths):
             glBindVertexArray(vao)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glDrawArrays(GL_TRIANGLES, 0, length)
-            glBindVertexArray(0)
+        glBindVertexArray(0)
+
+    def render_back_wireframe(self):
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_FRONT)
+        for vao, length in zip(self._wireframe_vaos, self._wireframe_lengths):
+            glBindVertexArray(vao)
+            glLineWidth(4)
+            glPolygonMode(GL_BACK, GL_LINE)
+            glDrawArrays(GL_TRIANGLES, 0, length)
+        glBindVertexArray(0)
