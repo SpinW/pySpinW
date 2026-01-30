@@ -5,9 +5,12 @@ from abc import ABC, abstractmethod
 from numpy._typing import ArrayLike
 import numpy as np
 
+from pyspinw.gui.camera import Camera
 from pyspinw.gui.rendering.model import Model
+from pyspinw.site import LatticeSite
 
-class Renderable:
+
+class Renderable(ABC):
     def __init__(self,
                  position: ArrayLike | None,
                  rotation: ArrayLike | None,
@@ -76,30 +79,5 @@ class Renderable:
 
         self._model_matrix = np.concatenate((filled_part, np.array([0,0,0,1], dtype=np.float32)), axis=0)
 
-
-
-class Renderer(ABC):
-    """ Base class for rendering, renders objects of type pyspinw.gui.rendering.Model """
-
-
-    @abstractmethod
-    def render(self,
-               model: Model,
-               rotation: ArrayLike | None = None,
-               translation: ArrayLike | None = None,
-               scaling: ArrayLike | None = None):
-
-        """ Render a model using this renderer"""
-
-class PhongRenderer(Renderer):
-    def __init__(self,
-                 light_pos: ArrayLike,
-                 light_color: ArrayLike,
-                 object_color: ArrayLike):
-
-        pass
-
-
 if __name__ == "__main__":
-    print(Renderer.modelMatrix(None, None, None))
-    print(Renderer.modelMatrix(None, (1,2,3), (5,6,7)))
+    pass

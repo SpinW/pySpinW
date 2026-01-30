@@ -9,13 +9,14 @@ from OpenGL.GL import *
 import sys
 
 from pyspinw.gui.camera import Camera
-from pyspinw.gui.load_shaders import load_shaders
+from pyspinw.gui.rendering.load_shaders import load_shaders
 from pyspinw.gui.rendering.models.arrow import Arrow
 from pyspinw.gui.rendering.models.sphere import Sphere
 from pyspinw.gui.rendering.models.tube import Tube
 
 import logging
 
+from pyspinw.gui.rendering.shader import SelectionShader, ObjectShader
 from pyspinw.util import rotation_matrix
 
 logger = logging.Logger(__name__)
@@ -35,7 +36,11 @@ class CrystalViewerWidget(QOpenGLWidget):
         super().__init__()
 
         self.camera = Camera()
-        self.shader_program = None
+        # self.shader_program = None
+        # self.default_shader = None
+        #
+        self.object_shader: ObjectShader | None = None
+        self.selection_shader: SelectionShader | None = None
 
         # Set up antialiasing
         format = self.format()
@@ -66,10 +71,13 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.tube = Tube()
             self.arrow = Arrow()
 
-            self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="tailored_fragment")
-            self.default_shader = load_shaders()
+            # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="tailored_fragment")
+            # self.default_shader = load_shaders()
             # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
             # self.shader_program = load_shaders()
+
+            self.object_shader = ObjectShader()
+            self.selection_shader = SelectionShader()
 
             self.angle = 0.0
 
@@ -101,49 +109,22 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.camera.up = tuple(up_world)
         self.camera.look_at = tuple(origin_world)
 
+
+
         # Rendering stuff
+        #
+        # view = self.camera.view_matrix()
+        # proj = self.camera.perspective_matrix(0.01, 100)
+        # projectionView = proj @ view
 
-        view = self.camera.view_matrix()
-        proj = self.camera.perspective_matrix(0.01, 100)
-        projectionView = proj @ view
-
-        glUseProgram(self.shader_program)
-
-        model_loc = glGetUniformLocation(self.shader_program, "model")
-        projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
-        light_pos_loc = glGetUniformLocation(self.shader_program, "lightPos")
-        view_pos_loc = glGetUniformLocation(self.shader_program, "viewPos")
-        light_color_loc = glGetUniformLocation(self.shader_program, "lightColor")
-        object_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
-
-        glUseProgram(self.default_shader)
-
-        model_loc = glGetUniformLocation(self.default_shader, "model")
-        projection_view_loc = glGetUniformLocation(self.default_shader, "projectionView")
-        light_pos_loc = glGetUniformLocation(self.default_shader, "lightPos")
-        view_pos_loc = glGetUniformLocation(self.default_shader, "viewPos")
-        light_color_loc = glGetUniformLocation(self.default_shader, "lightColor")
-        object_color_loc = glGetUniformLocation(self.default_shader, "objectColor")
-
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, np.eye(4, dtype=np.float32))
-        glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
-
-        glUniform3f(light_pos_loc, -20,0,0)
-        glUniform3f(view_pos_loc, *camera_world)
-
-        glUniform3f(light_color_loc, 1, 1, 1)
-        glUniform3f(object_color_loc, 0.7, 0.8, 0.6)
-
-        self.arrow.render_back_wireframe()
-
-        glUseProgram(self.shader_program)
-
-        model_loc = glGetUniformLocation(self.shader_program, "model")
-        projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
-        light_pos_loc = glGetUniformLocation(self.shader_program, "lightPos")
-        view_pos_loc = glGetUniformLocation(self.shader_program, "viewPos")
-        light_color_loc = glGetUniformLocation(self.shader_program, "lightColor")
-        object_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
+        # glUseProgram(self.shader_program)
+        #
+        # model_loc = glGetUniformLocation(self.shader_program, "model")
+        # projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
+        # light_pos_loc = glGetUniformLocation(self.shader_program, "lightPos")
+        # view_pos_loc = glGetUniformLocation(self.shader_program, "viewPos")
+        # light_color_loc = glGetUniformLocation(self.shader_program, "lightColor")
+        # object_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
         #
         # glUseProgram(self.default_shader)
         #
@@ -153,17 +134,55 @@ class CrystalViewerWidget(QOpenGLWidget):
         # view_pos_loc = glGetUniformLocation(self.default_shader, "viewPos")
         # light_color_loc = glGetUniformLocation(self.default_shader, "lightColor")
         # object_color_loc = glGetUniformLocation(self.default_shader, "objectColor")
+        #
+        # glUniformMatrix4fv(model_loc, 1, GL_FALSE, np.eye(4, dtype=np.float32))
+        # glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
+        #
+        # glUniform3f(light_pos_loc, -20,0,0)
+        # glUniform3f(view_pos_loc, *camera_world)
+        #
+        # glUniform3f(light_color_loc, 1, 1, 1)
+        # glUniform3f(object_color_loc, 0.7, 0.8, 0.6)
 
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, np.eye(4, dtype=np.float32))
-        glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
+        if self.selection_shader is not None:
 
-        glUniform3f(light_pos_loc, -20,0,0)
-        glUniform3f(view_pos_loc, *camera_world)
+            self.selection_shader.use()
+            self.arrow.render_back_wireframe()
+        #
+        # glUseProgram(self.shader_program)
+        #
+        # model_loc = glGetUniformLocation(self.shader_program, "model")
+        # projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
+        # light_pos_loc = glGetUniformLocation(self.shader_program, "lightPos")
+        # view_pos_loc = glGetUniformLocation(self.shader_program, "viewPos")
+        # light_color_loc = glGetUniformLocation(self.shader_program, "lightColor")
+        # object_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
+        #
+        # glUseProgram(self.default_shader)
+        #
+        # model_loc = glGetUniformLocation(self.default_shader, "model")
+        # projection_view_loc = glGetUniformLocation(self.default_shader, "projectionView")
+        # light_pos_loc = glGetUniformLocation(self.default_shader, "lightPos")
+        # view_pos_loc = glGetUniformLocation(self.default_shader, "viewPos")
+        # light_color_loc = glGetUniformLocation(self.default_shader, "lightColor")
+        # object_color_loc = glGetUniformLocation(self.default_shader, "objectColor")
+        #
+        # glUniformMatrix4fv(model_loc, 1, GL_FALSE, np.eye(4, dtype=np.float32))
+        # glUniformMatrix4fv(projection_view_loc, 1, GL_FALSE, projectionView.T)
+        #
+        # glUniform3f(light_pos_loc, -20,0,0)
+        # glUniform3f(view_pos_loc, *camera_world)
+        #
+        # glUniform3f(object_color_loc, 0, 0, 1)
+        # glUniform3f(light_color_loc, 1, 0, 1)
 
-        glUniform3f(object_color_loc, 0, 0, 1)
-        glUniform3f(light_color_loc, 1, 0, 1)
+        if self.object_shader is not None:
 
-        self.arrow.render_triangles()
+            self.object_shader.object_color = 0.7, 0.8, 0.6
+
+            self.object_shader.camera = self.camera
+            self.object_shader.use()
+            self.arrow.render_triangles()
 
         # self.sphere1.render_triangles()
         # self.sphere2.render_triangles()

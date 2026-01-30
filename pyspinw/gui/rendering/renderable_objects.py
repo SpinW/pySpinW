@@ -1,5 +1,6 @@
 from numpy._typing import ArrayLike
 
+from pyspinw.gui.camera import Camera
 from pyspinw.gui.rendering.model import Model
 from pyspinw.gui.rendering.rendering import Renderable
 
@@ -7,7 +8,8 @@ from pyspinw.gui.rendering.rendering import Renderable
 class SelectionMode:
     NOT_SELECTED = 0
     SELECTED = 1
-    SECONDARY = 2
+    HOVER = 2
+    SECONDARY = 3
 
 class Site(Renderable):
     def __init__(self,
@@ -18,8 +20,7 @@ class Site(Renderable):
                  color: ArrayLike | None,
                  selection_mode: SelectionMode | int = SelectionMode.NOT_SELECTED,
                  moment_length: float = 1.5,
-                 scale: float = 1.0,
-                 anisotropy):
+                 scale: float = 1.0):
 
         self._moment_length = moment_length
         self._scale = scale
@@ -35,4 +36,7 @@ class Site(Renderable):
         pass
 
     def scale(self):
+        pass
+
+    def render(self, camera: Camera):
         pass
