@@ -275,35 +275,50 @@ class Hamiltonian(SPWSerialisable):
             return zip(energies, intensities)
         return energies
 
+    def plot(self,
+             path: Path,
+             field: ArrayLike | None = None,
+             show: bool=True,
+             new_figure: bool=True,
+             use_rust: bool=True,
+             scale: str='linear'):
+        """ Create a spaghetti diagram with energy top and intensity bottom """
+        if new_figure:
+            fg, axs = plt.subplots(2, 1)
+        else:
+            fg = plt.gcf()
+            axs = fg.get_axes()
+            for ii in range(len(axs), 2):
+                axs.append(fg.add_subplot(2,1,ii+1))
+
+        x_values = path.x_values()
+
+        for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust, return_intensities=True):
+            axs[0].plot(x_values, series[0], 'k')
+            axs[1].plot(x_values, series[1])
+        if 'log' in scale:
+            axs[1].set_yscale('log')
+
+        path.format_plot(axs[0])
+        path.format_plot(axs[1])
+
+        if show:
+            plt.show()
+
     def energy_plot(self,
                     path: Path,
                     field: ArrayLike | None = None,
                     show: bool=True,
                     new_figure: bool=True,
-                    use_rust: bool=True,
-                    show_intensities=False):
+                    use_rust: bool=True):
         """ Create a spaghetti diagram """
-        if new_figure and show_intensities:
-            fg, axs = plt.subplots(2, 1)
-        elif show_intensities:
-            fg = plt.gcf()
-            axs = fg.get_axes()
-            for ii in range(len(axs), 2):
-                axs.append(fg.add_subplot(2,1,ii+1))
-        elif new_figure:
+        if new_figure:
             plt.figure("Energy")
 
         x_values = path.x_values()
 
-        if show_intensities:
-            for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust, return_intensities=True):
-                axs[0].plot(x_values, series[0], 'k')
-                axs[1].plot(x_values, series[1])
-            if axs[1].get_ylim()[1] > 1e3:
-                axs[1].set_ylim([0, 10])
-        else:
-            for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust):
-                plt.plot(x_values, series, 'k')
+        for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust):
+            plt.plot(x_values, series, 'k')
 
         path.format_plot(plt)
 
