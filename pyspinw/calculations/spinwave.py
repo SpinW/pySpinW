@@ -71,8 +71,7 @@ def _calc_q_independent(
     C = np.zeros((n_sites, n_sites), dtype=complex)
     for coupling in couplings:
         i, j = (coupling.index1, coupling.index2)
-        C[j, j] += spin_coefficients[j, j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
-    C *= 2
+        C[j, j] += magnitudes[j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
 
     # calculate the Zeeman term for the A matrix (A^z in Toth & Lake)
     if field is not None:

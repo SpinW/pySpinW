@@ -52,7 +52,7 @@ def find_relative_positions(
 
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
 
-    cartesian_position = fractional_positions @ unit_cell_transform.T
+    cartesian_position = fractional_positions @ unit_cell_transform
 
     square_distances = np.sum(cartesian_position**2, axis=1)
 
@@ -118,9 +118,9 @@ def get_cell_offsets_containing_bounding_box(
     limits = np.ceil(box_sizes)
 
     # Get bounds of the form [0, l+1], note that arange is not inclusive
-    i_values = np.arange(0, limits[0]+2)
-    j_values = np.arange(0, limits[1]+2)
-    k_values = np.arange(0, limits[2]+2)
+    i_values = np.arange(-(limits[0]+1), limits[0]+2)
+    j_values = np.arange(-(limits[0]+1), limits[1]+2)
+    k_values = np.arange(-(limits[0]+1), limits[2]+2)
 
     i, j, k = np.meshgrid(i_values, j_values, k_values)
 

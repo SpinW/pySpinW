@@ -19,7 +19,7 @@ class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
     :param: i,j,k - Fractional coordinates within unit cell
-    :param: mi,mj,mk - Magnetic moment along unit cell aligned axis
+    :param: mi,mj,mk - Magnetic moment (or complex basisvector) along unit cell aligned axis
     """
 
     serialisation_name = "site"
@@ -45,8 +45,7 @@ class LatticeSite(SPWSerialisable):
             self._moment_data = np.array([[
                 0.0 if mi is None else mi,
                 0.0 if mj is None else mj,
-                0.0 if mk is None else mk]],
-                    dtype=float)
+                0.0 if mk is None else mk]])
 
         else:
             if mi is not None or mj is not None or mk is not None:
