@@ -3,6 +3,7 @@
 import numpy as np
 from numpy._typing import ArrayLike
 from scipy.stats import goodness_of_fit
+from enum import Enum
 
 from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
@@ -14,6 +15,10 @@ def _generate_unique_id():
     global _id_counter # noqa: PLW0603
     _id_counter += 1
     return _id_counter
+
+class SiteMomentUnit(Enum):
+    XYZ = "xyz"
+    LU = "lu"
 
 class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
@@ -31,11 +36,13 @@ class LatticeSite(SPWSerialisable):
                  mk: float | None = None,
                  supercell_moments: ArrayLike | None = None,
                  g: ArrayLike | None = None,
-                 name: str = ""):
+                 name: str = "",
+                 unit: SiteMomentUnit | str = "xyz"):
 
         self._i = float(i)
         self._j = float(j)
         self._k = float(k)
+        self._unit = SiteMomentUnit(unit) if isinstance(unit, str) else unit
 
         #
         # Lots of case checking for the moment input format
@@ -145,6 +152,16 @@ class LatticeSite(SPWSerialisable):
         """ Get the parent site (just itself for non-implied sites)"""
         return self
 
+    @property
+    def unit(self):
+        """ Moment unit """
+        return self._unit
+
+    def xyz_moment(self, transformation):
+        if self.unit == SiteMomentUnit.XYZ:
+            return self._base_moment @ transformation
+        return self._base_moment
+
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
         """ Create from an array of values """
@@ -176,7 +193,8 @@ class LatticeSite(SPWSerialisable):
                 "k": self.k,
                 "supercell_moments": numpy_serialise(self._moment_data),
                 "name": self.name,
-                "g": numpy_serialise(self.g)
+                "g": numpy_serialise(self.g),
+                "unit": self.unit
             }
 
             context.sites.put(self._unique_id, json)

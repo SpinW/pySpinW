@@ -1,4 +1,4 @@
-""" Antiferromagnetic chain example """
+""" Antiferromagnetic chain example with applied magnetic field """
 
 from multiprocessing.spawn import freeze_support
 
@@ -14,16 +14,36 @@ from pyspinw.structures import Structure
 
 from pyspinw.debug_plot import debug_plot
 
+"""
+afc = spinw;
+afc.genlattice('lat_const',[4 6 6])
+afc.addatom('r',[  0 0 0],'S',1)
+afc.addatom('r',[1/2 0 0],'S',1)
+afc.addmatrix('label','J','value',1)
+afc.gencoupling
+afc.addcoupling('mat','J','bond',1)
+afc.addmatrix('label','A','value',diag([0 0 -0.1]))
+afc.addaniso('A')
+afc.genmagstr('mode','direct','S',[0 0; 0 0; 1 -1]);
+afc.field([0 0 7])
+afcSpec = afc.spinwave({[0 0 0] [2 0 0] 101}, 'hermit',true);
+figure; subplot(2,1,1)
+sw_plotspec(afcSpec,'mode',4,'dE',0.2,'axLim',[0 3])
+afcSpec = sw_egrid(sw_neutron(afcSpec),'Evect',linspace(0,6.5,500),'component','Sperp');
+afcSpec = sw_omegasum(afcSpec,'zeroint',1e-6);
+subplot(2,1,2)
+sw_plotspec(afcSpec,'mode',2,'log',false,'axLim',[-4 10])
+"""
+
 if __name__ == "__main__":
     freeze_support()
 
-    unit_cell = UnitCell(2,1,1)
+    unit_cell = UnitCell(4,6,6)
 
     sites = [LatticeSite(0, 0, 0, 0,0,1, name="X"),
              LatticeSite(0.5,0,0, 0,0, -1, name="Y")]
 
     s = Structure(sites, unit_cell=unit_cell)
-
 
     exchanges = couplings(sites=sites,
                           unit_cell=unit_cell,
@@ -38,5 +58,5 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
-    path = Path([[0,0,0], [1,0,0]])
-    hamiltonian.energy_plot(path, field=[0,0,7])
+    path = Path([[0,0,0], [2,0,0]])
+    hamiltonian.plot(path, field=[0,0,7])
