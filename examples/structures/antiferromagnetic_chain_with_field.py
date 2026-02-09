@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     exchanges = couplings(sites=sites,
                           unit_cell=unit_cell,
-                          max_distance=1.1,
+                          max_distance=2.1,
                           coupling_type=HeisenbergCoupling,
                           j=1,
                           direction_filter=filter([1,0,0], symmetric=True))

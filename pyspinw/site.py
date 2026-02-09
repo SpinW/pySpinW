@@ -16,13 +16,6 @@ def _generate_unique_id():
     _id_counter += 1
     return _id_counter
 
-class SiteMomentUnit(StrEnum):
-    """ Moment unit: either Cartesian XYZ or lattice units LU """
-
-    XYZ = "xyz"
-    LU = "lu"
-
-
 class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
@@ -40,12 +33,14 @@ class LatticeSite(SPWSerialisable):
                  supercell_moments: ArrayLike | None = None,
                  g: ArrayLike | None = None,
                  name: str = "",
-                 unit: SiteMomentUnit | str = "xyz"):
+                 unit: str = "xyz"):
 
         self._i = float(i)
         self._j = float(j)
         self._k = float(k)
-        self._unit = SiteMomentUnit(unit) if isinstance(unit, str) else unit
+        if unit.lower() != "xyz" and unit.lower() != "lu":
+            raise ValueError("Unit must be either 'xyz' or 'lu'")
+        self._unit = unit.lower()
 
         #
         # Lots of case checking for the moment input format
@@ -162,7 +157,7 @@ class LatticeSite(SPWSerialisable):
 
     def xyz_moment(self, transformation):
         """ The moment in XYZ unit """
-        if self.unit == SiteMomentUnit.XYZ:
+        if self.unit == 'lu':
             return self._base_moment @ transformation
         return self._base_moment
 

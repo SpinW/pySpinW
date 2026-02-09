@@ -40,7 +40,6 @@ def find_relative_positions(
 
     Find all sets of fractional coordinates produced by translations of input coordinates by multiples
     of the unit cell, and that differ by a cartesian distance of a most max_distance from (0,0,0)
-    **in the positive quadrant (i>=0, j>=0, k>=0)**
 
     :param fractional_coordinates: Fractional coordinates of the base point
     :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates

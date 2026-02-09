@@ -181,7 +181,7 @@ class Hamiltonian(SPWSerialisable):
         lu2xyz /= np.sqrt(np.sum(lu2xyz**2, axis=1)).reshape(-1, 1)
         for index, site in enumerate(expanded._structure.sites):
             # TODO: Sort out moments for supercells
-            moments.append(site.xyz_moment(self.structure.unit_cell._xyz))
+            moments.append(site.xyz_moment(lu2xyz))
 
             positions.append(site.ijk)
 

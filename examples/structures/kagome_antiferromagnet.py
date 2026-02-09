@@ -42,9 +42,6 @@ if __name__ == "__main__":
     x = LatticeSite(0.5, 0, 0, 1, 2, 0, name="X", unit="lu")
     y = LatticeSite(0, 0.5, 0, -2, -1, 0, name="Y", unit="lu")
     z = LatticeSite(0.5, 0.5, 0, 1, -1, 0, name="Z", unit="lu")
-    #x = LatticeSite(0.5, 0, 0, 0, 1, 0, name="X")
-    #y = LatticeSite(0, 0.5, 0, -sqrt(3)/2, -0.5, 0, name="Y")
-    #z = LatticeSite(0.5, 0.5, 0, sqrt(3)/2, -0.5, 0, name="Z")
 
     sites = [x, y, z]
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(1,1,1)))
