@@ -285,6 +285,7 @@ class Supercell(ABC, SPWSerialisable):
 
     @property
     def scaling(self):
+        """ The scaling triplet for this supercell """
         return self._scaling
 
 
@@ -349,6 +350,7 @@ class CommensurateSupercell(Supercell):
 
     @property
     def scaling(self):
+        """ The scaling triplet for this supercell """
         return self.cell_size()
 
 

@@ -177,8 +177,8 @@ class Hamiltonian(SPWSerialisable):
         moments = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
-        lu2xyz = self.structure.unit_cell._xyz 
-        lu2xyz /= np.sqrt(np.sum(lu2xyz**2, axis=1)).reshape(-1, 1) 
+        lu2xyz = self.structure.unit_cell._xyz
+        lu2xyz /= np.sqrt(np.sum(lu2xyz**2, axis=1)).reshape(-1, 1)
         for index, site in enumerate(expanded._structure.sites):
             # TODO: Sort out moments for supercells
             moments.append(site.xyz_moment(self.structure.unit_cell._xyz))

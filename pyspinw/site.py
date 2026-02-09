@@ -3,7 +3,7 @@
 import numpy as np
 from numpy._typing import ArrayLike
 from scipy.stats import goodness_of_fit
-from enum import Enum
+from enum import StrEnum
 
 from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
@@ -16,9 +16,12 @@ def _generate_unique_id():
     _id_counter += 1
     return _id_counter
 
-class SiteMomentUnit(Enum):
+class SiteMomentUnit(StrEnum):
+    """ Moment unit: either Cartesian XYZ or lattice units LU """
+
     XYZ = "xyz"
     LU = "lu"
+
 
 class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
@@ -158,6 +161,7 @@ class LatticeSite(SPWSerialisable):
         return self._unit
 
     def xyz_moment(self, transformation):
+        """ The moment in XYZ unit """
         if self.unit == SiteMomentUnit.XYZ:
             return self._base_moment @ transformation
         return self._base_moment
