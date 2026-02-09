@@ -263,16 +263,16 @@ class Hamiltonian(SPWSerialisable):
         energy = np.array(energy)
 
         # Sort the energies
-        idx_en = np.argsort(energy.real, axis=1)
+        energy_index = np.argsort(energy.real, axis=1)
 
         # return the top half (positive)
         n_energies = energy.shape[1]
 
-        energy = np.take_along_axis(energy, idx_en, axis=1)
+        energy = np.take_along_axis(energy, energy_index, axis=1)
         energies = [energy[:, n_energies - i - 1] for i in range(n_energies//2)]
 
         if return_intensities:
-            intensities = np.take_along_axis(np.array(intensities), idx_en, axis=1)
+            intensities = np.take_along_axis(np.array(intensities), energy_index, axis=1)
             intensities = [intensities[:, n_energies - i - 1] for i in range(n_energies//2)]
             return zip(energies, intensities)
         return energies
@@ -286,12 +286,12 @@ class Hamiltonian(SPWSerialisable):
              scale: str='linear'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
-            fg, axs = plt.subplots(2, 1)
+            fig, axs = plt.subplots(2, 1)
         else:
-            fg = plt.gcf()
-            axs = fg.get_axes()
+            fig = plt.gcf()
+            axs = fig.get_axes()
             for ii in range(len(axs), 2):
-                axs.append(fg.add_subplot(2,1,ii+1))
+                axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
 
