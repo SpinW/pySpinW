@@ -101,7 +101,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # Work out camera movement stuff
 
-        compound_rotation = self.mouse_rotation @ self.view_rotation
+        compound_rotation = self.view_rotation @ self.mouse_rotation
 
         camera_world = self.view_origin + self.mouse_origin + \
                        compound_rotation @ np.array([0, 0, self.view_radius], dtype=float)
@@ -197,7 +197,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         self.mouse_data = None
 
-        self.view_rotation = self.mouse_rotation @ self.view_rotation
+        # self.view_rotation = self.mouse_rotation @ self.view_rotation
+        self.view_rotation =  self.view_rotation @ self.mouse_rotation
         self.view_origin = self.mouse_origin + self.view_origin
 
         self.mouse_rotation = np.eye(3, dtype=float)
