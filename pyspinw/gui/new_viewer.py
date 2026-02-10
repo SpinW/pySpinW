@@ -134,6 +134,14 @@ class CrystalViewerWidget(QOpenGLWidget):
                 self.object_shader.use()
                 self.arrow.render_triangles()
 
+            self.object_shader.object_color = 0.2, 0.4, 0.8
+            thickness = 0.01
+            coupling_scaling = np.diag([thickness, thickness, 1, 1])
+            for coupling in self.render_model.couplings:
+                self.object_shader.model_matrix = coupling.model_matrix @ coupling_scaling
+                self.object_shader.use()
+                self.tube.render_triangles()
+
         # Draw the supercell
         supercell_matrix = np.eye(4, dtype=np.float32)
         supercell_matrix[:3, :3] = self.render_model.expanded.structure.unit_cell._xyz.T
@@ -143,8 +151,9 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.cell_shader.camera = self.camera
 
         self.cell_shader.use()
-
         self.cube.render_wireframe()
+
+        # Render unit cells
 
         unit_cell_transform = np.eye(4, dtype=np.float32)
         unit_cell_transform[:3,:3] = self.render_model.hamiltonian.structure.unit_cell._xyz.T
@@ -156,6 +165,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.cell_shader.use()
             self.cube.render_wireframe()
+
+
 
     def resizeGL(self, w, h):
         """ Qt override, called when window is resized """

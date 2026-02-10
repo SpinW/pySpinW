@@ -7,6 +7,19 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
+def alt_rotate(target_vector):
+    v = target_vector / np.sqrt(np.sum(target_vector**2))
+
+    x,y,z = v
+
+    if z < 1e-9 - 1:
+        return np.array([[-1,0,0],[0,1,0],[0,0,-1]])
+
+    return np.array([
+        [1-x**2 / (1+z), -x*y / (1+z), x],
+        [-x*y / (1+z), 1 - y**2 / (1+z), y],
+        [-x, -y, z]
+    ])
 
 class Component:
     def __init__(self, model_matrix: np.ndarray):
@@ -35,16 +48,29 @@ class RenderSite(Selectable):
         model_matrix[:3, :3] = -rotation
         model_matrix[:3, 3] = translation
 
-        print(model_matrix)
-
         super().__init__(render_id, model_matrix)
         self.site = site
 
 
 class RenderCoupling(Selectable):
-    def __init__(self, render_id: int, coupling: Coupling):
+    def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
 
-        super().__init__(render_id, np.eye(4))
+        translation = unit_cell.fractional_to_cartesian(coupling.site_1.ijk)
+        delta = unit_cell.fractional_to_cartesian(coupling.site_2.ijk + coupling.cell_offset.vector) - translation
+
+        length = np.sqrt(np.sum(delta**2))
+        print(length)
+
+        rotation = alt_rotate(delta)
+        print(delta)
+        print(rotation)
+
+        model_matrix = np.zeros((4, 4), dtype=np.float32)
+        model_matrix[3,3] = 1.0
+        model_matrix[:3, :3] = (rotation @ np.diag([1,1,length]) )
+        model_matrix[:3, 3] = translation
+
+        super().__init__(render_id, model_matrix)
         self.coupling = coupling
 
 class RenderAnisotropy(Component):
@@ -82,7 +108,7 @@ class RenderModel:
 
         self.couplings = []
         for coupling in self.expanded.couplings:
-            render_coupling = RenderCoupling(render_id, coupling)
+            render_coupling = RenderCoupling(render_id, coupling, self.expanded.structure.unit_cell)
             self.couplings.append(render_coupling)
             self.render_map[render_id] = render_coupling
             render_id += 1
