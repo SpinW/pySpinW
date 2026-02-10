@@ -139,6 +139,7 @@ class ObjectShader(Shader):
 
         self.model_matrix = np.eye(4, dtype=np.float32)
         self.projection_view = np.eye(4, dtype=np.float32)
+        self.view = np.eye(4, dtype=np.float32)
 
         self.light_position = -20, 0, 0
         self.view_position = 0, 0, 0
@@ -147,7 +148,7 @@ class ObjectShader(Shader):
         self.object_color = 1, 1, 1
 
         self.specular_strength = 0.3
-        self.ambient_strength = 0.2
+        self.ambient_strength = 0.5
 
     @property
     def camera(self):
@@ -157,9 +158,9 @@ class ObjectShader(Shader):
     def camera(self, camera: Camera):
         self._camera = camera
 
-        view = self.camera.view_matrix()
+        self.view = self.camera.view_matrix()
         proj = self.camera.perspective_matrix(0.01, 100)
-        self.projection_view = proj @ view
+        self.projection_view = proj @ self.view
 
         self.view_position = camera.position
 

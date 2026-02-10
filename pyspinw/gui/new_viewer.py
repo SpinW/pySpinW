@@ -135,7 +135,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                 self.arrow.render_triangles()
 
             self.object_shader.object_color = 0.2, 0.4, 0.8
-            thickness = 0.01
+            thickness = 0.02
             coupling_scaling = np.diag([thickness, thickness, 1, 1])
             for coupling in self.render_model.couplings:
                 self.object_shader.model_matrix = coupling.model_matrix @ coupling_scaling
