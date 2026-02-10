@@ -9,14 +9,15 @@ from OpenGL.GL import *
 import sys
 
 from pyspinw.gui.camera import Camera
-from pyspinw.gui.rendering.load_shaders import load_shaders
+from pyspinw.gui.render_model import RenderModel
 from pyspinw.gui.rendering.models.arrow import Arrow
 from pyspinw.gui.rendering.models.sphere import Sphere
 from pyspinw.gui.rendering.models.tube import Tube
 
 import logging
 
-from pyspinw.gui.rendering.shader import SelectionShader, ObjectShader
+from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
+from pyspinw.gui.rendering.shader import SelectionShader, ObjectShader, CellShader
 from pyspinw.util import rotation_matrix
 
 logger = logging.Logger(__name__)
@@ -31,9 +32,11 @@ class CrystalViewerWidget(QOpenGLWidget):
     mouse_zoom_sensitivity = 0.002
     min_view_radius = 0.01
 
-    def __init__(self):
+    def __init__(self, render_model: RenderModel):
 
         super().__init__()
+
+        self.render_model = render_model
 
         self.camera = Camera()
         # self.shader_program = None
@@ -48,7 +51,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.setFormat(format)
 
         # View details
-        self.view_origin = np.array([0,0,0], dtype=float)
+        self.view_origin = render_model.expanded.structure.unit_cell.centre #np.array([0,0,0], dtype=float)
         self.view_rotation = np.eye(3)
         self.view_radius = 10.0
 
@@ -70,6 +73,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.sphere2 = Sphere(3)
             self.tube = Tube()
             self.arrow = Arrow()
+            self.cube = WireframeCube()
 
             # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="tailored_fragment")
             # self.default_shader = load_shaders()
@@ -78,6 +82,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.object_shader = ObjectShader()
             self.selection_shader = SelectionShader()
+            self.cell_shader = CellShader()
 
             self.angle = 0.0
 
@@ -111,17 +116,46 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # Do the rendering
 
-        if self.selection_shader is not None:
-            self.selection_shader.camera = self.camera
-            self.selection_shader.use()
-            self.arrow.render_back_wireframe()
-
-        if self.object_shader is not None:
+        if self.object_shader is not None and self.selection_shader is not None:
             self.object_shader.object_color = 0.7, 0.8, 0.6
 
             self.object_shader.camera = self.camera
-            self.object_shader.use()
-            self.arrow.render_triangles()
+            self.selection_shader.camera = self.camera
+
+
+            for site in self.render_model.sites:
+
+                if site.is_selected:
+                    self.selection_shader.model_matrix = site.model_matrix
+                    self.selection_shader.use()
+                    self.arrow.render_back_wireframe()
+
+                self.object_shader.model_matrix = site.model_matrix
+                self.object_shader.use()
+                self.arrow.render_triangles()
+
+        # Draw the supercell
+        supercell_matrix = np.eye(4, dtype=np.float32)
+        supercell_matrix[:3, :3] = self.render_model.expanded.structure.unit_cell._xyz.T
+
+
+        self.cell_shader.model_matrix = supercell_matrix
+        self.cell_shader.camera = self.camera
+
+        self.cell_shader.use()
+
+        self.cube.render_wireframe()
+
+        unit_cell_transform = np.eye(4, dtype=np.float32)
+        unit_cell_transform[:3,:3] = self.render_model.hamiltonian.structure.unit_cell._xyz.T
+        for offset in self.render_model.hamiltonian.structure.supercell.cells():
+            translation_matrix = np.eye(4, dtype=np.float32)
+            translation_matrix[:3, 3] = offset.vector
+
+            self.cell_shader.model_matrix = unit_cell_transform @ translation_matrix
+
+            self.cell_shader.use()
+            self.cube.render_wireframe()
 
     def resizeGL(self, w, h):
         """ Qt override, called when window is resized """
@@ -189,11 +223,13 @@ class CrystalViewerWidget(QOpenGLWidget):
                     self.mouse_move_sensitivity*dy,
                     0.0])
 
+def show_hamiltonian(render_model):
 
 
-app = QApplication(sys.argv)
-widget = CrystalViewerWidget()
-widget.resize(800, 600)
-widget.show()
-sys.exit(app.exec())
+
+    app = QApplication()
+    widget = CrystalViewerWidget(render_model)
+    widget.resize(800, 600)
+    widget.show()
+    sys.exit(app.exec())
 

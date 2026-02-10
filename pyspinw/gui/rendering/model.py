@@ -65,6 +65,6 @@ class Model:
         for vao, length in zip(self._vaos, self._lengths):
             glBindVertexArray(vao)
             glLineWidth(4)
-            glPolygonMode(GL_BACK, GL_LINE)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             glDrawArrays(GL_TRIANGLES, 0, length)
         glBindVertexArray(0)

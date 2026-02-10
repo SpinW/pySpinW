@@ -75,9 +75,9 @@ class Hamiltonian(SPWSerialisable):
 
         return "\n".join(lines)
 
-    def expand(self):
-        """ Expand the supercell structure into a single cell structure """
-        bigger_cell, mapping = self.structure.expansion_site_mapping()
+    def expand_with_mapping(self):
+        """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians """
+        bigger_cell, site_mapping = self.structure.expansion_site_mapping()
 
         new_couplings = []
         new_anisotropies = []
@@ -104,8 +104,8 @@ class Hamiltonian(SPWSerialisable):
                 new_cell_offset = CellOffset(ni, nj, nk)
                 second_site_lookup_value = (ri, rj, rk)
 
-                target_site_1 = mapping[(coupling.site_1._unique_id, first_site_offset.as_tuple)]
-                target_site_2 = mapping[(coupling.site_2._unique_id, second_site_lookup_value)]
+                target_site_1 = site_mapping[(coupling.site_1.unique_id, first_site_offset.as_tuple)]
+                target_site_2 = site_mapping[(coupling.site_2.unique_id, second_site_lookup_value)]
 
                 # Create the new coupling using their update method, which copies everything not specified
                 new_couplings.append(
@@ -115,19 +115,24 @@ class Hamiltonian(SPWSerialisable):
                         cell_offset=new_cell_offset))
 
             for anisotropy in self.anisotropies:
-                target_site = mapping[(anisotropy.site._unique_id, first_site_offset.as_tuple)]
+                target_site = site_mapping[(anisotropy.site.unique_id, first_site_offset.as_tuple)]
 
                 # Copy anisotropy
                 new_anisotropies.append(anisotropy.updated(site=target_site))
 
         structure = Structure(
-            sites=[site for site in mapping.values()],
+            sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
             spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
             supercell=TrivialSupercell(scaling=(1,1,1))
         )
 
-        return Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies)
+        return Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies), site_mapping
+
+    def expand(self):
+        """ Expand the supercell structure into a single cell structure """
+        expanded, _ = self.expand_with_mapping()
+        return expanded
 
 
     def print_summary(self):

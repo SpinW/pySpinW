@@ -33,11 +33,42 @@ class Shader(ABC):
         glUseProgram(self.shader_program)
         self._set_uniforms()
 
+class CellShader(Shader):
+    vertex_shader = "simple_vertex"
+    fragment_shader = "cell_fragment"
+
+    def __init__(self):
+        super().__init__()
+
+        self.mode = SelectionMode.NOT_SELECTED
+
+        self._model_loc = glGetUniformLocation(self.shader_program, "model")
+        self._projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
+
+        self.model_matrix = np.eye(4, dtype=np.float32)
+        self.projection_view = np.eye(4, dtype=np.float32)
+
+    @property
+    def camera(self):
+        return self._camera
+
+    @camera.setter
+    def camera(self, camera: Camera):
+        self._camera = camera
+
+        view = self.camera.view_matrix()
+        proj = self.camera.perspective_matrix(0.01, 100)
+        self.projection_view = proj @ view
+
+    def _set_uniforms(self):
+
+        glUniformMatrix4fv(self._model_loc, 1, GL_TRUE, np.array(self.model_matrix, dtype=np.float32))
+        glUniformMatrix4fv(self._projection_view_loc, 1, GL_TRUE, np.array(self.projection_view, dtype=np.float32))
 
 class SelectionShader(Shader):
     """ Used for rendering the selection highlighting """
 
-    vertex_shader = "selection_vertex"
+    vertex_shader = "simple_vertex"
     fragment_shader = "selection_fragment"
 
     def __init__(self):
@@ -70,7 +101,7 @@ class SelectionShader(Shader):
     def _set_uniforms(self):
         """ Set the shader uniforms for render"""
 
-        glUniformMatrix4fv(self._model_loc, 1, GL_FALSE, np.array(self.model_matrix, dtype=np.float32))
+        glUniformMatrix4fv(self._model_loc, 1, GL_TRUE, np.array(self.model_matrix, dtype=np.float32))
         glUniformMatrix4fv(self._projection_view_loc, 1, GL_TRUE, np.array(self.projection_view, dtype=np.float32))
 
         match self.mode:
@@ -133,7 +164,8 @@ class ObjectShader(Shader):
         self.view_position = camera.position
 
     def _set_uniforms(self):
-        glUniformMatrix4fv(self._model_loc, 1, GL_FALSE, np.array(self.model_matrix, dtype=np.float32))
+
+        glUniformMatrix4fv(self._model_loc, 1, GL_TRUE, np.array(self.model_matrix, dtype=np.float32))
         glUniformMatrix4fv(self._projection_view_loc, 1, GL_TRUE, np.array(self.projection_view, dtype=np.float32))
 
         glUniform3f(self._light_pos_loc, *self.light_position)

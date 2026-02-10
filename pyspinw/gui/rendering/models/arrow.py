@@ -152,5 +152,8 @@ class Arrow(Model):
 
         vertices_and_normals = [np.array(v_n, dtype=np.float32) for v_n in vertices_and_normals]
 
+        centring_offset = np.array([[0,0,-0.5,0,0,0]], dtype=np.float32)
+        vertices_and_normals = [section + centring_offset for section in vertices_and_normals]
+
         for v_n in vertices_and_normals:
             self.add_vertex_normal_data(v_n)
