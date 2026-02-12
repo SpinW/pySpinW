@@ -14,7 +14,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.constants import MU_B
 
 # smallest energy not considered negligible (in meV)
-ZERO_ENERGY_TOL = 5e-4
+ZERO_ENERGY_TOL = 1e-12
 
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
@@ -270,14 +270,9 @@ def _calc_chunk_spinwave(
         eigvals, eigvecs = np.linalg.eigh(to_diagonalise + np.diag(np.array(range(to_diagonalise.shape[0]))*1e-12))
         energies.append(eigvals)
 
-        # sort eigenvalues and eigenvectors in decreasing order of eigenvalue
-        sort_indices = np.argsort(eigvals)[::-1]
-        eigvals = eigvals[sort_indices]
-        eigvecs = eigvecs[:, sort_indices]
-
         ## calculate block matrices [ Y Z ; V W ] for S'^alpha,beta
         # first we get phase factor matrix where `phase_factors_matrix[i,j] = exp(i q (r_i - r_j))`
-        phase_factors = np.array([np.exp(1j * (q @ pos)) for pos in positions])
+        phase_factors = np.array([np.exp(2j * np.pi * (q @ pos)) for pos in positions])
         phase_factors_matrix = np.outer(phase_factors, np.conj(phase_factors))
 
         coefficients = 2 * spin_coefficients * phase_factors_matrix
@@ -319,17 +314,22 @@ def _calc_chunk_spinwave(
         # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
         # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
         # for the eigenvalues of the Hamiltonian
-        sqrt_E = eigvals.copy()
-        sqrt_E[n_sites:] *= -1
+        sqrt_E = np.sqrt(np.abs(eigvals.copy()))
         sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
-        sqrt_E = np.sqrt(sqrt_E)
 
         try:
             # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
-            T = solve(sqrt_hamiltonian, eigvecs @ np.diag(sqrt_E), assume_a="lower triangular")
-        except np.linalg.LinAlgError:
-            # if K is singular, then eigenvalues are all zero, so T is zero
-            T = np.zeros((2 * n_sites, 2 * n_sites))
+            T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
+            assert not np.isnan(T).any(), "singular matrix"
+        except (AssertionError, np.linalg.LinAlgError):
+            # if K is singular, then add a small amount to the diagonal.
+            kk = sqrt_hamiltonian.conj().T
+            for jj in range(kk.shape[0]):
+                kk[jj, jj] += 1e-7
+            if np.linalg.cond(kk) > 1e16:
+                T = np.zeros((2 * n_sites, 2 * n_sites)) * np.nan
+            else:
+                T = solve(kk, eigvecs @ np.diag(sqrt_E))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for

@@ -177,12 +177,13 @@ class Hamiltonian(SPWSerialisable):
         moments = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
+        lu2xyz = self.structure.unit_cell._xyz
+        lu2xyz /= np.sqrt(np.sum(lu2xyz**2, axis=1)).reshape(-1, 1)
         for index, site in enumerate(expanded._structure.sites):
             # TODO: Sort out moments for supercells
-            moments.append(site.base_moment)
+            moments.append(site.xyz_moment(lu2xyz))
 
-            positions.append(
-                expanded.structure.unit_cell.fractional_to_cartesian(site.ijk))
+            positions.append(site.ijk)
 
             unique_id_to_index[site._unique_id] = index
 
@@ -208,11 +209,12 @@ class Hamiltonian(SPWSerialisable):
         for input_coupling in expanded.couplings:
             # Normal coupling
 
+            # Factor of 1/2 is due to double counting correction
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
-                np.array(input_coupling.coupling_matrix, **rust_kw),
-                input_coupling.vector(expanded.structure.unit_cell)
+                np.array(input_coupling.coupling_matrix, **rust_kw) / 2.,
+                input_coupling.cell_offset.vector.astype('double')
             )
 
             couplings.append(coupling)
@@ -222,8 +224,8 @@ class Hamiltonian(SPWSerialisable):
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
-                np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                -input_coupling.vector(expanded.structure.unit_cell)
+                np.array(input_coupling.coupling_matrix.T, **rust_kw) / 2.,
+                -input_coupling.cell_offset.vector.astype('double')
             )
 
             couplings.append(coupling)
@@ -243,7 +245,7 @@ class Hamiltonian(SPWSerialisable):
         result = spinwave_calculation(
                         rotations=rotations,
                         magnitudes=magnitudes,
-                        q_vectors=q_vectors,
+                        q_vectors=q_vectors * self.structure.supercell.scaling,
                         couplings=couplings,
                         positions=positions,
                         field=magnetic_field)
@@ -253,20 +255,57 @@ class Hamiltonian(SPWSerialisable):
     def sorted_positive_energies(self,
                                  path: Path,
                                  field: ArrayLike | None = None,
-                                 use_rust: bool = True) -> list[np.ndarray]:
+                                 use_rust: bool = True,
+                                 return_intensities: bool = False) -> list[np.ndarray]:
         """ Return energies as series corresponding to q, sorted by energy """
-        energy, _ = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+        energy, intensities = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
 
         energy = np.array(energy)
 
         # Sort the energies
-        energy = np.sort(energy.real, axis=1)
+        energy_index = np.argsort(energy.real, axis=1)
 
         # return the top half (positive)
         n_energies = energy.shape[1]
+
+        energy = np.take_along_axis(energy, energy_index, axis=1)
         energies = [energy[:, n_energies - i - 1] for i in range(n_energies//2)]
 
+        if return_intensities:
+            intensities = np.take_along_axis(np.array(intensities), energy_index, axis=1)
+            intensities = [intensities[:, n_energies - i - 1] for i in range(n_energies//2)]
+            return zip(energies, intensities)
         return energies
+
+    def plot(self,
+             path: Path,
+             field: ArrayLike | None = None,
+             show: bool=True,
+             new_figure: bool=True,
+             use_rust: bool=True,
+             scale: str='linear'):
+        """ Create a spaghetti diagram with energy top and intensity bottom """
+        if new_figure:
+            fig, axs = plt.subplots(2, 1)
+        else:
+            fig = plt.gcf()
+            axs = fig.get_axes()
+            for ii in range(len(axs), 2):
+                axs.append(fig.add_subplot(2,1,ii+1))
+
+        x_values = path.x_values()
+
+        for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust, return_intensities=True):
+            axs[0].plot(x_values, series[0], 'k')
+            axs[1].plot(x_values, series[1])
+        if 'log' in scale:
+            axs[1].set_yscale('log')
+
+        path.format_plot(axs[0])
+        path.format_plot(axs[1])
+
+        if show:
+            plt.show()
 
     def energy_plot(self,
                     path: Path,
@@ -277,7 +316,6 @@ class Hamiltonian(SPWSerialisable):
         """ Create a spaghetti diagram """
         if new_figure:
             plt.figure("Energy")
-
 
         x_values = path.x_values()
 
