@@ -426,8 +426,7 @@ fn spinwave_single_q(
 
     // T is NaN if sqrt_hamiltonian is singular; add a delta to the diagonal to avoid this
     if T.has_nan() {
-        sqrt_hamiltonian.diagonal_mut().column_vector_mut().iter_mut().map(|x| {
-            if x.re.abs() < 1e-7 { C64::from(1e-7) } else { *x } });
+        sqrt_hamiltonian.diagonal_mut().column_vector_mut().iter_mut().for_each(|x| *x += C64::from(1e-7) );
         T = eigvecs * sqrt_E.as_diagonal();
         solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
     }

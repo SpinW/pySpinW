@@ -320,11 +320,12 @@ def _calc_chunk_spinwave(
         try:
             # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
             T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
-        except np.linalg.LinAlgError:
+            assert not np.isnan(T).any(), "singular matrix"
+        except (AssertionError, np.linalg.LinAlgError):
             # if K is singular, then add a small amount to the diagonal.
             kk = sqrt_hamiltonian.conj().T
             for jj in range(kk.shape[0]):
-                kk[jj, jj] = max(kk[jj, jj], 1e-7)
+                kk[jj, jj] += 1e-7
             if np.linalg.cond(kk) > 1e16:
                 T = np.zeros((2 * n_sites, 2 * n_sites)) * np.nan
             else:
