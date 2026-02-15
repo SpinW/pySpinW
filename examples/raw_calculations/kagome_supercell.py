@@ -124,7 +124,8 @@ def kagome_supercell(n_q = 100, classes = py_classes):
         )
     )
 
-    return rotations, magnitudes, q_vectors, couplings, positions
+    rlu2cart = np.sqrt([[1./36, 1./108, 0], [0, 1./27, 0], [0, 0, 1./1600]]) * 2 * np.pi
+    return rotations, magnitudes, q_vectors, couplings, positions, rlu2cart
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

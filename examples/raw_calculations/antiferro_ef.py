@@ -44,7 +44,7 @@ def antiferro_ef(n_q = 100, classes = py_classes):
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 2, 0]).reshape(1, 3) * q_mags
 
-    return (rotations, magnitudes, q_vectors, couplings, positions, ext_field)
+    return (rotations, magnitudes, q_vectors, couplings, positions, np.eye(3, order='F'), ext_field)
 
 if __name__ == "__main__":
 

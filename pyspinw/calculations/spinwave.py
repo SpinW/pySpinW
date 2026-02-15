@@ -71,8 +71,7 @@ def _calc_q_independent(
     C = np.zeros((n_sites, n_sites), dtype=complex)
     for coupling in couplings:
         i, j = (coupling.index1, coupling.index2)
-        C[j, j] += spin_coefficients[j, j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
-    C *= 2
+        C[j, j] += magnitudes[j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
 
     # calculate the Zeeman term for the A matrix (A^z in Toth & Lake)
     if field is not None:
@@ -115,6 +114,7 @@ def _calc_sqrt_hamiltonian(
         A += Az
 
     hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+    hamiltonian_matrix += np.diag(np.array(range(hamiltonian_matrix.shape[0]))*1e-12)
 
     # We need to enforce the bosonic commutation properties, we do this
     # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
@@ -206,6 +206,7 @@ def spinwave_calculation(
         q_vectors: np.ndarray,
         couplings: list[Coupling],
         positions: list[np.ndarray],
+        rlu_to_cart: np.ndarray = np.eye(3),
         field: MagneticField | None = None,
         save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
@@ -218,7 +219,7 @@ def spinwave_calculation(
     with ProcessPoolExecutor() as executor:
         q_calculations = [
             executor.submit(
-                _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions, Az, save_sab
+                _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions, rlu_to_cart, Az, save_sab
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -251,6 +252,7 @@ def _calc_chunk_spinwave(
         spin_coefficients: np.ndarray,
         couplings: list[Coupling],
         positions: list[np.ndarray],
+        rlu_to_cart: np.ndarray,
         Az: np.ndarray | None = None,
         save_sab: bool = False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
@@ -267,7 +269,7 @@ def _calc_chunk_spinwave(
 
         to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
 
-        eigvals, eigvecs = np.linalg.eigh(to_diagonalise + np.diag(np.array(range(to_diagonalise.shape[0]))*1e-12))
+        eigvals, eigvecs = np.linalg.eigh(to_diagonalise)
         energies.append(eigvals)
 
         ## calculate block matrices [ Y Z ; V W ] for S'^alpha,beta
@@ -342,7 +344,8 @@ def _calc_chunk_spinwave(
         if (q_mag := np.linalg.norm(q)) == 0:
             norm_q = np.array([0, 0, 0])
         else:
-            norm_q = q / q_mag
+            norm_q = q @ rlu_to_cart
+            norm_q /= np.sqrt(np.sum(norm_q**2))
         perp_factor = np.eye(3) - np.outer(norm_q, norm_q)
         # the einsum here performs elementwise multiplication and then sums over alpha, beta
         s_perp = np.einsum("ijk,ij->k", sab, perp_factor)

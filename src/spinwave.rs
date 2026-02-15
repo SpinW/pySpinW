@@ -151,7 +151,10 @@ fn calc_sqrt_hamiltonian(
     let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
     let B_adj = B.adjoint().to_owned();
 
-    let hamiltonian: Mat<C64> = block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C);
+    // Adds a small delta to diagonal to ensure we don't have an exact degeneracies
+    let diag_delta = Mat::<C64>::from_fn(A.nrows() * 2, A.ncols() * 2,
+        |i,j| if i == j { C64::from((i as f64)*1e-12) } else { C64::ZERO } );
+    let hamiltonian: Mat<C64> = block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C) + diag_delta;
 
     // take square root of Hamiltonian using Cholesky if possible; if this fails,
     // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
@@ -277,6 +280,7 @@ pub fn calc_spinwave(
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<&Coupling>,
     positions: Vec<ColRef<f64>>,
+    rlu_to_cart: MatRef<f64>,
     field: Option<MagneticField>,
     save_Sab: bool,
 ) -> Vec<SpinwaveResult> {
@@ -295,6 +299,7 @@ pub fn calc_spinwave(
                 n_sites,
                 &couplings,
                 &positions,
+                rlu_to_cart,
                 save_Sab,
             )
         })
@@ -320,6 +325,7 @@ fn spinwave_single_q(
     n_sites: usize,
     couplings: &[&Coupling],
     positions: &[ColRef<f64>],
+    rlu_to_cart: MatRef<f64>,
     save_Sab: bool,
 ) -> SpinwaveResult {
     let z = &q_independent_components.z;
@@ -389,11 +395,7 @@ fn spinwave_single_q(
         }
     }
 
-    // Adds a small delta to diagonal to ensure we don't have an exact degeneracies
-    let diag_delta = Mat::<C64>::from_fn(shc.nrows(), shc.ncols(),
-        |i,j| if i == j { C64::from((i as f64)*1e-12) } else { C64::ZERO } );
-    let eigendecomp = ((sqrt_hamiltonian.adjoint() * shc) + diag_delta)
-        .self_adjoint_eigen(Side::Lower)
+    let eigendecomp = (sqrt_hamiltonian.adjoint() * shc).self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
     let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
@@ -450,9 +452,12 @@ fn spinwave_single_q(
         })
         .collect();
 
+    // gets the conversion from r.l.u. to Cartesian, for Sperp we need Q in Cartesians
+    let qcart: Col<f64> = (q.transpose() * rlu_to_cart).transpose().to_owned();
+    
     // and finally, calculate the perpendicular component of Sab
     let intensities = {
-        let mut norm_q: Col<C64> = (q.as_ref() / q.norm_l2()).iter().map(C64::from).collect();
+        let mut norm_q: Col<C64> = (qcart.as_ref() / qcart.norm_l2()).iter().map(C64::from).collect();
         if norm_q.has_nan() {
             norm_q = Col::<C64>::from_iter([C64::ZERO, C64::ZERO, C64::ZERO]);
         }
