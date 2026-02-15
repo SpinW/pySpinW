@@ -138,7 +138,7 @@ def _calc_sqrt_hamiltonian(
         # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
         # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
         l, d, p = ldl(hamiltonian_matrix)  # To LDL^\dagger (i.e. adjoint on right)
-        sqrt_hamiltonian = l @ np.sqrt(d)
+        sqrt_hamiltonian = l[p,:] @ np.sqrt(d)
 
     return sqrt_hamiltonian
 
@@ -219,7 +219,8 @@ def spinwave_calculation(
     with ProcessPoolExecutor() as executor:
         q_calculations = [
             executor.submit(
-                _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions, rlu_to_cart, Az, save_sab
+                _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
+                rlu_to_cart, Az, save_sab
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -328,10 +329,7 @@ def _calc_chunk_spinwave(
             kk = sqrt_hamiltonian.conj().T
             for jj in range(kk.shape[0]):
                 kk[jj, jj] += 1e-7
-            if np.linalg.cond(kk) > 1e16:
-                T = np.zeros((2 * n_sites, 2 * n_sites)) * np.nan
-            else:
-                T = solve(kk, eigvecs @ np.diag(sqrt_E))
+            T = solve(kk, eigvecs @ np.diag(sqrt_E))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
