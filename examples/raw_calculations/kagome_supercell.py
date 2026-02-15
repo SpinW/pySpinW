@@ -8,18 +8,7 @@ import sys
 import numpy as np
 
 from examples.raw_calculations.utils import run_example, plot, py_classes
-
-# define our rotation matrices
-def rotation(theta):
-    """Return the rotation matrix for an angle `theta` in the x-z plane."""
-    return np.array(
-        [
-            [np.cos(theta), 0, np.sin(theta)],
-            [np.sin(theta), 0, -np.cos(theta)],
-            [0, 1, 0],
-        ],
-        dtype=complex, order='F',
-    )
+from pyspinw.hamiltonian import omegasum
 
 
 def kagome_supercell(n_q = 100, classes = py_classes):
@@ -41,17 +30,18 @@ def kagome_supercell(n_q = 100, classes = py_classes):
     #   0 \ 1 \ 2
     #
     # Within each unit cell there are 3 spins, at (0.5, 0), (0, 0.5) and (0.5, 0.5)
+    s3 = np.sqrt(3) / 2
     def down():
         # ↙️
-        return rotation(-np.pi / 6)
+        return np.array([[s3, 0, -0.5], [-0.5, 0, -s3], [0, 1, 0]], dtype=complex, order='F')
 
     def up():
         # ↖
-        return rotation(-5 * np.pi / 6)
+        return np.array([[s3, 0, -0.5], [0.5, 0, s3], [0, -1, 0]], dtype=complex, order='F')
 
     def right():
         # →
-        return rotation(np.pi / 2)
+        return np.array([[0, 0, 1.], [1., 0, 0], [0, 1, 0]], dtype=complex, order='F')
 
     rotations = [
             up(),    # Cell 0, (0.5, 0)
@@ -83,16 +73,16 @@ def kagome_supercell(n_q = 100, classes = py_classes):
             up(),
         ]
     magnitudes = np.array([1] * 27)  # spin 1
-    unit_cell_positions = [np.array([0., 0., 0.]), np.array([0., 1., 0.]), np.array([1., 0., 0.])]
+    unit_cell_positions = [np.array([1/6., 0., 0.]), np.array([0., 1/6., 0.]), np.array([1/6., 1/6., 0.])]
     positions = (unit_cell_positions  # unit cell 0
-                + [pos + np.array([1., 0., 0.]) for pos in unit_cell_positions]  # unit cell 1
-                + [pos + np.array([2., 0., 0.]) for pos in unit_cell_positions]  # unit cell 2
-                + [pos + np.array([0., 1., 0.]) for pos in unit_cell_positions]  # unit cell 3
-                + [pos + np.array([1., 1., 0.]) for pos in unit_cell_positions]  # unit cell 4
-                + [pos + np.array([2., 1., 0.]) for pos in unit_cell_positions]  # unit cell 5
-                + [pos + np.array([0., 2., 0.]) for pos in unit_cell_positions]  # unit cell 6
-                + [pos + np.array([1., 2., 0.]) for pos in unit_cell_positions]  # unit cell 7
-                + [pos + np.array([2., 2., 0.]) for pos in unit_cell_positions]) # unit cell 8
+                + [pos + np.array([1., 0., 0.])/3. for pos in unit_cell_positions]  # unit cell 1
+                + [pos + np.array([2., 0., 0.])/3. for pos in unit_cell_positions]  # unit cell 2
+                + [pos + np.array([0., 1., 0.])/3. for pos in unit_cell_positions]  # unit cell 3
+                + [pos + np.array([1., 1., 0.])/3. for pos in unit_cell_positions]  # unit cell 4
+                + [pos + np.array([2., 1., 0.])/3. for pos in unit_cell_positions]  # unit cell 5
+                + [pos + np.array([0., 2., 0.])/3. for pos in unit_cell_positions]  # unit cell 6
+                + [pos + np.array([1., 2., 0.])/3. for pos in unit_cell_positions]  # unit cell 7
+                + [pos + np.array([2., 2., 0.])/3. for pos in unit_cell_positions]) # unit cell 8
 
     # The inter_site_vector is actually the vector between unit cells (see eq 10 and eq 14 in Toth+Lake)
     # So we define the pairs within each cell first - there are 2 for each cell
@@ -100,17 +90,19 @@ def kagome_supercell(n_q = 100, classes = py_classes):
         (0, 2), (1, 2),      (3, 5), (4, 5),      (6, 8), (7, 8),     # Cells 0-2
         (9, 11), (10, 11),   (12, 14), (13, 14),  (15, 17), (16, 17), # Cells 3-5
         (18, 20), (19, 20),  (21, 23), (22, 23),  (24, 26), (25, 26), # Cells 6-8
+        (1, 9), (2, 9),      (4, 12), (5, 12),    (7, 15), (8, 15),   # Cells 0-2 vertical supercell
+        (10, 18), (11, 18),  (13, 21), (14, 21),  (16, 24), (17, 24), # Cells 3-5 vertical supercell
+        (0, 4), (2, 4),      (3, 7), (5, 7),                          # Cells 0-2 horizontal supercell
+        (9, 13), (11, 13),   (12, 16), (14, 16),                      # Cells 3-5 horizontal supercell
+        (18, 22), (20, 22),  (21, 25), (23, 25),                      # Cells 6-8 horizontal supercell
     ]
     # Now, couplings between unit cells parallel to the a-axis (also two per cell)
     horizontal_pairs = [
-        (0, 4), (2, 4),      (3, 7), (5, 7),      (6, 1), (8, 1),     # Cells 0-2
-        (9, 13), (11, 13),   (12, 16), (14, 16),  (15, 10), (17, 10), # Cells 3-5
-        (18, 22), (20, 22),  (21, 25), (23, 25),  (24, 19), (26, 19), # Cells 6-8
+        # Cells 0-2          Cells 3-5            Cells 6-8
+        (6, 1), (8, 1),      (15, 10), (17, 10),  (24, 19), (26, 19),
     ]
     # Now, couplings between unit cells parallel to the b-axis (also two per cell)
     vertical_pairs = [
-        (1, 9), (2, 9),      (4, 12), (5, 12),    (7, 15), (8, 15),   # Cells 0-2
-        (10, 18), (11, 18),  (13, 21), (14, 21),  (16, 24), (17, 24), # Cells 3-5
         (19, 0), (20, 0),    (22, 3), (23, 3),    (25, 6), (26, 6),   # Cells 6-8
     ]
 
@@ -125,18 +117,12 @@ def kagome_supercell(n_q = 100, classes = py_classes):
 
     q_mags = 0.5 * np.linspace(0, 1, n_q + 1).reshape(-1, 1)
 
-    # q_vectors = np.concatenate((
-    #         q_mags[::-1].reshape(-1, 1) * np.array([1, 0, 1]).reshape(1, -1),
-    #         q_mags[1:].reshape(-1, 1) * np.array([0, 0, 1]).reshape(1, -1)
-    # ))
     q_vectors = np.concatenate(
         (
-            q_mags[::-1].reshape(-1, 1) * np.array([-1, 0, 0]).reshape(1, -1),
-            q_mags[1:].reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1),
+            q_mags[::-1].reshape(-1, 1) * np.array([-3, 0, 0]).reshape(1, -1),
+            q_mags[1:].reshape(-1, 1) * np.array([3, 3, 0]).reshape(1, -1),
         )
     )
-
-    # q_vectors = q_mags.reshape(-1, 1) * np.array([1, 1, 0]).reshape(1, -1)
 
     return rotations, magnitudes, q_vectors, couplings, positions
 
@@ -161,9 +147,11 @@ if __name__ == "__main__":
     translated_energies = [energy - min_energy for energy in positive_energies]
 
     # Note: we get complex data types with real part zero
+    translated_energies, sqw = omegasum(translated_energies, sqw)
 
-    plot(indices, translated_energies, sqw)
+    fg = plot(indices, translated_energies, sqw, show=False)
     # plt.plot(indices, [method.value for method in result.method])
 
     #plt.savefig("fig.png")
+    fg.axes[1].set_ylim(0, 1)
     plt.show()
