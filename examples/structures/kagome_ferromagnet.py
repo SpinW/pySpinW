@@ -33,6 +33,8 @@ if __name__ == "__main__":
     """Reproduces Tutorial 5: https://spinw.org/tutorials/05tutorial"""
     freeze_support()
 
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
+
     unit_cell = UnitCell(6,6,5, gamma=120)
 
     x = LatticeSite(0.5, 0, 0, 0, 1, 0, name="X")
@@ -57,7 +59,7 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
-    hamiltonian.energy_plot(path, show=False)
+    hamiltonian.energy_plot(path, show=False, use_rust=use_rust)
 
     sample = Powder(hamiltonian)
     path1D = Path1D(0.1, 2.5, n_points=100)

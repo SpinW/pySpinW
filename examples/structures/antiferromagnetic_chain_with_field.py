@@ -38,6 +38,8 @@ sw_plotspec(afcSpec,'mode',2,'log',false,'axLim',[-4 10])
 if __name__ == "__main__":
     freeze_support()
 
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
+
     unit_cell = UnitCell(4,6,6)
 
     sites = [LatticeSite(0, 0, 0, 0,0,1, name="X"),
@@ -59,4 +61,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [2,0,0]])
-    hamiltonian.spaghetti_plot(path, field=[0,0,7])
+    hamiltonian.spaghetti_plot(path, field=[0,0,7], use_rust=use_rust)

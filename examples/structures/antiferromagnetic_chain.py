@@ -34,6 +34,8 @@ if __name__ == "__main__":
     """Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial"""
     freeze_support()
 
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
+
     unit_cell = UnitCell(3, 8, 8)
 
     sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="MCu1")]
@@ -52,4 +54,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])
-    hamiltonian.spaghetti_plot(path, scale='log')
+    hamiltonian.spaghetti_plot(path, scale='log', use_rust=use_rust)

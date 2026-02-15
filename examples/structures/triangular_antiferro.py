@@ -37,6 +37,8 @@ if __name__ == "__main__":
     """Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial"""
     freeze_support()
 
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
+
     unit_cell = UnitCell(3, 3, 4, gamma=120)
 
     sites = [LatticeSite(0, 0, 0, -1j, 1, 0, name="X")]
@@ -58,6 +60,6 @@ if __name__ == "__main__":
 
     path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False)
+    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
     fig.axes[1].set_ylim(0, 5)
     plt.show()
