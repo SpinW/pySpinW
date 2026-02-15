@@ -28,6 +28,21 @@ from pyspinw.symmetry.supercell import TrivialSupercell
 
 logger = logging.Logger("pyspinw.hamiltonian")
 
+def omegasum(energy, intensity, tol=1e-5, zeroint=0):
+    """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
+    energy, intensity = (np.array(energy), np.array(intensity))
+    en_out, int_out = (energy * np.nan, intensity * np.nan)
+    if tol > 0:
+        energy = np.round(energy / tol) * tol
+    if zeroint > 0:
+        energy[np.where(np.abs(np.real(intensity)) < zeroint)] = np.nan
+    for iQ in range(energy.shape[0]):
+        eu = np.unique(energy[iQ,:])
+        en_out[iQ,:len(eu)] = eu
+        for iE in range(len(eu)):
+            int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
+    return en_out, int_out
+
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
 
@@ -252,32 +267,7 @@ class Hamiltonian(SPWSerialisable):
 
         return result[0], result[1]
 
-    def sorted_positive_energies(self,
-                                 path: Path,
-                                 field: ArrayLike | None = None,
-                                 use_rust: bool = True,
-                                 return_intensities: bool = False) -> list[np.ndarray]:
-        """ Return energies as series corresponding to q, sorted by energy """
-        energy, intensities = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
-
-        energy = np.array(energy)
-
-        # Sort the energies
-        energy_index = np.argsort(energy.real, axis=1)
-
-        # return the top half (positive)
-        n_energies = energy.shape[1]
-
-        energy = np.take_along_axis(energy, energy_index, axis=1)
-        energies = [energy[:, n_energies - i - 1] for i in range(n_energies//2)]
-
-        if return_intensities:
-            intensities = np.take_along_axis(np.array(intensities), energy_index, axis=1)
-            intensities = [intensities[:, n_energies - i - 1] for i in range(n_energies//2)]
-            return zip(energies, intensities)
-        return energies
-
-    def plot(self,
+    def spaghetti_plot(self,
              path: Path,
              field: ArrayLike | None = None,
              show: bool=True,
@@ -294,8 +284,9 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-
-        for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust, return_intensities=True):
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust))
+        n_mode = energy.shape[1]
+        for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, series[0], 'k')
             axs[1].plot(x_values, series[1])
         if 'log' in scale:
@@ -306,6 +297,26 @@ class Hamiltonian(SPWSerialisable):
 
         if show:
             plt.show()
+        else:
+            return fig
+
+    def sorted_positive_energies(self,
+                                 path: Path,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool = True) -> list[np.ndarray]:
+        """ Return energies as series corresponding to q, sorted by energy """
+        energy, intensities = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+
+        energy = np.array(energy)
+
+        # Sort the energies
+        energy = np.sort(energy.real, axis=1)
+
+        # return the top half (positive)
+        n_energies = energy.shape[1]
+        energies = [energy[:, n_energies - i - 1] for i in range(n_energies//2)]
+
+        return energies
 
     def energy_plot(self,
                     path: Path,

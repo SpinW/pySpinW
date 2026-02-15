@@ -52,4 +52,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])
-    hamiltonian.plot(path, scale='log')
+    hamiltonian.spaghetti_plot(path, scale='log')

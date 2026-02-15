@@ -59,4 +59,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [2,0,0]])
-    hamiltonian.plot(path, field=[0,0,7])
+    hamiltonian.spaghetti_plot(path, field=[0,0,7])

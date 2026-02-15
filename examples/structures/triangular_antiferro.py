@@ -56,5 +56,8 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
-    path = Path([[0,0,0], [1,1,0]])
-    hamiltonian.plot(path)
+    path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
+    import matplotlib.pyplot as plt
+    fig = hamiltonian.spaghetti_plot(path, show=False)
+    fig.axes[1].set_ylim(0, 5)
+    plt.show()

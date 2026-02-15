@@ -32,4 +32,4 @@ if __name__ == "__main__":
 
     path = Path([[0,0,0], [1,0,0]])
 
-    hamiltonian.energy_plot(path)
+    hamiltonian.spaghetti_plot(path)
