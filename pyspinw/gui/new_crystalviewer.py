@@ -2,12 +2,13 @@
 
 import numpy as np
 from PySide6.QtCore import QTimer, QPoint
-from PySide6.QtGui import Qt
+from PySide6.QtGui import Qt, QKeyEvent
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QApplication
 from OpenGL.GL import *
 import sys
 
+from pyspinw.gui.buffers import IntegerBuffer
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.render_model import RenderModel
 from pyspinw.gui.rendering.models.arrow import Arrow
@@ -17,7 +18,7 @@ from pyspinw.gui.rendering.models.tube import Tube
 import logging
 
 from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
-from pyspinw.gui.rendering.shader import SelectionShader, ObjectShader, CellShader
+from pyspinw.gui.rendering.shader import SelectionShader, ObjectShader, CellShader, IDShader
 from pyspinw.gui.renderoptions import DisplayOptions
 from pyspinw.util import rotation_matrix
 
@@ -58,12 +59,18 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.view_rotation = np.eye(3)
         self.view_radius = 10.0
 
+        # These variables are used for selection / highlighting
+        self.mouse_position: QPoint | None = None
+        self.hover_index: int = 0
 
         # These variables are used for handling mouse dragging
         self.mouse_data: tuple[QPoint, Qt.MouseButton] | None= None
         self.mouse_rotation = np.eye(3)
         self.mouse_origin = np.array([0,0,0], dtype=float)
 
+        # We want to be able to do hovering, and respond to key presses
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.StrongFocus)
 
 
     def initializeGL(self):
@@ -71,21 +78,22 @@ class CrystalViewerWidget(QOpenGLWidget):
         glEnable(GL_DEPTH_TEST)
 
         try:
-
-            self.sphere1 = Sphere(3)
-            self.sphere2 = Sphere(3)
+            # Normal objects
+            self.sphere= Sphere(3)
             self.tube = Tube()
             self.arrow = Arrow()
             self.cube = WireframeCube()
 
-            # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="tailored_fragment")
-            # self.default_shader = load_shaders()
-            # self.shader_program = load_shaders(vertex_filename="phong_vertex", fragment_filename="default_fragment")
-            # self.shader_program = load_shaders()
-
+            # Normal shaders
             self.object_shader = ObjectShader()
             self.selection_shader = SelectionShader()
             self.cell_shader = CellShader()
+
+            self.id_shader = IDShader()
+
+            # Framebuffer for ID rendering
+            self.id_framebuffer = IntegerBuffer()
+
 
             self.angle = 0.0
 
@@ -94,11 +102,21 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.timer.timeout.connect(self.update)
             self.timer.start(16)
 
+
         except Exception as e:
             logger.exception(e)
 
     def paintGL(self):
         """ Qt override, paints the GL canvas"""
+
+        #
+        # Normal painting, let Qt do its thing
+        #
+
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        glDisable(GL_BLEND)
+
         glClearColor(0.05, 0.05, 0.08, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -119,6 +137,12 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # Do the rendering
 
+        moment_scale = 2 * self.display_options.atom_moment_scaling
+        moment_scale_matrix = np.diag([moment_scale, moment_scale, moment_scale, 1])
+
+        coupling_scale = 0.1 * self.display_options.coupling_scaling
+        coupling_scaling = np.diag([coupling_scale, coupling_scale, 1, 1])
+
         if self.object_shader is not None and self.selection_shader is not None:
 
             self.object_shader.camera = self.camera
@@ -128,14 +152,12 @@ class CrystalViewerWidget(QOpenGLWidget):
             if self.display_options.show_sites:
                 self.object_shader.object_color = 0.7, 0.8, 0.6
 
-                moment_scale = 2*self.display_options.atom_moment_scaling
-                moment_scale_matrix = np.diag([moment_scale, moment_scale, moment_scale, 1])
 
                 for site in self.render_model.sites:
 
                     scaled_matrix = site.model_matrix @ moment_scale_matrix
 
-                    if site.is_selected:
+                    if site.render_id == self.hover_index:
                         self.selection_shader.model_matrix = scaled_matrix
                         self.selection_shader.use()
                         self.arrow.render_back_wireframe()
@@ -148,13 +170,21 @@ class CrystalViewerWidget(QOpenGLWidget):
             if self.display_options.show_couplings:
 
                 self.object_shader.object_color = 0.2, 0.4, 0.8
-                thickness = 0.1 * self.display_options.coupling_scaling
-                coupling_scaling = np.diag([thickness, thickness, 1, 1])
 
                 for coupling in self.render_model.couplings:
-                    self.object_shader.model_matrix = coupling.model_matrix @ coupling_scaling
+
+                    scaled_matrix = coupling.model_matrix @ coupling_scaling
+
+                    if coupling.render_id == self.hover_index:
+                        self.selection_shader.model_matrix = scaled_matrix
+                        self.selection_shader.use()
+                        self.arrow.render_back_wireframe()
+
+                    self.object_shader.model_matrix = scaled_matrix
                     self.object_shader.use()
                     self.tube.render_triangles()
+
+
 
         # Draw the supercell
         if self.display_options.show_supercell:
@@ -183,6 +213,62 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 self.cell_shader.use()
                 self.cube.render_wireframe()
+
+        #
+        # ID framebuffer
+        #
+
+        self.id_framebuffer.use(self.width(), self.height())
+
+        if self.id_shader is not None:
+
+            self.id_shader.camera = self.camera
+
+            # Sites
+            if self.display_options.show_sites:
+
+                for site in self.render_model.sites:
+
+                    scaled_matrix = site.model_matrix @ moment_scale_matrix
+
+                    self.id_shader.model_matrix = scaled_matrix
+                    self.id_shader.id_value = site.render_id
+                    self.id_shader.use()
+                    self.arrow.render_triangles()
+
+            # Couplings
+            if self.display_options.show_couplings:
+
+                for coupling in self.render_model.couplings:
+                    self.id_shader.id_value = coupling.render_id
+                    self.id_shader.model_matrix = coupling.model_matrix @ coupling_scaling
+                    self.id_shader.use()
+                    self.tube.render_triangles()
+
+        #
+        # Calculate the object for the mouse over, and set its hover state
+        #
+
+        if self.mouse_position is not None:
+
+            id = np.zeros(1, dtype=np.uint32) # Buffer to set data in
+
+            x, y = self.mouse_position.x(), self.height() - self.mouse_position.y()
+
+            glReadPixels(
+                x, y,
+                1, 1,
+                GL_RED_INTEGER,
+                GL_UNSIGNED_INT,
+                id
+            )
+
+            # print(f"Hovering over ({x}, {y}) ID={id}")
+
+            self.hover_index = int(id)
+
+        else:
+            self.hover_index = 0
 
 
 
@@ -229,8 +315,16 @@ class CrystalViewerWidget(QOpenGLWidget):
         if self.view_radius < self.min_view_radius:
             self.view_radius = self.min_view_radius
 
+    def leaveEvent(self, event):
+        """ Qt override, mouse leaves widget"""
+        self.mouse_position = None
+        event.accept()
+
     def mouseMoveEvent(self, event):
         """Qt override, called on mouse movement"""
+
+
+        self.mouse_position = event.position()
 
         if self.mouse_data is not None:
             start, button = self.mouse_data
@@ -254,3 +348,22 @@ class CrystalViewerWidget(QOpenGLWidget):
                     0.0])
 
 
+    def keyPressEvent(self, event: QKeyEvent):
+        # We have this for debugging
+
+        if event.key() == Qt.Key_W:
+
+            import matplotlib.pyplot as plt
+            im = self.id_framebuffer.get_image(self.width(), self.height())
+
+            plt.figure()
+            plt.imshow(im)
+            plt.show()
+
+
+
+
+        elif event.key() == Qt.Key_Escape:
+            print("Escape pressed")
+
+        event.accept()

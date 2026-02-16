@@ -92,7 +92,7 @@ class RenderModel:
 
         self.expanded, site_mapping = self.hamiltonian.expand_with_mapping()
 
-        render_id = 0
+        render_id = 1
 
         self.render_map: dict[int, Component] = {}
         self.anisotropy_render_id_map: dict[int, int] = {} # We don't select anisotropies from the viewer, need this
