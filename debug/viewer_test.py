@@ -33,8 +33,5 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
-    render_model = RenderModel(hamiltonian)
 
-    render_model.sites[3].is_selected = True
-
-    show_hamiltonian(render_model)
+    show_hamiltonian(hamiltonian)

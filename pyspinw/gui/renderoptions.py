@@ -122,7 +122,7 @@ class DisplayOptionsToolbar(QWidget):
 
     settings_filename = "render_settings.conf"
 
-    renderOptionsChanged = Signal()
+    displayOptionsChanged = Signal()
 
     def _add_slider(self,
                     min_value: float, max_value: float, start_value: float,
@@ -254,9 +254,14 @@ class DisplayOptionsToolbar(QWidget):
         self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.setLayout(self.bar_layout)
 
+        # Scaling properties
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.bar_layout.setContentsMargins(0, 0, 0, 0)
+        self.bar_layout.setSpacing(0)
+
     def _on_change(self):
         """ Called when anything changes, send signal """
-        self.renderOptionsChanged.emit()
+        self.displayOptionsChanged.emit()
 
     def display_options(self) -> DisplayOptions:
         """ Get the current render options """
