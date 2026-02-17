@@ -145,7 +145,7 @@ class Structure(SPWSerialisable):
             c=self.unit_cell.c * scale[2])
 
         # Create a mapping between sites and offsets to the new sites
-        mapping: dict[tuple[LatticeSite, tuple[int, int, int]], LatticeSite] = {}
+        mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
         for offset in self.supercell.cells():
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)

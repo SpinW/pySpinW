@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QAppli
 from pyspinw.gui.new_crystalviewer import CrystalViewerWidget
 from pyspinw.gui.render_model import RenderModel
 from pyspinw.gui.renderoptions import DisplayOptions, DisplayOptionsToolbar
+from pyspinw.gui.text_display import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
 
 
@@ -15,13 +16,15 @@ class Viewer(QWidget):
 
         super().__init__(parent)
 
-        splitter = QSplitter(Qt.Horizontal)  # Left / Right split
+        render_model = RenderModel(hamiltonian)
 
-        self.viewer = CrystalViewerWidget(RenderModel(hamiltonian))
-        right = QTextEdit("Details here")
+        splitter = QSplitter(Qt.Horizontal)
+
+        self.viewer = CrystalViewerWidget(render_model)
+        self.text_display = TextDisplay(render_model)
 
         splitter.addWidget(self.viewer)
-        splitter.addWidget(right)
+        splitter.addWidget(self.text_display)
 
         layout = QVBoxLayout()
 

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 
 from pyspinw.anisotropy import Anisotropy
@@ -81,25 +83,59 @@ class RenderModel:
 
         self.hamiltonian = hamiltonian
 
+        self.expanded, expansion_mapping = self.hamiltonian.expand_with_mapping()
+
+        self.expanded_uid_to_original_uid: dict[int, int] = {}
+        self.original_uid_to_expanded_uid: defaultdict[int, list[int]] = defaultdict(list)
+
+        self.original_sites = self.hamiltonian.structure.sites
+
+        for (parent_unique_id, offset), child_site in expansion_mapping.items():
+            self.original_uid_to_expanded_uid[parent_unique_id].append(child_site.unique_id)
+            self.expanded_uid_to_original_uid[child_site.unique_id] = parent_unique_id
+
         #
         # Build the data structure for rendering
         #
-
-        self.expanded, site_mapping = self.hamiltonian.expand_with_mapping()
 
         render_id = 1
 
         self.render_map: dict[int, Component] = {}
         self.anisotropy_render_id_map: dict[int, int] = {} # We don't select anisotropies from the viewer, need this
-        site_unique_id_to_render_id: dict[int, int] = {}
+        self.expanded_site_unique_id_to_render_id: dict[int, int] = {}
 
-        self.sites = []
+        self.original_site_unique_id_to_index: dict[int, int] = {}
+        for index, site in enumerate(self.hamiltonian.structure.sites):
+            self.original_site_unique_id_to_index[site.unique_id] = index
+
+        self.expanded_index_to_original_index = []
+        # self.original_index_to_expanded_index = []
+
+        #
+        # Create render data for sites
+        #
+        self.sites: list[RenderSite] = []
         for site in self.expanded.structure.sites:
             render_site = RenderSite(render_id, site, self.expanded.structure.unit_cell)
             self.sites.append(render_site)
             self.render_map[render_id] = render_site
-            site_unique_id_to_render_id[site.unique_id] = render_id
+            self.expanded_site_unique_id_to_render_id[site.unique_id] = render_id
+
+            parent_unique_id = self.expanded_uid_to_original_uid[site.unique_id]
+
+            self.expanded_index_to_original_index.append(self.original_site_unique_id_to_index[parent_unique_id])
+
             render_id += 1
+
+        self.original_index_to_expanded = defaultdict(list)
+        for expanded, original in enumerate(self.expanded_index_to_original_index):
+            self.original_index_to_expanded[original].append(expanded)
+
+        print(self.original_index_to_expanded)
+
+        #
+        # Create render data for couplings
+        #
 
         self.couplings = []
         for coupling in self.expanded.couplings:
@@ -113,10 +149,9 @@ class RenderModel:
             render_anisotropy = RenderAnisotropy(anisotropy)
             self.anisotropies.append(render_anisotropy)
             self.render_map[render_id] = render_anisotropy
-            self.anisotropy_render_id_map[render_id] = site_unique_id_to_render_id[anisotropy.site.unique_id]
+            self.anisotropy_render_id_map[render_id] = self.expanded_site_unique_id_to_render_id[anisotropy.site.unique_id]
             render_id += 1
 
         #
         # Build the data structures for displaying
         #
-

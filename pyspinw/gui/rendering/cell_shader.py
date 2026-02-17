@@ -14,8 +14,6 @@ class CellShader(Shader):
     def __init__(self):
         super().__init__()
 
-        self.mode = SelectionMode.NOT_SELECTED
-
         self._model_loc = glGetUniformLocation(self.shader_program, "model")
         self._projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
 

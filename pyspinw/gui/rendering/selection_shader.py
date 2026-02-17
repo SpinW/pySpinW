@@ -52,6 +52,6 @@ class SelectionShader(Shader):
                 glUniform3f(self._selection_color_loc, 1.0, 0.6, 0.1)
             case SelectionMode.HOVER:
                 glUniform3f(self._selection_color_loc, 1.0, 1.0, 1.0)
-            case SelectionMode.SECONDARY:
-                glUniform3f(self._selection_color_loc, 0.8, 0.8, 0.1)
+            case SelectionMode.SELECTED_HOVER:
+                glUniform3f(self._selection_color_loc, 1.0, 0.8, 0.1)
 

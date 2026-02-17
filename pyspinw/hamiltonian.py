@@ -76,7 +76,10 @@ class Hamiltonian(SPWSerialisable):
         return "\n".join(lines)
 
     def expand_with_mapping(self):
-        """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians """
+        """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians
+
+        The site mapping contains
+        """
         bigger_cell, site_mapping = self.structure.expansion_site_mapping()
 
         new_couplings = []

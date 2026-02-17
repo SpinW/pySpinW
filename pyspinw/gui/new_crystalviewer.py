@@ -163,17 +163,23 @@ class CrystalViewerWidget(QOpenGLWidget):
                     site_model_matrix = site.model_matrix @ moment_scale_matrix
 
                     if site.render_id == self.hover_index:
-                        self.selection_shader.model_matrix = site_model_matrix
-                        self.selection_shader.mode = SelectionMode.HOVER
-                        self.selection_shader.use()
-                        self.arrow.render_back_wireframe()
+                        if site.render_id in self.current_selection:
+                            mode = SelectionMode.SELECTED_HOVER
+                        else:
+                            mode = SelectionMode.HOVER
 
                     else:
                         if site.render_id in self.current_selection:
-                            self.selection_shader.model_matrix = site_model_matrix
-                            self.selection_shader.mode = SelectionMode.SELECTED
-                            self.selection_shader.use()
-                            self.arrow.render_back_wireframe()
+                            mode = SelectionMode.SELECTED
+                        else:
+                            mode = SelectionMode.NOT_SELECTED
+
+                    if mode != SelectionMode.NOT_SELECTED:
+
+                        self.selection_shader.model_matrix = site_model_matrix
+                        self.selection_shader.mode = mode
+                        self.selection_shader.use()
+                        self.arrow.render_back_wireframe()
 
                     self.object_shader.model_matrix = site_model_matrix
                     self.object_shader.use()
@@ -189,16 +195,22 @@ class CrystalViewerWidget(QOpenGLWidget):
                     coupling_model_matrix = coupling.model_matrix @ coupling_scaling
 
                     if coupling.render_id == self.hover_index:
-                        self.selection_shader.model_matrix = coupling_model_matrix
-                        self.selection_shader.mode = SelectionMode.HOVER
-                        self.selection_shader.use()
-                        self.tube.render_back_wireframe()
+                        if coupling.render_id in self.current_selection:
+                            mode = SelectionMode.SELECTED_HOVER
+                        else:
+                            mode = SelectionMode.HOVER
+
                     else:
                         if coupling.render_id in self.current_selection:
-                            self.selection_shader.model_matrix = coupling_model_matrix
-                            self.selection_shader.mode = SelectionMode.SELECTED
-                            self.selection_shader.use()
-                            self.tube.render_back_wireframe()
+                            mode = SelectionMode.SELECTED
+                        else:
+                            mode = SelectionMode.NOT_SELECTED
+
+                    if mode != SelectionMode.NOT_SELECTED:
+                        self.selection_shader.model_matrix = coupling_model_matrix
+                        self.selection_shader.mode = mode
+                        self.selection_shader.use()
+                        self.tube.render_back_wireframe()
 
                     self.object_shader.model_matrix = coupling_model_matrix
                     self.object_shader.use()
@@ -331,7 +343,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def mouseMoveEvent(self, event):
         """Qt override, called on mouse movement"""
-
 
         self.mouse_position = event.position()
 
