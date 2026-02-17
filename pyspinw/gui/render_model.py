@@ -55,15 +55,14 @@ class RenderSite(Selectable):
 class RenderCoupling(Selectable):
     def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
 
+        # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
+
         translation = unit_cell.fractional_to_cartesian(coupling.site_1.ijk)
         delta = unit_cell.fractional_to_cartesian(coupling.site_2.ijk + coupling.cell_offset.vector) - translation
 
         length = np.sqrt(np.sum(delta**2))
-        print(length)
 
         rotation = alt_rotate(delta)
-        print(delta)
-        print(rotation)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
         model_matrix[3,3] = 1.0

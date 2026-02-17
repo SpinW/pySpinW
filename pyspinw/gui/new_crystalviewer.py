@@ -11,6 +11,8 @@ import sys
 from pyspinw.gui.buffers import IntegerBuffer
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.render_model import RenderModel
+from pyspinw.gui.rendering.cell_shader import CellShader
+from pyspinw.gui.rendering.id_shader import IDShader
 from pyspinw.gui.rendering.models.arrow import Arrow
 from pyspinw.gui.rendering.models.sphere import Sphere
 from pyspinw.gui.rendering.models.tube import Tube
@@ -18,7 +20,8 @@ from pyspinw.gui.rendering.models.tube import Tube
 import logging
 
 from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
-from pyspinw.gui.rendering.shader import SelectionShader, ObjectShader, CellShader, IDShader
+from pyspinw.gui.rendering.object_shader import ObjectShader
+from pyspinw.gui.rendering.selection_shader import SelectionShader
 from pyspinw.gui.renderoptions import DisplayOptions
 from pyspinw.util import rotation_matrix
 
@@ -155,14 +158,14 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for site in self.render_model.sites:
 
-                    scaled_matrix = site.model_matrix @ moment_scale_matrix
+                    site_model_matrix = site.model_matrix @ moment_scale_matrix
 
                     if site.render_id == self.hover_index:
-                        self.selection_shader.model_matrix = scaled_matrix
+                        self.selection_shader.model_matrix = site_model_matrix
                         self.selection_shader.use()
                         self.arrow.render_back_wireframe()
 
-                    self.object_shader.model_matrix = scaled_matrix
+                    self.object_shader.model_matrix = site_model_matrix
                     self.object_shader.use()
                     self.arrow.render_triangles()
 
@@ -173,14 +176,14 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for coupling in self.render_model.couplings:
 
-                    scaled_matrix = coupling.model_matrix @ coupling_scaling
+                    coupling_model_matrix = coupling.model_matrix @ coupling_scaling
 
                     if coupling.render_id == self.hover_index:
-                        self.selection_shader.model_matrix = scaled_matrix
+                        self.selection_shader.model_matrix = coupling_model_matrix
                         self.selection_shader.use()
-                        self.arrow.render_back_wireframe()
+                        self.tube.render_back_wireframe()
 
-                    self.object_shader.model_matrix = scaled_matrix
+                    self.object_shader.model_matrix = coupling_model_matrix
                     self.object_shader.use()
                     self.tube.render_triangles()
 
@@ -229,9 +232,9 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for site in self.render_model.sites:
 
-                    scaled_matrix = site.model_matrix @ moment_scale_matrix
+                    site_model_matrix = site.model_matrix @ moment_scale_matrix
 
-                    self.id_shader.model_matrix = scaled_matrix
+                    self.id_shader.model_matrix = site_model_matrix
                     self.id_shader.id_value = site.render_id
                     self.id_shader.use()
                     self.arrow.render_triangles()
