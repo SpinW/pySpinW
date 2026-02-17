@@ -30,10 +30,6 @@ class Selectable(Component):
         super().__init__(model_matrix)
 
         self.render_id = render_id
-        self.is_selected = False
-        self.is_hover = False
-        self.is_group_selected = False
-        self.is_group_hover = False
 
 
 class RenderSite(Selectable):
