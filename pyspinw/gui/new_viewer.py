@@ -49,6 +49,7 @@ class Viewer(QWidget):
 
         self.text_display.hoverChanged.connect(self.on_text_hover_changed)
         self.viewer.hoverChanged.connect(self.on_render_hover_changed)
+        self.viewer.selectionChanged.connect(self.on_render_selection_changed)
 
     def on_display_options_changed(self):
         self.viewer.display_options = self.toolbar.display_options()
@@ -59,14 +60,20 @@ class Viewer(QWidget):
     def on_render_hover_changed(self):
         self.text_display.set_hover(self.viewer.hover_ids)
 
+    def on_render_selection_changed(self):
+        self.text_display.set_selection(self.viewer.current_selection)
+
     def closeEvent(self, event):
         self.toolbar.save_settings()
         super().closeEvent(event)
 
 
 def show_hamiltonian(hamiltonian):
-
     app = QApplication()
+
+    # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+    # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
     widget = Viewer(hamiltonian)
     widget.resize(800, 600)
     widget.show()

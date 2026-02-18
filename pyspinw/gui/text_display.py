@@ -1,7 +1,7 @@
 from collections import defaultdict
 
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont
+from PySide6.QtCore import Signal, QItemSelection, QItemSelectionModel
+from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont, QGuiApplication
 from PySide6.QtWidgets import QWidget, QSplitter, QTextEdit, QTreeView, QVBoxLayout
 
 from pyspinw.gui.render_model import RenderModel
@@ -38,6 +38,19 @@ class ParameterTable(QTreeView):
         self.hover_ids = []
 
         self.setMouseTracking(True)
+        self.setSelectionBehavior(QTreeView.SelectRows)
+
+        # if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+        self.setStyleSheet("""
+        QTreeView::item:selected {
+            background-color: #DD9911;
+            color: black;
+        } 
+        """)
+
+        # else:
+        #     self.setStyleSheet("""
+        #     """)
 
     def on_item_hovered(self, index):
         if index.isValid():
@@ -133,12 +146,9 @@ class TextDisplay(QWidget):
 
             site_root.appendRow([unexpanded_name, unexpanded_pos, unexpanded_cart, unexpanded_moment])
 
-        print(self.site_render_id_to_index)
-        print(self.site_index_to_row_item)
-
         self.site_tree.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.site_tree.setModel(site_model)
-        # site_tree.expandAll()
+
 
         #
         # Couplings
@@ -228,3 +238,26 @@ class TextDisplay(QWidget):
                 # is_child = self.site_index_to_is_child[index]
                 item = self.site_index_to_row_item[index]
                 self.set_row_boldness(item, True)
+
+    def set_selection(self, render_ids: list[int]):
+
+        # Get the items to select
+        site_items = []
+        for render_id in render_ids:
+            indices = self.site_render_id_to_index[render_id] # Defaultdict, so no item will be empty list
+            for index in indices:
+                item = self.site_index_to_row_item[index]
+                parent = item.parent()
+                if parent is not None:
+                    site_items.append(item)
+                    self.site_tree.expand(parent.index())
+
+        selection = QItemSelection()
+
+        for item in site_items:
+            index = item.index()
+            selection.select(index, index)
+
+        self.site_tree.selectionModel().select(
+            selection,
+            QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)

@@ -33,6 +33,7 @@ class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
 
     hoverChanged = Signal()
+    selectionChanged = Signal()
 
     mouse_angle_sensitivity = 0.01
     mouse_move_sensitivity = 0.005
@@ -68,7 +69,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.mouse_position: QPoint | None = None
         self.hover_ids: list[int] = []
         self.current_selection: list[int] = []
-        self.last_id = 0
+        self.last_hover_id = 0
 
         # These variables are used for handling mouse dragging
         self.mouse_data: tuple[QPoint, Qt.MouseButton, int] | None= None
@@ -299,16 +300,16 @@ class CrystalViewerWidget(QOpenGLWidget):
                 id
             )
 
-            id = int(id)
+            self.current_hover_id = int(id)
             if id != 0:
-                self.hover_ids = [id]
+                self.hover_ids = [self.current_hover_id]
             else:
                 self.hover_ids = []
 
-            if self.last_id != id:
+            if self.last_hover_id != self.current_hover_id:
                 self.hoverChanged.emit()
 
-            self.last_id = id
+            self.last_hover_id = id
 
 
 
@@ -331,11 +332,15 @@ class CrystalViewerWidget(QOpenGLWidget):
         if index == 0:
             if not shift:
                 self.current_selection = []
+                self.selectionChanged.emit()
+
         else:
             if not shift:
                 self.current_selection = [index]
             else:
                 self.current_selection.append(index)
+
+            self.selectionChanged.emit()
 
     def mousePressEvent(self, event):
         """ Qt override, called on mouse press"""
@@ -382,8 +387,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             modifiers = QApplication.keyboardModifiers()
             shift = modifiers == Qt.ShiftModifier
-            if self.hover_ids:
-                self.click_on_element(self.hover_ids[0], shift)
+            self.click_on_element(self.current_hover_id, shift)
 
         self.mouse_data = None
 
