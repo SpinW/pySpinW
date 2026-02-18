@@ -48,6 +48,7 @@ class Viewer(QWidget):
         #
 
         self.text_display.hoverChanged.connect(self.on_text_hover_changed)
+        self.text_display.selectionChanged.connect(self.on_text_selection_changed)
         self.viewer.hoverChanged.connect(self.on_render_hover_changed)
         self.viewer.selectionChanged.connect(self.on_render_selection_changed)
 
@@ -56,6 +57,9 @@ class Viewer(QWidget):
 
     def on_text_hover_changed(self):
         self.viewer.hover_ids = self.text_display.hover_ids
+
+    def on_text_selection_changed(self):
+        self.viewer.current_selection = self.text_display.current_selection
 
     def on_render_hover_changed(self):
         self.text_display.set_hover(self.viewer.hover_ids)

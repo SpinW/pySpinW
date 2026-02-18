@@ -40,17 +40,12 @@ class ParameterTable(QTreeView):
         self.setMouseTracking(True)
         self.setSelectionBehavior(QTreeView.SelectRows)
 
-        # if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark:
         self.setStyleSheet("""
-        QTreeView::item:selected {
-            background-color: #DD9911;
-            color: black;
-        } 
-        """)
+            QTreeView::item:selected {
+                background-color: #DD9911;
+                color: black;
+            } """)
 
-        # else:
-        #     self.setStyleSheet("""
-        #     """)
 
     def on_item_hovered(self, index):
         if index.isValid():
@@ -71,6 +66,7 @@ class ParameterTable(QTreeView):
 class TextDisplay(QWidget):
 
     hoverChanged = Signal()
+    selectionChanged = Signal()
 
     _bold_font = QFont()
     _bold_font.setBold(True)
@@ -197,13 +193,28 @@ class TextDisplay(QWidget):
         #
 
         self.hover_ids = []
+        self.current_selection = []
         self.site_tree.hoverChanged.connect(self.on_hover_changed)
+        self.site_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def on_hover_changed(self):
         self.hover_ids = self.site_tree.hover_ids # + other one
-
-
         self.hoverChanged.emit()
+
+    def on_selection_changed(self):
+
+        render_ids = []
+        model = self.site_tree.model()
+
+        for index in self.site_tree.selectionModel().selectedIndexes():
+            if index.column() == 0:
+                render_ids += model.itemFromIndex(index).ids
+
+        render_ids = list(set(render_ids))
+
+        self.current_selection = render_ids
+        self.selectionChanged.emit()
+
 
     @staticmethod
     def _get_row_items(item: QStandardItem):
@@ -258,6 +269,11 @@ class TextDisplay(QWidget):
             index = item.index()
             selection.select(index, index)
 
-        self.site_tree.selectionModel().select(
-            selection,
-            QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+
+        selection_model = self.site_tree.selectionModel()
+
+        selection_model.blockSignals(True) # Block the signals when sending
+        try:
+            selection_model.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+        finally:
+            selection_model.blockSignals(False)
