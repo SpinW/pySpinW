@@ -64,7 +64,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # These variables are used for selection / highlighting
         self.mouse_position: QPoint | None = None
-        self.hover_index: int = 0
+        self.hover_ids: list[int] = []
         self.current_selection: list[int] = []
 
         # These variables are used for handling mouse dragging
@@ -162,7 +162,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                     site_model_matrix = site.model_matrix @ moment_scale_matrix
 
-                    if site.render_id == self.hover_index:
+                    # This can be sped up
+                    if site.render_id in self.hover_ids:
                         if site.render_id in self.current_selection:
                             mode = SelectionMode.SELECTED_HOVER
                         else:
@@ -194,7 +195,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                     coupling_model_matrix = coupling.model_matrix @ coupling_scaling
 
-                    if coupling.render_id == self.hover_index:
+                    if coupling.render_id in self.hover_ids:
                         if coupling.render_id in self.current_selection:
                             mode = SelectionMode.SELECTED_HOVER
                         else:
@@ -297,10 +298,12 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             # print(f"Hovering over ({x}, {y}) ID={id}")
 
-            self.hover_index = int(id)
+            id = int(id)
+            if id != 0:
+                self.hover_ids = [id]
+            else:
+                self.hover_ids = []
 
-        else:
-            self.hover_index = 0
 
 
 
@@ -332,7 +335,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         """ Qt override, called on mouse press"""
 
         if self.mouse_data is None:
-            self.mouse_data = event.position(), event.button(), self.hover_index
+            self.mouse_data = event.position(), event.button(), self.hover_ids
 
             if event.button() == Qt.MouseButton.LeftButton:
                 self.mouse_rotation = np.eye(3)
@@ -370,10 +373,11 @@ class CrystalViewerWidget(QOpenGLWidget):
     def mouseReleaseEvent(self, event):
         """ Qt override, called on mouse up"""
 
-        if self.hover_index == self.mouse_data[2] and event.button() == Qt.MouseButton.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             modifiers = QApplication.keyboardModifiers()
             shift = modifiers == Qt.ShiftModifier
-            self.click_on_element(self.hover_index, shift)
+            if self.hover_ids:
+                self.click_on_element(self.hover_ids[0], shift)
 
         self.mouse_data = None
 
