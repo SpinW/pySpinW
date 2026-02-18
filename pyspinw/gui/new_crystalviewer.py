@@ -1,7 +1,7 @@
 """ Main widget for Qt/GL rendering of magnetic crystal structures"""
 
 import numpy as np
-from PySide6.QtCore import QTimer, QPoint
+from PySide6.QtCore import QTimer, QPoint, Signal
 from PySide6.QtGui import Qt, QKeyEvent
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL import *
@@ -31,6 +31,8 @@ logger = logging.Logger(__name__)
 
 class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
+
+    hoverChanged = Signal()
 
     mouse_angle_sensitivity = 0.01
     mouse_move_sensitivity = 0.005
@@ -66,6 +68,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.mouse_position: QPoint | None = None
         self.hover_ids: list[int] = []
         self.current_selection: list[int] = []
+        self.last_id = 0
 
         # These variables are used for handling mouse dragging
         self.mouse_data: tuple[QPoint, Qt.MouseButton, int] | None= None
@@ -296,13 +299,16 @@ class CrystalViewerWidget(QOpenGLWidget):
                 id
             )
 
-            # print(f"Hovering over ({x}, {y}) ID={id}")
-
             id = int(id)
             if id != 0:
                 self.hover_ids = [id]
             else:
                 self.hover_ids = []
+
+            if self.last_id != id:
+                self.hoverChanged.emit()
+
+            self.last_id = id
 
 
 

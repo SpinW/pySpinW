@@ -48,12 +48,16 @@ class Viewer(QWidget):
         #
 
         self.text_display.hoverChanged.connect(self.on_text_hover_changed)
+        self.viewer.hoverChanged.connect(self.on_render_hover_changed)
 
     def on_display_options_changed(self):
         self.viewer.display_options = self.toolbar.display_options()
 
     def on_text_hover_changed(self):
         self.viewer.hover_ids = self.text_display.hover_ids
+
+    def on_render_hover_changed(self):
+        self.text_display.set_hover(self.viewer.hover_ids)
 
     def closeEvent(self, event):
         self.toolbar.save_settings()
