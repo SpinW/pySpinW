@@ -1,7 +1,5 @@
 from multiprocessing import freeze_support
 
-from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
-from pyspinw.gui.render_model import RenderModel
 from pyspinw.interface import couplings, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.gui.viewer import show_hamiltonian

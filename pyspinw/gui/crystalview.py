@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QApplication
 from pyspinw.gui.buffers import IntegerBuffer
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.render_model import RenderModel
+from pyspinw.gui.rendering.axes_shader import AxesShader
 from pyspinw.gui.rendering.cell_shader import CellShader
 from pyspinw.gui.rendering.id_shader import IDShader
 from pyspinw.gui.rendering.models.arrow import Arrow
@@ -20,13 +21,17 @@ import logging
 
 from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
 from pyspinw.gui.rendering.object_shader import ObjectShader
-from pyspinw.gui.rendering.renderable_objects import SelectionMode
+from pyspinw.gui.rendering.selectionmode import SelectionMode
 from pyspinw.gui.rendering.selection_shader import SelectionShader
 from pyspinw.gui.renderoptions import DisplayOptions
 from pyspinw.util import rotation_matrix
 
 logger = logging.Logger(__name__)
 
+# Transforms for xyz arrows in axes viewport
+_z_axis_mat = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, .5], [0, 0, 0, 1]], dtype=np.float32)
+_y_axis_mat = np.array([[1, 0, 0, 0], [0, 0, 1, .5], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
+_x_axis_mat = np.array([[0, 0, 1, .5], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 
 
 class CrystalViewerWidget(QOpenGLWidget):
@@ -39,6 +44,9 @@ class CrystalViewerWidget(QOpenGLWidget):
     mouse_move_sensitivity = 0.005
     mouse_zoom_sensitivity = 0.002
     min_view_radius = 0.01
+
+    axes_size = 100
+    axes_padding = 10
 
     def __init__(self, render_model: RenderModel):
 
@@ -98,6 +106,10 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.selection_shader = SelectionShader()
             self.cell_shader = CellShader()
 
+            # shader for axes
+            self.axes_shader = AxesShader()
+
+            # Shader used for object ID mapping
             self.id_shader = IDShader()
 
             # Framebuffer for ID rendering
@@ -252,6 +264,52 @@ class CrystalViewerWidget(QOpenGLWidget):
                 self.cube.render_wireframe()
 
         #
+        # Corner viewport for axes
+        #
+
+
+        # Save state
+        glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+        # glDisable(GL_LIGHTING)
+        # glDisable(GL_TEXTURE_2D)
+        glDisable(GL_DEPTH_TEST)
+
+        # Axes viewport
+        glViewport(
+            self.axes_padding,
+            self.axes_padding,
+            self.axes_size,
+            self.axes_size
+        )
+
+        self.axes_shader.camera = self.camera
+
+        # render x
+        self.axes_shader.object_color = 1, 0, 0
+        self.axes_shader.model_matrix = _x_axis_mat
+        self.axes_shader.use()
+        self.arrow.render_triangles()
+
+        # render y
+        self.axes_shader.object_color = 0, 1, 0
+        self.axes_shader.model_matrix = _y_axis_mat
+        self.axes_shader.use()
+        self.arrow.render_triangles()
+
+        # render z
+        self.axes_shader.object_color = 0, 0, 1
+        self.axes_shader.model_matrix = _z_axis_mat
+        self.axes_shader.use()
+        self.arrow.render_triangles()
+
+
+        # Restore matrices
+
+        glEnable(GL_DEPTH_TEST)
+        glPopAttrib()
+
+
+        #
         # ID framebuffer
         #
 
@@ -281,6 +339,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                     self.id_shader.model_matrix = coupling.model_matrix @ coupling_scaling
                     self.id_shader.use()
                     self.tube.render_triangles()
+
 
         #
         # Calculate the object for the mouse over, and set its hover state
@@ -409,23 +468,3 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.mouse_position = None
         event.accept()
 
-
-    def keyPressEvent(self, event: QKeyEvent):
-        # We have this for debugging
-
-        if event.key() == Qt.Key_W:
-
-            import matplotlib.pyplot as plt
-            im = self.id_framebuffer.get_image(self.width(), self.height())
-
-            plt.figure()
-            plt.imshow(im)
-            plt.show()
-
-
-
-
-        elif event.key() == Qt.Key_Escape:
-            print("Escape pressed")
-
-        event.accept()

@@ -48,11 +48,40 @@ class Camera:
     def view_matrix(self):
         """Transform from world position to camera relative """
         eye = np.array(self.position, dtype=np.float32)
-        target = np.array(self.look_at, dtype=np.float32)
+        target = np.array([0.5, 0.5, 0.5], dtype=np.float32)
         up = np.array(self.up, dtype=np.float32)
 
         # Look at matrix
         f = target - eye
+        f = f / np.linalg.norm(f)
+
+        s = np.cross(f, up)
+        s = s / np.linalg.norm(s)
+
+        u = np.cross(s, f)
+
+        view = np.identity(4, dtype=np.float32)
+        view[0, :3] = s
+        view[1, :3] = u
+        view[2, :3] = -f
+        view[0, 3] = -np.dot(s, eye)
+        view[1, 3] = -np.dot(u, eye)
+        view[2, 3] = np.dot(f, eye)
+
+        return view
+
+
+    axes_target = np.ones((3, ), dtype=np.float32) / 2
+    def axes_view_matrix(self):
+        """View matrix for axes"""
+
+        eye = np.array(self.position, dtype=np.float32)
+        eye_mag = np.sqrt(np.sum(eye ** 2))
+        eye *= 3 / eye_mag
+        up = np.array(self.up, dtype=np.float32)
+
+        # Look at matrix
+        f = self.axes_target - eye
         f = f / np.linalg.norm(f)
 
         s = np.cross(f, up)

@@ -2,7 +2,7 @@ import numpy as np
 from OpenGL.GL import *
 
 from pyspinw.gui.camera import Camera
-from pyspinw.gui.rendering.renderable_objects import SelectionMode
+from pyspinw.gui.rendering.selectionmode import SelectionMode
 from pyspinw.gui.rendering.shader import Shader
 
 
@@ -10,7 +10,7 @@ class SelectionShader(Shader):
     """ Used for rendering the selection highlighting """
 
     vertex_shader = "simple_vertex"
-    fragment_shader = "selection_fragment"
+    fragment_shader = "emission_fragment"
 
     def __init__(self):
         super().__init__()
@@ -24,7 +24,7 @@ class SelectionShader(Shader):
         self._model_loc = glGetUniformLocation(self.shader_program, "model")
         self._projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
 
-        self._selection_color_loc = glGetUniformLocation(self.shader_program, "selectionColor")
+        self._selection_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
 
 
     @property

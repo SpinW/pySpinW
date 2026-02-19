@@ -24,6 +24,7 @@ def alt_rotate(target_vector):
         [-x, -y, z]
     ])
 
+
 class Component:
     """ Base class for components """
     def __init__(self, model_matrix: np.ndarray):
@@ -42,12 +43,12 @@ class RenderSite(Selectable):
     def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
         # Build model matrix
 
-        rotation = site_rotations(np.array([site.base_moment]))
+        rotation = alt_rotate(np.array(site.base_moment))
         translation = unit_cell.fractional_to_cartesian(site.ijk)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
         model_matrix[3,3] = 1.0
-        model_matrix[:3, :3] = -rotation
+        model_matrix[:3, :3] = rotation
         model_matrix[:3, 3] = translation
 
         super().__init__(render_id, model_matrix)
