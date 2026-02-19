@@ -139,15 +139,20 @@ class TextDisplay(QWidget):
         small_cell = render_model.hamiltonian.structure.unit_cell
         big_cell = render_model.expanded.structure.unit_cell
 
-        self.site_render_id_to_index = defaultdict(list)
-        self.site_index_to_row_item: dict[int, DisplayItem] = {}
+        # Mapping from render ID to first row item, use default dict to avoid key errors
+        self.site_render_id_to_row_item: dict[int, list[DisplayItem]] = defaultdict(list)
+
+        # Mapping from expanded site to offset
+        site_expanded_uid_to_offset: dict[int, tuple[int, int, int]] = {}
 
         #
         # Fill out site data
         #
 
         index = 0 # We need our own flat indexing
-        for original_index, site in enumerate(render_model.original_sites):
+        for unexpanded_index, site in enumerate(render_model.original_sites):
+
+            # Note: unexpanded type is LatticeSite, expanded type is RenderSite
 
             parent_ids = []
 
@@ -159,13 +164,8 @@ class TextDisplay(QWidget):
                 format_anisotropies(site_uid_to_anisotropies[site.unique_id]), parent_ids)
             unexpanded_gfactor = DisplayItem(format_g(site.g), parent_ids)
 
-            parent_index = index
 
-            self.site_index_to_row_item[index] = unexpanded_name
-
-            index += 1
-
-            for expanded_index in render_model.original_index_to_expanded[original_index]:
+            for expanded_index in render_model.original_index_to_expanded[unexpanded_index]:
 
                 expanded_render_site = render_model.sites[expanded_index]
                 expanded_site = expanded_render_site.site
@@ -173,7 +173,12 @@ class TextDisplay(QWidget):
                 ids=[render_model.sites[expanded_index].render_id]
                 parent_ids += ids # This doesn't replace the list, adds to existing one
 
-                expanded_name = DisplayItem(f"{expanded_site.name} {expanded_render_site.offset}", ids=ids)
+                # Get the offset, save, then use for name
+                offset = expanded_render_site.offset
+                site_expanded_uid_to_offset[expanded_site.unique_id] = offset
+                expanded_name = DisplayItem(f"{expanded_site.name} {offset}", ids=ids)
+
+                # rest of items
                 expanded_pos = DisplayItem(format_triple(expanded_site.ijk), ids=ids)
                 expanded_cart = DisplayItem(format_triple(big_cell.fractional_to_cartesian(expanded_site.ijk)), ids=ids)
                 expanded_moment = DisplayItem(format_triple(expanded_site.base_moment), ids=ids)
@@ -189,13 +194,9 @@ class TextDisplay(QWidget):
                     expanded_anisotropies,
                     expanded_gfactor])
 
-                self.site_index_to_row_item[index] = expanded_name
-
                 for id in ids:
-                    self.site_render_id_to_index[id].append(parent_index)
-                    self.site_render_id_to_index[id].append(index)
+                    self.site_render_id_to_row_item[id] = [unexpanded_name, expanded_name]
 
-                index += 1
 
 
             site_root.appendRow([
@@ -212,11 +213,13 @@ class TextDisplay(QWidget):
         #
         # Couplings
         #
+        # Mapping from render ID to first row item, use default dict to avoid key errors
+        self.coupling_render_id_to_row_item: dict[int, list[DisplayItem]] = defaultdict(list)
 
         # Get mapping from original to expanded
         self.couplings_original_to_expanded = defaultdict(list)
-        for expanded_index, original_index in enumerate(render_model.coupling_mapping):
-            self.couplings_original_to_expanded[original_index].append(expanded_index)
+        for expanded_index, unexpanded_index in enumerate(render_model.coupling_mapping):
+            self.couplings_original_to_expanded[unexpanded_index].append(expanded_index)
 
 
         # Fill out the coupling table
@@ -227,30 +230,62 @@ class TextDisplay(QWidget):
 
         coupling_root = coupling_model.invisibleRootItem()
 
-        for original_index, original_coupling in enumerate(render_model.hamiltonian.couplings):
-            parent_ids = []
-            unexpanded_name = DisplayItem(original_coupling.name, parent_ids)
+        for unexpanded_index, unexpanded_coupling in enumerate(render_model.hamiltonian.couplings):
 
-            for expanded_index in self.couplings_original_to_expanded[original_index]:
+            # Note unexpanded is type Coupling, expanded is type RenderCoupling
+
+            parent_ids = []
+            unexpanded_name = DisplayItem(unexpanded_coupling.name, parent_ids)
+            unexpanded_offset = DisplayItem(str(unexpanded_coupling.cell_offset.as_tuple), parent_ids)
+            unexpanded_type = DisplayItem(unexpanded_coupling.coupling_type, parent_ids)
+            unexpanded_site_1 = DisplayItem(unexpanded_coupling.site_1.name, parent_ids)
+            unexpanded_site_2 = DisplayItem(unexpanded_coupling.site_2.name, parent_ids)
+            unexpanded_parameters = DisplayItem(unexpanded_coupling.parameter_string, parent_ids)
+
+
+            for expanded_index in self.couplings_original_to_expanded[unexpanded_index]:
                 expanded_coupling: RenderCoupling = render_model.couplings[expanded_index]
 
                 # Set the render ids
                 ids = [expanded_coupling.render_id]
                 parent_ids += ids # This doesn't replace the list, adds to existing one
 
+                site_1_offset = site_expanded_uid_to_offset[expanded_coupling.coupling.site_1.unique_id]
+                site_1_name = f"{expanded_coupling.coupling.site_1.name} {site_1_offset}"
+                site_2_offset = site_expanded_uid_to_offset[expanded_coupling.coupling.site_2.unique_id]
+                site_2_name = f"{expanded_coupling.coupling.site_2.name} {site_2_offset}"
+
                 expanded_name = DisplayItem(expanded_coupling.coupling.name, ids)
+                expanded_offset = DisplayItem(str(expanded_coupling.coupling.cell_offset.as_tuple), ids)
+                expanded_type = DisplayItem(expanded_coupling.coupling.coupling_type, ids)
+                expanded_site_1 = DisplayItem(site_1_name, ids)
+                expanded_site_2 = DisplayItem(site_2_name, ids)
+                expanded_parameters = DisplayItem(expanded_coupling.coupling.parameter_string, ids)
 
                 unexpanded_name.appendRow([
-                    expanded_name
+                    expanded_name,
+                    expanded_offset,
+                    expanded_type,
+                    expanded_site_1,
+                    expanded_site_2,
+                    expanded_parameters
                 ])
+
+                # Save column zero items
+                for id in ids:
+                    self.coupling_render_id_to_row_item[id] = [unexpanded_name, expanded_name]
 
 
             coupling_root.appendRow([
-                unexpanded_name
+                unexpanded_name,
+                unexpanded_offset,
+                unexpanded_type,
+                unexpanded_site_1,
+                unexpanded_site_2,
+                unexpanded_parameters
             ])
 
         self.coupling_tree.setModel(coupling_model)
-        self.coupling_tree.expandAll()
 
         #
         # Layout components
@@ -268,7 +303,7 @@ class TextDisplay(QWidget):
         self.setLayout(layout)
 
         #
-        # Hovering stuff
+        # Hovering and selection stuff
         #
 
         self.hover_ids = []
@@ -282,22 +317,29 @@ class TextDisplay(QWidget):
         self.hoverChanged.emit()
 
     def on_selection_changed(self):
+        """ Called when selection on either of the trees changes"""
+        #
+        # Build a list of render ids
+        #
 
         render_ids = []
 
+        # Sites
         model = self.site_tree.model()
         for index in self.site_tree.selectionModel().selectedIndexes():
             if index.column() == 0:
                 render_ids += model.itemFromIndex(index).ids
 
+        # Couplings
         model = self.coupling_tree.model()
         for index in self.coupling_tree.selectionModel().selectedIndexes():
             if index.column() == 0:
                 render_ids += model.itemFromIndex(index).ids
 
-
+        # Remove duplicates
         render_ids = list(set(render_ids))
 
+        # Make accessible, then signal anything listening
         self.current_selection = render_ids
         self.selectionChanged.emit()
 
@@ -327,36 +369,50 @@ class TextDisplay(QWidget):
 
     def set_hover(self, render_ids):
 
-        for item in self.site_index_to_row_item.values():
-            self.set_row_boldness(item, False)
+        for items in self.site_render_id_to_row_item.values():
+            # TODO Be more efficient
+            for item in items:
+                self.set_row_boldness(item, False)
 
         for render_id in render_ids:
-            for index in self.site_render_id_to_index[render_id]:
-                # is_child = self.site_index_to_is_child[index]
-                item = self.site_index_to_row_item[index]
+            for item in self.site_render_id_to_row_item[render_id]:
+                self.set_row_boldness(item, True)
+
+        for items in self.coupling_render_id_to_row_item.values():
+            # TODO Be more efficient
+            for item in items:
+                self.set_row_boldness(item, False)
+
+        for render_id in render_ids:
+            for item in self.coupling_render_id_to_row_item[render_id]:
                 self.set_row_boldness(item, True)
 
     def set_selection(self, render_ids: list[int]):
-
+        """ Set the selection based on render IDs"""
         # print("Set selection:", render_ids)
 
-        # Get the items to select
-        site_items = []
+        #
+        # Sites
+        #
+
+        selected_items = [] # Items to select
+
+        # Get the selection items, and expand where needed
         for render_id in render_ids:
-            indices = self.site_render_id_to_index[render_id] # Defaultdict, so no item will be empty list
-            for index in indices:
-                item = self.site_index_to_row_item[index]
+            for item in self.site_render_id_to_row_item[render_id]:
                 parent = item.parent()
                 if parent is not None:
-                    site_items.append(item)
+                    selected_items.append(item)
                     self.site_tree.expand(parent.index())
 
+        # Make the selection object
         selection = QItemSelection()
 
-        for item in site_items:
+        for item in selected_items:
             index = item.index()
             selection.select(index, index)
 
+        # Do selection
 
         selection_model = self.site_tree.selectionModel()
 
@@ -368,3 +424,35 @@ class TextDisplay(QWidget):
 
         # Repaint signals will have got lost, so we need to manually refresh
         self.site_tree.viewport().update()
+
+        #
+        # Couplings
+        #
+
+        selected_items = [] # items to be selected
+
+        # Get the selection items, and expand where needed
+        for render_id in render_ids:
+            for item in self.coupling_render_id_to_row_item[render_id]:
+                parent = item.parent()
+                if parent is not None:
+                    selected_items.append(item)
+                    self.coupling_tree.expand(parent.index())
+
+        selection = QItemSelection()
+
+        for item in selected_items:
+            index = item.index()
+            selection.select(index, index)
+
+        # Set selection on tree
+        selection_model = self.coupling_tree.selectionModel()
+
+        selection_model.blockSignals(True)  # Block the signals when sending
+        try:
+            selection_model.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+        finally:
+            selection_model.blockSignals(False)
+
+        # Repaint signals will have got lost, so we need to manually refresh
+        self.coupling_tree.viewport().update()
