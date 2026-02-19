@@ -8,7 +8,8 @@ from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont, 
 from PySide6.QtWidgets import QWidget, QSplitter, QTextEdit, QTreeView, QVBoxLayout
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.gui.render_model import RenderModel
+from pyspinw.gui.render_model import RenderModel, RenderCoupling
+
 
 class DisplayItem(QStandardItem):
     """ Slightly modified display item"""
@@ -64,6 +65,7 @@ class ParameterTable(QTreeView):
 
         self.setMouseTracking(True)
         self.setSelectionBehavior(QTreeView.SelectRows)
+        self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
 
         self.setStyleSheet("""
             QTreeView::item:selected {
@@ -140,6 +142,10 @@ class TextDisplay(QWidget):
         self.site_render_id_to_index = defaultdict(list)
         self.site_index_to_row_item: dict[int, DisplayItem] = {}
 
+        #
+        # Fill out site data
+        #
+
         index = 0 # We need our own flat indexing
         for original_index, site in enumerate(render_model.original_sites):
 
@@ -165,7 +171,7 @@ class TextDisplay(QWidget):
                 expanded_site = expanded_render_site.site
 
                 ids=[render_model.sites[expanded_index].render_id]
-                parent_ids += ids
+                parent_ids += ids # This doesn't replace the list, adds to existing one
 
                 expanded_name = DisplayItem(f"{expanded_site.name} {expanded_render_site.offset}", ids=ids)
                 expanded_pos = DisplayItem(format_triple(expanded_site.ijk), ids=ids)
@@ -200,7 +206,6 @@ class TextDisplay(QWidget):
                 unexpanded_anisotropies,
                 unexpanded_gfactor])
 
-        self.site_tree.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.site_tree.setModel(site_model)
 
 
@@ -208,36 +213,52 @@ class TextDisplay(QWidget):
         # Couplings
         #
 
-        coupling_tree = QTreeView()
+        # Get mapping from original to expanded
+        self.couplings_original_to_expanded = defaultdict(list)
+        for expanded_index, original_index in enumerate(render_model.coupling_mapping):
+            self.couplings_original_to_expanded[original_index].append(expanded_index)
+
+
+        # Fill out the coupling table
+        self.coupling_tree = ParameterTable()
 
         coupling_model = QStandardItemModel()
-        coupling_model.setHorizontalHeaderLabels(["Name", "Type", "Site 1", "Site 2", "Parameters"])
+        coupling_model.setHorizontalHeaderLabels(["Name", "Offset", "Type", "Site 1", "Site 2", "Parameters"])
 
-        root = coupling_model.invisibleRootItem()
+        coupling_root = coupling_model.invisibleRootItem()
 
-        animals = QStandardItem("Animals")
+        for original_index, original_coupling in enumerate(render_model.hamiltonian.couplings):
+            parent_ids = []
+            unexpanded_name = DisplayItem(original_coupling.name, parent_ids)
 
-        mammals = QStandardItem("Mammals")
-        mammals.appendRow(QStandardItem("Dog"))
-        mammals.appendRow(QStandardItem("Cat"))
+            for expanded_index in self.couplings_original_to_expanded[original_index]:
+                expanded_coupling: RenderCoupling = render_model.couplings[expanded_index]
 
-        birds = QStandardItem("Birds")
-        birds.appendRow(QStandardItem("Eagle"))
+                # Set the render ids
+                ids = [expanded_coupling.render_id]
+                parent_ids += ids # This doesn't replace the list, adds to existing one
 
-        animals.appendRow(mammals)
-        animals.appendRow(birds)
+                expanded_name = DisplayItem(expanded_coupling.coupling.name, ids)
 
-        root.appendRow(animals)
+                unexpanded_name.appendRow([
+                    expanded_name
+                ])
 
-        coupling_tree.setModel(coupling_model)
-        coupling_tree.expandAll()
 
+            coupling_root.appendRow([
+                unexpanded_name
+            ])
+
+        self.coupling_tree.setModel(coupling_model)
+        self.coupling_tree.expandAll()
+
+        #
+        # Layout components
+        #
 
         splitter = QSplitter(Qt.Vertical)
-
-
         splitter.addWidget(self.site_tree)
-        splitter.addWidget(coupling_tree)
+        splitter.addWidget(self.coupling_tree)
 
         layout = QVBoxLayout()
         layout.addWidget(splitter)
@@ -254,6 +275,7 @@ class TextDisplay(QWidget):
         self.current_selection = []
         self.site_tree.hoverChanged.connect(self.on_hover_changed)
         self.site_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
+        self.coupling_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def on_hover_changed(self):
         self.hover_ids = self.site_tree.hover_ids # + other one
@@ -262,11 +284,17 @@ class TextDisplay(QWidget):
     def on_selection_changed(self):
 
         render_ids = []
-        model = self.site_tree.model()
 
+        model = self.site_tree.model()
         for index in self.site_tree.selectionModel().selectedIndexes():
             if index.column() == 0:
                 render_ids += model.itemFromIndex(index).ids
+
+        model = self.coupling_tree.model()
+        for index in self.coupling_tree.selectionModel().selectedIndexes():
+            if index.column() == 0:
+                render_ids += model.itemFromIndex(index).ids
+
 
         render_ids = list(set(render_ids))
 
@@ -310,6 +338,8 @@ class TextDisplay(QWidget):
 
     def set_selection(self, render_ids: list[int]):
 
+        # print("Set selection:", render_ids)
+
         # Get the items to select
         site_items = []
         for render_id in render_ids:
@@ -335,3 +365,6 @@ class TextDisplay(QWidget):
             selection_model.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
         finally:
             selection_model.blockSignals(False)
+
+        # Repaint signals will have got lost, so we need to manually refresh
+        self.site_tree.viewport().update()
