@@ -267,47 +267,95 @@ class CrystalViewerWidget(QOpenGLWidget):
         # Corner viewport for axes
         #
 
+        if self.display_options.show_cartesian_axes:
 
-        # Save state
-        glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
-        # glDisable(GL_LIGHTING)
-        # glDisable(GL_TEXTURE_2D)
-        glDisable(GL_DEPTH_TEST)
+            # Save state
+            glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+            # glDisable(GL_LIGHTING)
+            # glDisable(GL_TEXTURE_2D)
+            glDisable(GL_DEPTH_TEST)
 
-        # Axes viewport
-        glViewport(
-            self.axes_padding,
-            self.axes_padding,
-            self.axes_size,
-            self.axes_size
-        )
+            # Axes viewport
+            glViewport(
+                self.axes_padding,
+                self.axes_padding,
+                self.axes_size,
+                self.axes_size
+            )
 
-        self.axes_shader.camera = self.camera
+            self.axes_shader.camera = self.camera
 
-        # render x
-        self.axes_shader.object_color = 1, 0, 0
-        self.axes_shader.model_matrix = _x_axis_mat
-        self.axes_shader.use()
-        self.arrow.render_triangles()
+            # render x
+            self.axes_shader.object_color = 1, 0, 0
+            self.axes_shader.model_matrix = _x_axis_mat
+            self.axes_shader.use()
+            self.arrow.render_triangles()
 
-        # render y
-        self.axes_shader.object_color = 0, 1, 0
-        self.axes_shader.model_matrix = _y_axis_mat
-        self.axes_shader.use()
-        self.arrow.render_triangles()
+            # render y
+            self.axes_shader.object_color = 0, 1, 0
+            self.axes_shader.model_matrix = _y_axis_mat
+            self.axes_shader.use()
+            self.arrow.render_triangles()
 
-        # render z
-        self.axes_shader.object_color = 0, 0, 1
-        self.axes_shader.model_matrix = _z_axis_mat
-        self.axes_shader.use()
-        self.arrow.render_triangles()
+            # render z
+            self.axes_shader.object_color = 0, 0, 1
+            self.axes_shader.model_matrix = _z_axis_mat
+            self.axes_shader.use()
+            self.arrow.render_triangles()
 
 
-        # Restore matrices
+            # Restore state
 
-        glEnable(GL_DEPTH_TEST)
-        glPopAttrib()
+            glEnable(GL_DEPTH_TEST)
+            glPopAttrib()
 
+        #
+        # Other corner viewport for lattice axes
+        #
+
+        if self.display_options.show_lattice_axes:
+
+            # Save state
+            glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+            glDisable(GL_DEPTH_TEST)
+
+            # Lattice axes viewport
+            glViewport(
+                self.width() - self.axes_size - self.axes_padding,
+                self.axes_padding,
+                self.axes_size,
+                self.axes_size
+            )
+
+            self.axes_shader.camera = self.camera
+
+            if self.display_options.orthogonal_lattice_axes:
+                transforms = self.render_model.unit_cell_orthobasis_transforms
+            else:
+                transforms = self.render_model.unit_cell_axes_transforms
+
+            # render a
+            self.axes_shader.object_color = 0.8, 0.4, 0 # Red -> Orange
+            self.axes_shader.model_matrix = transforms[0]
+            self.axes_shader.use()
+            self.arrow.render_triangles()
+
+            # render b
+            self.axes_shader.object_color = 0.6, 0.8, 0 # Green -> Yellow
+            self.axes_shader.model_matrix = transforms[1]
+            self.axes_shader.use()
+            self.arrow.render_triangles()
+
+            # render c
+            self.axes_shader.object_color = 0.7, 0.3, 0.9 # Blue -> pink
+            self.axes_shader.model_matrix = transforms[2]
+            self.axes_shader.use()
+            self.arrow.render_triangles()
+
+            # Restore state
+
+            glEnable(GL_DEPTH_TEST)
+            glPopAttrib()
 
         #
         # ID framebuffer

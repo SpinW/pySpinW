@@ -9,9 +9,15 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
-def alt_rotate(target_vector):
+
+def rotation_from_z(target_vector):
     """ Rotation matrix from (0,0,1) to the target vector direction """
-    v = target_vector / np.sqrt(np.sum(target_vector**2))
+    mag_sq = np.sum(target_vector**2)
+
+    if mag_sq < 1e-9:
+        return np.eye(3)
+
+    v = target_vector / np.sqrt(mag_sq)
 
     x,y,z = v
 
@@ -43,7 +49,7 @@ class RenderSite(Selectable):
     def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
         # Build model matrix
 
-        rotation = alt_rotate(np.array(site.base_moment))
+        rotation = rotation_from_z(np.array(site.base_moment))
         translation = unit_cell.fractional_to_cartesian(site.ijk)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
@@ -68,7 +74,7 @@ class RenderCoupling(Selectable):
 
         length = np.sqrt(np.sum(delta**2))
 
-        rotation = alt_rotate(delta)
+        rotation = rotation_from_z(delta)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
         model_matrix[3,3] = 1.0
@@ -167,5 +173,29 @@ class RenderModel:
             render_id += 1
 
         #
-        # Build the data structures for displaying
+        # Unit cell axes
         #
+
+        translation_matrix = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,.5],[0,0,0,1]], dtype=np.float32)
+
+        # get orthogonal axes transforms
+
+        unit_cell_orthobasis = hamiltonian.structure.unit_cell._xyz_moments
+
+        self.unit_cell_orthobasis_transforms = []
+        for direction in unit_cell_orthobasis:
+            rotation_matrix = np.eye(4, dtype=np.float32)
+            rotation_matrix[:3, :3] = rotation_from_z(direction)
+
+            self.unit_cell_orthobasis_transforms.append(rotation_matrix @ translation_matrix)
+
+        # get normal xyz
+
+        unit_cell_basis = hamiltonian.structure.unit_cell._xyz
+
+        self.unit_cell_axes_transforms = []
+        for direction in unit_cell_basis:
+            rotation_matrix = np.eye(4, dtype=np.float32)
+            rotation_matrix[:3, :3] = rotation_from_z(direction)
+
+            self.unit_cell_axes_transforms.append(rotation_matrix @ translation_matrix)

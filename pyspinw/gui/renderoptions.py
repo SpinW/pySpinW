@@ -1,17 +1,14 @@
 import json
 import os
-from enum import Enum
+
 from dataclasses import dataclass, asdict
 
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QIcon, QPainter
-from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy, QLabel, QSlider, QComboBox
+from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy, QSlider
 
-from pyspinw.gui.icons.iconload import load_icon, load_pixmap
+from pyspinw.gui.icons.iconload import load_icon
 
-
-class RenderMode(Enum):
-    default = "default"
 
 @dataclass
 class DisplayOptions:
@@ -28,21 +25,25 @@ class DisplayOptions:
     atom_moment_scaling: float = 1.0
     coupling_scaling: float = 1.0
 
-    render_mode: RenderMode = RenderMode.default
+    show_cartesian_axes: bool = True
+    show_lattice_axes: bool = True
+    orthogonal_lattice_axes: bool = False
 
     def serialise(self) -> str:
         out = asdict(self)
-        out["render_mode"] = self.render_mode.value
 
         return json.dumps(out)
 
     @staticmethod
     def deserialise(serialised: str):
-        data = json.loads(serialised)
+        try:
+            data = json.loads(serialised)
 
-        data["render_mode"] = RenderMode(data["render_mode"])
+            return DisplayOptions(**data)
 
-        return DisplayOptions(**data)
+        except Exception: # Anything at all goes wrong, just return default
+
+            return DisplayOptions()
 
 
 
@@ -236,19 +237,12 @@ class DisplayOptionsToolbar(QWidget):
 
         self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
-        #
-        # Render mode
-        #
-
-        self.render_mode_combo = QComboBox()
-        for item in RenderMode:
-            self.render_mode_combo.addItem(item.value)
-
-        self.render_mode_combo.setCurrentText(settings.render_mode.value)
-
-        self.render_mode_combo.setAccessibleDescription("Rendering method")
-        self.bar_layout.addWidget(self.render_mode_combo)
-
+        self.show_cartesian_axes = self._add_toggle_button("Show Cartesian axes",
+                                                           value=settings.show_cartesian_axes)
+        self.show_lattice_axes = self._add_toggle_button("Show lattice aligned axes",
+                                                         value=settings.show_lattice_axes)
+        self.orthogonal_lattice_axes = self._add_toggle_button("Show",
+                                                                  value=settings.orthogonal_lattice_axes)
 
         # Pad right, and set layout
         self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
@@ -266,8 +260,6 @@ class DisplayOptionsToolbar(QWidget):
     def display_options(self) -> DisplayOptions:
         """ Get the current render options """
 
-        render_mode = RenderMode(self.render_mode_combo.currentText())
-
         return DisplayOptions(
             show_sites = self.show_sites.isChecked(),
             show_couplings = self.show_couplings.isChecked(),
@@ -278,7 +270,9 @@ class DisplayOptionsToolbar(QWidget):
             use_atomic_radii = self.scale_atoms.isChecked(),
             atom_moment_scaling = self.moment_scale_slider.value(),
             coupling_scaling = self.coupling_scale_slider.value(),
-            render_mode = render_mode)
+            show_cartesian_axes = self.show_cartesian_axes.isChecked(),
+            show_lattice_axes = self.show_lattice_axes.isChecked(),
+            orthogonal_lattice_axes = self.orthogonal_lattice_axes.isChecked())
 
     def save_settings(self):
         with open(self.settings_filename, 'w') as file:
