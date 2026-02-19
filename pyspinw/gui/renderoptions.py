@@ -238,11 +238,16 @@ class DisplayOptionsToolbar(QWidget):
         self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         self.show_cartesian_axes = self._add_toggle_button("Show Cartesian axes",
+                                                           icon="cartesianaxes",
                                                            value=settings.show_cartesian_axes)
+
         self.show_lattice_axes = self._add_toggle_button("Show lattice aligned axes",
+                                                         icon="latticeaxes",
                                                          value=settings.show_lattice_axes)
-        self.orthogonal_lattice_axes = self._add_toggle_button("Show",
-                                                                  value=settings.orthogonal_lattice_axes)
+
+        self.orthogonal_lattice_axes = self._add_toggle_button("Show orthogonal lattice axes",
+                                                               icon="latticeaxesorth",
+                                                               value=settings.orthogonal_lattice_axes)
 
         # Pad right, and set layout
         self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
