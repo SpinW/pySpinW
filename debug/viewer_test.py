@@ -4,7 +4,7 @@ from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
 from pyspinw.gui.render_model import RenderModel
 from pyspinw.interface import couplings, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
-from pyspinw.gui.new_viewer import show_hamiltonian
+from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure

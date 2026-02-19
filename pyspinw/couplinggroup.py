@@ -9,8 +9,7 @@ from numpy._typing import ArrayLike
 
 from pyspinw.coupling import Coupling
 from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
-from pyspinw.gui.symmetry_settings import SymmetrySettings
-from pyspinw.serialisation import SPWSerialisable
+from pyspinw.symmetry.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
