@@ -10,6 +10,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 
 def alt_rotate(target_vector):
+    """ Rotation matrix from (0,0,1) to the target vector direction """
     v = target_vector / np.sqrt(np.sum(target_vector**2))
 
     x,y,z = v
@@ -24,10 +25,12 @@ def alt_rotate(target_vector):
     ])
 
 class Component:
+    """ Base class for components """
     def __init__(self, model_matrix: np.ndarray):
         self.model_matrix = model_matrix
 
 class Selectable(Component):
+    """ Components that can be selected in the viewer """
     def __init__(self, render_id: int, model_matrix: np.ndarray):
         super().__init__(model_matrix)
 
@@ -35,7 +38,8 @@ class Selectable(Component):
 
 
 class RenderSite(Selectable):
-    def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell):
+    """ Render information for each site """
+    def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
         # Build model matrix
 
         rotation = site_rotations(np.array([site.base_moment]))
@@ -48,9 +52,12 @@ class RenderSite(Selectable):
 
         super().__init__(render_id, model_matrix)
         self.site = site
+        self.offset = offset
 
 
 class RenderCoupling(Selectable):
+    """ Render information for each coupling """
+
     def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
 
         # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
@@ -71,6 +78,8 @@ class RenderCoupling(Selectable):
         self.coupling = coupling
 
 class RenderAnisotropy(Component):
+    """ Render information for anisotropies"""
+
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
     def __init__(self, anisotropy: Anisotropy):
@@ -79,20 +88,26 @@ class RenderAnisotropy(Component):
         self.anisotropy = anisotropy
 
 class RenderModel:
+    """ Model of the hamiltonian, contains lots of derived information for rendering and text representation"""
+
     def __init__(self, hamiltonian: Hamiltonian):
 
         self.hamiltonian = hamiltonian
 
-        self.expanded, expansion_mapping = self.hamiltonian.expand_with_mapping()
+        self.expanded, site_mapping, self.coupling_mapping, self.anisotropy_mapping = \
+            self.hamiltonian._expand_with_mapping()
 
-        self.expanded_uid_to_original_uid: dict[int, int] = {}
-        self.original_uid_to_expanded_uid: defaultdict[int, list[int]] = defaultdict(list)
+        self.site_expanded_uid_to_original_uid: dict[int, int] = {}
+        self.site_original_uid_to_expanded_uid: defaultdict[int, list[int]] = defaultdict(list)
 
         self.original_sites = self.hamiltonian.structure.sites
 
-        for (parent_unique_id, offset), child_site in expansion_mapping.items():
-            self.original_uid_to_expanded_uid[parent_unique_id].append(child_site.unique_id)
-            self.expanded_uid_to_original_uid[child_site.unique_id] = parent_unique_id
+        for (parent_unique_id, offset), child_site in site_mapping.items():
+            self.site_original_uid_to_expanded_uid[parent_unique_id].append(child_site.unique_id)
+            self.site_expanded_uid_to_original_uid[child_site.unique_id] = parent_unique_id
+
+        self.site_expanded_uid_to_original_index_and_offset = \
+            {site.unique_id: data for data, site in site_mapping.items()}
 
         #
         # Build the data structure for rendering
@@ -101,7 +116,6 @@ class RenderModel:
         render_id = 1
 
         self.render_map: dict[int, Component] = {}
-        self.anisotropy_render_id_map: dict[int, int] = {} # We don't select anisotropies from the viewer, need this
         self.expanded_site_unique_id_to_render_id: dict[int, int] = {}
 
         self.original_site_unique_id_to_index: dict[int, int] = {}
@@ -109,19 +123,21 @@ class RenderModel:
             self.original_site_unique_id_to_index[site.unique_id] = index
 
         self.expanded_index_to_original_index = []
-        # self.original_index_to_expanded_index = []
 
         #
         # Create render data for sites
         #
         self.sites: list[RenderSite] = []
         for site in self.expanded.structure.sites:
-            render_site = RenderSite(render_id, site, self.expanded.structure.unit_cell)
+
+            parent_index, offset = self.site_expanded_uid_to_original_index_and_offset[site.unique_id]
+            render_site = RenderSite(render_id, site, self.expanded.structure.unit_cell, offset)
+
             self.sites.append(render_site)
             self.render_map[render_id] = render_site
             self.expanded_site_unique_id_to_render_id[site.unique_id] = render_id
 
-            parent_unique_id = self.expanded_uid_to_original_uid[site.unique_id]
+            parent_unique_id = self.site_expanded_uid_to_original_uid[site.unique_id]
 
             self.expanded_index_to_original_index.append(self.original_site_unique_id_to_index[parent_unique_id])
 
@@ -130,8 +146,6 @@ class RenderModel:
         self.original_index_to_expanded = defaultdict(list)
         for expanded, original in enumerate(self.expanded_index_to_original_index):
             self.original_index_to_expanded[original].append(expanded)
-
-        print(self.original_index_to_expanded)
 
         #
         # Create render data for couplings
@@ -149,7 +163,6 @@ class RenderModel:
             render_anisotropy = RenderAnisotropy(anisotropy)
             self.anisotropies.append(render_anisotropy)
             self.render_map[render_id] = render_anisotropy
-            self.anisotropy_render_id_map[render_id] = self.expanded_site_unique_id_to_render_id[anisotropy.site.unique_id]
             render_id += 1
 
         #

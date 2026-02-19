@@ -1,7 +1,8 @@
 from multiprocessing import freeze_support
 
+from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
 from pyspinw.gui.render_model import RenderModel
-from pyspinw.interface import couplings
+from pyspinw.interface import couplings, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.gui.new_viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
@@ -29,7 +30,9 @@ if __name__ == "__main__":
                            coupling_type=HeisenbergCoupling,
                            j=-1)
 
-    hamiltonian = Hamiltonian(s, exchanges)
+    anisotropies = axis_anisotropies([x], 1, (0,0,1)) + axis_anisotropies([x,y], 1, (0,1,0))
+
+    hamiltonian = Hamiltonian(s, exchanges, anisotropies=anisotropies)
 
     hamiltonian.print_summary()
 

@@ -1,9 +1,13 @@
+""" Text based display of the system """
+
 from collections import defaultdict
 
+import numpy as np
 from PySide6.QtCore import Signal, QItemSelection, QItemSelectionModel
 from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont, QGuiApplication
 from PySide6.QtWidgets import QWidget, QSplitter, QTextEdit, QTreeView, QVBoxLayout
 
+from pyspinw.anisotropy import Anisotropy
 from pyspinw.gui.render_model import RenderModel
 
 class DisplayItem(QStandardItem):
@@ -11,8 +15,6 @@ class DisplayItem(QStandardItem):
     def __init__(self, text: str, ids: list[int]):
         super().__init__(text)
         self.ids = ids
-
-
 
 
 def format_triple(triple):
@@ -27,7 +29,30 @@ def format_moment_data(moment_data):
     else:
         return "--"
 
+def format_anisotropies(anisotropies: list[Anisotropy]):
+    if anisotropies:
+        return "; ".join([a.parameter_string for a in anisotropies])
+    else:
+        return "None"
+
+def format_g(g_matrix: np.ndarray):
+    """ Formatting for g-factors"""
+    diag = np.diagonal(g_matrix)
+    if np.all(g_matrix == np.diag(diag)):
+        a,b,c = diag
+
+        if a==b and b==c:
+            return f"{a:.3g}"
+        else:
+            return f"{a:.3g}, {b:.3g}, {c:.3g}"
+    else:
+        m = g_matrix.reshape(-1)
+        return (f"[[{m[0]:.3g}, {m[1]:.3g}, {m[2]:.3g}],"
+                f" [{m[3]:.3g}, {m[4]:.3g}, {m[5]:.3g}],"
+                f" [{m[6]:.3g}, {m[7]:.3g}, {m[8]:.3g}]]")
+
 class ParameterTable(QTreeView):
+    """ Derivative class for both the text based site viewer and text based coupling viewer """
 
     hoverChanged = Signal()
 
@@ -48,6 +73,7 @@ class ParameterTable(QTreeView):
 
 
     def on_item_hovered(self, index):
+        """ Called when item is hovered over"""
         if index.isValid():
 
             self.hover_ids = self.model().itemFromIndex(index).ids
@@ -55,6 +81,7 @@ class ParameterTable(QTreeView):
             self.hoverChanged.emit()
 
     def leaveEvent(self, event):
+        """ Qt override, mouse leaves widget"""
 
         self.hover_ids = []
         self.hoverChanged.emit()
@@ -64,6 +91,7 @@ class ParameterTable(QTreeView):
 
 
 class TextDisplay(QWidget):
+    """ Display of items in text form """
 
     hoverChanged = Signal()
     selectionChanged = Signal()
@@ -88,10 +116,21 @@ class TextDisplay(QWidget):
         # Sites and anisotropies
         #
 
+        # mapping from site UID to anisotopies
+        site_uid_to_anisotropies = defaultdict(list)
+
+        for anisotropy in render_model.expanded.anisotropies:
+            site_uid_to_anisotropies[anisotropy.site.unique_id].append(anisotropy)
+
+        for anisotropy in render_model.hamiltonian.anisotropies:
+            site_uid_to_anisotropies[anisotropy.site.unique_id].append(anisotropy)
+
+        # Main set up
         self.site_tree = ParameterTable()
 
         site_model = QStandardItemModel()
-        site_model.setHorizontalHeaderLabels(["Name", "Lattice Pos.", "Cartesian Pos.", "Moment"])
+        site_model.setHorizontalHeaderLabels([
+            "Name", "Lattice Pos.", "Cartesian Pos.", "Moment", "Anisotropies", "g-Factor"])
 
         site_root = site_model.invisibleRootItem()
 
@@ -110,6 +149,9 @@ class TextDisplay(QWidget):
             unexpanded_pos = DisplayItem(format_triple(site.ijk), parent_ids)
             unexpanded_cart = DisplayItem(format_triple(small_cell.fractional_to_cartesian(site.ijk)), parent_ids)
             unexpanded_moment = DisplayItem(format_moment_data(site.moment_data), parent_ids)
+            unexpanded_anisotropies = DisplayItem(
+                format_anisotropies(site_uid_to_anisotropies[site.unique_id]), parent_ids)
+            unexpanded_gfactor = DisplayItem(format_g(site.g), parent_ids)
 
             parent_index = index
 
@@ -119,17 +161,27 @@ class TextDisplay(QWidget):
 
             for expanded_index in render_model.original_index_to_expanded[original_index]:
 
-                expanded_site = render_model.sites[expanded_index].site
+                expanded_render_site = render_model.sites[expanded_index]
+                expanded_site = expanded_render_site.site
 
                 ids=[render_model.sites[expanded_index].render_id]
                 parent_ids += ids
 
-                expanded_name = DisplayItem(expanded_site.name, ids=ids)
+                expanded_name = DisplayItem(f"{expanded_site.name} {expanded_render_site.offset}", ids=ids)
                 expanded_pos = DisplayItem(format_triple(expanded_site.ijk), ids=ids)
                 expanded_cart = DisplayItem(format_triple(big_cell.fractional_to_cartesian(expanded_site.ijk)), ids=ids)
                 expanded_moment = DisplayItem(format_triple(expanded_site.base_moment), ids=ids)
+                expanded_anisotropies = DisplayItem(
+                    format_anisotropies(site_uid_to_anisotropies[expanded_site.unique_id]), ids=ids)
+                expanded_gfactor = DisplayItem(format_g(expanded_site.g), ids=ids)
 
-                unexpanded_name.appendRow([expanded_name, expanded_pos, expanded_cart, expanded_moment])
+                unexpanded_name.appendRow([
+                    expanded_name,
+                    expanded_pos,
+                    expanded_cart,
+                    expanded_moment,
+                    expanded_anisotropies,
+                    expanded_gfactor])
 
                 self.site_index_to_row_item[index] = expanded_name
 
@@ -140,7 +192,13 @@ class TextDisplay(QWidget):
                 index += 1
 
 
-            site_root.appendRow([unexpanded_name, unexpanded_pos, unexpanded_cart, unexpanded_moment])
+            site_root.appendRow([
+                unexpanded_name,
+                unexpanded_pos,
+                unexpanded_cart,
+                unexpanded_moment,
+                unexpanded_anisotropies,
+                unexpanded_gfactor])
 
         self.site_tree.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.site_tree.setModel(site_model)
@@ -153,7 +211,7 @@ class TextDisplay(QWidget):
         coupling_tree = QTreeView()
 
         coupling_model = QStandardItemModel()
-        coupling_model.setHorizontalHeaderLabels(["Name", "Type", "Site 1", "Site 2"])
+        coupling_model.setHorizontalHeaderLabels(["Name", "Type", "Site 1", "Site 2", "Parameters"])
 
         root = coupling_model.invisibleRootItem()
 
