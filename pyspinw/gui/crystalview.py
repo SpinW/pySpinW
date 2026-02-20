@@ -127,7 +127,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def paintGL(self):
         """ Qt override, paints the GL canvas"""
-
         #
         # Normal painting, let Qt do its thing
         #
@@ -454,14 +453,12 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def reset_view(self):
         """ Reset the view to default """
-
         self.view_origin = self.render_model.expanded.structure.unit_cell.centre
         self.view_rotation = np.eye(3)
         self.view_radius = 10.0
 
     def click_on_element(self, index: int, shift: bool):
         """ Response to clicking on an element """
-
         if index == 0:
             if not shift:
                 self.current_selection = []
@@ -477,7 +474,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def mousePressEvent(self, event):
         """ Qt override, called on mouse press"""
-
         if self.mouse_data is None:
             self.mouse_data = event.position(), event.button(), self.hover_ids
 
@@ -490,7 +486,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def mouseMoveEvent(self, event):
         """Qt override, called on mouse movement"""
-
         self.mouse_position = event.position()
 
         if self.mouse_data is not None:
@@ -515,7 +510,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def mouseReleaseEvent(self, event):
         """ Qt override, called on mouse up"""
-
         if event.button() == Qt.MouseButton.LeftButton:
             modifiers = QApplication.keyboardModifiers()
             shift = modifiers == Qt.ShiftModifier

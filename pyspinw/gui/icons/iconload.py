@@ -28,8 +28,7 @@ def pixmap_from_package(svg_package: str, svg_name: str, size: int) -> QPixmap:
 
 
 def icon_from_package(svg_package: str, svg_name: str, size: int) -> QIcon:
-    """
-    Load an SVG icon from a Python package using importlib.resources
+    """Load an SVG icon from a Python package using importlib.resources
     and return a QIcon of the given size.
 
     :param svg_package: package path as string, e.g., 'pyspinw.gui.icons'
@@ -37,7 +36,6 @@ def icon_from_package(svg_package: str, svg_name: str, size: int) -> QIcon:
     :param size: icon size in pixels
     :return: QIcon
     """
-
     pixmap = pixmap_from_package(svg_package, svg_name, size)
 
 
@@ -48,7 +46,6 @@ def icon_from_package(svg_package: str, svg_name: str, size: int) -> QIcon:
 
 def load_icon(name: str, size: int=128) -> QIcon:
     """ Load an icon, choose based on dark/light mode """
-
     if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark:
         name += "-dark"
 
@@ -58,7 +55,6 @@ def load_icon(name: str, size: int=128) -> QIcon:
 
 def load_pixmap(name: str, size: int=128) -> QPixmap:
     """ Load an icon, choose based on dark/light mode """
-
     if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark:
         name += "-dark"
 

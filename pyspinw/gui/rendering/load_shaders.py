@@ -50,7 +50,6 @@ def _create_shader_program(vs_src, fs_src):
 
 def load_shaders(fragment_filename: str | None = None, vertex_filename: str | None = None):
     """ Load shaders from file, or from the shaders directory"""
-
     if fragment_filename is None:
         frag_code = resources.read_text("pyspinw.gui.rendering.shaders", "default_fragment.glsl")
 

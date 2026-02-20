@@ -23,7 +23,6 @@ class Shader(ABC):
 
     def use(self):
         """ Call to set this shader for use"""
-
         glUseProgram(self.shader_program)
         self._set_uniforms()
 

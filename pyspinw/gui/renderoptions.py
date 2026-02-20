@@ -112,7 +112,7 @@ class GraphicalSlider(QWidget):
         self.main_layout.addWidget(right_label)
 
         self.setLayout(self.main_layout)
-        
+
     def on_slider_changed(self):
         """ Callback to send signal on """
         self.value_changed.emit()
@@ -133,7 +133,6 @@ class DisplayOptionsToolbar(QWidget):
                     min_value: float, max_value: float, start_value: float,
                     left_label: QWidget, right_label: QWidget, alt_text: str):
         """ Add a slider and wire it up """
-
         slider = GraphicalSlider(
             min_value, max_value, start_value,
             left_label, right_label, alt_text)
@@ -287,7 +286,6 @@ class DisplayOptionsToolbar(QWidget):
 
     def display_options(self) -> DisplayOptions:
         """ Get the current render options """
-
         return DisplayOptions(
             show_sites = self.show_sites.isChecked(),
             show_couplings = self.show_couplings.isChecked(),

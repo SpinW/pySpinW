@@ -8,7 +8,6 @@ hex_color_pattern = re.compile(r'#([0-9a-fA-F]{2})\1\1')
 
 def invert_gray_match(m):
     """ Invert an individual match"""
-
     value = int(m.group(1), 16)
     inverted = 255 - value
     hex_byte = f'{inverted:02x}'

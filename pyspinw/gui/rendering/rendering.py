@@ -69,7 +69,6 @@ class Renderable(ABC):
     @property
     def model_matrix(self):
         """ Get the model matrix in the GL MVP formalism from more intuitive values"""
-
         return self._model_matrix
 
     def update_model_matrix(self):

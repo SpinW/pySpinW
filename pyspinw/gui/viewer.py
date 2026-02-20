@@ -13,6 +13,7 @@ from pyspinw.hamiltonian import Hamiltonian
 
 class Viewer(QWidget):
     """ Main viewer class """
+
     def __init__(self, hamiltonian: Hamiltonian, parent=None):
 
         super().__init__(parent)
@@ -78,7 +79,6 @@ class Viewer(QWidget):
 
     def closeEvent(self, event):
         """ Qt override for close event"""
-
         # Save settings on exit
         self.toolbar.save_settings()
 
@@ -86,12 +86,14 @@ class Viewer(QWidget):
 
 
 def show_hamiltonian(hamiltonian):
+    """ Show a Hamiltonian in the viewer"""
     app = QApplication()
 
+    # Useful for checking particular display options
     # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
     # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
     widget = Viewer(hamiltonian)
     widget.resize(800, 600)
     widget.show()
-    sys.exit(app.exec())
+    app.exec()

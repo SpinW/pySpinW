@@ -35,11 +35,13 @@ def rotation_from_z(target_vector):
 
 class Component:
     """ Base class for components """
+
     def __init__(self, model_matrix: np.ndarray):
         self.model_matrix = model_matrix
 
 class Selectable(Component):
     """ Components that can be selected in the viewer """
+
     def __init__(self, render_id: int, model_matrix: np.ndarray):
         super().__init__(model_matrix)
 
@@ -47,7 +49,6 @@ class Selectable(Component):
 
 
 class RenderSite(Selectable):
-
     """ Render information for each site """
 
     @staticmethod
@@ -125,7 +126,6 @@ class RenderCoupling(Selectable):
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
         """Either the default matrix in a list, or a list of the prettified matrices"""
-
         if pretty:
             return self.split_model_matrices
         else:

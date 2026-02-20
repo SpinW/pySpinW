@@ -74,7 +74,6 @@ class Camera:
     axes_target = np.ones((3, ), dtype=np.float32) / 2
     def axes_view_matrix(self):
         """View matrix for axes"""
-
         eye = np.array(self.position, dtype=np.float32)
         eye_mag = np.sqrt(np.sum(eye ** 2))
         eye *= 3 / eye_mag

@@ -40,7 +40,6 @@ class IDShader(Shader):
 
     def _set_uniforms(self):
         """ Set the shader uniforms for render"""
-
         glUniformMatrix4fv(self._model_loc, 1, GL_TRUE, np.array(self.model_matrix, dtype=np.float32))
         glUniformMatrix4fv(self._projection_view_loc, 1, GL_TRUE, np.array(self.projection_view, dtype=np.float32))
 

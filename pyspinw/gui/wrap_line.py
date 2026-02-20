@@ -1,3 +1,5 @@
+""" Splitting and wrapping line segments to the unit cube"""
+
 import numpy as np
 
 
@@ -109,7 +111,7 @@ def split_and_wrap_line_segment(a: np.ndarray, b: np.ndarray, tol=1e-12, max_par
 if __name__ == "__main__":
 
     def run_example(a, b):
-
+        """ Show plots and data for an example"""
         split, wrap = split_and_wrap_line_segment(a, b)
 
         import matplotlib.pyplot as plt
@@ -134,14 +136,14 @@ if __name__ == "__main__":
 
         plt.show()
 
-    #
-    # run_example([0.5, 0.5, 0.5], [1.5, 2.5, 3.5]) # A nice check as it has a double collision at one point
-    # run_example([1.5, 2.5, 3.5], [0.5, 0.5, 0.5]) # Check reverse of it too
-    #
+
+    run_example([0.5, 0.5, 0.5], [1.5, 2.5, 3.5]) # A nice check as it has a double collision at one point
+    run_example([1.5, 2.5, 3.5], [0.5, 0.5, 0.5]) # Check reverse of it too
+
 
     run_example([0.1,0.5,0], [5, 0, 0]) # Lots of int values, one index doesn't change
     run_example([5, 0, 0], [0.1,0.5,0]) # And reverse
 
-    # run_example([-1, 1, -1], [1, -1, 1]) # Some negatives
+    run_example([-1, 1, -1], [1, -1, 1]) # Some negatives
 
 

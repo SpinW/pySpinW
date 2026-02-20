@@ -13,13 +13,14 @@ from pyspinw.gui.rendermodel import RenderModel, RenderCoupling
 
 class DisplayItem(QStandardItem):
     """ Slightly modified display item"""
+
     def __init__(self, text: str, ids: list[int]):
         super().__init__(text)
         self.ids = ids
 
 
 def format_triple(triple):
-    """ Rendering for tripples"""
+    """ Rendering for numeric triples"""
     a,b,c = triple
     return f"({a:.3g}, {b:.3g}, {c:.3g})"
 
@@ -31,6 +32,7 @@ def format_moment_data(moment_data):
         return "--"
 
 def format_anisotropies(anisotropies: list[Anisotropy]):
+    """ Formatting for the anisotropies column"""
     if anisotropies:
         return "; ".join([a.parameter_string for a in anisotropies])
     else:
@@ -84,7 +86,6 @@ class ParameterTable(QTreeView):
 
     def leaveEvent(self, event):
         """ Qt override, mouse leaves widget"""
-
         self.hover_ids = []
         self.hoverChanged.emit()
 
@@ -313,6 +314,7 @@ class TextDisplay(QWidget):
         self.coupling_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def on_hover_changed(self):
+        """ Called when items are hovered """
         self.hover_ids = self.site_tree.hover_ids # + other one
         self.hoverChanged.emit()
 
@@ -346,6 +348,7 @@ class TextDisplay(QWidget):
 
     @staticmethod
     def _get_row_items(item: QStandardItem):
+        """ Get items in a row """
         parent = item.parent()  # None if top-level
         row = item.row()
 
@@ -358,7 +361,7 @@ class TextDisplay(QWidget):
             return [parent.child(row, col) for col in range(column_count)]
 
     def set_row_boldness(self, item: QStandardItem, is_bold: bool):
-
+        """ Set the boldness of the font for a given row"""
         for item in TextDisplay._get_row_items(item):
 
             if is_bold:
@@ -367,8 +370,8 @@ class TextDisplay(QWidget):
                 item.setData(self._normal_font, Qt.FontRole)
 
 
-    def set_hover(self, render_ids):
-
+    def set_hover(self, render_ids: list[int]):
+        """ Set the hover state for specified render_ids"""
         for items in self.site_render_id_to_row_item.values():
             # TODO Be more efficient
             for item in items:
