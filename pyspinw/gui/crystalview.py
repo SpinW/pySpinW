@@ -95,6 +95,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         try:
             # Normal objects
             self.sphere= Sphere(3)
+            self.small_sphere = Sphere(3, 0.1)
             self.tube = Tube()
             self.arrow = Arrow()
             self.cube = WireframeCube()
@@ -192,33 +193,36 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for site in self.render_model.sites:
 
+                    if site.is_magnetic or self.display_options.show_nonmagnetic_atoms:
 
-                    # This can be sped up
-                    if site.render_id in self.hover_ids:
-                        if site.render_id in self.current_selection:
-                            mode = SelectionMode.SELECTED_HOVER
+                        # TODO: This can be sped up
+                        if site.render_id in self.hover_ids:
+                            if site.render_id in self.current_selection:
+                                mode = SelectionMode.SELECTED_HOVER
+                            else:
+                                mode = SelectionMode.HOVER
+
                         else:
-                            mode = SelectionMode.HOVER
+                            if site.render_id in self.current_selection:
+                                mode = SelectionMode.SELECTED
+                            else:
+                                mode = SelectionMode.NOT_SELECTED
 
-                    else:
-                        if site.render_id in self.current_selection:
-                            mode = SelectionMode.SELECTED
-                        else:
-                            mode = SelectionMode.NOT_SELECTED
+                        render_object = self.arrow if site.is_magnetic else self.small_sphere
 
-                    for model_matrix in site.model_matrices(self.display_options.prettify):
-                        site_model_matrix = model_matrix @ moment_scale_matrix
+                        for model_matrix in site.model_matrices(self.display_options.prettify):
+                            site_model_matrix = model_matrix @ moment_scale_matrix
 
-                        if mode != SelectionMode.NOT_SELECTED:
+                            if mode != SelectionMode.NOT_SELECTED:
 
-                            self.selection_shader.model_matrix = site_model_matrix
-                            self.selection_shader.mode = mode
-                            self.selection_shader.use()
-                            self.arrow.render_back_wireframe()
+                                self.selection_shader.model_matrix = site_model_matrix
+                                self.selection_shader.mode = mode
+                                self.selection_shader.use()
+                                render_object.render_back_wireframe()
 
-                        self.object_shader.model_matrix = site_model_matrix
-                        self.object_shader.use()
-                        self.arrow.render_triangles()
+                            self.object_shader.model_matrix = site_model_matrix
+                            self.object_shader.use()
+                            render_object.render_triangles()
 
             # Couplings
             if self.display_options.show_couplings:
@@ -391,14 +395,19 @@ class CrystalViewerWidget(QOpenGLWidget):
             if self.display_options.show_sites:
 
                 for site in self.render_model.sites:
-                    for model_matrix in site.model_matrices(self.display_options.prettify):
 
-                        site_model_matrix = model_matrix @ moment_scale_matrix
+                    if site.is_magnetic or self.display_options.show_nonmagnetic_atoms:
 
-                        self.id_shader.model_matrix = site_model_matrix
-                        self.id_shader.id_value = site.render_id
-                        self.id_shader.use()
-                        self.arrow.render_triangles()
+                        render_object = self.arrow if site.is_magnetic else self.small_sphere
+
+                        for model_matrix in site.model_matrices(self.display_options.prettify):
+
+                            site_model_matrix = model_matrix @ moment_scale_matrix
+
+                            self.id_shader.model_matrix = site_model_matrix
+                            self.id_shader.id_value = site.render_id
+                            self.id_shader.use()
+                            render_object.render_triangles()
 
             # Couplings
             if self.display_options.show_couplings:

@@ -5,7 +5,6 @@ from collections import defaultdict
 import numpy as np
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.basis import site_rotations
 from pyspinw.coupling import Coupling
 from pyspinw.gui.edge_cases import add_extra_edge_lines, add_extra_edge_points
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
@@ -78,6 +77,8 @@ class RenderSite(Selectable):
 
         self.pretty_render_model_matrices = [self.site_model_matrix(new_position, moment, unit_cell)
                                              for new_position in add_extra_edge_points(position)]
+
+        self.is_magnetic = np.sum(moment**2) > 1e-12
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:

@@ -10,7 +10,7 @@ from pyspinw.gui.rendering.model import Model
 class Sphere(Model):
     """ 3D Model of a sphere """
 
-    def __init__(self, divisions: int):
+    def __init__(self, divisions: int, radius: float=1.0):
 
         super().__init__()
 
@@ -36,16 +36,18 @@ class Sphere(Model):
 
             c = (points[face[0], :] + points[face[1], :] + points[face[2], :]) / 3
 
-            if np.dot(n, c) > 0:
+            if np.dot(n, c) < 0:
                 face = face[::-1]
 
             # Add verts
             for i in face:
-                verts.append(points[i, :])
-                verts.append(points[i, :]/np.sqrt(np.sum(points[i, :]**2))) # Normals, normalised
+                verts.append(radius * points[i, :])
+                verts.append(points[i, :]) # Normals
 
 
         self.vertices_and_normals = np.array(verts, dtype=np.float32).reshape(-1) # Return as float32 for rendering
+
+        print(self.vertices_and_normals.reshape(-1, 6))
 
         self.add_vertex_normal_data(self.vertices_and_normals)
 
