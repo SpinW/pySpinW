@@ -11,6 +11,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
+import sys
 
 from pyspinw.debug_plot import debug_plot
 

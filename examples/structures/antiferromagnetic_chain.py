@@ -10,6 +10,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
+import sys
 
 from pyspinw.debug_plot import debug_plot
 

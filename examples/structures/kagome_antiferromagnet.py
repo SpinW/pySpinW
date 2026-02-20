@@ -11,6 +11,7 @@ from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagati
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from numpy import sqrt
+import sys
 
 from pyspinw.debug_plot import debug_plot
 
@@ -52,12 +53,11 @@ if __name__ == "__main__":
     j2 = couplings(sites=[x, y, z], unit_cell=unit_cell, min_distance=5, max_distance=5.2, coupling_type=HeisenbergCoupling, j=0.11)
     exchanges = j1 + j2
 
-    debug_plot(s, exchanges, show=False)
+    #debug_plot(s, exchanges, show=False)
 
     hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()
-    hamiltonian.expand()
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
     hamiltonian.spaghetti_plot(path, use_rust=use_rust)

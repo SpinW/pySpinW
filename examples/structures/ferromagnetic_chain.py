@@ -10,6 +10,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
+import sys
 
 if __name__ == "__main__":
     freeze_support()
