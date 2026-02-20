@@ -11,7 +11,7 @@ class Path:
                  points: ArrayLike,
                  labels: list[str] | None = None,
                  avoid_endpoints=True,
-                 resolution: int=101,
+                 n_points_per_segment: int=101,
                  scale_by_distance=False):
 
         self._points = np.array(points, dtype=float)
@@ -33,7 +33,7 @@ class Path:
             self._labels = labels
 
         self._avoid_endpoints = avoid_endpoints
-        self._resolution = resolution
+        self._n_points_per_segment = n_points_per_segment
 
         if scale_by_distance:
             self._section_scalings = []
@@ -49,7 +49,7 @@ class Path:
             # If we avoid endpoints, we choose points that are close to each of the positions, but not equal
 
             # Interpolation factor
-            f = np.linspace(0, 1, self._resolution).reshape(1, -1)
+            f = np.linspace(0, 1, self._n_points_per_segment).reshape(1, -1)
             f[0,0] = 1e-8
             f[0,-1] = 1-1e-8
 
@@ -60,7 +60,7 @@ class Path:
 
         else:
 
-            f = np.linspace(0, 1, self._resolution).reshape(1, -1) # Interpolation factor
+            f = np.linspace(0, 1, self._n_points_per_segment).reshape(1, -1) # Interpolation factor
 
             # If we don't avoid the endpoints, we need to skip the first point except for the first time
             output.append(self._points[1, :].reshape(-1, 1) * f +
@@ -80,7 +80,7 @@ class Path:
     def x_values(self):
         """ x values for plotting """
         output = []
-        f = np.linspace(0, 1, self._resolution)
+        f = np.linspace(0, 1, self._n_points_per_segment)
 
         output.append(f * self._section_scalings[0])
 
@@ -120,16 +120,16 @@ class Path1D():
                  q_min: float = 0.0,
                  q_max: float = 1.0,
                  avoid_endpoints=True,
-                 resolution: int = 101):
+                 n_points: int = 101):
 
         self.q_min = q_min
         self.q_max = q_max
-        self.resolution = resolution
+        self.n_points = n_points
         self.avoid_endpoints = avoid_endpoints
 
     def q_values(self):
         """ Get q magnitudes """
-        base = np.linspace(0, 1, self.resolution)
+        base = np.linspace(0, 1, self.n_points)
 
         if self.avoid_endpoints:
             base[0] = 1e-8
@@ -140,7 +140,7 @@ class Path1D():
 if __name__ == "__main__":
 
     print("Path excluding endpoints, not scaling axes by distance")
-    path = Path([[0,0,0],[0,0,1],[1,1,1]], resolution=5)
+    path = Path([[0,0,0],[0,0,1],[1,1,1]], n_points_per_segment=5)
 
     print(path.q_points())
     print(path.x_values())
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     print("Path including endpoints, scaling axes by distance")
     path = Path([[0,0,0],[0,0,1],[1,1,1]],
-                resolution=5,
+                n_points_per_segment=5,
                 avoid_endpoints=False,
                 scale_by_distance=True)
 

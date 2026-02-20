@@ -1,6 +1,7 @@
 """Different Kinds of samples"""
 
 from abc import ABC, abstractmethod
+from enum import Enum
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -146,7 +147,11 @@ class Twin(Multidomain):
             domains=[CrystalDomain(np.eye(3), first_twin_fraction),
                      CrystalDomain(relative_rotation, second_twin_fraction)])
 
+class ScalingMethod(Enum):
+    """ Scaling methods for plots"""
 
+    LINEAR = 'linear'
+    LOG = 'log'
 
 class Powder(Sample1D):
     """Sample is a powder"""
@@ -188,7 +193,7 @@ class Powder(Sample1D):
         energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
 
         # Output map
-        output = np.zeros((path.resolution, n_energy_bins))
+        output = np.zeros((path.n_points, n_energy_bins))
 
         # at each q, bin the energies with weights of the intensities, but ignore the negative ones
         for i, q in enumerate(path.q_values()):
@@ -216,6 +221,7 @@ class Powder(Sample1D):
                       max_energy: float | None = None,
                       n_energy_bins: int | None = None,
                       random_seed: int | None = None,
+                      scaling_method: ScalingMethod | str = 'linear',
                       show_plot: bool = True,
                       new_figure: bool = True,
                       use_rust: bool = True):
@@ -224,6 +230,18 @@ class Powder(Sample1D):
                                    min_energy, max_energy, n_energy_bins,
                                    random_seed, use_rust)
 
+        if isinstance(scaling_method, str):
+            scaling_method = ScalingMethod(scaling_method)
+
+        match scaling_method:
+            case ScalingMethod.LOG:
+                zeros = data <= 0
+                min_value = np.log10(np.min(data[~zeros][:]))
+
+                data = np.log10(data)
+                data[zeros] =  min_value - 1
+
+
         import matplotlib.pyplot as plt
 
         if new_figure:
@@ -231,7 +249,7 @@ class Powder(Sample1D):
 
         ax = plt.gca()
 
-        plt.imshow((data.T)[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
+        plt.imshow(data.T[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
         ax.set_aspect(0.2)
 
         if show_plot:
