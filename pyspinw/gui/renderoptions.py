@@ -1,3 +1,5 @@
+""" Toolbar and display options data for the viewer"""
+
 import json
 import os
 
@@ -12,6 +14,8 @@ from pyspinw.gui.icons.iconload import load_icon
 
 @dataclass
 class DisplayOptions:
+    """ Options for how things should display """
+
     show_sites: bool = True
     show_couplings: bool = True
     show_anisotropies: bool = True
@@ -33,12 +37,14 @@ class DisplayOptions:
 
 
     def serialise(self) -> str:
+        """ Serialise settings object to a string"""
         out = asdict(self)
 
         return json.dumps(out)
 
     @staticmethod
     def deserialise(serialised: str):
+        """ Deserialise a setting object from a string"""
         try:
             data = json.loads(serialised)
 
@@ -143,6 +149,7 @@ class DisplayOptionsToolbar(QWidget):
         return slider
 
     def _toolbar_button(self, alt_text, icon: str | None):
+        """ Create a toolbar button with standardised formatting"""
         btn = QPushButton()
 
         if icon is not None:
@@ -302,10 +309,13 @@ class DisplayOptionsToolbar(QWidget):
             prettify = self.prettify.isChecked())
 
     def save_settings(self):
+        """ Save the current settings"""
         with open(self.settings_filename, 'w') as file:
             file.write(self.display_options().serialise())
 
     def closeEvent(self, event):
+        """ Qt override, window closed"""
+        # we want to save the settings before exiting
         self.save_settings()
 
         super().closeEvent(event)

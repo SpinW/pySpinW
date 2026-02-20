@@ -7,6 +7,7 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QPixmap, QPainter
 
 def pixmap_from_package(svg_package: str, svg_name: str, size: int) -> QPixmap:
+    """ Load an svg file using importlib and convert to a pixmap"""
     # Get the path to the SVG file inside the package
     svg_path = resources.files(svg_package) / svg_name
 
@@ -28,14 +29,7 @@ def pixmap_from_package(svg_package: str, svg_name: str, size: int) -> QPixmap:
 
 
 def icon_from_package(svg_package: str, svg_name: str, size: int) -> QIcon:
-    """Load an SVG icon from a Python package using importlib.resources
-    and return a QIcon of the given size.
-
-    :param svg_package: package path as string, e.g., 'pyspinw.gui.icons'
-    :param svg_name: filename
-    :param size: icon size in pixels
-    :return: QIcon
-    """
+    """Load an svg icon from a package and return a QIcon  """
     pixmap = pixmap_from_package(svg_package, svg_name, size)
 
 

@@ -45,6 +45,7 @@ class Anisotropy(SPWSerialisable):
 
     @property
     def parameter_string(self):
+        """ A string representation of the parameters """
         m = self.anisotropy_matrix.reshape(-1)
         return f"[[{m[0]}, {m[1]}, {m[2]}], [{m[3]}, {m[4]}, {m[5]}], [{m[6]}, {m[7]}, {m[8]}]]"
 
@@ -91,6 +92,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @property
     def parameter_string(self):
+        """ A string representation of the parameters """
         return f"a={self.constant}, axis={self.direction}"
 
     def __repr__(self):

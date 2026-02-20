@@ -1,3 +1,5 @@
+""" Shader for drawing the axes """
+
 import numpy as np
 from OpenGL.GL import *
 
@@ -6,6 +8,7 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class AxesShader(Shader):
+    """ Shader for drawing the axes """
 
     vertex_shader = "simple_vertex"
     fragment_shader = "emission_fragment"
@@ -29,13 +32,15 @@ class AxesShader(Shader):
 
     @property
     def camera(self):
+        """ Get the current camera"""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
+        """ Set the camera and associated matrices """
         self._camera = camera
 
-        view = self.camera.axes_view_matrix()
+        view = self.camera.axes_view_matrix() # Note, this is a different matrix to usual
         proj = self.camera.perspective_matrix(0.01, 100)
         self.projection_view = proj @ view
 

@@ -1,3 +1,5 @@
+""" Shader for most of the objects in the viewer"""
+
 import numpy as np
 from OpenGL.GL import *
 
@@ -6,6 +8,7 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class ObjectShader(Shader):
+    """ Shader for most of the objects in the viewer"""
 
     vertex_shader = "object_vertex"
     fragment_shader = "object_fragment"
@@ -42,10 +45,12 @@ class ObjectShader(Shader):
 
     @property
     def camera(self):
+        """ Get the current camera"""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
+        """ Set the camera and associated matrices """
         self._camera = camera
 
         self.view = self.camera.view_matrix()

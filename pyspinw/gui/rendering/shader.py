@@ -1,3 +1,5 @@
+""" Base class for the shader interface """
+
 from abc import ABC, abstractmethod
 
 from pyspinw.gui.rendering.load_shaders import load_shaders

@@ -1,3 +1,5 @@
+""" Shader used for highlighting """
+
 import numpy as np
 from OpenGL.GL import *
 
@@ -29,10 +31,12 @@ class SelectionShader(Shader):
 
     @property
     def camera(self):
+        """ Get the current camera"""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
+        """ Set the camera associated matrices"""
         self._camera = camera
 
         view = self.camera.view_matrix()

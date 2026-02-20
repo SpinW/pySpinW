@@ -1,3 +1,5 @@
+""" Integer shader used for rendering object IDs as part of graphical selection """
+
 import numpy as np
 from OpenGL.GL import glGetUniformLocation, glUniformMatrix4fv, glUniform1ui, GL_TRUE
 
@@ -6,7 +8,7 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class IDShader(Shader):
-    """ Used for rendering the selection highlighting """
+    """ Integer shader used for rendering object IDs as part of graphical selection """
 
     vertex_shader = "simple_vertex"
     fragment_shader = "id_fragment"
@@ -28,10 +30,12 @@ class IDShader(Shader):
 
     @property
     def camera(self):
+        """ Get the current camera"""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
+        """ Set the camera and associated matrices"""
         self._camera = camera
 
         view = self.camera.view_matrix()

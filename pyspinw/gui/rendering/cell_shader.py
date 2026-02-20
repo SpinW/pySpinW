@@ -1,13 +1,15 @@
+""" Shader for unit- and super- cells """
+
 import numpy as np
 
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.rendering.shader import Shader
 
-from pyspinw.gui.rendering.selectionmode import SelectionMode
-
 from OpenGL.GL import *
 
 class CellShader(Shader):
+    """ Shader for unit- and super- cells """
+
     vertex_shader = "simple_vertex"
     fragment_shader = "cell_fragment"
 
@@ -22,10 +24,12 @@ class CellShader(Shader):
 
     @property
     def camera(self):
+        """ Get the current camera"""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
+        """ Set the current camera and associated matrices"""
         self._camera = camera
 
         view = self.camera.view_matrix()

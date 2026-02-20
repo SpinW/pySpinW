@@ -1,7 +1,11 @@
+""" Specialised buffers for rendering"""
+
 import numpy as np
 from OpenGL.GL import *
 
 class IntegerBuffer:
+    """ Manages a uint framebuffer, used as a location to render object ids to for selections"""
+
     def __init__(self):
 
         WIDTH, HEIGHT = 1024, 1024
@@ -57,16 +61,18 @@ class IntegerBuffer:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def use(self, width: int, height: int):
+        """ Make this the active framebuffer, and set appropriate flags """
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glViewport(0, 0, width, height)
 
-        glDisable(GL_BLEND)  # REQUIRED
-        glDisable(GL_DITHER)  # Recommended
+        glDisable(GL_BLEND)
+        glDisable(GL_DITHER)
 
         glClearBufferuiv(GL_COLOR, 0, [0])  # Clear integer buffer
         glClear(GL_DEPTH_BUFFER_BIT)
 
     def get_image(self, width, height):
+        """ Get this buffer as data that can be treated as an image """
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
 
         # Allocate numpy array

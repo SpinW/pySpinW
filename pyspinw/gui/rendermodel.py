@@ -1,3 +1,5 @@
+""" Representation of the Hamiltonian that has lots of precalculated stuff needed for rendering it"""
+
 from collections import defaultdict
 
 import numpy as np
@@ -53,7 +55,7 @@ class RenderSite(Selectable):
 
     @staticmethod
     def site_model_matrix(position, moment, unit_cell):
-
+        """ Model matrix for a site """
         rotation = rotation_from_z(moment)
         translation = unit_cell.fractional_to_cartesian(position)
 
@@ -79,7 +81,7 @@ class RenderSite(Selectable):
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
-
+        """ Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries """
         if pretty:
             return self.pretty_render_model_matrices
         else:
@@ -91,7 +93,7 @@ class RenderCoupling(Selectable):
 
     @staticmethod
     def segment_model_matrix(a, b, unit_cell):
-
+        """ Model matrix for a line segment """
         # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
 
         translation = unit_cell.fractional_to_cartesian(a)

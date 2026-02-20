@@ -1,11 +1,11 @@
-from numpy._typing import ArrayLike
+""" Selection state of selectable objects"""
 
-from pyspinw.gui.camera import Camera
-from pyspinw.gui.rendering.model import Model
-from pyspinw.gui.rendering.rendering import Renderable
+from enum import Enum
 
 
-class SelectionMode:
+class SelectionMode(Enum):
+    """ Selection state of selectable objects """
+
     NOT_SELECTED = 0
     HOVER = 1
     SELECTED = 2

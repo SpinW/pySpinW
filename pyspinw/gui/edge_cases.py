@@ -1,3 +1,5 @@
+""" Functions for dealing with the sites/couplings lying on the boundary of the unit/super cell"""
+
 import numpy as np
 
 def _hypercube(n):
