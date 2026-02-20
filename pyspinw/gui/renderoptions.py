@@ -127,6 +127,7 @@ class DisplayOptionsToolbar(QWidget):
     settings_filename = "render_settings.conf"
 
     displayOptionsChanged = Signal()
+    requestViewReset = Signal()
 
     def _add_slider(self,
                     min_value: float, max_value: float, start_value: float,
@@ -142,9 +143,7 @@ class DisplayOptionsToolbar(QWidget):
 
         return slider
 
-    def _add_toggle_button(self, alt_text: str, icon: str | None = None, value: bool = True):
-        """ Add a toggle button and wire it up"""
-
+    def _toolbar_button(self, alt_text, icon: str | None):
         btn = QPushButton()
 
         if icon is not None:
@@ -153,11 +152,20 @@ class DisplayOptionsToolbar(QWidget):
 
         btn.setIconSize(QSize(32, 32))
         btn.setMinimumSize(QSize(40, 40))
-        btn.setCheckable(True)
+
         btn.setToolTip(alt_text)
-        btn.setChecked(value)
 
         self.bar_layout.addWidget(btn)
+
+        return btn
+
+    def _add_toggle_button(self, alt_text: str, icon: str | None = None, value: bool = True):
+        """ Add a toggle button and wire it up"""
+        btn = self._toolbar_button(alt_text, icon)
+
+        btn.setCheckable(True)
+        btn.setChecked(value)
+
         btn.clicked.connect(self._on_change)
 
         return btn
@@ -203,7 +211,8 @@ class DisplayOptionsToolbar(QWidget):
                                                       icon="supercell",
                                                       value=settings.show_supercell)
 
-        self.prettify = self._add_toggle_button("Use pretty representation instead of direct input",
+        self.prettify = self._add_toggle_button("Use cosmetic representation instead of direct input",
+                                                icon="cosmetic",
                                                 value=settings.prettify)
 
 
@@ -255,6 +264,10 @@ class DisplayOptionsToolbar(QWidget):
                                                                icon="latticeaxesorth",
                                                                value=settings.orthogonal_lattice_axes)
 
+        self.reset_view = self._toolbar_button("Reset view", icon="datum")
+
+        self.reset_view.clicked.connect(self.on_reset_view_clicked)
+
         # Pad right, and set layout
         self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.setLayout(self.bar_layout)
@@ -267,6 +280,10 @@ class DisplayOptionsToolbar(QWidget):
     def _on_change(self):
         """ Called when anything changes, send signal """
         self.displayOptionsChanged.emit()
+
+    def on_reset_view_clicked(self):
+        """ Called when the view reset button is pressed, send a signal"""
+        self.requestViewReset.emit()
 
     def display_options(self) -> DisplayOptions:
         """ Get the current render options """

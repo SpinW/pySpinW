@@ -67,7 +67,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.setFormat(format)
 
         # View details
-        self.view_origin = render_model.expanded.structure.unit_cell.centre #np.array([0,0,0], dtype=float)
+        self.view_origin = render_model.expanded.structure.unit_cell.centre
         self.view_rotation = np.eye(3)
         self.view_radius = 10.0
 
@@ -454,8 +454,10 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def reset_view(self):
         """ Reset the view to default """
+
+        self.view_origin = self.render_model.expanded.structure.unit_cell.centre
         self.view_rotation = np.eye(3)
-        self.view_origin = np.zeros((3, ), dtype=float)
+        self.view_radius = 10.0
 
     def click_on_element(self, index: int, shift: bool):
         """ Response to clicking on an element """

@@ -40,6 +40,7 @@ class Viewer(QWidget):
 
         self.viewer.display_options = self.toolbar.display_options()
         self.toolbar.displayOptionsChanged.connect(self.on_display_options_changed)
+        self.toolbar.requestViewReset.connect(self.on_reset_view_requested)
 
         #
         # Wire up text and graphics
@@ -49,6 +50,7 @@ class Viewer(QWidget):
         self.text_display.selectionChanged.connect(self.on_text_selection_changed)
         self.viewer.hoverChanged.connect(self.on_render_hover_changed)
         self.viewer.selectionChanged.connect(self.on_render_selection_changed)
+
 
     def on_display_options_changed(self):
         """ Called when the toolbar changes"""
@@ -69,6 +71,10 @@ class Viewer(QWidget):
     def on_render_selection_changed(self):
         """ Called when selecting through the graphical window"""
         self.text_display.set_selection(self.viewer.current_selection)
+
+    def on_reset_view_requested(self):
+        """ Called when a view reset is requested"""
+        self.viewer.reset_view()
 
     def closeEvent(self, event):
         """ Qt override for close event"""
