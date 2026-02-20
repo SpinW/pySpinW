@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QApplication
 
 from pyspinw.gui.buffers import IntegerBuffer
 from pyspinw.gui.camera import Camera
-from pyspinw.gui.render_model import RenderModel
+from pyspinw.gui.rendermodel import RenderModel
 from pyspinw.gui.rendering.axes_shader import AxesShader
 from pyspinw.gui.rendering.cell_shader import CellShader
 from pyspinw.gui.rendering.id_shader import IDShader
@@ -209,7 +209,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for coupling in self.render_model.couplings:
 
-                    coupling_model_matrix = coupling.model_matrix @ coupling_scaling
 
                     if coupling.render_id in self.hover_ids:
                         if coupling.render_id in self.current_selection:
@@ -223,15 +222,18 @@ class CrystalViewerWidget(QOpenGLWidget):
                         else:
                             mode = SelectionMode.NOT_SELECTED
 
-                    if mode != SelectionMode.NOT_SELECTED:
-                        self.selection_shader.model_matrix = coupling_model_matrix
-                        self.selection_shader.mode = mode
-                        self.selection_shader.use()
-                        self.tube.render_back_wireframe()
+                    for model_matrix in coupling.model_matrices(self.display_options.prettify):
+                        coupling_model_matrix = model_matrix @ coupling_scaling
 
-                    self.object_shader.model_matrix = coupling_model_matrix
-                    self.object_shader.use()
-                    self.tube.render_triangles()
+                        if mode != SelectionMode.NOT_SELECTED:
+                            self.selection_shader.model_matrix = coupling_model_matrix
+                            self.selection_shader.mode = mode
+                            self.selection_shader.use()
+                            self.tube.render_back_wireframe()
+
+                        self.object_shader.model_matrix = coupling_model_matrix
+                        self.object_shader.use()
+                        self.tube.render_triangles()
 
 
 
@@ -383,10 +385,11 @@ class CrystalViewerWidget(QOpenGLWidget):
             if self.display_options.show_couplings:
 
                 for coupling in self.render_model.couplings:
-                    self.id_shader.id_value = coupling.render_id
-                    self.id_shader.model_matrix = coupling.model_matrix @ coupling_scaling
-                    self.id_shader.use()
-                    self.tube.render_triangles()
+                    for model_matrix in coupling.model_matrices(self.display_options.prettify):
+                        self.id_shader.id_value = coupling.render_id
+                        self.id_shader.model_matrix = model_matrix @ coupling_scaling
+                        self.id_shader.use()
+                        self.tube.render_triangles()
 
 
         #

@@ -5,6 +5,7 @@ import numpy as np
 from pyspinw.anisotropy import Anisotropy
 from pyspinw.basis import site_rotations
 from pyspinw.coupling import Coupling
+from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -65,12 +66,12 @@ class RenderSite(Selectable):
 class RenderCoupling(Selectable):
     """ Render information for each coupling """
 
-    def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
+    def _segment_model_matrix(self, a, b, unit_cell):
 
         # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
 
-        translation = unit_cell.fractional_to_cartesian(coupling.site_1.ijk)
-        delta = unit_cell.fractional_to_cartesian(coupling.site_2.ijk + coupling.cell_offset.vector) - translation
+        translation = unit_cell.fractional_to_cartesian(a)
+        delta = unit_cell.fractional_to_cartesian(b) - translation
 
         length = np.sqrt(np.sum(delta**2))
 
@@ -81,8 +82,31 @@ class RenderCoupling(Selectable):
         model_matrix[:3, :3] = (rotation @ np.diag([1,1,length]) )
         model_matrix[:3, 3] = translation
 
-        super().__init__(render_id, model_matrix)
+        return model_matrix
+
+    def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
+
         self.coupling = coupling
+
+        p1 = coupling.site_1.ijk
+        p2 = coupling.site_2.ijk + coupling.cell_offset.vector
+
+        model_matrix = self._segment_model_matrix(p1, p2, unit_cell)
+
+        super().__init__(render_id, model_matrix)
+
+        # Create prettified model matrices
+        _, sections = split_and_wrap_line_segment(p1, p2)
+        self.split_model_matrices = [self._segment_model_matrix(s1, s2, unit_cell) for s1, s2 in sections]
+
+    def model_matrices(self, pretty: bool) -> list[np.ndarray]:
+        """Either the default matrix in a list, or a list of the prettified matrices"""
+
+        if pretty:
+            return self.split_model_matrices
+        else:
+            return [self.model_matrix]
+
 
 class RenderAnisotropy(Component):
     """ Render information for anisotropies"""

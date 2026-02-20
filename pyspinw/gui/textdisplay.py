@@ -8,7 +8,7 @@ from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont, 
 from PySide6.QtWidgets import QWidget, QSplitter, QTextEdit, QTreeView, QVBoxLayout
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.gui.render_model import RenderModel, RenderCoupling
+from pyspinw.gui.rendermodel import RenderModel, RenderCoupling
 
 
 class DisplayItem(QStandardItem):

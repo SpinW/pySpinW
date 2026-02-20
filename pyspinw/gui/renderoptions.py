@@ -18,6 +18,8 @@ class DisplayOptions:
     show_unit_cell: bool = True
     show_supercell: bool = True
 
+    prettify: bool = True
+
     show_nonmagnetic_atoms: bool = True
     use_atomic_radii: bool = True
     show_atoms_not_moments: bool = False
@@ -28,6 +30,7 @@ class DisplayOptions:
     show_cartesian_axes: bool = True
     show_lattice_axes: bool = True
     orthogonal_lattice_axes: bool = False
+
 
     def serialise(self) -> str:
         out = asdict(self)
@@ -200,6 +203,9 @@ class DisplayOptionsToolbar(QWidget):
                                                       icon="supercell",
                                                       value=settings.show_supercell)
 
+        self.prettify = self._add_toggle_button("Use pretty representation instead of direct input",
+                                                value=settings.prettify)
+
 
         self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
@@ -277,7 +283,8 @@ class DisplayOptionsToolbar(QWidget):
             coupling_scaling = self.coupling_scale_slider.value(),
             show_cartesian_axes = self.show_cartesian_axes.isChecked(),
             show_lattice_axes = self.show_lattice_axes.isChecked(),
-            orthogonal_lattice_axes = self.orthogonal_lattice_axes.isChecked())
+            orthogonal_lattice_axes = self.orthogonal_lattice_axes.isChecked(),
+            prettify = self.prettify.isChecked())
 
     def save_settings(self):
         with open(self.settings_filename, 'w') as file:

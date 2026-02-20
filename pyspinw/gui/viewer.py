@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
 
 from pyspinw.gui.crystalview import CrystalViewerWidget
-from pyspinw.gui.render_model import RenderModel
+from pyspinw.gui.rendermodel import RenderModel
 from pyspinw.gui.renderoptions import DisplayOptions, DisplayOptionsToolbar
 from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
