@@ -48,7 +48,7 @@ class Camera:
     def view_matrix(self):
         """Transform from world position to camera relative """
         eye = np.array(self.position, dtype=np.float32)
-        target = np.array([0.5, 0.5, 0.5], dtype=np.float32)
+        target = np.array(self.look_at, dtype=np.float32)
         up = np.array(self.up, dtype=np.float32)
 
         # Look at matrix

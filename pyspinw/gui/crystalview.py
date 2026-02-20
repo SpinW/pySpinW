@@ -57,9 +57,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.display_options = DisplayOptions()
 
         self.camera = Camera()
-        # self.shader_program = None
-        # self.default_shader = None
-        #
+
         self.object_shader: ObjectShader | None = None
         self.selection_shader: SelectionShader | None = None
 
@@ -145,16 +143,35 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         compound_rotation = self.view_rotation @ self.mouse_rotation
 
-        camera_world = self.view_origin + self.mouse_origin + \
+        origin_world = self.view_origin + self.mouse_origin
+
+        camera_world = origin_world + \
                        compound_rotation @ np.array([0, 0, self.view_radius], dtype=float)
 
-        origin_world = self.view_origin + self.mouse_origin
 
         up_world = compound_rotation @ np.array([0,1,0], dtype=float)
 
         self.camera.position = tuple(camera_world)
         self.camera.up = tuple(up_world)
         self.camera.look_at = tuple(origin_world)
+
+        # # Camera debug things
+        #
+        # scale = 0.03
+        # for position, color in [([0,0,0], (1,0,0)),
+        #                         ([origin_world, (0,1,0)]),
+        #                         ([self.view_origin, (0,0,1)])]:
+        #
+        #     m = np.diag([scale, scale, scale, 1])
+        #     v = np.array(position, dtype=np.float32)
+        #
+        #     m[:3, 3] = v
+        #
+        #     self.object_shader.model_matrix = m
+        #     self.object_shader.object_color = color
+        #     self.object_shader.use()
+        #     self.sphere.render_triangles()
+
 
         # Do actual the rendering
 
@@ -392,6 +409,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                         self.tube.render_triangles()
 
 
+
         #
         # Calculate the object for the mouse over, and set its hover state
         #
@@ -484,7 +502,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
             if button == Qt.MouseButton.RightButton:
-                #r = np.linalg.inv(self.view_rotation)
                 r = self.view_rotation
                 self.mouse_origin = r @ np.array([
                     -self.mouse_move_sensitivity*dx,
