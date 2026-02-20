@@ -19,7 +19,7 @@ class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
     :param: i,j,k - Fractional coordinates within unit cell
-    :param: mi,mj,mk - Magnetic moment along unit cell aligned axis
+    :param: mi,mj,mk - Magnetic moment (or complex basisvector) along unit cell aligned axis
     """
 
     serialisation_name = "site"
@@ -31,11 +31,15 @@ class LatticeSite(SPWSerialisable):
                  mk: float | None = None,
                  supercell_moments: ArrayLike | None = None,
                  g: ArrayLike | None = None,
-                 name: str = ""):
+                 name: str = "",
+                 unit: str = "xyz"):
 
         self._i = float(i)
         self._j = float(j)
         self._k = float(k)
+        if unit.lower() != "xyz" and unit.lower() != "lu":
+            raise ValueError("Unit must be either 'xyz' or 'lu'")
+        self._unit = unit.lower()
 
         #
         # Lots of case checking for the moment input format
@@ -45,8 +49,7 @@ class LatticeSite(SPWSerialisable):
             self._moment_data = np.array([[
                 0.0 if mi is None else mi,
                 0.0 if mj is None else mj,
-                0.0 if mk is None else mk]],
-                    dtype=float)
+                0.0 if mk is None else mk]])
 
         else:
             if mi is not None or mj is not None or mk is not None:
@@ -146,6 +149,17 @@ class LatticeSite(SPWSerialisable):
         """ Get the parent site (just itself for non-implied sites)"""
         return self
 
+    @property
+    def unit(self):
+        """ Moment unit """
+        return self._unit
+
+    def xyz_moment(self, transformation):
+        """ The moment in XYZ unit """
+        if self.unit == 'lu':
+            return self._base_moment @ transformation
+        return self._base_moment
+
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
         """ Create from an array of values """
@@ -177,7 +191,8 @@ class LatticeSite(SPWSerialisable):
                 "k": self.k,
                 "supercell_moments": numpy_serialise(self._moment_data),
                 "name": self.name,
-                "g": numpy_serialise(self.g)
+                "g": numpy_serialise(self.g),
+                "unit": self.unit
             }
 
             context.sites.put(self._unique_id, json)

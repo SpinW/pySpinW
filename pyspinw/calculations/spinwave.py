@@ -14,7 +14,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.constants import MU_B
 
 # smallest energy not considered negligible (in meV)
-ZERO_ENERGY_TOL = 5e-4
+ZERO_ENERGY_TOL = 1e-12
 
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
@@ -71,8 +71,7 @@ def _calc_q_independent(
     C = np.zeros((n_sites, n_sites), dtype=complex)
     for coupling in couplings:
         i, j = (coupling.index1, coupling.index2)
-        C[j, j] += spin_coefficients[j, j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
-    C *= 2
+        C[j, j] += magnitudes[j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
 
     # calculate the Zeeman term for the A matrix (A^z in Toth & Lake)
     if field is not None:
@@ -115,6 +114,7 @@ def _calc_sqrt_hamiltonian(
         A += Az
 
     hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+    hamiltonian_matrix += np.diag(np.array(range(hamiltonian_matrix.shape[0]))*1e-12)
 
     # We need to enforce the bosonic commutation properties, we do this
     # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
@@ -138,7 +138,7 @@ def _calc_sqrt_hamiltonian(
         # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
         # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
         l, d, p = ldl(hamiltonian_matrix)  # To LDL^\dagger (i.e. adjoint on right)
-        sqrt_hamiltonian = l @ np.sqrt(d)
+        sqrt_hamiltonian = l[p,:] @ np.sqrt(d)
 
     return sqrt_hamiltonian
 
@@ -206,6 +206,7 @@ def spinwave_calculation(
         q_vectors: np.ndarray,
         couplings: list[Coupling],
         positions: list[np.ndarray],
+        rlu_to_cart: np.ndarray = np.eye(3),
         field: MagneticField | None = None,
         save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
@@ -218,7 +219,8 @@ def spinwave_calculation(
     with ProcessPoolExecutor() as executor:
         q_calculations = [
             executor.submit(
-                _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions, Az, save_sab
+                _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
+                rlu_to_cart, Az, save_sab
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -251,6 +253,7 @@ def _calc_chunk_spinwave(
         spin_coefficients: np.ndarray,
         couplings: list[Coupling],
         positions: list[np.ndarray],
+        rlu_to_cart: np.ndarray,
         Az: np.ndarray | None = None,
         save_sab: bool = False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
@@ -267,17 +270,12 @@ def _calc_chunk_spinwave(
 
         to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
 
-        eigvals, eigvecs = np.linalg.eigh(to_diagonalise + np.diag(np.array(range(to_diagonalise.shape[0]))*1e-12))
+        eigvals, eigvecs = np.linalg.eigh(to_diagonalise)
         energies.append(eigvals)
-
-        # sort eigenvalues and eigenvectors in decreasing order of eigenvalue
-        sort_indices = np.argsort(eigvals)[::-1]
-        eigvals = eigvals[sort_indices]
-        eigvecs = eigvecs[:, sort_indices]
 
         ## calculate block matrices [ Y Z ; V W ] for S'^alpha,beta
         # first we get phase factor matrix where `phase_factors_matrix[i,j] = exp(i q (r_i - r_j))`
-        phase_factors = np.array([np.exp(1j * (q @ pos)) for pos in positions])
+        phase_factors = np.array([np.exp(2j * np.pi * (q @ pos)) for pos in positions])
         phase_factors_matrix = np.outer(phase_factors, np.conj(phase_factors))
 
         coefficients = 2 * spin_coefficients * phase_factors_matrix
@@ -319,17 +317,19 @@ def _calc_chunk_spinwave(
         # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
         # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
         # for the eigenvalues of the Hamiltonian
-        sqrt_E = eigvals.copy()
-        sqrt_E[n_sites:] *= -1
+        sqrt_E = np.sqrt(np.abs(eigvals.copy()))
         sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
-        sqrt_E = np.sqrt(sqrt_E)
 
         try:
             # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
-            T = solve(sqrt_hamiltonian, eigvecs @ np.diag(sqrt_E), assume_a="lower triangular")
-        except np.linalg.LinAlgError:
-            # if K is singular, then eigenvalues are all zero, so T is zero
-            T = np.zeros((2 * n_sites, 2 * n_sites))
+            T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
+            assert not np.isnan(T).any(), "singular matrix"
+        except (AssertionError, np.linalg.LinAlgError):
+            # if K is singular, then add a small amount to the diagonal.
+            kk = sqrt_hamiltonian.conj().T
+            for jj in range(kk.shape[0]):
+                kk[jj, jj] += 1e-7
+            T = solve(kk, eigvecs @ np.diag(sqrt_E))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
@@ -342,7 +342,8 @@ def _calc_chunk_spinwave(
         if (q_mag := np.linalg.norm(q)) == 0:
             norm_q = np.array([0, 0, 0])
         else:
-            norm_q = q / q_mag
+            norm_q = q @ rlu_to_cart
+            norm_q /= np.sqrt(np.sum(norm_q**2))
         perp_factor = np.eye(3) - np.outer(norm_q, norm_q)
         # the einsum here performs elementwise multiplication and then sums over alpha, beta
         s_perp = np.einsum("ijk,ij->k", sab, perp_factor)

@@ -13,7 +13,7 @@ def heisenberg_ferromagnet(n_q = 100, classes = py_classes):
     rust_kw = {'dtype':complex, 'order':'F'}
     Coupling = classes.coupling
 
-    q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
+    q_mags = np.linspace(0.01, 0.99, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
     positions = [np.array([0., 0., 0.])]  # single site at origin
 
