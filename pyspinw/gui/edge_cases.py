@@ -27,11 +27,6 @@ def add_extra_edge_lines(point_pairs: list[tuple[np.ndarray, np.ndarray]], tol=1
     * Three being zero should not happen, because the line will have length zero
     """
 
-    # Extras for edges
-    subs = [np.array([0.0, 1.0]),
-            np.array([1.0, 0.0]),
-            np.array([1.0, 1.0])]
-
     new_pair_list = []
     for a, b in point_pairs:
         a_zeros = np.isclose(a, 0, atol=tol)
@@ -57,3 +52,13 @@ def add_extra_edge_points(point, tol=1e-12):
 
     zeros = np.isclose(point, 0, atol=tol)
 
+    n_zeros = int(np.sum(zeros))
+
+    new_points = []
+    for replacement in replacements[n_zeros]:
+        point_copy = point.copy()
+        point_copy[zeros] = replacement
+
+        new_points.append(point_copy)
+
+    return new_points

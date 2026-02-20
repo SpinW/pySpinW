@@ -193,7 +193,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for site in self.render_model.sites:
 
-                    site_model_matrix = site.model_matrix @ moment_scale_matrix
 
                     # This can be sped up
                     if site.render_id in self.hover_ids:
@@ -208,16 +207,19 @@ class CrystalViewerWidget(QOpenGLWidget):
                         else:
                             mode = SelectionMode.NOT_SELECTED
 
-                    if mode != SelectionMode.NOT_SELECTED:
+                    for model_matrix in site.model_matrices(self.display_options.prettify):
+                        site_model_matrix = model_matrix @ moment_scale_matrix
 
-                        self.selection_shader.model_matrix = site_model_matrix
-                        self.selection_shader.mode = mode
-                        self.selection_shader.use()
-                        self.arrow.render_back_wireframe()
+                        if mode != SelectionMode.NOT_SELECTED:
 
-                    self.object_shader.model_matrix = site_model_matrix
-                    self.object_shader.use()
-                    self.arrow.render_triangles()
+                            self.selection_shader.model_matrix = site_model_matrix
+                            self.selection_shader.mode = mode
+                            self.selection_shader.use()
+                            self.arrow.render_back_wireframe()
+
+                        self.object_shader.model_matrix = site_model_matrix
+                        self.object_shader.use()
+                        self.arrow.render_triangles()
 
             # Couplings
             if self.display_options.show_couplings:
@@ -390,13 +392,14 @@ class CrystalViewerWidget(QOpenGLWidget):
             if self.display_options.show_sites:
 
                 for site in self.render_model.sites:
+                    for model_matrix in site.model_matrices(self.display_options.prettify):
 
-                    site_model_matrix = site.model_matrix @ moment_scale_matrix
+                        site_model_matrix = model_matrix @ moment_scale_matrix
 
-                    self.id_shader.model_matrix = site_model_matrix
-                    self.id_shader.id_value = site.render_id
-                    self.id_shader.use()
-                    self.arrow.render_triangles()
+                        self.id_shader.model_matrix = site_model_matrix
+                        self.id_shader.id_value = site.render_id
+                        self.id_shader.use()
+                        self.arrow.render_triangles()
 
             # Couplings
             if self.display_options.show_couplings:
