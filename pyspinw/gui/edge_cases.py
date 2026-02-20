@@ -1,5 +1,21 @@
 import numpy as np
 
+def _hypercube(n):
+    """ Inner loop for `hypercube`"""
+    if n <= 0:
+        return [[]]
+
+    else:
+        smaller = _hypercube(n-1)
+        return [x + [0] for x in smaller] + [x + [1] for x in smaller]
+
+def hypercube(n):
+    """ Generate points in an n-dimensional unit hypercube"""
+    return [np.array(x) for x in _hypercube(n)]
+
+# rules for replacement
+replacements = {i: hypercube(i) for i in range(4)}
+
 
 def add_extra_edge_lines(point_pairs: list[tuple[np.ndarray, np.ndarray]], tol=1e-12):
     """ When a line lives on the x/y/z=0 face/edges of the unit cube, make extra ones
@@ -25,26 +41,19 @@ def add_extra_edge_lines(point_pairs: list[tuple[np.ndarray, np.ndarray]], tol=1
 
         n_zeros = np.sum(both_zeros)
 
-        new_pair_list.append((a, b)) # We'll always need this
-        match n_zeros:
-            case 0:
-                pass
-            case 1:
-                a_copy = a.copy()
-                b_copy = b.copy()
-                a_copy[both_zeros] = 1.0
-                b_copy[both_zeros] = 1.0
-                new_pair_list.append((a_copy, b_copy))
-            case 2:
-                for sub in subs:
-                    a_copy = a.copy()
-                    b_copy = b.copy()
-                    a_copy[both_zeros] = sub
-                    b_copy[both_zeros] = sub
-                    new_pair_list.append((a_copy, b_copy))
-
-            case _:
-                raise ValueError("More than 2 shared zeros in pair, either they're the same point"
-                                 "or something much worse has happened")
+        for replacement in replacements[n_zeros]:
+            a_copy = a.copy()
+            b_copy = b.copy()
+            a_copy[both_zeros] = replacement
+            b_copy[both_zeros] = replacement
+            new_pair_list.append((a_copy, b_copy))
 
     return new_pair_list
+
+
+
+def add_extra_edge_points(point, tol=1e-12):
+    """ If a point has any coordinate of zero, add extra ones at 1 """
+
+    zeros = np.isclose(point, 0, atol=tol)
+
