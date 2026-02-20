@@ -11,6 +11,7 @@ from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagati
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from math import sqrt
+import sys
 
 from pyspinw.debug_plot import debug_plot
 
@@ -34,11 +35,17 @@ if __name__ == "__main__":
     """Reproduces Tutorial 8: https://spinw.org/tutorials/08tutorial"""
     freeze_support()
 
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
+
     unit_cell = UnitCell(6, 6, 40, gamma=120)
 
-    x = LatticeSite(0.5, 0,   0, 0, 1, 0, name="X", unit="lu")
-    y = LatticeSite(0,   0.5, 0, 0, 1, 0, name="Y", unit="lu")
-    z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, name="Z", unit="lu")
+    #x = LatticeSite(0.5, 0,   0, 0, 1, 0, name="X", unit="lu")
+    #y = LatticeSite(0,   0.5, 0, 0, 1, 0, name="Y", unit="lu")
+    #z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, name="Z", unit="lu")
+    s3 = sqrt(3) / 2
+    x = LatticeSite(0.5, 0,   0, -0.5-s3*1j,  s3-0.5j, 0, name="X")
+    y = LatticeSite(0,   0.5, 0, -0.5-s3*1j,  s3-0.5j, 0, name="Y")
+    z = LatticeSite(0.5, 0.5, 0, -0.5+s3*1j, -s3-0.5j, 0, name="Z")
 
     sites = [x, y, z]
     k = CommensuratePropagationVector(-1./3., -1./3., 0)
@@ -50,11 +57,17 @@ if __name__ == "__main__":
                           coupling_type=HeisenbergCoupling,
                           j=1)
 
-    debug_plot(s, exchanges, show=False)
+    #debug_plot(s, exchanges, show=False)
 
     hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()
 
+    #from pyspinw.gui.viewer import show_hamiltonian
+    #show_hamiltonian(hamiltonian)
+
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
-    hamiltonian.spaghetti_plot(path, use_rust=False)
+    import matplotlib.pyplot as plt
+    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig.axes[1].set_ylim(0, 1)
+    plt.show()

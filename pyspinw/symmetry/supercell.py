@@ -419,7 +419,7 @@ class SummationSupercell(CommensurateSupercell):
         moment = np.zeros(3, dtype=complex)
         for component, propagation_vector in zip(site.moment_data, self._propagation_vectors):
             # TODO: check
-            moment += np.real(component * np.exp(2j * np.pi * propagation_vector.dot(cell_offset)))
+            moment += component * np.exp(-2j * np.pi * propagation_vector.dot(cell_offset))
 
         return moment.real
 
