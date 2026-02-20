@@ -14,24 +14,19 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(1,1,1)
 
-    x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
-    y = LatticeSite(1, 0, 0, 0, 0, 1, name="Y")
-    z = LatticeSite(0, 1, 0, 0, 0, 1, name="Z")
-    w = LatticeSite(0,0,1,0,0,1, name="W")
+    x = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
 
-    sites = [x, y, z, w]
+    sites = [x]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(1,1,1)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(2,2,2)))
 
-    exchanges = couplings(sites=sites,
-                           unit_cell=unit_cell,
-                           max_distance=1.0001,
-                           coupling_type=HeisenbergCoupling,
-                           j=-1)
+    exchanges = [
+        HeisenbergCoupling(x, x, -1, cell_offset=(1,0,0), name="X"),
+        HeisenbergCoupling(x, x, -1, cell_offset=(0,1,0), name="Y"),
+        HeisenbergCoupling(x, x, -1, cell_offset=(0,0,1), name="Z"),
+                 ]
 
-    anisotropies = axis_anisotropies([x], 1, (0,0,1)) + axis_anisotropies([x,y], 1, (0,1,0))
-
-    hamiltonian = Hamiltonian(s, exchanges, anisotropies=anisotropies)
+    hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()
 

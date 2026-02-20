@@ -5,6 +5,7 @@ import numpy as np
 from pyspinw.anisotropy import Anisotropy
 from pyspinw.basis import site_rotations
 from pyspinw.coupling import Coupling
+from pyspinw.gui.edge_cases import add_extra_edge_lines
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -97,6 +98,7 @@ class RenderCoupling(Selectable):
 
         # Create prettified model matrices
         _, sections = split_and_wrap_line_segment(p1, p2)
+        sections = add_extra_edge_lines(sections)
         self.split_model_matrices = [self._segment_model_matrix(s1, s2, unit_cell) for s1, s2 in sections]
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
