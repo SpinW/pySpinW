@@ -17,7 +17,7 @@ class RawUnitCell(SPWSerialisable):
     _unit_cell_name = "raw"
 
     def __init__(self, xyz):
-        self._xyz = xyz
+        self._xyz = xyz # Transformation from lattice units to cartesian
 
         # Inverse transformation
 
@@ -27,13 +27,10 @@ class RawUnitCell(SPWSerialisable):
         except np.linalg.LinAlgError as e:
             raise BadCellDefinition(f"{self._xyz} is not invertible")
 
+        #
         # Matrices to convert moments
+        #
 
-        # a_vector = xyz[:, 0]
-        # b_vector = xyz[:, 1]
-        # c_vector = xyz[:, 2]
-
-        # TODO: Tests to make sure we have the right components (think they are right)
         a_vector = xyz[0, :]
         b_vector = xyz[1, :]
         c_vector = xyz[2, :]
@@ -45,9 +42,8 @@ class RawUnitCell(SPWSerialisable):
         #  we want to take away the component of b that is in the direction of a
 
         b_in_a = np.dot(moment_a, b_vector)    # scalar projection of b into a
-        b_norm = np.sqrt(np.sum(b_vector**2))  # direction of b
 
-        moment_b = b_vector - b_in_a * b_norm    # unnormalised
+        moment_b = b_vector - b_in_a * moment_a  # unnormalised
         moment_b /= np.sqrt(np.sum(moment_b**2)) # normalise
 
         # assert np.dot(moment_a, moment_b) < 1e-10, "moment_a and moment_b should be orthogonal"
@@ -85,7 +81,6 @@ class RawUnitCell(SPWSerialisable):
     def moment_cartesian_to_fractional(self, moments: np.ndarray):
         """ Convert a list of moments from cartesian (mx, my, mz) to fractional (mi, mj, mk)"""
         return moments @ self._xyz_moments_inv
-
 
     @property
     def centre(self):
