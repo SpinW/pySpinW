@@ -1,5 +1,5 @@
 """ Toolbar and display options data for the viewer"""
-
+import ctypes
 import json
 import os
 
@@ -19,8 +19,8 @@ class DisplayOptions:
     show_sites: bool = True
     show_couplings: bool = True
     show_anisotropies: bool = True
-    show_unit_cell: bool = True
-    show_supercell: bool = True
+    show_unit_cell: bool = False
+    show_supercell: bool = False
 
     prettify: bool = True
 
@@ -28,11 +28,11 @@ class DisplayOptions:
     use_atomic_radii: bool = True
     show_atoms_not_moments: bool = False
 
-    atom_moment_scaling: float = 1.0
-    coupling_scaling: float = 1.0
+    atom_moment_scaling: float = 0.35
+    coupling_scaling: float = 0.20
 
     show_cartesian_axes: bool = True
-    show_lattice_axes: bool = True
+    show_lattice_axes: bool = False
     orthogonal_lattice_axes: bool = False
 
 
@@ -233,9 +233,6 @@ class DisplayOptionsToolbar(QWidget):
                                                        value=settings.show_atoms_not_moments)
 
 
-        self.show_nonmagnetic = self._add_toggle_button("Show non-magnetic sites",
-                                                        icon="nonmagnetic",
-                                                        value=settings.show_nonmagnetic_atoms)
 
 
         self.moment_scale_slider = self._add_slider(
@@ -243,6 +240,11 @@ class DisplayOptionsToolbar(QWidget):
             left_label=IconWidget("small_moments", "Smaller Sites"),
             right_label=IconWidget("big_moments", "Larger Sites"),
             alt_text="Site scale factor")
+
+
+        self.show_nonmagnetic = self._add_toggle_button("Show non-magnetic sites",
+                                                        icon="nonmagnetic",
+                                                        value=settings.show_nonmagnetic_atoms)
 
         self.scale_atoms = self._add_toggle_button("Scale atoms by atomic radii",
                                                    icon="atomsizes",
@@ -282,6 +284,11 @@ class DisplayOptionsToolbar(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.bar_layout.setContentsMargins(0, 0, 0, 0)
         self.bar_layout.setSpacing(0)
+
+        # TODO: Temporally disabled until implemented
+        self.show_anisotropies.setVisible(False)
+        self.atom_or_moments.setVisible(False)
+        self.scale_atoms.setVisible(False)
 
     def _on_change(self):
         """ Called when anything changes, send signal """

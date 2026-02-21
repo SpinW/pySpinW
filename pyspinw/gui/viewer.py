@@ -1,10 +1,12 @@
 """ Viewer window """
+import ctypes
 import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
 
 from pyspinw.gui.crystalview import CrystalViewerWidget
+from pyspinw.gui.icons.iconload import png_icon
 from pyspinw.gui.rendermodel import RenderModel
 from pyspinw.gui.renderoptions import DisplayOptions, DisplayOptionsToolbar
 from pyspinw.gui.textdisplay import TextDisplay
@@ -87,13 +89,24 @@ class Viewer(QWidget):
 
 def show_hamiltonian(hamiltonian):
     """ Show a Hamiltonian in the viewer"""
+
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
+    except:
+        pass
+
+
     app = QApplication()
+
+    app.setWindowIcon(png_icon("pyspinw"))
 
     # Useful for checking particular display options
     # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
     # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
-    widget = Viewer(hamiltonian)
-    widget.resize(800, 600)
-    widget.show()
+    viewer = Viewer(hamiltonian)
+    viewer.setWindowTitle("Hamiltonian Viewer")
+    viewer.resize(800, 600)
+    viewer.show()
+
     app.exec()
