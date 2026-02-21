@@ -56,5 +56,7 @@ def load_pixmap(name: str, size: int=128) -> QPixmap:
     return pixmap_from_package("pyspinw.gui.icons.svg", name + ".svg", size)
 
 def png_icon(name):
+    """ Load a png icon from the icons directory"""
+    # TODO: Can this be made robust against weird packaging stuff???
     with resources.as_file(resources.files("pyspinw.gui.icons") / f"{name}.png") as icon_path:
         return QIcon(str(icon_path))

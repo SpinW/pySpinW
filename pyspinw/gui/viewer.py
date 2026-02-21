@@ -89,10 +89,9 @@ class Viewer(QWidget):
 
 def show_hamiltonian(hamiltonian):
     """ Show a Hamiltonian in the viewer"""
-
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
-    except:
+    except Exception:
         pass
 
 
