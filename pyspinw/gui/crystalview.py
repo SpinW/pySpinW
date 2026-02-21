@@ -295,8 +295,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             # Save state
             glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
-            # glDisable(GL_LIGHTING)
-            # glDisable(GL_TEXTURE_2D)
             glDisable(GL_DEPTH_TEST)
 
             # Axes viewport
@@ -520,9 +518,19 @@ class CrystalViewerWidget(QOpenGLWidget):
     def mouseReleaseEvent(self, event):
         """ Qt override, called on mouse up"""
         if event.button() == Qt.MouseButton.LeftButton:
-            modifiers = QApplication.keyboardModifiers()
-            shift = modifiers == Qt.ShiftModifier
-            self.click_on_element(self.current_hover_id, shift)
+
+            start, button, _ = self.mouse_data
+            end = event.position()
+
+            dx = end.x() - start.x()
+            dy = end.y() - start.y()
+
+            if dx*dx + dy*dy < 100:
+
+                modifiers = QApplication.keyboardModifiers()
+                shift = modifiers == Qt.ShiftModifier
+
+                self.click_on_element(self.current_hover_id, shift)
 
         self.mouse_data = None
 
