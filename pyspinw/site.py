@@ -20,6 +20,10 @@ class LatticeSite(SPWSerialisable):
 
     :param: i,j,k - Fractional coordinates within unit cell
     :param: mi,mj,mk - Magnetic moment (or complex basisvector) along unit cell aligned axis
+    :param: supercell_moments - ???
+    :param: g - g-tensor (3x3)
+    :param: name
+    :param: S - magnitude of spin (optional - will be determined from mi, mj, mk components if not specified
     """
 
     serialisation_name = "site"
@@ -32,14 +36,11 @@ class LatticeSite(SPWSerialisable):
                  supercell_moments: ArrayLike | None = None,
                  g: ArrayLike | None = None,
                  name: str = "",
-                 unit: str = "xyz"):
+                 S: float | None = None):
 
         self._i = float(i)
         self._j = float(j)
         self._k = float(k)
-        if unit.lower() != "xyz" and unit.lower() != "lu":
-            raise ValueError("Unit must be either 'xyz' or 'lu'")
-        self._unit = unit.lower()
 
         #
         # Lots of case checking for the moment input format
@@ -92,7 +93,7 @@ class LatticeSite(SPWSerialisable):
                 raise ValueError("g-factor should be a scalar, a vector of length 3, or a 3-by-3 matrix")
 
         self._base_moment = np.sum(self._moment_data, axis=0)
-
+        self._magnitude = np.linalg.norm(self._base_moment) if S is None else S
         self._name = name
 
         self._ijk = np.array([i, j, k], dtype=float)
@@ -150,15 +151,9 @@ class LatticeSite(SPWSerialisable):
         return self
 
     @property
-    def unit(self):
-        """ Moment unit """
-        return self._unit
-
-    def xyz_moment(self, transformation):
-        """ The moment in XYZ unit """
-        if self.unit == 'lu':
-            return self._base_moment @ transformation
-        return self._base_moment
+    def magnitude(self):
+        """ The spin magnitude or length of this site """
+        return self._magnitude
 
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
@@ -192,7 +187,7 @@ class LatticeSite(SPWSerialisable):
                 "supercell_moments": numpy_serialise(self._moment_data),
                 "name": self.name,
                 "g": numpy_serialise(self.g),
-                "unit": self.unit
+                "S": self.magnitude,
             }
 
             context.sites.put(self._unique_id, json)

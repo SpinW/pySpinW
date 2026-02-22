@@ -7,7 +7,7 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import spacegroup, couplings, filter
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
+from pyspinw.legacy.genmagstr import genmagstr
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from math import sqrt
@@ -39,17 +39,10 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(6, 6, 40, gamma=120)
 
-    #x = LatticeSite(0.5, 0,   0, 0, 1, 0, name="X", unit="lu")
-    #y = LatticeSite(0,   0.5, 0, 0, 1, 0, name="Y", unit="lu")
-    #z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, name="Z", unit="lu")
-    s3 = sqrt(3) / 2
-    x = LatticeSite(0.5, 0,   0, -0.5-s3*1j,  s3-0.5j, 0, name="X")
-    y = LatticeSite(0,   0.5, 0, -0.5-s3*1j,  s3-0.5j, 0, name="Y")
-    z = LatticeSite(0.5, 0.5, 0, -0.5+s3*1j, -s3-0.5j, 0, name="Z")
-
-    sites = [x, y, z]
-    k = CommensuratePropagationVector(-1./3., -1./3., 0)
-    s = Structure(sites, unit_cell=unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
+    x = LatticeSite(0.5, 0,   0, 0, 1, 0, S=1, name="X")
+    y = LatticeSite(0,   0.5, 0, 0, 1, 0, S=1, name="Y")
+    z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, S=1, name="Z")
+    s = genmagstr([x, y, z], unit_cell, mode='helical', k=[-1./3, -1./3, 0], n=[0, 0, 1], unit='lu')
 
     exchanges = couplings(sites=[x, y, z],
                           unit_cell=unit_cell,
