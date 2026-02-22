@@ -263,6 +263,7 @@ class Hamiltonian(SPWSerialisable):
                         q_vectors=q_vectors * self.structure.supercell.scaling,
                         couplings=couplings,
                         positions=positions,
+                        rlu_to_cart=np.linalg.inv(self.structure.unit_cell._xyz).T * 2 * np.pi,
                         field=magnetic_field)
 
         return result[0], result[1]
