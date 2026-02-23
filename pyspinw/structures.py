@@ -134,7 +134,7 @@ class Structure(SPWSerialisable):
 
         return unique_sites
 
-    def expansion_site_mapping(self):
+    def _expansion_site_mapping(self):
         """ Expand supercell into a single, bigger cell """
         # Calculate new cell
         scale = self.supercell.cell_size()
@@ -145,7 +145,7 @@ class Structure(SPWSerialisable):
             c=self.unit_cell.c * scale[2])
 
         # Create a mapping between sites and offsets to the new sites
-        mapping: dict[tuple[LatticeSite, tuple[int, int, int]], LatticeSite] = {}
+        mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
         for offset in self.supercell.cells():
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)
@@ -165,7 +165,7 @@ class Structure(SPWSerialisable):
 
     def expand(self):
         """ Expand supercell into a single, bigger cell """
-        cell, mapping = self.expansion_site_mapping()
+        cell, mapping = self._expansion_site_mapping()
 
 
         return Structure(

@@ -97,6 +97,11 @@ class LatticeSite(SPWSerialisable):
         self._unique_id = _generate_unique_id()
 
     @property
+    def unique_id(self):
+        """ Unique ID for this site """
+        return self._unique_id
+
+    @property
     def name(self):
         """ Name given to this site """
         return self._name

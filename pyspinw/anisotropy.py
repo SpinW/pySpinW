@@ -26,7 +26,7 @@ class Anisotropy(SPWSerialisable):
 
     @property
     def anisotropy_matrix(self) -> np.ndarray:
-        """Matrix spefifying the anisotropy - `A` term in the Hamiltonian"""
+        """Matrix specifying the anisotropy - `A` term in the Hamiltonian"""
         if self._anisotropy_matrix is None:
             raise ValueError("Anisotropy matrix not initialised - this shouldn't happen")
         else:
@@ -43,10 +43,14 @@ class Anisotropy(SPWSerialisable):
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
         return Anisotropy(site, anisotropy_matrix)
 
-    def __repr__(self):
+    @property
+    def parameter_string(self):
+        """ A string representation of the parameters """
         m = self.anisotropy_matrix.reshape(-1)
-        return (f"Anisotropy({self.site.name}, "
-                f"[[{m[0]}, {m[1]}, {m[2]}], [{m[3]}, {m[4]}, {m[5]}], [{m[6]}, {m[7]}, {m[8]}]])")
+        return f"[[{m[0]}, {m[1]}, {m[2]}], [{m[3]}, {m[4]}, {m[5]}], [{m[6]}, {m[7]}, {m[8]}]]"
+
+    def __repr__(self):
+        return (f"Anisotropy({self.site.name}, {self.parameter_string})")
 
     def updated(self, site: LatticeSite | None = None, anisotropy_matrix: ArrayLike | None = None):
         """ Return a copy of this anisotropy term with variables replaced"""
@@ -86,8 +90,13 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         """ The principal direction of the anisotropy"""
         return self._direction
 
+    @property
+    def parameter_string(self):
+        """ A string representation of the parameters """
+        return f"a={self.constant}, axis={self.direction}"
+
     def __repr__(self):
-        return (f"Anisotropy({self.site.name}, a={self.constant}, axis={self.direction})")
+        return (f"Anisotropy({self.site.name}, {self.parameter_string})")
 
     def _serialise(self, context: SPWSerialisationContext):
         return {
