@@ -16,18 +16,18 @@ def antiferro_chain(n_q = 100, classes = py_classes):
     rust_kw = {'dtype':complex, 'order':'F'}
     Coupling = classes.coupling
 
-    rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
+    rotations = [np.eye(3, **rust_kw), np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]], **rust_kw)]
     magnitudes = np.array([1.0]*2)
-    positions = np.array([[0., 0., 0.], [0., 1., 0.]])
+    positions = np.array([[0., 0., 0.], [0., 0.5, 0.]])
 
     couplings = [
+        Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 0., 0.])),
         Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
-        Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])),
-        Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
+        Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 0., 0.])),
         Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])),
     ]
 
-    q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
+    q_mags = np.linspace(0, 2, n_q).reshape(-1, 1)
     q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
 
     return (rotations, magnitudes, q_vectors, couplings, positions)

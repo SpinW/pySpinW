@@ -246,7 +246,7 @@ class Supercell(ABC, SPWSerialisable):
     def fractional_in_supercell(self, position_in_cell: ArrayLike, cell_offset: CellOffset):
         """ Get the fractional position within a supercell """
         position = cell_offset.vector + np.array(position_in_cell, dtype=float)
-        scaling = np.array(self._scaling, dtype=float)
+        scaling = np.array(self.scaling, dtype=float)
 
         return position / scaling
 
@@ -283,7 +283,10 @@ class Supercell(ABC, SPWSerialisable):
             expected_names = ", ".join([f"'{key}'" for key in supercell_types])
             raise SPWSerialisationError(f"Expected transform type to be one of {expected_names}") from ke
 
-
+    @property
+    def scaling(self):
+        """ The scaling triplet for this supercell """
+        return self._scaling
 
 
 class TrivialSupercell(Supercell):
@@ -344,6 +347,11 @@ class CommensurateSupercell(Supercell):
         """ Number of cells in this supercell """
         a, b, c = self.cell_size()
         return a*b*c
+
+    @property
+    def scaling(self):
+        """ The scaling triplet for this supercell """
+        return self.cell_size()
 
 
 class TransformationSupercell(CommensurateSupercell):
@@ -411,7 +419,7 @@ class SummationSupercell(CommensurateSupercell):
         moment = np.zeros(3, dtype=complex)
         for component, propagation_vector in zip(site.moment_data, self._propagation_vectors):
             # TODO: check
-            moment += component * np.exp(2j * np.pi * propagation_vector.dot(cell_offset))
+            moment += component * np.exp(-2j * np.pi * propagation_vector.dot(cell_offset))
 
         return moment.real
 

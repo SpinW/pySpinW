@@ -10,9 +10,12 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
+import sys
 
 if __name__ == "__main__":
     freeze_support()
+
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(1,1,1)
 
@@ -32,4 +35,4 @@ if __name__ == "__main__":
 
     path = Path([[0,0,0], [1,0,0]])
 
-    hamiltonian.energy_plot(path)
+    hamiltonian.spaghetti_plot(path, use_rust=use_rust)

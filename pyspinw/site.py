@@ -19,7 +19,11 @@ class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
     :param: i,j,k - Fractional coordinates within unit cell
-    :param: mi,mj,mk - Magnetic moment along unit cell aligned axis
+    :param: mi,mj,mk - Magnetic moment (or complex basisvector) along unit cell aligned axis
+    :param: supercell_moments - ???
+    :param: g - g-tensor (3x3)
+    :param: name
+    :param: S - magnitude of spin (optional - will be determined from mi, mj, mk components if not specified
     """
 
     serialisation_name = "site"
@@ -31,7 +35,8 @@ class LatticeSite(SPWSerialisable):
                  mk: float | None = None,
                  supercell_moments: ArrayLike | None = None,
                  g: ArrayLike | None = None,
-                 name: str = ""):
+                 name: str = "",
+                 S: float | None = None):
 
         self._i = float(i)
         self._j = float(j)
@@ -45,8 +50,7 @@ class LatticeSite(SPWSerialisable):
             self._moment_data = np.array([[
                 0.0 if mi is None else mi,
                 0.0 if mj is None else mj,
-                0.0 if mk is None else mk]],
-                    dtype=float)
+                0.0 if mk is None else mk]])
 
         else:
             if mi is not None or mj is not None or mk is not None:
@@ -89,7 +93,7 @@ class LatticeSite(SPWSerialisable):
                 raise ValueError("g-factor should be a scalar, a vector of length 3, or a 3-by-3 matrix")
 
         self._base_moment = np.sum(self._moment_data, axis=0)
-
+        self._magnitude = np.linalg.norm(self._base_moment) if S is None else S
         self._name = name
 
         self._ijk = np.array([i, j, k], dtype=float)
@@ -146,6 +150,11 @@ class LatticeSite(SPWSerialisable):
         """ Get the parent site (just itself for non-implied sites)"""
         return self
 
+    @property
+    def magnitude(self):
+        """ The spin magnitude or length of this site """
+        return self._magnitude
+
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
         """ Create from an array of values """
@@ -177,7 +186,8 @@ class LatticeSite(SPWSerialisable):
                 "k": self.k,
                 "supercell_moments": numpy_serialise(self._moment_data),
                 "name": self.name,
-                "g": numpy_serialise(self.g)
+                "g": numpy_serialise(self.g),
+                "S": self.magnitude,
             }
 
             context.sites.put(self._unique_id, json)

@@ -51,7 +51,7 @@ def find_relative_positions(
 
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
 
-    cartesian_position = fractional_positions @ unit_cell_transform.T
+    cartesian_position = fractional_positions @ unit_cell_transform
 
     square_distances = np.sum(cartesian_position**2, axis=1)
 

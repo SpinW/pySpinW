@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use faer::linalg::triangular_solve::solve_lower_triangular_in_place;
+use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
 use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm};
 use faer::mat::{AsMatRef, AsMatMut};
 use indicatif::ParallelProgressIterator;
@@ -11,7 +11,7 @@ use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
 /// Minimum energy that isn't just set for zero (in meV)
-const ZERO_ENERGY_TOL: f64 = 5e-4;
+const ZERO_ENERGY_TOL: f64 = 1e-12;
 
 /// The result of a single-Q spinwave calculation.
 ///
@@ -151,7 +151,10 @@ fn calc_sqrt_hamiltonian(
     let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
     let B_adj = B.adjoint().to_owned();
 
-    let hamiltonian: Mat<C64> = block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C);
+    // Adds a small delta to diagonal to ensure we don't have an exact degeneracies
+    let diag_delta = Mat::<C64>::from_fn(A.nrows() * 2, A.ncols() * 2,
+        |i,j| if i == j { C64::from((i as f64)*1e-12) } else { C64::ZERO } );
+    let hamiltonian: Mat<C64> = block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C) + diag_delta;
 
     // take square root of Hamiltonian using Cholesky if possible; if this fails,
     // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
@@ -277,6 +280,7 @@ pub fn calc_spinwave(
     q_vectors: Vec<Vec<f64>>,
     couplings: Vec<&Coupling>,
     positions: Vec<ColRef<f64>>,
+    rlu_to_cart: MatRef<f64>,
     field: Option<MagneticField>,
     save_Sab: bool,
 ) -> Vec<SpinwaveResult> {
@@ -295,6 +299,7 @@ pub fn calc_spinwave(
                 n_sites,
                 &couplings,
                 &positions,
+                rlu_to_cart,
                 save_Sab,
             )
         })
@@ -320,12 +325,13 @@ fn spinwave_single_q(
     n_sites: usize,
     couplings: &[&Coupling],
     positions: &[ColRef<f64>],
+    rlu_to_cart: MatRef<f64>,
     save_Sab: bool,
 ) -> SpinwaveResult {
     let z = &q_independent_components.z;
     let spin_coefficients = &q_independent_components.spin_coefficients;
 
-    let sqrt_hamiltonian =
+    let mut sqrt_hamiltonian =
         calc_sqrt_hamiltonian(q.clone(), q_independent_components, n_sites, couplings);
     let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
     let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
@@ -337,10 +343,11 @@ fn spinwave_single_q(
     // pair of sites i, j; to calculate these efficiently we calculate
     // exp(i q r_i) for each site i and then the outer product of this with its conjugate
     // gives us the full matrix of phase factors.
+    let J2PI = 2. * J * PI;
     let phase_factors = Col::<C64>::from_iter(
         positions
             .iter()
-            .map(|r_i| (J * (q.transpose() * r_i)).exp()),
+            .map(|r_i| (J2PI * (q.transpose() * r_i)).exp()),
     );
     let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
 
@@ -388,11 +395,7 @@ fn spinwave_single_q(
         }
     }
 
-    // Adds a small delta to diagonal to ensure we don't have an exact degeneracies
-    let diag_delta = Mat::<C64>::from_fn(shc.nrows(), shc.ncols(),
-        |i,j| if i == j { C64::from((i as f64)*1e-12) } else { C64::ZERO } );
-    let eigendecomp = ((sqrt_hamiltonian.adjoint() * shc) + diag_delta)
-        .self_adjoint_eigen(Side::Lower)
+    let eigendecomp = (sqrt_hamiltonian.adjoint() * shc).self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
     let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
@@ -421,11 +424,13 @@ fn spinwave_single_q(
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
-    solve_lower_triangular_in_place(sqrt_hamiltonian.as_ref(), T.as_mut(), Par::Seq);
+    solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
 
-    // T is NaN if there are zero eigenvalues; set to zeroes
+    // T is NaN if sqrt_hamiltonian is singular; add a delta to the diagonal to avoid this
     if T.has_nan() {
-        T = Mat::<C64>::zeros(2 * n_sites, 2 * n_sites);
+        sqrt_hamiltonian.diagonal_mut().column_vector_mut().iter_mut().for_each(|x| *x += C64::from(1e-7) );
+        T = eigvecs * sqrt_E.as_diagonal();
+        solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
     }
 
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
@@ -447,9 +452,12 @@ fn spinwave_single_q(
         })
         .collect();
 
+    // gets the conversion from r.l.u. to Cartesian, for Sperp we need Q in Cartesians
+    let qcart: Col<f64> = (q.transpose() * rlu_to_cart).transpose().to_owned();
+    
     // and finally, calculate the perpendicular component of Sab
     let intensities = {
-        let mut norm_q: Col<C64> = (q.as_ref() / q.norm_l2()).iter().map(C64::from).collect();
+        let mut norm_q: Col<C64> = (qcart.as_ref() / qcart.norm_l2()).iter().map(C64::from).collect();
         if norm_q.has_nan() {
             norm_q = Col::<C64>::from_iter([C64::ZERO, C64::ZERO, C64::ZERO]);
         }
