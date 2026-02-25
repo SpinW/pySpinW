@@ -4,17 +4,13 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
-from pyspinw.interface import spacegroup, couplings, filter, axis_anisotropies
+from pyspinw.interface import couplings, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from pyspinw.legacy.genmagstr import genmagstr
-from math import sqrt
 import sys
-
-from pyspinw.debug_plot import debug_plot
 
 """
 tri = spinw;
@@ -51,8 +47,6 @@ if __name__ == "__main__":
                           coupling_type=HeisenbergCoupling,
                           j=1)
 
-    debug_plot(s, exchanges, show=False)
-
     anisotropies = axis_anisotropies(sites, 0.2)
     hamiltonian = Hamiltonian(s, exchanges, anisotropies)
 
@@ -61,5 +55,6 @@ if __name__ == "__main__":
     path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
     import matplotlib.pyplot as plt
     fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig.axes[0].set_ylim(0, 10)
     fig.axes[1].set_ylim(0, 5)
     plt.show()

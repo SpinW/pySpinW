@@ -4,10 +4,9 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import couplings, filter
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 import sys
@@ -22,7 +21,6 @@ if __name__ == "__main__":
     only_site = LatticeSite(0, 0, 0, 0,0,1, name="X")
 
     s = Structure([only_site], unit_cell=unit_cell)
-
 
     exchanges = couplings(sites=[only_site],
                           unit_cell=unit_cell,

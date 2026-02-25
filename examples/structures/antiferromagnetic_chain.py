@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import couplings
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
@@ -21,7 +21,8 @@ AFMchain.addatom('r',[0 0 0],'S',1,'label','MCu1','color','blue');
 AFMchain.gencoupling('maxDistance',7)
 AFMchain.addmatrix('label','Ja','value',1,'color','red');
 AFMchain.addcoupling('mat','Ja','bond',1);
-AFMchain.genmagstr('mode','direct','k',[1/2 0 0],'n',[1 0 0],'S',[0 0; 1 -1;0 0]);
+%AFMchain.genmagstr('mode','direct','k',[1/2 0 0],'n',[1 0 0],'S',[0; 1; 0]);
+AFMchain.genmagstr('mode','direct','S',[0 0; 1 -1; 0 0],'nExt',[1 2 1]);
 afcSpec = AFMchain.spinwave({[0 0 0] [1 0 0] 523}, 'hermit',true);
 figure; subplot(2,1,1)
 sw_plotspec(afcSpec,'mode',4,'dE',0.2,'axLim',[0 3])

@@ -4,11 +4,10 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import couplings, filter
 from pyspinw.path import Path, Path1D
 from pyspinw.sample import Powder
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 

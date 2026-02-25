@@ -4,16 +4,13 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import couplings
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.legacy.genmagstr import genmagstr
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from numpy import sqrt
 import sys
-
-from pyspinw.debug_plot import debug_plot
 
 """
 AFkagome = spinw;
@@ -50,8 +47,6 @@ if __name__ == "__main__":
     j1 = couplings(sites=[x, y, z], unit_cell=unit_cell, min_distance=0, max_distance=4.1, coupling_type=HeisenbergCoupling, j=1)
     j2 = couplings(sites=[x, y, z], unit_cell=unit_cell, min_distance=5, max_distance=5.2, coupling_type=HeisenbergCoupling, j=0.11)
     exchanges = j1 + j2
-
-    #debug_plot(s, exchanges, show=False)
 
     hamiltonian = Hamiltonian(s, exchanges)
 

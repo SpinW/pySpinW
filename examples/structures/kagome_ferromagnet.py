@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import couplings
 from pyspinw.path import Path, Path1D
 from pyspinw.site import LatticeSite
 from pyspinw.sample import Powder
@@ -12,8 +12,6 @@ from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 import sys
-
-from pyspinw.debug_plot import debug_plot
 
 """
 FMkagome = spinw;
@@ -52,8 +50,6 @@ if __name__ == "__main__":
                            max_distance=4.,
                            coupling_type=HeisenbergCoupling,
                            j=-1)
-
-    debug_plot(s, exchanges, show=False)
 
     hamiltonian = Hamiltonian(s, exchanges)
 

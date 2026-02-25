@@ -2,18 +2,14 @@
 
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.anisotropy import AxisMagnitudeAnisotropy
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter, axis_anisotropies, axis_anisotropies
+from pyspinw.interface import couplings, filter, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 import sys
-
-from pyspinw.debug_plot import debug_plot
 
 """
 afc = spinw;

@@ -4,16 +4,13 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import spacegroup, couplings, filter
+from pyspinw.interface import couplings
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.legacy.genmagstr import genmagstr
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from math import sqrt
 import sys
-
-from pyspinw.debug_plot import debug_plot
 
 """
 AF33kagome = spinw;
@@ -28,7 +25,11 @@ S0 = [0 0 -1;
 AF33kagome.genmagstr('mode','helical','k',[-1/3 -1/3 0],...
     'n',[0 0 1],'unit','lu','S',S0,'nExt',0.1);
 kag33Spec = AF33kagome.spinwave({[-1/2 0 0] [0 0 0] [1/2 1/2 0] 250},'hermit',false);
-figure; sw_plotspec(kag33Spec)
+figure; subplot(211)
+sw_plotspec(kag33Spec,'mode',1,'colorbar',false,'colormap',[0 0 0],'dashed',true,'axLim',[0 3])
+kag33Spec = sw_egrid(sw_neutron(kag33Spec),'Evect',linspace(0,6.5,500),'component','Sperp');
+kag33Spec = sw_omegasum(kag33Spec,'zeroint',1e-6);
+subplot(212); sw_plotspec(kag33Spec,'mode',2,'log',false,'axLim',[0 3])
 """
 
 if __name__ == "__main__":
@@ -50,8 +51,6 @@ if __name__ == "__main__":
                           coupling_type=HeisenbergCoupling,
                           j=1)
 
-    #debug_plot(s, exchanges, show=False)
-
     hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()
@@ -62,5 +61,6 @@ if __name__ == "__main__":
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
     import matplotlib.pyplot as plt
     fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig.axes[0].set_ylim(0, 3)
     fig.axes[1].set_ylim(0, 1)
     plt.show()
