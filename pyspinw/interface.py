@@ -3,6 +3,7 @@ import math
 
 import numpy as np
 from numpy._typing import ArrayLike
+from enum import Enum
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_couplings import default_naming_pattern
@@ -18,21 +19,45 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-def sites(positions: ArrayLike,
-          moments: ArrayLike | None = None,
-          names: list[str] | None=None,
-          convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
-    """ Create lattice site
+class UnitSystem(Enum):
+    """ Types of coordinate system """
+
+    XYZ = 'xyz' # Cartesian
+    LU = 'lu'   # Lattice units
+
+
+def generate_sites(positions: ArrayLike,
+                   moments: ArrayLike | None = None,
+                   names: list[str] | None=None,
+                   magnitudes: ArrayLike | None = None,
+                   positions_units: UnitSystem | str = 'lu',
+                   moments_units: UnitSystem | str = 'xyz',
+                   convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+    """ Create a list of lattice sites
 
     :param positions: positions of the sites
     :param moments: moments of the sites, if not specified, they will be set to zero
-    :param convert_to_cell_with: If this is None, we assume the position is in lattice units, and moments
-                                are in the unit cell moment coordinate system
-                                (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
-                                `pyspinw.UnitCell.moment_cartesian_to_fractional`)
-                                if instead it is a unit cell, we assume the coordinates are cartesian,
-                                and the positions will be converted into lattice units
+    :param names: (optional) a list of names for sites
+    :param magnitudes: (optional) a list of moment magnitudes (spin length S)
+                       If not specified, the norm of the moments vectors will be used as the spin length
+    :param positions_units: the units for atomic positions; either 'lu' or 'xyz'
+                            (default: 'lu', lattice units)
+    :param moments_units: the units for the magnetic moment directions; either 'lu' or 'xyz'
+                            (default: 'xyz', Cartesian axis with x||a)
+    :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
+                                 moments_units is not 'xyz' and allows conversion from those units
+                                 to the default used in LatticeSite.
+                                 (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
+                                 `pyspinw.UnitCell.moment_cartesian_to_fractional`)
     """
+    # check units
+    positions_units = UnitSystem(positions_units)
+    moments_units = UnitSystem(moments_units)
+    if positions_units == UnitSystem.XYZ and convert_to_cell_with is None:
+        raise RuntimeError('Positions in "xyz" units but no conversion given')
+    if moments_units == UnitSystem.LU and convert_to_cell_with is None:
+        raise RuntimeError('Moments in "lu" units but no conversion given')
+
     # check the positions are n-by-3, or 1d
     positions = np.array(positions, dtype=float)
     match len(positions.shape):
@@ -51,7 +76,10 @@ def sites(positions: ArrayLike,
             raise ValueError("Expected positions to be n-by-3, or a single vector of length 3")
 
     # check moment definitions
-    moments = np.array(moments, dtype=float)
+    if moments is None:
+        moments = np.zeros((n_sites, 3, 1))
+    else:
+        moments = np.array(moments, dtype=float)
     match len(moments.shape):
         case 1:
             if n_sites != 1:
@@ -81,18 +109,29 @@ def sites(positions: ArrayLike,
         case _:
             raise ValueError("Expected moments to be n-by-3-m, n-by-3, or vector of length 3")
 
+    # check magnitudes
+    if magnitudes is None:
+        magnitudes = np.linalg.norm(moments, axis=2)
+    else:
+        magnitudes = np.array(magnitudes)
+
     # Convert cell positions
     if convert_to_cell_with is not None:
-        positions = convert_to_cell_with.cartesian_to_fractional(positions)
+        if positions_units == UnitSystem.XYZ:
+            positions = convert_to_cell_with.cartesian_to_fractional(positions)
 
         # convert moments
-        converted_moments = np.zeros_like(moments)
-        for i in range(moments.shape[2]):
-            converted_moments[:,:,i] = convert_to_cell_with.moment_cartesian_to_fractional(moments[:,:,i])
-
-        moments = converted_moments
+        if moments_units == UnitSystem.LU:
+            converted_moments = np.zeros_like(moments)
+            for i in range(moments.shape[2]):
+                converted_moments[i,:,:] = convert_to_cell_with.fractional_to_cartesian(moments[i,:,:])
+            moments = converted_moments
+    for i in range(moments.shape[2]):
+        moments[i,:,:] = moments[i,:,:] * (magnitudes[i] / np.linalg.norm(moments[i,:,:]))
 
     n_sites = positions.shape[0]
+    if names is None:
+        names = [f'site{i:02d}' for i in range(n_sites)]
 
     out = []
     for i in range(n_sites):
@@ -102,11 +141,48 @@ def sites(positions: ArrayLike,
             i = position[0],
             j = position[1],
             k = position[2],
-            supercell_moments=moments[i, :, :],
+            supercell_moments=np.squeeze(moments[i, :, :]),
             name = names[i]
         ))
 
     return out
+
+def generate_helical_structure(unit_cell: UnitCell,
+                               positions: ArrayLike,
+                               moments: ArrayLike,
+                               perpendicular: ArrayLike,
+                               propagation_vector: ArrayLike,
+                               names: list[str] | None=None,
+                               magnitudes: ArrayLike | None = None,
+                               positions_units: UnitSystem | str = 'lu',
+                               moments_units: UnitSystem | str = 'xyz',
+                               convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+    """ Creates a helical structure with a propagation vector and plane normal
+
+    :param unit_cell: a UnitCell object
+    :param positions: positions of the sites
+    :param moments: moments of the sites
+    :param perpendicular: vector perpendicular to helix plane of rotation
+    :param propagation_vector: the propagation vector
+    :param names: (optional) a list of names for sites
+    :param magnitudes: (optional) a list of moment magnitudes (spin length S)
+                       If not specified, the norm of the moments vectors will be used as the spin length
+    :param positions_units: the units for atomic positions; either 'lu' or 'xyz'
+                            (default: 'lu', lattice units)
+    :param moments_units: the units for the magnetic moment directions; either 'lu' or 'xyz'
+                          (default: 'xyz', Cartesian axis with x||a)
+    :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
+                                 moments_units is not 'xyz' and allows conversion from those units
+                                 to the default used in LatticeSite.
+                                 (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
+                                 `pyspinw.UnitCell.moment_cartesian_to_fractional`)
+    """
+    sites = generate_sites(positions, moments, names, magnitudes, positions_units, moments_units, unit_cell)
+    for site in sites:
+        site._base_moment = site._base_moment + 1j * np.cross(perpendicular, site._base_moment)
+    site._moment_data = np.array([site._base_moment])
+    k = CommensuratePropagationVector(*propagation_vector)
+    return Structure(sites, unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
 
 #
 # Supercell methods
