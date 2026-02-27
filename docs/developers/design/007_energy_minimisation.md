@@ -32,7 +32,7 @@ $\frac{d\alpha}{dS_k} = \sum_{ij} (S_i^T A_{ik})^T + A_{kj} S_j = \sum_{ij} A_{i
 
 as $\alpha$ is linear with respect to $S_i$, this is constant with respect to $S_i$.
 
-Next we can look at $\beta$, where we have something very similar
+Next we can look at $\beta$, where we have something very similar, but note that it is linear, rather than constant in $S_k$
 
 $\frac{d\beta}{dS_k} = \sum_{i} \delta_{ik} (B_i^T + B_i) S_i = \sum_k (B_k^T + B_k) S_k$
 
@@ -49,7 +49,17 @@ $\frac{d\gamma}{dS_k} = \sum_i \delta_{ik} S_i \cdot C_i = C_k$
 
 ### Non-unique ground state
 
+The lowest energy state will not be, in general, unique. For example, consider two spins with a ferromagnetic Heisenberg coupling. They will be at an energy minimum when the spins are aligned. 
+However, there will be two degrees of freedom with which they can achieve this, it doesn't matter which direction they face.
+
+There's not much we can do about this
+
 ### Gimbal Lock
+
+Another challenge is that global parameterisations on the surface of the sphere, or circle, will be discontinuous and potentially singular.
+
+We can avoid this in the optimisation by exploiting the fact that we will only want small rotations. This means we can pick a coordinate system at each
+step, work out how to move the moments in that system, then pick a new one in the next step. 
 
 
 
@@ -58,6 +68,7 @@ $\frac{d\gamma}{dS_k} = \sum_i \delta_{ik} S_i \cdot C_i = C_k$
 ### Unconstrained
 
 ### Constrained to plane
+
 
 
 
