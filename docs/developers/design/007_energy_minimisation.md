@@ -10,6 +10,16 @@ linear terms describe the effect of the magnetic field.
 
 $H = \sum_{i \neq j} A_{ij} S_i^T S_j + \sum_i S_i^T B_i S_i + \sum_i S_i \cdot C_i $
 
+It will be useful to consider this in parts,
+
+$\alpha = \sum_{i \neq j} A_{ij} S_i^T S_j$
+
+$\beta = \sum_i S_i^T B_i S_i$ 
+
+$\gamma = \sum_i S_i \cdot C_i$
+
+so, $H = \alpha + \beta + \gamma$
+
 ## Challenges
 
 ### Non-unique ground state
@@ -23,6 +33,7 @@ $H = \sum_{i \neq j} A_{ij} S_i^T S_j + \sum_i S_i^T B_i S_i + \sum_i S_i \cdot 
 ### Unconstrained
 
 ### Constrained to plane
+
 
 
 
