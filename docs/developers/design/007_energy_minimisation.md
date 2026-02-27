@@ -52,7 +52,9 @@ $\frac{d\gamma}{dS_k} = \sum_i \delta_{ik} S_i \cdot C_i = C_k$
 The lowest energy state will not be, in general, unique. For example, consider two spins with a ferromagnetic Heisenberg coupling. They will be at an energy minimum when the spins are aligned. 
 However, there will be two degrees of freedom with which they can achieve this, it doesn't matter which direction they face.
 
-There's not much we can do about this
+There's not much we can do about this, however, it will be a bigger problem in stocastic optimisation and it should not affect the spinwave calculation in a way other than changing the coordinates.
+
+This motivates being able to fix the orientation of moments during the optimisation.
 
 ### Gimbal Lock
 
@@ -68,6 +70,7 @@ step, work out how to move the moments in that system, then pick a new one in th
 ### Unconstrained
 
 ### Constrained to plane
+
 
 
 
