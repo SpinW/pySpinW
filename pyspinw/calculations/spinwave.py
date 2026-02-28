@@ -29,6 +29,10 @@ class Coupling:
     matrix: np.ndarray
     inter_site_vector: np.ndarray
 
+    def __eq__(self, other):
+        return self.index1 == other.index1 and self.index2 == other.index2 \
+                and np.allclose(self.matrix, other.matrix) \
+                and np.allclose(self.inter_site_vector, other.inter_site_vector)
 
 @dataclass
 class MagneticField:

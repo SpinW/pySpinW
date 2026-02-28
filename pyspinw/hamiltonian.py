@@ -226,7 +226,7 @@ class Hamiltonian(SPWSerialisable):
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
-                np.array(input_coupling.coupling_matrix, **rust_kw) / 2.,
+                np.array(input_coupling.coupling_matrix, **rust_kw),
                 input_coupling.cell_offset.vector.astype('double')
             )
 
@@ -237,11 +237,15 @@ class Hamiltonian(SPWSerialisable):
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
-                np.array(input_coupling.coupling_matrix.T, **rust_kw) / 2.,
+                np.array(input_coupling.coupling_matrix.T, **rust_kw),
                 -input_coupling.cell_offset.vector.astype('double')
             )
 
             couplings.append(coupling)
+
+        # Remove duplicate couplings
+        couplings = [c1 for ic, c1 in enumerate(couplings)
+                     if all([c1 != c2 for c2 in couplings[ic+1:]])]
 
         # Add in anisotropies as spinwave_calculation couplings
         for input_anisotropy in expanded.anisotropies:

@@ -49,6 +49,18 @@ impl Coupling {
             inter_site_vector: inter_site_vector.into_faer().to_owned(),
         }
     }
+    fn __eq__(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl PartialEq for Coupling {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.index1 == other.index1 && self.index2 == other.index2 &&
+            (self.matrix.clone() - other.matrix.clone()).norm_l1() < 1e-6 &&
+            (self.inter_site_vector.clone() - other.inter_site_vector.clone()).norm_l1() < 1e-6
+    }
 }
 
 #[pyclass(frozen)]
