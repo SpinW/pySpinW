@@ -8,7 +8,7 @@ from enum import Enum
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling
+from pyspinw.coupling import Coupling, HeisenbergCoupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     SymmetricInDirectionFilter
 from pyspinw.site import LatticeSite
@@ -195,7 +195,8 @@ def generate_helical_structure(unit_cell: UnitCell,
                                  (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
                                  `pyspinw.UnitCell.moment_cartesian_to_fractional`)
     """
-    positions, moments, _ = _transform_site(unit_cell, positions, moments, names, magnitudes, positions_unit, moments_unit)
+    positions, moments, _ = _transform_site(unit_cell, positions, moments, names,
+                                            magnitudes, positions_unit, moments_unit)
     moments = np.array(moments, dtype='complex')
     for i in range(moments.shape[0]):
         moments[i,:,:] = moments[i,:,:] + 1j * np.cross(perpendicular, moments[i,:,:])
@@ -368,10 +369,11 @@ def filter(direction: ArrayLike,
             return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
 
-def couplings(sites: list[LatticeSite],
-              unit_cell: UnitCell | Structure,
-              coupling_type: type[Coupling],
-              max_distance: float,
+def couplings(sites: list[LatticeSite] | Structure,
+              unit_cell: UnitCell | None = None,
+              coupling_type: type[Coupling] = HeisenbergCoupling,
+              bond: int = 0,
+              max_distance: float = 0.0,
               min_distance: float = 0.0,
               direction_filter: DirectionalityFilter | None = None,
               max_order: int | None = None,
@@ -387,10 +389,11 @@ def couplings(sites: list[LatticeSite],
               naming_pattern: str | None = None,):
     """ Automatically creates a list of couplings
 
-    :param sites: *required* List of sites to make couplings between
-    :param unit_cell: *required* Unit cell (needed for working out the Cartesian coordinates of sites)
-    :param coupling_type: *required* Type of coupling
-    :param max_distance: *required* Maximum Cartesian distance at which couplings are made
+    :param sites: *required* List of sites to make couplings between or a Structure object
+    :param unit_cell: Unit cell (needed if first argument is a list of sites)
+    :param coupling_type: Type of coupling (defaults to HeisenbergCoupling)
+    :param bond: The bond index (If this is given the _distance parameters are ignored)
+    :param max_distance: Maximum Cartesian distance at which couplings are made
     :param min_distance: Minimum Cartesian distance at which couplings are made
     :param direction_filter: Supply a DirectionalityFilter object (e.g. using `filter`)
                              to only create couplings in certain directions
@@ -408,8 +411,14 @@ def couplings(sites: list[LatticeSite],
 
     :returns: list of couplings
     """
-    if isinstance(unit_cell, Structure):
-        unit_cell = unit_cell.unit_cell
+    if isinstance(sites, Structure):
+        unit_cell = sites.unit_cell
+        sites = sites.sites
+    elif unit_cell is None:
+        raise RuntimeError('If first argument is not a Structure, you need to specify a unit_cell')
+
+    if bond == 0 and max_distance == 0.0 and min_distance == 0.0:
+        raise RuntimeError('You must specify either a bond index or maximum/minimum distance pairs')
 
     if coupling_parameters is None:
         coupling_parameters = {}
@@ -448,6 +457,7 @@ def couplings(sites: list[LatticeSite],
 
     group = CouplingGroup(
         name = "<unnamed group>",
+        bond = bond,
         min_distance = min_distance,
         max_distance = max_distance,
         max_order = max_order,
