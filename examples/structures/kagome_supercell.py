@@ -40,10 +40,10 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(6, 6, 40, gamma=120)
 
-    x = LatticeSite(0.5, 0,   0, 0, 1, 0, S=1, name="X")
-    y = LatticeSite(0,   0.5, 0, 0, 1, 0, S=1, name="Y")
-    z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, S=1, name="Z")
-    s = genmagstr([x, y, z], unit_cell, mode='helical', k=[-1./3, -1./3, 0], n=[0, 0, 1], unit='lu')
+    x = LatticeSite(0.5, 0,   0, 0, 1, 0, name="X")
+    y = LatticeSite(0,   0.5, 0, 0, 1, 0, name="Y")
+    z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, name="Z")
+    s = genmagstr([x, y, z], unit_cell, magnitude=[1,1,1], mode='helical', k=[-1./3, -1./3, 0], n=[0, 0, 1], unit='lu')
 
     exchanges = couplings(sites=[x, y, z],
                           unit_cell=unit_cell,

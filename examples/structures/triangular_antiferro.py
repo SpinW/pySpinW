@@ -38,8 +38,8 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(3, 3, 4, gamma=120)
 
-    sites = [LatticeSite(0, 0, 0, 0, 1, 0, S=3./2, name="X")]
-    s = genmagstr(sites, unit_cell, mode='helical', k=[1./3, 1./3, 0], n=[0, 0, 1])
+    sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="X")]
+    s = genmagstr(sites, unit_cell, magnitude=[3./2],mode='helical', k=[1./3, 1./3, 0], n=[0, 0, 1])
 
     exchanges = couplings(sites=sites,
                           unit_cell=unit_cell,

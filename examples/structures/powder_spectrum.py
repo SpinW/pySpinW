@@ -4,10 +4,11 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings, filter
+from pyspinw.interface import spacegroup, couplings, filter
 from pyspinw.path import Path, Path1D
 from pyspinw.sample import Powder
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 
@@ -37,5 +38,5 @@ if __name__ == "__main__":
 
     sample = Powder(hamiltonian)
 
-    path1D = Path1D(0.1, 0.9, n_points=201)
-    sample.show_spectrum(path1D, n_energy_bins=20)
+    path1D = Path1D()
+    sample.show_spectrum(path1D, n_energy_bins=100, n_samples=500)

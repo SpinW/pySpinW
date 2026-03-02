@@ -39,6 +39,7 @@ def genmagstr(
         k: ArrayLike | None = None,
         n: ArrayLike | None = None,
         S: ArrayLike | None = None,
+        magnitude: ArrayLike | None = None,
         unit: UnitSystem | str = UnitSystem.XYZ,
         epsilon: float = 1e-5,
         func: Callable | None = None,
@@ -51,17 +52,27 @@ def genmagstr(
     # Some parameter checking
     nExt = (1,1,1) if nExt is None else tuple(*nExt)
 
+
     # Convert moments out of unit system to xyz
-    if S is not None and unit == UnitSystem.LU:
-        S = unit_cell.fractional_to_cartesian(S)
+    if S is not None:
+        if magnitude is None:
+            magnitude = [np.linalg.norm(S[i,:]) for i in S.shape[0]]
+        if unit == UnitSystem.LU:
+            S = unit_cell.fractional_to_cartesian(S)
+    elif magnitude is None:
+        magnitude = [np.linalg.norm(site._base_moment) for site in sites]
 
     match mode:
         case GenMagStrMode.TILE | GenMagStrMode.EXTEND:
-            if unit == UnitSystem.LU:
+            if S is not None:
+                for i, site in enumerate(sites):
+                    site._base_moment = S[i,:]
+                    site._moment_data = np.array([site._base_moment])
+            elif unit == UnitSystem.LU:
                 norm_transform = unit_cell._xyz / np.sqrt(np.sum(unit_cell._xyz**2, axis=1)).reshape(-1, 1)
-                for site in sites:
+                for i, site in enumerate(sites):
                     Stmp = site._base_moment @ norm_transform
-                    site._base_moment = Stmp * site._magnitude / np.linalg.norm(Stmp)
+                    site._base_moment = Stmp * magnitude[i] / np.linalg.norm(Stmp)
                     site._moment_data = np.array([site._base_moment])
             return Structure(sites, unit_cell, supercell=TrivialSupercell(scaling=nExt))
 
@@ -77,14 +88,14 @@ def genmagstr(
             # Make the basis complex
             for ii, site in enumerate(sites):
                 if S is not None:
-                    S = S * site._magnitude / np.linalg.norm(S)
+                    S = S * magnitude[ii] / np.linalg.norm(S)
                     site._base_moment = S[:,ii] + 1j * np.cross(n, S[:,ii])
                 elif unit == UnitSystem.LU:
                     Stmp = site._base_moment @ norm_transform
-                    Stmp = Stmp * site._magnitude / np.linalg.norm(Stmp)
+                    Stmp = Stmp * magnitude[ii] / np.linalg.norm(Stmp)
                     site._base_moment = Stmp + 1j * np.cross(n, Stmp)
                 else:
-                    site._base_moment = site._base_moment * site._magnitude / np.linalg.norm(site._base_moment)
+                    site._base_moment = site._base_moment * magnitude[ii] / np.linalg.norm(site._base_moment)
                     site._base_moment = site._base_moment + 1j * np.cross(n, site._base_moment)
                 site._moment_data = np.array([site._base_moment])
             k = CommensuratePropagationVector(k[0], k[1], k[2])

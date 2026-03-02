@@ -44,8 +44,7 @@ class Structure(SPWSerialisable):
                 j=site.j + cell.j,
                 k=site.k + cell.k,
                 supercell_moments=site.moment_data,
-                name=site.name,
-                S=site.magnitude,
+                name=site.name
             ) for site in cell_sites]
 
         return all_sites
@@ -121,8 +120,7 @@ class Structure(SPWSerialisable):
                     site_1.j,
                     site_1.k,
                     supercell_moments=site_1.moment_data,
-                    name = site_1.name, # TODO: Check if this is sensible
-                    S=site_1.magnitude,
+                    name = site_1.name # TODO: Check if this is sensible
                 ))
 
             else:
@@ -131,8 +129,7 @@ class Structure(SPWSerialisable):
                     site_1.j,
                     site_1.k,
                     supercell_moments=np.zeros_like(site_1.moment_data),
-                    name=site_1.name,  # TODO: Check if this is sensible
-                    S=site_1.magnitude,
+                    name=site_1.name  # TODO: Check if this is sensible
                 ))
 
         return unique_sites
@@ -160,8 +157,7 @@ class Structure(SPWSerialisable):
                     k=position[2],
                     supercell_moments=moment,
                     g=site.g,
-                    name=site.name,
-                    S=site.magnitude)
+                    name=site.name)
 
                 mapping[(site._unique_id, offset.as_tuple)] = new_site
 
