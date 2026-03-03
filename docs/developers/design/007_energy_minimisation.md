@@ -83,10 +83,11 @@ $\frac{\partial S}{\partial \alpha}\vert_{\alpha=\beta=0} = R [0,-1,0] $
 
 $\frac{\partial S}{\partial \beta}\vert_{\alpha=\beta=0} = R [1,0,0] $
 
-The generalised force on each site is then just $\frac{dH}{dS_k} \frac{dS_k}{d\alpha_k}$, and similarly for $\beta$. We only need to consider the contributions from sites
+The generalised force on each site is then just $\frac{dH}{dS_k} \frac{dS_k}{d\alpha_k}$, and similarly for $\beta$. We only need to consider the contributions from couplings/anisotropies/fields that involve the site under consideration.
 
 
 ### Constrained to plane
+
 
 
 
