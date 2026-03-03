@@ -67,9 +67,18 @@ step, work out how to move the moments in that system, then pick a new one in th
 
 ## Coordinate Systems
 
+We want a coordinate system that is defined locally around the current state.
+
+Let $R$ be the a rotation from $z = [0, 0, 1]$ to the current moment, i.e. $m = R z$
+
 ### Unconstrained
 
+For unconstrained systems we want to rotate around z first, we can choose a rotation about the x and y axes, resulting in a parameterised rotation of:
+
+$m = R R_x(\alpha) R_y(\beta) z = R [sin(\beta), -sin(\alpha) cos(\beta), cos(\alpha) cos(\beta)]$
+
 ### Constrained to plane
+
 
 
 
