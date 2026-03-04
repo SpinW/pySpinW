@@ -19,6 +19,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
+from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TrivialSupercell
@@ -75,17 +76,30 @@ class Hamiltonian(SPWSerialisable):
 
         return "\n".join(lines)
 
-    def expand(self):
-        """ Expand the supercell structure into a single cell structure """
-        bigger_cell, mapping = self.structure.expansion_site_mapping()
+    def _expand_with_mapping(self) -> tuple["Hamiltonian",
+                                            dict[tuple[int, tuple[int, int, int]], LatticeSite],
+                                            list[int],
+                                            list[int]]:
+        """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians
+
+        This should only be used internally, and its not very user friendly
+
+        The site mapping is a dict from (original site UID, offset) -> LatticeSite
+        The coupling mapping is a len(new couplings) list of indices for the original couplings
+        The anisotropy mapping is a len(new anisotropies) list of indices for the original anisotropies
+        """
+        bigger_cell, site_mapping = self.structure._expansion_site_mapping()
 
         new_couplings = []
         new_anisotropies = []
 
         si, sj, sk = self.structure.supercell.cell_size()
 
+        coupling_mapping = []
+        anisotropy_mapping = []
+
         for first_site_offset in self.structure.supercell.cells():
-            for coupling in self.couplings:
+            for original_index, coupling in enumerate(self.couplings):
                 # Convert the offset in the coupling, into
                 #  1) an offset in the supercell, and
                 #  2) an offset between supercells
@@ -104,8 +118,8 @@ class Hamiltonian(SPWSerialisable):
                 new_cell_offset = CellOffset(ni, nj, nk)
                 second_site_lookup_value = (ri, rj, rk)
 
-                target_site_1 = mapping[(coupling.site_1._unique_id, first_site_offset.as_tuple)]
-                target_site_2 = mapping[(coupling.site_2._unique_id, second_site_lookup_value)]
+                target_site_1 = site_mapping[(coupling.site_1.unique_id, first_site_offset.as_tuple)]
+                target_site_2 = site_mapping[(coupling.site_2.unique_id, second_site_lookup_value)]
 
                 # Create the new coupling using their update method, which copies everything not specified
                 new_couplings.append(
@@ -114,20 +128,32 @@ class Hamiltonian(SPWSerialisable):
                         site_2=target_site_2,
                         cell_offset=new_cell_offset))
 
-            for anisotropy in self.anisotropies:
-                target_site = mapping[(anisotropy.site._unique_id, first_site_offset.as_tuple)]
+                # Add entry to mapping
+                coupling_mapping.append(original_index)
 
-                # Copy anisotropy
+            for original_index, anisotropy in enumerate(self.anisotropies):
+                target_site = site_mapping[(anisotropy.site.unique_id, first_site_offset.as_tuple)]
+
+                # Update-copy anisotropy
                 new_anisotropies.append(anisotropy.updated(site=target_site))
 
+                # Add entry to mapping
+                anisotropy_mapping.append(original_index)
+
         structure = Structure(
-            sites=[site for site in mapping.values()],
+            sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
             spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
             supercell=TrivialSupercell(scaling=(1,1,1))
         )
 
-        return Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies)
+        return (Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies),
+                site_mapping, coupling_mapping, anisotropy_mapping)
+
+    def expanded(self):
+        """ Expand the supercell structure into a single cell structure """
+        expanded, _, _, _ = self._expand_with_mapping()
+        return expanded
 
 
     def print_summary(self):
@@ -171,7 +197,7 @@ class Hamiltonian(SPWSerialisable):
         # Set up the system
         #
 
-        expanded = self.expand()
+        expanded = self.expanded()
 
         # Get the positions, rotations, moments for the sites
         moments = []

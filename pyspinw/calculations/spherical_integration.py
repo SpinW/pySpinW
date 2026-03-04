@@ -183,7 +183,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     for generator in _spherical_point_generator_lookup.values():
-        # generator(100).show_points_3d(do_show=False)
+        generator(100).show_points_3d(do_show=False)
         generator(100).show_points_lambert(do_show=False)
 
     plt.show()

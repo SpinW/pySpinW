@@ -36,7 +36,7 @@ def test_expansion_chain_no_rot():
         couplings=unexpanded_couplings,
         anisotropies=unexpanded_anisotropies)
 
-    expanded_hamiltonian = unexpanded_hamiltonian.expand()
+    expanded_hamiltonian = unexpanded_hamiltonian.expanded()
 
     # Check the unit cell
 
