@@ -125,6 +125,9 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Old Matlab files for checking
+examples/*/*.m
+
 # Environments
 .env
 .venv
@@ -169,3 +172,6 @@ cython_debug/
 .envrc
 
 Cargo.lock
+
+# Config files
+render_settings.conf
