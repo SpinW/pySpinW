@@ -268,7 +268,12 @@ class Hamiltonian(SPWSerialisable):
                         rlu_to_cart=np.linalg.inv(self.structure.unit_cell._xyz).T * 2 * np.pi,
                         field=magnetic_field)
 
-        return result[0], result[1]
+        # Applies a rescaling to agree with Matlab code for Sab
+        # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
+        scale_factor = rotations.shape[0] / np.prod(self.structure.supercell.scaling)
+        intensity = [res * scale_factor for res in result[1]]
+
+        return result[0], intensity
 
     def spaghetti_plot(self,
              path: Path,

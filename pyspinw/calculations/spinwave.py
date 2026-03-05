@@ -340,7 +340,7 @@ def _calc_chunk_spinwave(
         # S'^alpha,beta(k, omega) at each eigenvalue
         # this is a 3x3x2N array indexed by [alpha, beta, omega]
         sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
-        sab /= n_sites
+        sab /= 2 * n_sites
 
         # take perpendicular component s_perp of sab
         if (q_mag := np.linalg.norm(q)) == 0:
