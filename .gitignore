@@ -82,10 +82,6 @@ target/
 profile_default/
 ipython_config.py
 
-# Vim
-*.swp
-*.swo
-
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
 #   intended to run in multiple environments; otherwise, check them in:
@@ -124,9 +120,6 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
-
-# Old Matlab files for checking
-examples/*/*.m
 
 # Environments
 .env
