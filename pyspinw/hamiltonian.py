@@ -253,7 +253,7 @@ class Hamiltonian(SPWSerialisable):
             anisotropy = coupling_class(
                 unique_id_to_index[input_anisotropy.site._unique_id],
                 unique_id_to_index[input_anisotropy.site._unique_id],
-                np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw),
+                np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw) * 2.,
                 inter_site_vector=np.array([0,0,0], dtype=float)
             )
 

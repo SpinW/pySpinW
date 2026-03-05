@@ -439,7 +439,7 @@ fn spinwave_single_q(
     // We do the division required by 2 * n_sites here to save doing it later
     let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
         let mat = T.adjoint() * sab_blocks[(alpha, beta)].as_ref() * T.as_ref();
-        mat.diagonal().column_vector().to_owned() / (2 * n_sites) as f64
+        mat.diagonal().column_vector().to_owned() / (n_sites) as f64
     });
 
     // now create S' for each eigenvalue (the only places where there are non-zero intensities)
