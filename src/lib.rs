@@ -160,12 +160,9 @@ pub fn spinwave_calculation<'py>(
         .map(faer_ext::IntoFaer::into_faer)
         .collect();
 
-    let to_cart: Mat<f64> = match rlu_to_cart {
-        Some(f) => f.into_faer().to_owned(),
-        None => Mat::<f64>::identity(3, 3),
-    };
+    let to_cart: Option<MatRef<f64>> = rlu_to_cart.map(|f| f.into_faer());
 
-    let results = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, to_cart.as_ref(), field, false);
+    let results = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, to_cart, field, false);
     Ok((
         results
             .iter()
@@ -203,12 +200,9 @@ pub fn spinwave_calculation_Sab<'py>(
         .map(faer_ext::IntoFaer::into_faer)
         .collect();
 
-    let to_cart: Mat<f64> = match rlu_to_cart {
-        Some(f) => f.into_faer().to_owned(),
-        None => Mat::<f64>::identity(3, 3),
-    };
+    let to_cart: Option<MatRef<f64>> = rlu_to_cart.map(|f| f.into_faer());
 
-    let results = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, to_cart.as_ref(), field, true);
+    let results = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, to_cart, field, true);
     Ok((
         results
             .iter()

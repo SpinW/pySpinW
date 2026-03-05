@@ -76,6 +76,8 @@ def _calc_q_independent(
     for coupling in couplings:
         i, j = (coupling.index1, coupling.index2)
         C[j, j] += magnitudes[j] * eta[i, :].T @ coupling.matrix @ eta[j, :]
+    # Adds a small delta to diagonal to ensure we don't have an exact degeneracies
+    C -= np.diag(np.array(range(C.shape[0]))*1e-12)
 
     # calculate the Zeeman term for the A matrix (A^z in Toth & Lake)
     if field is not None:
@@ -118,7 +120,6 @@ def _calc_sqrt_hamiltonian(
         A += Az
 
     hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
-    hamiltonian_matrix += np.diag(np.array(range(hamiltonian_matrix.shape[0]))*1e-12)
 
     # We need to enforce the bosonic commutation properties, we do this
     # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
