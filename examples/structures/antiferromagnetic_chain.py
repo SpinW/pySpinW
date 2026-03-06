@@ -4,12 +4,9 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings
+from pyspinw.interface import couplings, generate_helical_structure
 from pyspinw.path import Path
-from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
 import sys
 
 from pyspinw.debug_plot import debug_plot
@@ -40,19 +37,15 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(3, 8, 8)
 
-    sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="MCu1")]
-
-    k = CommensuratePropagationVector(0.5, 0, 0)
-    s = Structure(sites, unit_cell=unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
+    sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], moments=[[0,1,0]],
+                                       perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
     exchanges = couplings(sites=sites,
-                          unit_cell=unit_cell,
                           max_distance=3.1,
                           coupling_type=HeisenbergCoupling,
                           j=1)
 
-
-    hamiltonian = Hamiltonian(s, exchanges)
+    hamiltonian = Hamiltonian(sites, exchanges)
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])

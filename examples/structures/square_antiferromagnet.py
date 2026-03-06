@@ -50,6 +50,6 @@ if __name__ == "__main__":
     path = Path([[3/4, 1/4, 0], [1/2, 1/2, 0], [1/2, 0, 0], [3/4, 1/4, 0], [1, 0, 0], [1/2, 0, 0]], n_points_per_segment=51)
     import matplotlib.pyplot as plt
     fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
-    fig.axes[0].set_ylim(0, 600)
-    fig.axes[1].set_ylim(0, 20)
+    fig.axes[0].set_ylim(0, 300)
+    fig.axes[1].set_ylim(0, 5)
     plt.show()

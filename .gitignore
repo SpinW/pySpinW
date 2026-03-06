@@ -82,6 +82,10 @@ target/
 profile_default/
 ipython_config.py
 
+# Vim
+*.swp
+*.swo
+
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
 #   intended to run in multiple environments; otherwise, check them in:
@@ -153,6 +157,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Old Matlab examples scripts
+examples/*/*.m
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
