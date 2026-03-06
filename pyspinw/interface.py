@@ -3,7 +3,6 @@ import math
 
 import numpy as np
 from numpy._typing import ArrayLike
-from enum import Enum
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_couplings import default_naming_pattern
@@ -17,13 +16,7 @@ from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMat
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
     TransformationSupercell, SummationSupercell
 from pyspinw.symmetry.unitcell import UnitCell
-
-
-class UnitSystem(Enum):
-    """ Types of coordinate system """
-
-    XYZ = 'xyz' # Cartesian
-    LU = 'lu'   # Lattice units
+from pyspinw.units import CoordsUnits
 
 
 def _check_positions_moments_shape(positions: ArrayLike,
@@ -117,18 +110,18 @@ def _transform_site(unit_cell: UnitCell,
                     moments: ArrayLike,
                     names: list[str] | None,
                     magnitudes: ArrayLike | None,
-                    positions_unit: UnitSystem | str,
-                    moments_unit: UnitSystem | str) -> tuple:
+                    positions_unit: CoordsUnits | str,
+                    moments_unit: CoordsUnits | str) -> tuple:
     """ Converts site data into default units """
     positions, moments = _check_positions_moments_shape(positions, moments)
     # check units
-    positions_unit = UnitSystem(positions_unit)
-    moments_unit = UnitSystem(moments_unit)
+    positions_unit = CoordsUnits(positions_unit)
+    moments_unit = CoordsUnits(moments_unit)
     # Convert cell positions
-    if positions_unit == UnitSystem.XYZ:
+    if positions_unit == CoordsUnits.XYZ:
         positions = unit_cell.cartesian_to_fractional(np.array(positions))
     # convert moments
-    if moments_unit == UnitSystem.LU:
+    if moments_unit == CoordsUnits.LU:
         moments = np.array(moments, dtype=complex)
         for i in range(moments.shape[0]):
             magnitude = np.linalg.norm(moments[i,:,:]) if magnitudes is None else magnitudes[i]
@@ -141,8 +134,8 @@ def generate_structure(unit_cell: UnitCell,
                        moments: ArrayLike,
                        names: list[str] | None=None,
                        magnitudes: ArrayLike | None = None,
-                       positions_unit: UnitSystem | str = 'lu',
-                       moments_unit: UnitSystem | str = 'xyz') -> Structure:
+                       positions_unit: CoordsUnits | str = 'lu',
+                       moments_unit: CoordsUnits | str = 'xyz') -> Structure:
     """ Creates a magnetic structure from a list of positions and moments
 
     :param unit_cell: a UnitCell object
@@ -173,8 +166,8 @@ def generate_helical_structure(unit_cell: UnitCell,
                                propagation_vector: ArrayLike,
                                names: list[str] | None=None,
                                magnitudes: ArrayLike | None = None,
-                               positions_unit: UnitSystem | str = 'lu',
-                               moments_unit: UnitSystem | str = 'xyz') -> Structure:
+                               positions_unit: CoordsUnits | str = 'lu',
+                               moments_unit: CoordsUnits | str = 'xyz') -> Structure:
     """ Creates a helical structure with a propagation vector and plane normal
 
     :param unit_cell: a UnitCell object
