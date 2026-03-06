@@ -68,9 +68,9 @@ def test_find_aligned_basis_zero_is_z():
     assert np.all(e1[:, 2] == 1)
 
     assert np.all(e2[:, 0] == 0)
-    assert np.all(e2[:, 1] == 1)
+    assert np.all(e2[:, 1] == -1)
     assert np.all(e2[:, 2] == 0)
 
-    assert np.all(e3[:, 0] == -1)
+    assert np.all(e3[:, 0] == 1)
     assert np.all(e3[:, 1] == 0)
     assert np.all(e3[:, 2] == 0)
