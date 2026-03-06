@@ -29,7 +29,7 @@ from pyspinw.symmetry.supercell import TrivialSupercell
 
 logger = logging.Logger("pyspinw.hamiltonian")
 
-def omegasum(energy, intensity, tol=1e-5, zeroint=0):
+def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0):
     """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
     energy, intensity = (np.array(energy), np.array(intensity))
     en_out, int_out = (energy * np.nan, intensity * np.nan)
@@ -175,9 +175,9 @@ class Hamiltonian(SPWSerialisable):
         """ Print a textual summary to stdout"""
         print(self.text_summary)
 
-    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
-    def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
-        """Calculate the energy levels of the system for the given q-vectors."""
+    @check_sizes(field=(3,), allow_nones=True, force_numpy=True)
+    def prepare_spinwave_calculation(self, field: ArrayLike | None = None, use_rust: bool=True):
+        """ Sets up data structures for a spinwave calculation """
         #
         # Set up choice of calculation
         #
@@ -212,13 +212,11 @@ class Hamiltonian(SPWSerialisable):
         # Set up the system
         #
 
-        expanded = self.expanded()
-
         # Get the positions, rotations, moments for the sites
         moments = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
-        for index, site in enumerate(expanded._structure.sites):
+        for index, site in enumerate(self.structure.sites):
             # TODO: Sort out moments for supercells
             moments.append(site.base_moment)
 
@@ -231,9 +229,8 @@ class Hamiltonian(SPWSerialisable):
             magnetic_field = None
         else:
             g_tensors = []
-            for site in expanded.structure.sites:
+            for site in self.structure.sites:
                 g_tensors.append(site.g)
-
             magnetic_field = magnetic_field_class(
                                 vector=np.array(field, **rust_kw),
                                 g_tensors=np.array(g_tensors, **rust_kw))
@@ -245,7 +242,7 @@ class Hamiltonian(SPWSerialisable):
 
         # Convert the couplings
         couplings: list[Coupling] = []
-        for input_coupling in expanded.couplings:
+        for input_coupling in self.couplings:
             # Normal coupling
 
             # Factor of 1/2 is due to double counting correction
@@ -274,7 +271,7 @@ class Hamiltonian(SPWSerialisable):
                      if all([c1 != c2 for c2 in couplings[ic+1:]])]
 
         # Add in anisotropies as spinwave_calculation couplings
-        for input_anisotropy in expanded.anisotropies:
+        for input_anisotropy in self.anisotropies:
 
             anisotropy = coupling_class(
                 unique_id_to_index[input_anisotropy.site._unique_id],
@@ -285,7 +282,17 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(anisotropy)
 
-        result = spinwave_calculation(
+        return rotations, magnitudes, couplings, positions, magnetic_field, spinwave_calculation
+
+    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
+    def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
+        """Calculate the energy levels of the system for the given q-vectors."""
+        # Set up the system
+        expanded = self.expanded()
+        rotations, magnitudes, couplings, positions, magnetic_field, calculator = \
+            expanded.prepare_spinwave_calculation(field, use_rust)
+
+        result = calculator(
                         rotations=rotations,
                         magnitudes=magnitudes,
                         q_vectors=q_vectors * self.structure.supercell.scaling,
@@ -318,7 +325,8 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust))
+        calculator = self.rotating_frame_calculator if use_rotating else self.energies_and_intensities
+        energy, intensity = omegasum(*calculator(path.q_points(), field=field, use_rust=use_rust))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, series[0], 'k')
