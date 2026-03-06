@@ -44,6 +44,40 @@ def omegasum(energy, intensity, tol=1e-5, zeroint=0):
             int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
     return en_out, int_out
 
+def compute_reciprocal_couplings(input_couplings, coupling_class, unique_id_to_index):
+    """ Computes reciprocal couplings and converts to right format for Rust/Py calculator """
+    rust_kw = {'dtype': complex, 'order': 'F'}
+    couplings: list[Coupling] = []
+    for input_coupling in input_couplings:
+        # Normal coupling
+
+        # Factor of 1/2 is due to double counting correction
+        coupling = coupling_class(
+            unique_id_to_index[input_coupling.site_1._unique_id],
+            unique_id_to_index[input_coupling.site_2._unique_id],
+            np.array(input_coupling.coupling_matrix, **rust_kw),
+            input_coupling.cell_offset.vector.astype('double')
+        )
+
+        couplings.append(coupling)
+
+        # Reversed coupling
+
+        coupling = coupling_class(
+            unique_id_to_index[input_coupling.site_2._unique_id],
+            unique_id_to_index[input_coupling.site_1._unique_id],
+            np.array(input_coupling.coupling_matrix.T, **rust_kw),
+            -input_coupling.cell_offset.vector.astype('double')
+        )
+
+        couplings.append(coupling)
+
+    # Remove duplicate couplings
+    couplings = [c1 for ic, c1 in enumerate(couplings)
+                 if all([c1 != c2 for c2 in couplings[ic+1:]])]
+
+    return couplings
+
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
 
@@ -170,10 +204,42 @@ class Hamiltonian(SPWSerialisable):
         expanded, _, _, _ = self._expand_with_mapping()
         return expanded
 
-
     def print_summary(self):
         """ Print a textual summary to stdout"""
         print(self.text_summary)
+
+    def _prepare_supercell_calculation(self, coupling_class):
+        """ Sets up a supercell calculation """
+        expanded = self.expanded()
+        rust_kw = {'dtype': complex, 'order': 'F'}
+
+        # Get the positions, rotations, moments for the sites
+        moments = []
+        positions = []
+        unique_id_to_index: dict[int, int] = {}
+        for index, site in enumerate(expanded._structure.sites):
+            # TODO: Sort out moments for supercells
+            moments.append(site.base_moment)
+            positions.append(site.ijk)
+            unique_id_to_index[site._unique_id] = index
+
+        moments = np.array(moments, dtype=float)
+
+        couplings = compute_reciprocal_couplings(expanded.couplings, coupling_class, unique_id_to_index)
+
+        # Add in anisotropies as spinwave_calculation couplings
+        for input_anisotropy in expanded.anisotropies:
+
+            anisotropy = coupling_class(
+                unique_id_to_index[input_anisotropy.site._unique_id],
+                unique_id_to_index[input_anisotropy.site._unique_id],
+                np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw) * 2.,
+                inter_site_vector=np.array([0,0,0], dtype=float)
+            )
+
+            couplings.append(anisotropy)
+
+        return expanded, moments, couplings, positions
 
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
@@ -193,12 +259,9 @@ class Hamiltonian(SPWSerialisable):
                     spinwave_calculation as rs_spinwave,
                     Coupling as RsCoupling,
                     MagneticField as RsMagneticField)
-
                 coupling_class = RsCoupling
                 spinwave_calculation = rs_spinwave
                 magnetic_field_class = RsMagneticField
-
-
             except ModuleNotFoundError:
                 # Silently don't use rust, maybe should give a warning though
                 logger.warning("Failed to load rust core, falling back to python")
@@ -211,20 +274,10 @@ class Hamiltonian(SPWSerialisable):
         #
         # Set up the system
         #
-
-        expanded = self.expanded()
-
-        # Get the positions, rotations, moments for the sites
-        moments = []
-        positions = []
-        unique_id_to_index: dict[int, int] = {}
-        for index, site in enumerate(expanded._structure.sites):
-            # TODO: Sort out moments for supercells
-            moments.append(site.base_moment)
-
-            positions.append(site.ijk)
-
-            unique_id_to_index[site._unique_id] = index
+        expanded, moments, couplings, positions = self._prepare_supercell_calculation(coupling_class)
+        rotations = site_rotations(moments)
+        magnitudes = np.sqrt(np.sum(moments**2, axis=1))
+        rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
 
         # Get the field object
         if field is None:
@@ -237,53 +290,6 @@ class Hamiltonian(SPWSerialisable):
             magnetic_field = magnetic_field_class(
                                 vector=np.array(field, **rust_kw),
                                 g_tensors=np.array(g_tensors, **rust_kw))
-
-        moments = np.array(moments, dtype=float)
-        rotations = site_rotations(moments)
-        magnitudes = np.sqrt(np.sum(moments**2, axis=1))
-        rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
-
-        # Convert the couplings
-        couplings: list[Coupling] = []
-        for input_coupling in expanded.couplings:
-            # Normal coupling
-
-            # Factor of 1/2 is due to double counting correction
-            coupling = coupling_class(
-                unique_id_to_index[input_coupling.site_1._unique_id],
-                unique_id_to_index[input_coupling.site_2._unique_id],
-                np.array(input_coupling.coupling_matrix, **rust_kw),
-                input_coupling.cell_offset.vector.astype('double')
-            )
-
-            couplings.append(coupling)
-
-            # Reversed coupling
-
-            coupling = coupling_class(
-                unique_id_to_index[input_coupling.site_2._unique_id],
-                unique_id_to_index[input_coupling.site_1._unique_id],
-                np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                -input_coupling.cell_offset.vector.astype('double')
-            )
-
-            couplings.append(coupling)
-
-        # Remove duplicate couplings
-        couplings = [c1 for ic, c1 in enumerate(couplings)
-                     if all([c1 != c2 for c2 in couplings[ic+1:]])]
-
-        # Add in anisotropies as spinwave_calculation couplings
-        for input_anisotropy in expanded.anisotropies:
-
-            anisotropy = coupling_class(
-                unique_id_to_index[input_anisotropy.site._unique_id],
-                unique_id_to_index[input_anisotropy.site._unique_id],
-                np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw) * 2.,
-                inter_site_vector=np.array([0,0,0], dtype=float)
-            )
-
-            couplings.append(anisotropy)
 
         result = spinwave_calculation(
                         rotations=rotations,
