@@ -471,16 +471,20 @@ def couplings(sites: list[LatticeSite] | Structure,
 
 @check_sizes(axis=(3, ), force_numpy=True)
 def axis_anisotropies(
-        sites: list[LatticeSite],
+        sites: list[LatticeSite] | Structure,
         a: float,
         axis: ArrayLike = [0, 0, 1]):
     """ Create anisotropy objects with magnitude `a` in direction `axis` for each site """
+    if isinstance(sites, Structure):
+        sites = sites.sites
     return [AxisMagnitudeAnisotropy(site, a, axis) for site in sites]
 
 
 @check_sizes(matrix=(3,3), force_numpy=True)
 def matrix_anisotropies(
-        sites: list[LatticeSite],
+        sites: list[LatticeSite] | Structure,
         matrix: ArrayLike):
     """ Create anisotropy objects specified by a matrix, the same for each site """
+    if isinstance(sites, Structure):
+        sites = sites.sites
     return [Anisotropy(site, matrix) for site in sites]
