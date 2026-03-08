@@ -7,7 +7,7 @@ from typing import Callable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, CommensuratePropagationVector
+from pyspinw.symmetry.supercell import TrivialSupercell, RotationSupercell, SummationSupercell, CommensuratePropagationVector
 
 
 class GenMagStrMode(Enum):
@@ -99,7 +99,7 @@ def genmagstr(
                     site._base_moment = site._base_moment + 1j * np.cross(n, site._base_moment)
                 site._moment_data = np.array([site._base_moment])
             k = CommensuratePropagationVector(k[0], k[1], k[2])
-            return Structure(sites, unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
+            return Structure(sites, unit_cell, supercell=RotationSupercell(perpendicular=n, propagation_vector=k))
 
         case GenMagStrMode.DIRECT:
             raise NotImplementedError("'direct' mode to be implemented")

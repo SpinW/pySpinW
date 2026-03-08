@@ -213,6 +213,7 @@ def spinwave_calculation(
         positions: list[np.ndarray],
         rlu_to_cart: np.ndarray = np.eye(3),
         field: MagneticField | None = None,
+        sab_transform: list[np.ndarray] | None = None,
         save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
@@ -225,7 +226,7 @@ def spinwave_calculation(
         q_calculations = [
             executor.submit(
                 _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
-                rlu_to_cart, Az, save_sab
+                rlu_to_cart, sab_transform, Az, save_sab
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -259,6 +260,7 @@ def _calc_chunk_spinwave(
         couplings: list[Coupling],
         positions: list[np.ndarray],
         rlu_to_cart: np.ndarray,
+        sab_transform: list[np.ndarray] | None = None,
         Az: np.ndarray | None = None,
         save_sab: bool = False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
@@ -266,6 +268,11 @@ def _calc_chunk_spinwave(
     energies = []
     intensities = []
     sabs = []
+
+    if sab_transform is not None:
+        sab_transform, nmat, nxn, km = tuple(sab_transform)
+    else:
+        km = np.array([0, 0, 0])
 
     for q in q_vectors:
         sqrt_hamiltonian = _calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
@@ -343,11 +350,19 @@ def _calc_chunk_spinwave(
         sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
         sab /= 2 * n_sites
 
+        if sab_transform is not None:
+            # Convert back into lab frame (eq 37)
+            sab = 0.5 * (sab - np.einsum("ij,jkl,km->iml", nmat, sab, nmat)
+                             + np.einsum("ij,jkl,km->iml", nxn-np.eye(3), sab, nxn)
+                             + np.einsum("ij,jkl,km->iml", nxn, sab, 2*nxn-np.eye(3)))
+            # Apply the transformation (eq 40)
+            sab = np.einsum("ijk,jl->ilk", sab, sab_transform)
+
         # take perpendicular component s_perp of sab
         if (q_mag := np.linalg.norm(q)) == 0:
             norm_q = np.array([0, 0, 0])
         else:
-            norm_q = q @ rlu_to_cart
+            norm_q = (q-km) @ rlu_to_cart
             norm_q /= np.sqrt(np.sum(norm_q**2))
         perp_factor = np.eye(3) - np.outer(norm_q, norm_q)
         # the einsum here performs elementwise multiplication and then sums over alpha, beta
