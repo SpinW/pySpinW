@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 
 from pyspinw.gui.rendermodel import rotation_from_z
@@ -35,7 +37,7 @@ class ClassicalEnergyMinimisation:
     See dev note 007_energy_minimisation.md
     """
 
-    def __init__(self, hamiltonian: Hamiltonian, constraints: list[Constraint], field: np.ndarray):
+    def __init__(self, hamiltonian: Hamiltonian, constraints: list[MinimisationConstraint], field: np.ndarray):
 
         self.hamiltonian = Hamiltonian
         self.constraints = constraints
@@ -60,7 +62,7 @@ class ClassicalEnergyMinimisation:
                     self.free_sites.append((i, site.unique_id))
                 case FixedConstraint():
                     self.fixed_sites.append((i, site.unique_id))
-                case PlanarConstraint(axis):
+                case Planar(axis):
                     self.planar_sites.append((i, site.unique_id))
                     self.planar_axes.append(axis)
 
@@ -94,7 +96,7 @@ class ClassicalEnergyMinimisation:
         self.n_sites = len(sites)
 
 
-    def iterate(self):
+    def iterate(self, step_size_factor):
 
         # TODO: Modify account for supercells
 
@@ -107,8 +109,8 @@ class ClassicalEnergyMinimisation:
 
         for i, site_uid in self.free_sites:
 
-            dS_dalpha = -rotation_matrices[:, 1] # m.(0, -1, 0)
-            dS_dbeta = rotation_matrices[:, 0]   # m.(1,  0, 0)
+            dS_dalpha = -rotation_matrices[i][:, 1] # m.(0, -1, 0)
+            dS_dbeta = rotation_matrices[i][:, 0]   # m.(1,  0, 0)
 
             # Couplings
             for coupling in self.site_to_coupling_side_1[site_uid]:
@@ -133,3 +135,9 @@ class ClassicalEnergyMinimisation:
             # Field
             field_force_alpha = self.field_contribution_vector[i] @ dS_dalpha
             field_force_beta = self.field_contribution_vector[i] @ dS_dbeta
+
+            forces_free_alpha[i] += field_force_alpha
+            forces_free_beta[i] += field_force_beta
+
+        print(forces_free_alpha)
+        print(forces_free_beta)
