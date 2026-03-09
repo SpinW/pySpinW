@@ -87,7 +87,7 @@ def batch_couplings(sites: list[LatticeSite],
                     max_distance: float,
                     naming_pattern: str=default_naming_pattern,
                     type_symbol: str="J",
-                    both_directions: bool=False):
+                    both_directions: bool=True):
     """ Find all the couplings within a certain distance
 
     :param sites: List of LatticeSite or ImpliedLatticeSite to find couplings between
