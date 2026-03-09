@@ -131,26 +131,4 @@ class CouplingGroup:
 
         return kept_couplings
 
-class SetCouplingTypeAndParameters(AbstractCouplingGroup):
-    """ Post creation operation - set parameter"""
-
-    def __init__(self,
-                 parent: AbstractCouplingGroup,
-                 indices: list[int] | None,
-                 coupling_type: str | None = None,
-                 parameters: dict = {}):
-
-        self.parent = parent
-
-class SetName(AbstractCouplingGroup):
-    """ Post creation operation - set the name"""
-
-    def __init__(self, parent: AbstractCouplingGroup, *index_name_pairs: tuple[int, str]):
-        self.parent = parent
-
-class Remove(AbstractCouplingGroup):
-    """ Post creation operation - remove a specific coupling"""
-
-    def __init__(self, parent: AbstractCouplingGroup, *indices: int):
-        self.parent = parent
 
