@@ -72,7 +72,7 @@ def find_relative_positions(
 
 def get_cell_offsets_containing_bounding_box(
         unit_cell_transform: np.ndarray,
-        radius: np.ndarray) -> np.ndarray:
+        radius: float) -> np.ndarray:
     """List of unit cell translations that corresponds to
 
     :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
@@ -171,10 +171,8 @@ def get_cell_offsets_containing_bounding_box(
 
 def demo_point_finding():
     """Demonstrate the calculation of the calculation of cells for searching in"""
-    # We want to only import matplotlib here
-    #pylint: disable=C0415
+
     import matplotlib.pyplot as plt
-    # pylint: enable=C0415
 
     radius = 5
     # transform =np.array(object=
