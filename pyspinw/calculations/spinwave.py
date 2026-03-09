@@ -213,20 +213,33 @@ def spinwave_calculation(
         positions: list[np.ndarray],
         rlu_to_cart: np.ndarray = np.eye(3),
         field: MagneticField | None = None,
-        sab_transform: list[np.ndarray] | None = None,
+        rotating_frame: list[np.ndarray] | None = None,
         save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
+    if rotating_frame is not None:
+        km, nvec = tuple(rotating_frame)
+        # Computes the transformation matrices for Sab after Toth & Lake, eq (39)
+        nmat = np.array([[0, -nvec[2], nvec[1]], [nvec[2], 0, -nvec[0]], [-nvec[1], nvec[0], 0]])
+        R2 = np.outer(nvec, nvec)
+        R1 = (np.eye(3) - 1j*nmat - R2) / 2.
+        rotating_frame = (nmat, R1, R2, km)
+        # Transforms the coupling matrices after Toth & Lake, eq (21)
+        for coupling in couplings:
+            qdotr = 2 * np.pi * np.dot(km, coupling.inter_site_vector)
+            Rq = (np.eye(3) * np.cos(qdotr)) + (nmat * np.sin(qdotr)) + (R2 * (1 - np.cos(qdotr))) # R(Q.r_n) eq (39)
+            coupling.matrix = (coupling.matrix @ Rq + Rq @ coupling.matrix) / 2.
+
     C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
 
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
     # for a single process, so we want to reduce contention by using fewer processes.
-    n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
+    n_proc = 1#max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
     with ProcessPoolExecutor() as executor:
         q_calculations = [
             executor.submit(
                 _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
-                rlu_to_cart, sab_transform, Az, save_sab
+                rlu_to_cart, rotating_frame, Az, save_sab
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -260,21 +273,21 @@ def _calc_chunk_spinwave(
         couplings: list[Coupling],
         positions: list[np.ndarray],
         rlu_to_cart: np.ndarray,
-        sab_transform: list[np.ndarray] | None = None,
+        rotating_frame: list[np.ndarray] | None = None,
         Az: np.ndarray | None = None,
         save_sab: bool = False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
     intensities = []
-    sabs = []
 
-    if sab_transform is not None:
-        sab_transform, nmat, nxn, km = tuple(sab_transform)
-    else:
-        km = np.array([0, 0, 0])
+    if rotating_frame is not None:
+        nmat, R1, nxn, km = tuple(rotating_frame)
+        q_vectors = np.vstack([q_vectors-km, q_vectors, q_vectors+km])
 
-    for q in q_vectors:
+    sabs = np.empty((3, 3, 2*n_sites, q_vectors.shape[0]), dtype=complex)
+
+    for ii, q in enumerate(q_vectors):
         sqrt_hamiltonian = _calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
 
         sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
@@ -349,24 +362,32 @@ def _calc_chunk_spinwave(
         # this is a 3x3x2N array indexed by [alpha, beta, omega]
         sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
         sab /= 2 * n_sites
+        sabs[:,:,:,ii] = sab
 
-        if sab_transform is not None:
-            # Convert back into lab frame (eq 37)
-            sab = 0.5 * (sab - np.einsum("ij,jkl,km->iml", nmat, sab, nmat)
-                             + np.einsum("ij,jkl,km->iml", nxn-np.eye(3), sab, nxn)
-                             + np.einsum("ij,jkl,km->iml", nxn, sab, 2*nxn-np.eye(3)))
-            # Apply the transformation (eq 40)
-            sab = np.einsum("ijk,jl->ilk", sab, sab_transform)
+    if rotating_frame is not None:
+        # Convert back into lab frame (eq 37)
+        sabs = 0.5 * (sabs - np.einsum("ij,jklm,kn->inlm", nmat, sabs, nmat)
+                           + np.einsum("ij,jklm,kn->inlm", nxn-np.eye(3), sabs, nxn)
+                           + np.einsum("ij,jklm,kn->inlm", nxn, sabs, 2*nxn-np.eye(3)))
+        # Apply the rotation transformation (eq 40)
+        nq = int(q_vectors.shape[0] / 3)
+        sabs = np.concatenate([np.einsum("ijkl,jm->imkl", sabs[:,:,:,:nq], R1.conj()),
+                               np.einsum("ijkl,jm->imkl", sabs[:,:,:,nq:2*nq], nxn),
+                               np.einsum("ijkl,jm->imkl", sabs[:,:,:,2*nq:], R1)], axis=2)
+        energies = [np.hstack([energies[i], energies[nq+i], energies[2*nq+i]]) for i in range(nq)]
+        # Reset q vectors list for next loop
+        q_vectors = q_vectors[nq:2*nq,:]
 
+    for ii, q in enumerate(q_vectors):
         # take perpendicular component s_perp of sab
         if (q_mag := np.linalg.norm(q)) == 0:
             norm_q = np.array([0, 0, 0])
         else:
-            norm_q = (q-km) @ rlu_to_cart
+            norm_q = q @ rlu_to_cart
             norm_q /= np.sqrt(np.sum(norm_q**2))
         perp_factor = np.eye(3) - np.outer(norm_q, norm_q)
         # the einsum here performs elementwise multiplication and then sums over alpha, beta
-        s_perp = np.einsum("ijk,ij->k", sab, perp_factor)
+        s_perp = np.einsum("ijk,ij->k", sabs[:,:,:,ii], perp_factor)
         intensities.append(s_perp)
 
     if save_sab:
