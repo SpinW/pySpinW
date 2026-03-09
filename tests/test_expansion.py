@@ -74,10 +74,10 @@ def test_expansion_chain_no_rot():
             assert anisotropy_1.site._unique_id != anisotropy_2.site._unique_id
 
     # Check number of couplings
-    assert len(expanded_hamiltonian.couplings) == len(unexpanded_hamiltonian.couplings) * 1 * 2 * 3
+    assert len(expanded_hamiltonian.generate_exchanges) == len(unexpanded_hamiltonian.couplings) * 1 * 2 * 3
 
     # Check the couplings have the right intersite vector
-    for coupling in expanded_hamiltonian.couplings:
+    for coupling in expanded_hamiltonian.generate_exchanges:
         match coupling.name:
             case "X":
                 expected_offset = np.array([1, 0, 0], dtype=float)

@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings, axis_anisotropies
+from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -41,11 +41,11 @@ if __name__ == "__main__":
     sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="X")]
     s = genmagstr(sites, unit_cell, magnitude=[3./2],mode='helical', k=[1./3, 1./3, 0], n=[0, 0, 1])
 
-    exchanges = couplings(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=3.1,
-                          coupling_type=HeisenbergCoupling,
-                          j=1)
+    exchanges = generate_exchanges(sites=sites,
+                                   unit_cell=unit_cell,
+                                   max_distance=3.1,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=1)
 
     anisotropies = axis_anisotropies(sites, 0.2)
     hamiltonian = Hamiltonian(s, exchanges, anisotropies)

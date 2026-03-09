@@ -116,19 +116,57 @@ def get_cell_offsets_containing_bounding_box(
 
     limits = np.ceil(box_sizes)
 
-    # Get bounds of the form [-(l+1), l+1], note that arange is not inclusive
+    # Create search blocks. The idea here is to exclude
+    #
+    #
+    # We need to have the following blocks (there is a free choice of axes direction)
+    # Block 1: x,y free, z > 0
+    # Block 2: x free, y > 0, z = 0
+    # Block 3: x > 0, y = 0, z = 0
+    # Block 4: x = 0, y = 0, z = 0
+
+    ## Block 1: x,y free, z > 0
+
     i_values = np.arange(-(limits[0]+1), limits[0]+2)
     j_values = np.arange(-(limits[1]+1), limits[1]+2)
-    k_values = np.arange(-(limits[2]+1), limits[2]+2)
+    k_values = np.arange(1, limits[2]+2)
 
     i, j, k = np.meshgrid(i_values, j_values, k_values)
 
-    ijk = np.concatenate((
+    block_1 = np.concatenate((
         i.reshape(-1,1),
         j.reshape(-1,1),
         k.reshape(-1,1)), axis=1)
 
-    return ijk
+    ## Block 2: x free, y > 0, z = 0
+
+    i_values = np.arange(-(limits[0] + 1), limits[0] + 2)
+    j_values = np.arange(1, limits[1] + 2)
+    k_values = np.array([0.0])
+
+    i, j, k = np.meshgrid(i_values, j_values, k_values)
+
+    block_2 = np.concatenate((
+        i.reshape(-1,1),
+        j.reshape(-1,1),
+        k.reshape(-1,1)), axis=1)
+
+    # Block 3: x > 0, y = 0, z = 0
+    i_values = np.arange(1, limits[0] + 2)
+    j_values = np.array([0.0])
+    k_values = np.array([0.0])
+
+    i, j, k = np.meshgrid(i_values, j_values, k_values)
+
+    block_3 = np.concatenate((
+        i.reshape(-1,1),
+        j.reshape(-1,1),
+        k.reshape(-1,1)), axis=1)
+
+    # Block 4: x=0, y=0, z=0
+    block_4 = np.array([[0.0, 0.0, 0.0]])
+
+    return np.concatenate((block_1, block_2, block_3, block_4), axis=0)
 
 
 def demo_point_finding():

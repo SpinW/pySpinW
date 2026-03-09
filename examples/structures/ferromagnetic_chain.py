@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings, filter
+from pyspinw.interface import generate_exchanges, filter
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -22,12 +22,12 @@ if __name__ == "__main__":
 
     s = Structure([only_site], unit_cell=unit_cell)
 
-    exchanges = couplings(sites=[only_site],
-                          unit_cell=unit_cell,
-                          max_distance=1.1,
-                          coupling_type=HeisenbergCoupling,
-                          j=-1,
-                          direction_filter=filter([1,0,0]))
+    exchanges = generate_exchanges(sites=[only_site],
+                                   unit_cell=unit_cell,
+                                   max_distance=1.1,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=-1,
+                                   direction_filter=filter([1,0,0]))
 
     hamiltonian = Hamiltonian(s, exchanges)
 
