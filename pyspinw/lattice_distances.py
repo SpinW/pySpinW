@@ -59,13 +59,8 @@ def find_relative_positions(
 
     square_distances = np.sum(cartesian_position**2, axis=1)
 
-    within_distance = square_distances <= (max_distance + tol)**2
+    valid_distance = square_distances <= (max_distance + tol)**2
 
-    if is_self_interaction:
-        not_self = square_distances > tol*tol
-        valid_distance = np.logical_and(within_distance, not_self)
-    else:
-        valid_distance = within_distance
 
     output_indices = np.array(fractional_coordinate_offsets[valid_distance, :], dtype=int)
     output_positions = cartesian_position[valid_distance, :]
@@ -225,10 +220,7 @@ def partial_search_space(
         j.reshape(-1,1),
         k.reshape(-1,1)), axis=1)
 
-    # Block 4: x=0, y=0, z=0
-    block_4 = np.array([[0.0, 0.0, 0.0]])
-
-    return np.concatenate((block_1, block_2, block_3, block_4), axis=0)
+    return np.concatenate((block_1, block_2, block_3), axis=0)
 
 
 
