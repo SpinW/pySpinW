@@ -9,7 +9,7 @@ from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
-    SymmetricInDirectionFilter
+    BiDirectionFilter
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
@@ -268,7 +268,7 @@ def filter(direction: ArrayLike,
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
     else:
         if symmetric:
-            return SymmetricInDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
+            return BiDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
         else:
             return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 

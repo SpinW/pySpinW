@@ -269,9 +269,10 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(coupling)
 
+        ## This shouldn't be needed now things are (probably) fixed - keeping in case
         # Remove duplicate couplings
-        couplings = [c1 for ic, c1 in enumerate(couplings)
-                     if all([c1 != c2 for c2 in couplings[ic+1:]])]
+        # couplings = [c1 for ic, c1 in enumerate(couplings)
+        #              if all([c1 != c2 for c2 in couplings[ic+1:]])]
 
         # Add in anisotropies as spinwave_calculation couplings
         for input_anisotropy in expanded.anisotropies:
