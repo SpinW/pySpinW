@@ -35,7 +35,7 @@ def find_relative_positions(
         unit_cell_transform: np.ndarray,
         max_distance: float,
         tol: float=tolerances.SAME_SITE_ABS_TOL,
-        allow_self=True) -> InteractionGeometries:
+        is_self_interaction=True) -> InteractionGeometries:
     """Find fractional coordinates from translations of the unit cell close to the origin.
 
     Find all sets of fractional coordinates produced by translations of input coordinates by multiples
@@ -45,9 +45,13 @@ def find_relative_positions(
     :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates
     :param max_distance: Maximum distance
     :param tol: tolerance used to check for identity
-    :param allow_self: include the original point with no translation (i,j,k = 0,0,0)
+    :param is_self_interaction: include the original point with no translation (i,j,k = 0,0,0)
     """
-    fractional_coordinate_offsets = get_cell_offsets_containing_bounding_box(unit_cell_transform, max_distance)
+
+    if is_self_interaction:
+        fractional_coordinate_offsets = partial_search_space(unit_cell_transform, max_distance)
+    else:
+        fractional_coordinate_offsets = full_search_space(unit_cell_transform, max_distance)
 
     fractional_positions = fractional_coordinate_offsets + fractional_coordinates.reshape(1, 3)
 
@@ -57,12 +61,11 @@ def find_relative_positions(
 
     within_distance = square_distances <= (max_distance + tol)**2
 
-    if allow_self:
-        valid_distance = within_distance
-    else:
+    if is_self_interaction:
         not_self = square_distances > tol*tol
         valid_distance = np.logical_and(within_distance, not_self)
-
+    else:
+        valid_distance = within_distance
 
     output_indices = np.array(fractional_coordinate_offsets[valid_distance, :], dtype=int)
     output_positions = cartesian_position[valid_distance, :]
@@ -70,10 +73,10 @@ def find_relative_positions(
 
     return InteractionGeometries(output_indices, output_positions, output_distances)
 
-def get_cell_offsets_containing_bounding_box(
+def full_search_space(
         unit_cell_transform: np.ndarray,
         radius: float) -> np.ndarray:
-    """List of unit cell translations that corresponds to
+    """List of unit cell translations so that cells cover a sphere of the specified radius
 
     :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
     :param radius: maximum radius
@@ -116,8 +119,67 @@ def get_cell_offsets_containing_bounding_box(
 
     limits = np.ceil(box_sizes)
 
-    # Create search blocks. The idea here is to exclude
+    i_values = np.arange(-limits[0] - 1, limits[0] + 2)
+    j_values = np.arange(-limits[1] - 1, limits[1] + 2)
+    k_values = np.arange(-limits[2] - 1, limits[2] + 2)
+
+    i, j, k = np.meshgrid(i_values, j_values, k_values)
+
+    return np.concatenate((
+        i.reshape(-1, 1),
+        j.reshape(-1, 1),
+        k.reshape(-1, 1)), axis=1)
+
+
+
+def partial_search_space(
+        unit_cell_transform: np.ndarray,
+        radius: float) -> np.ndarray:
+    """Partial list of unit cell translations so that cells cover a sphere of the specified radius,
+    with only one representation from each pair where (a,b,c) = (-p,-q,-r)
+
+    :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
+    :param radius: maximum radius
+    """
+    # Note: In fractional coordinates, a fixed radius sphere is an ellipsoid
+    # Note: We want any unit cell that overlaps with the ellipsoid, as such, we need to add
+    #       a value of 0.5 at many points
+
+    # The ellipse is Ax^2 + By^2 + Cz^2 + 2Dxy + 2Eyz + 2Fxz = 0
+    # i.e. if T is the transform such that
+    #   T.(i,j,k) = (x,y,z)
+    # and V is the vector (x,y,z) then we have
+    #   (TV).(TV) = 0
+    # or equivalently
+    #   V.MV = 0   with M = T.T
+    # and M is
+    #   [[A D F]
+    #    [D B E]
+    #    [F E C]]
     #
+
+    # Get the maximum values to search in each cartesian direction
+    # The bounding box for the ellipsoid is given by
+    #  V_max[i] = r sqrt((Q^-1)[i])
+    # we need to add 1/2 to this before we do a search
+    #
+
+    box_sizes = (radius *
+                 np.sqrt(
+                     np.diag(
+                        np.linalg.inv(
+                            np.dot(
+                                unit_cell_transform,
+                                unit_cell_transform)))))
+
+    # Build a grid of points within the bounding box: we want the corners of the boxes
+    # The first box is centred on 0,0,0, and we want at least one on point for each box outside
+    #  the ellipse at the extremes
+    #
+
+    limits = np.ceil(box_sizes)
+
+    # Create search blocks. The idea here is to exclude one of all pairs where (a,b,c) = (-p,-q,-r)
     #
     # We need to have the following blocks (there is a free choice of axes direction)
     # Block 1: x,y free, z > 0
@@ -127,8 +189,8 @@ def get_cell_offsets_containing_bounding_box(
 
     ## Block 1: x,y free, z > 0
 
-    i_values = np.arange(-(limits[0]+1), limits[0]+2)
-    j_values = np.arange(-(limits[1]+1), limits[1]+2)
+    i_values = np.arange(-limits[0]-1, limits[0]+2)
+    j_values = np.arange(-limits[1]-1, limits[1]+2)
     k_values = np.arange(1, limits[2]+2)
 
     i, j, k = np.meshgrid(i_values, j_values, k_values)
@@ -140,7 +202,7 @@ def get_cell_offsets_containing_bounding_box(
 
     ## Block 2: x free, y > 0, z = 0
 
-    i_values = np.arange(-(limits[0] + 1), limits[0] + 2)
+    i_values = np.arange(-limits[0]-1, limits[0] + 2)
     j_values = np.arange(1, limits[1] + 2)
     k_values = np.array([0.0])
 
@@ -167,6 +229,8 @@ def get_cell_offsets_containing_bounding_box(
     block_4 = np.array([[0.0, 0.0, 0.0]])
 
     return np.concatenate((block_1, block_2, block_3, block_4), axis=0)
+
+
 
 
 def demo_point_finding():
@@ -209,7 +273,7 @@ def demo_point_finding():
     # Plot the initial cell corner points used for searching
     #
 
-    initial_points = get_cell_offsets_containing_bounding_box(transform, radius)
+    initial_points = full_search_space(transform, radius)
 
     # Take a slice for drawing
     z_plane = initial_points[np.floor(initial_points[:, 2]) == 0, :]

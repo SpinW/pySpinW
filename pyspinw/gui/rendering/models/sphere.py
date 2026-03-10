@@ -47,8 +47,6 @@ class Sphere(Model):
 
         self.vertices_and_normals = np.array(verts, dtype=np.float32).reshape(-1) # Return as float32 for rendering
 
-        print(self.vertices_and_normals.reshape(-1, 6))
-
         self.add_vertex_normal_data(self.vertices_and_normals)
 
 
