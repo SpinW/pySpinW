@@ -2,7 +2,7 @@ from multiprocessing import freeze_support
 
 import numpy as np
 
-from pyspinw.calculations.optimisation.energy_minimisation import ClassicalEnergyMinimisation, Free
+from pyspinw.calculations.optimisation.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed
 from pyspinw.interface import couplings, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.gui.viewer import show_hamiltonian
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     unit_cell = UnitCell(1,1,1, gamma=60)
 
     x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 0, 1, name="X2")
+    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -34,6 +34,24 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
-    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Free, Free], field=np.array([0.0,0.0,0.0]))
+    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Fixed, Free], field=np.array([0.0,0.0,0.0]))
 
-    minimiser.iterate(0.01)
+    moment_history = [minimiser.moments.copy()]
+
+    for i in range(100):
+        # print(minimiser.moments)
+        minimiser.iterate(0.1)
+        print(minimiser.energy())
+
+        moment_history.append(minimiser.moments.copy())
+
+    print(minimiser.moments)
+
+    import matplotlib.pyplot as plt
+    ax = plt.figure().add_subplot(projection='3d')
+
+    for i in range(len(sites)):
+        xyz = np.array([moments[i,:] for moments in moment_history])
+        ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], "--x")
+
+    plt.show()
