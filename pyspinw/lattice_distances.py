@@ -47,7 +47,6 @@ def find_relative_positions(
     :param tol: tolerance used to check for identity
     :param is_self_interaction: include the original point with no translation (i,j,k = 0,0,0)
     """
-
     if is_self_interaction:
         fractional_coordinate_offsets = partial_search_space(unit_cell_transform, max_distance)
     else:
@@ -130,8 +129,9 @@ def full_search_space(
 def partial_search_space(
         unit_cell_transform: np.ndarray,
         radius: float) -> np.ndarray:
-    """Partial list of unit cell translations so that cells cover a sphere of the specified radius,
-    with only one representation from each pair where (a,b,c) = (-p,-q,-r)
+    """Partial list of unit cell translations so that cells cover a sphere of the specified radius
+
+    Only one representation from each pair where (a,b,c) = (-p,-q,-r)
 
     :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
     :param radius: maximum radius
@@ -227,7 +227,6 @@ def partial_search_space(
 
 def demo_point_finding():
     """Demonstrate the calculation of the calculation of cells for searching in"""
-
     import matplotlib.pyplot as plt
 
     radius = 5
