@@ -37,9 +37,25 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-    - name: Run tests with pyTest
+    - name: Run tests with pyTest (non-Linux)
+      if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest'
       run: |
         python -m pytest
+    - name: Run tests with pyTest and coverage (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        coverage run --source=pyspinw -m pytest
+        echo "### Python Code Coverage: " $(coverage report | grep TOTAL | awk '{print $4}') > coverage_report.md
+        echo "<details> <summary>Coverage Files Table</summary>" >> coverage_report.md
+        echo " " >> coverage_report.md
+        coverage report --format=markdown --skip-empty -m >> coverage_report.md
+        echo "</details>" >> coverage_report.md
+    - name: Create Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' && github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: coverage_report.md
 
   rust:
     runs-on: ${{ matrix.os }}
