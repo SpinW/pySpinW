@@ -44,7 +44,7 @@ jobs:
     - name: Run tests with pyTest and coverage (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        coverage run --source=pyspinw -m pytest
+        coverage run --source=pyspinw --omit="pyspinw/gui/*" -m pytest
         echo "### Python Code Coverage: " $(coverage report | grep TOTAL | awk '{print $4}') > coverage_report.md
         echo "<details> <summary>Coverage Files Table</summary>" >> coverage_report.md
         echo " " >> coverage_report.md
