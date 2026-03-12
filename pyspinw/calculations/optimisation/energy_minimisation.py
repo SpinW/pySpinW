@@ -1,10 +1,20 @@
 from collections import defaultdict
+from enum import Enum
+from abc import ABC, abstractmethod
 
 import numpy as np
+from numpy._typing import ArrayLike
 
-from pyspinw.gui.rendermodel import rotation_from_z
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
+from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
+
+
+
+class MinimisationConstraintGenerator(ABC):
+    @abstractmethod
+    def generate(self, n_constraints: int):
+        """ Generate full list of constraints"""
 
 class MinimisationConstraint:
     name = "<constraint base class>"
@@ -12,23 +22,47 @@ class MinimisationConstraint:
     def __repr__(self):
         return self.name
 
-class FreeConstraint(MinimisationConstraint):
+class FreeConstraint(MinimisationConstraint, MinimisationConstraintGenerator):
     name = "Free"
+
+    def generate(self, n_constraints: int):
+        return [self for _ in range(n_constraints)]
+
 
 class FixedConstraint(MinimisationConstraint):
     name = "Fixed"
 
-class Planar(MinimisationConstraint):
+class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
     name = "Planar"
 
-    def __init__(self, axis=np.ndarray):
-        self.axis = axis
+    __match_args__ = ('axis', )
+
+    def __init__(self, axis: ArrayLike):
+        self.axis = np.array(axis, dtype=float)
+        self.axis /= np.sqrt(np.sum(self.axis**2))
+
+    def generate(self, n_constraints: int):
+        return [self for _ in range(n_constraints)]
 
     def __repr__(self):
         return f"{self.name}(axis={self.axis[0]},{self.axis[1]},{self.axis[2]})"
 
 Free = FreeConstraint()
 Fixed = FixedConstraint()
+
+class OneFixed(MinimisationConstraintGenerator):
+    """ Constraint Generator"""
+    def __init__(self, index:int=0):
+        self.index = index
+
+    def generate(self, n_constraints: int):
+        return [Fixed if self.index == i else Free for i in range(n_constraints)]
+
+class InitialRandomisation(Enum):
+    NONE = "none"
+    JITTER = "jitter"
+    RANDOMISED = "randomised"
+
 
 alpha_m = np.array([0,-1,0], dtype=float)
 beta_m = np.array([1,0,0], dtype=float)
@@ -40,11 +74,43 @@ class ClassicalEnergyMinimisation:
     See dev note 007_energy_minimisation.md
     """
 
-    def __init__(self, hamiltonian: Hamiltonian, constraints: list[MinimisationConstraint], field: np.ndarray):
+    def __init__(self,
+                 hamiltonian: Hamiltonian,
+                 constraints: list[MinimisationConstraint] | MinimisationConstraintGenerator = Free,
+                 field: ArrayLike | None = None,
+                 seed: int | None = None):
+
+        # Check / normalise parameters
+
+        n_sites = len(hamiltonian.structure.sites)
+
+        if isinstance(constraints, list):
+            if len(constraints) != n_sites:
+                raise ValueError("If constraints are a list, there should be one for each site")
+
+        elif isinstance(constraints, MinimisationConstraintGenerator):
+            constraints = constraints.generate(n_sites)
+
+        else:
+            raise TypeError("Expected constraints to be a MinimisationConstraintGenerator or "
+                            "list of MinimisationConstraints")
+
+
+        if field is None:
+            field = np.zeros((3, ))
+        else:
+            field = np.array(field)
+
+        if field.shape != (3, ):
+            raise ValueError("Expected field to be a length 3 vector")
+
+        # Set up basic fields
 
         self.hamiltonian = hamiltonian
         self.constraints = constraints
         self.field = field
+
+        self.rng = np.random.default_rng(seed)
 
         #
         # Gather the data we'll need for the calculation
@@ -108,10 +174,83 @@ class ClassicalEnergyMinimisation:
 
         self._site_uid_to_index = {site.unique_id: i for i, site in enumerate(sites)}
 
-    def jitter(self, max_angular_change_per_direction):
-        pass
+    def _safe_randn(self, n, dim=3):
+        """ Make random gaussian vectors, avoiding 0,0,0..."""
+        output = self.rng.normal(0,1, (n, dim))
+
+        # Repeatedly replace any zero rows
+        zero_rows = np.all(output == 0, axis=1)
+        n_bad = np.sum(np.array(zero_rows, int))
+
+        while n_bad > 0:
+            output[zero_rows, :] = self.rng.normal(0, 1, (n_bad, dim))
+            zero_rows = np.all(output == 0, axis=1)
+            n_bad = np.sum(np.array(zero_rows, int))
+
+        return output
+
+    def jitter(self, jitter_size_rad=0.1):
+        """ Jitter method applies a movement of fixed size (radians) in a random direction """
+
+        #
+        # Free rotations
+        #
+
+        rotation_matrices = [rotation_from_z(self.moments[i]) for i, uid in self.free_sites]
+
+        # random direction in angle
+        angles = (2*np.pi) * self.rng.random((self.n_free, ))
+        cos_angles = np.cos(angles)
+        sin_angles = np.sin(angles)
+
+        cos_jitter = np.cos(jitter_size_rad)
+        sin_jitter = np.sin(jitter_size_rad)
+
+        unrotated_moments = np.empty((self.n_free, 3), dtype=float)
+        unrotated_moments[:, 0] = sin_jitter * cos_angles
+        unrotated_moments[:, 1] = sin_jitter * sin_angles
+        unrotated_moments[:, 2] = cos_jitter
+
+        unrotated_moments *= self.magnitudes[self.is_free].reshape(-1,1)
+
+        print(unrotated_moments)
+
+        for param_index, (site_index, _) in enumerate(self.free_sites):
+            self.moments[site_index, :] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
+
+        #
+        # Planar moments
+        #
+
+        for (site_index, _), axis in zip(self.planar_sites, self.planar_axes):
+            angle = jitter_size_rad if self.rng.random() > 0.5 else -jitter_size_rad
+            self.moments[site_index, :] = rotation_matrix(angle, axis) @ self.moments[site_index, :]
+
+    def randomise(self):
+        """ Randomise method chooses random directions for spins"""
+
+        # Do Free sites using Gaussian method
+
+        random_orientations = self._safe_randn(self.n_free, 3)
+        random_orientations /= np.sqrt(np.sum(random_orientations**2, axis=1)).reshape(-1, 3)
+
+        self.moments[self.is_free] = random_orientations
+        self.moments[self.is_free] *= self.magnitudes[self.is_free]
+
+        # Do planar sites by choosing a random number in [0,2pi)
+
+        random_angles = (2*np.pi) * self.rng.random((self.n_planar, ))
+        base_moments = self.magnitudes.reshape(-1, 1)*np.array(
+            [np.sin(random_angles),
+             np.cos(random_angles),
+             np.zeros((self.n_planar, ))]).T
+
+        for param_index, ((site_index, site_uid), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
+
+            self.moments[site_index, :] = rotation_from_z(axis) @ base_moments[param_index, :]
 
     def energy(self):
+        """ Energy of the current moments according to the hamiltonian """
         energy = 0.0
         for coupling in self.hamiltonian.couplings:
             site_1_moment = self.moments[self._site_uid_to_index[coupling.site_1.unique_id], :]
@@ -119,28 +258,88 @@ class ClassicalEnergyMinimisation:
 
             energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
 
+        for anisotropy in self.hamiltonian.anisotropies:
+            moment = self.moments[self._site_uid_to_index[anisotropy.site.unique_id], :]
+            energy += moment @ anisotropy.anisotropy_matrix @ moment
+
         # TODO: Anisotropies and fields
 
         return energy
 
-    def iterate(self, step_size_factor=0.01):
+    def minimise(self, rtol=1e-10, atol=1e-12, max_iters=1000,
+                 initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
+                 verbose=False):
+        """ Automatically do the minimisation and stop based on energy convergence """
+
+        if isinstance(initial_randomisation, str):
+            initial_randomisation = InitialRandomisation(initial_randomisation)
+
+        match initial_randomisation:
+            case InitialRandomisation.NONE:
+                pass
+            case InitialRandomisation.JITTER:
+                if verbose:
+                    print("Jittering")
+                self.jitter()
+            case InitialRandomisation.RANDOMISED:
+                if verbose:
+                    print("Randomising")
+                self.randomise()
+
+        last_energy = self.energy()
+        self.iterate()
+        this_energy = self.energy()
+
+        start_delta_energy = this_energy - last_energy
+
+        for i in range(max_iters-1):
+            last_energy = this_energy
+            self.iterate()
+            this_energy = self.energy()
+
+            delta_energy = this_energy - last_energy
+
+            if np.abs(delta_energy) < rtol * np.abs(start_delta_energy):
+                if verbose:
+                    print(f"Converged to E={this_energy} after {i+1} iterations (dE = {delta_energy} < {rtol} x {start_delta_energy})")
+
+                break
+
+            if np.abs(delta_energy) < atol:
+                if verbose:
+                    print(
+                        f"Converged to E={this_energy} after {i + 1} iterations (dE = {delta_energy} < {atol})")
+
+                break
+
+
+        else:
+            if verbose:
+                print(f"Failed to converge after {max_iters} iterations")
+
+        # TODO: Return new Hamiltonian
+
+
+
+    def iterate(self, step_size_factor=0.1):
 
         # TODO: Modify account for supercells
 
-        rotation_matrices = [rotation_from_z(moment) for moment in self.moments]
 
+        # Free sites
+
+        rotation_matrices = [rotation_from_z(self.moments[i]) for i, uid in self.free_sites]
 
         forces_free_alpha = np.zeros((self.n_free,))
         forces_free_beta = np.zeros((self.n_free,))
-        forces_planar = np.zeros((self.n_planar))
 
         for param_index, (site_index, site_uid) in enumerate(self.free_sites):
 
             # dS_dalpha = -rotation_matrices[i][:, 1] # m.(0, -1, 0)
             # dS_dbeta = rotation_matrices[i][:, 0]   # m.(1,  0, 0)
 
-            dS_dalpha = rotation_matrices[site_index] @ alpha_m # m.(0, -1, 0)
-            dS_dbeta = rotation_matrices[site_index] @ beta_m   # m.(1,  0, 0)
+            dS_dalpha = rotation_matrices[param_index] @ alpha_m # m.(0, -1, 0)
+            dS_dbeta = rotation_matrices[param_index] @ beta_m   # m.(1,  0, 0)
 
 
             # Couplings
@@ -161,7 +360,14 @@ class ClassicalEnergyMinimisation:
 
             # Anisotropies
             for anisotropy in self.site_to_anisotropy[site_uid]:
-                pass
+                # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
+                current_moment = self.moments[param_index]
+
+                forces_free_alpha[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
+                forces_free_alpha[param_index] -= dS_dalpha @ anisotropy.anisotropy_matrix @ current_moment
+
+                forces_free_beta[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dbeta
+                forces_free_beta[param_index] -= dS_dbeta @ anisotropy.anisotropy_matrix @ current_moment
 
             # Field
             field_force_alpha = self.field_contribution_vector[site_index] @ dS_dalpha
@@ -170,9 +376,43 @@ class ClassicalEnergyMinimisation:
             forces_free_alpha[param_index] -= field_force_alpha
             forces_free_beta[param_index] -= field_force_beta
 
-        #
-        # print("alpha forces:", forces_free_alpha)
-        # print("beta forces:", forces_free_beta)
+        # Planar sites
+
+        forces_planar = np.zeros((self.n_planar))
+
+        for param_index, ((site_index, site_uid), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
+
+
+            dS_dtheta = triple_product_matrix(-axis) @ self.moments[site_index, :]
+
+            # Couplings
+            for coupling in self.site_to_coupling_side_1[site_uid]:
+
+                other_index = self._site_uid_to_index[coupling.site_2.unique_id]
+                other_moment = self.moments[other_index, :]
+
+                forces_planar[site_index] -= dS_dtheta @ coupling.coupling_matrix @ other_moment
+
+
+            for coupling in self.site_to_coupling_side_2[site_uid]:
+                other_index = self._site_uid_to_index[coupling.site_1.unique_id]
+                other_moment = self.moments[other_index, :]
+
+                forces_planar[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dtheta
+
+            # Anisotropies
+            for anisotropy in self.site_to_anisotropy[site_uid]:
+                # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
+
+                current_moment = self.moments[param_index]
+
+                forces_planar[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dtheta
+                forces_planar[param_index] -= dS_dtheta @ anisotropy.anisotropy_matrix @ current_moment
+
+
+            # Field
+            forces_planar[param_index] -= self.field_contribution_vector[site_index] @ dS_dtheta
+
 
         # Move in direction of force
         # If you want a physical interpretation, this is critically damped movement, where step_size_factor is dt
@@ -182,22 +422,25 @@ class ClassicalEnergyMinimisation:
 
         alpha = step_size_factor * np.array(forces_free_alpha)
         beta = step_size_factor * np.array(forces_free_beta)
+        theta = step_size_factor * np.array(forces_planar)
 
         # print("alpha change:", alpha)
         # print("beta change:", beta)
 
-        # Get the moments before rotation
+        # Get the new moments
 
-        new_moments = np.zeros((self.n_sites, 3), dtype=float)
-        new_moments[:, 2] = 1.0
+        new_moments = self.moments.copy()
 
         cos_beta = np.cos(beta)
-
-        new_moments[self.is_free, :] = np.array([
+        unrotated_moments = np.array([
             np.sin(beta),
             -np.sin(alpha) * cos_beta,
             np.cos(alpha) * cos_beta
         ]).T
 
-        for site_index, _ in self.free_sites:
-            self.moments[site_index] = rotation_matrices[site_index] @ new_moments[site_index, :]
+        for param_index, (site_index, _) in enumerate(self.free_sites):
+            self.moments[site_index] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
+
+        for param_index, ((site_index, _), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
+            self.moments[site_index] = rotation_matrix(theta[param_index], axis) @ self.moments[site_index, :]
+
