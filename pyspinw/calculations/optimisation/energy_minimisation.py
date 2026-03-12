@@ -1,3 +1,5 @@
+""" Classical minimisation of spin orientations """
+
 from collections import defaultdict
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -12,27 +14,38 @@ from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 
 
 class MinimisationConstraintGenerator(ABC):
+    """ Base class for constraint specifications that can be applied to all sites"""
+
     @abstractmethod
     def generate(self, n_constraints: int):
         """ Generate full list of constraints"""
 
 class MinimisationConstraint:
+    """ Base class for constraint specifications applied to a single site"""
+
     name = "<constraint base class>"
 
     def __repr__(self):
         return self.name
 
 class FreeConstraint(MinimisationConstraint, MinimisationConstraintGenerator):
+    """ Specify that moment should be unconstrained """
+
     name = "Free"
 
     def generate(self, n_constraints: int):
+        """ Generate a list of constraints """
         return [self for _ in range(n_constraints)]
 
 
 class FixedConstraint(MinimisationConstraint):
+    """ Specify that moment should be fixed """
+
     name = "Fixed"
 
 class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
+    """ Specify that moment should be constrained to plane """
+
     name = "Planar"
 
     __match_args__ = ('axis', )
@@ -42,6 +55,7 @@ class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
         self.axis /= np.sqrt(np.sum(self.axis**2))
 
     def generate(self, n_constraints: int):
+        """ Generate a list of constraints """
         return [self for _ in range(n_constraints)]
 
     def __repr__(self):
@@ -52,13 +66,17 @@ Fixed = FixedConstraint()
 
 class OneFixed(MinimisationConstraintGenerator):
     """ Constraint Generator"""
+
     def __init__(self, index:int=0):
         self.index = index
 
     def generate(self, n_constraints: int):
+        """ Generate a list of constraints """
         return [Fixed if self.index == i else Free for i in range(n_constraints)]
 
 class InitialRandomisation(Enum):
+    """ Enum for setting the method of initial randomisation """
+
     NONE = "none"
     JITTER = "jitter"
     RANDOMISED = "randomised"
@@ -68,8 +86,7 @@ alpha_m = np.array([0,-1,0], dtype=float)
 beta_m = np.array([1,0,0], dtype=float)
 
 class ClassicalEnergyMinimisation:
-    """
-    Do a classical energy minimisation of the spin orientations
+    """Do a classical energy minimisation of the spin orientations
 
     See dev note 007_energy_minimisation.md
     """
@@ -191,7 +208,6 @@ class ClassicalEnergyMinimisation:
 
     def jitter(self, jitter_size_rad=0.1):
         """ Jitter method applies a movement of fixed size (radians) in a random direction """
-
         #
         # Free rotations
         #
@@ -226,7 +242,6 @@ class ClassicalEnergyMinimisation:
 
     def randomise(self):
         """ Randomise method chooses random directions for spins"""
-
         # Do Free sites using Gaussian method
 
         random_orientations = self._safe_randn(self.n_free, 3)
@@ -249,7 +264,6 @@ class ClassicalEnergyMinimisation:
 
     def energy(self):
         """ Energy of the current moments according to the hamiltonian """
-
         energy = 0.0
 
         # Exchanges
@@ -277,9 +291,8 @@ class ClassicalEnergyMinimisation:
                  initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
                  verbose=False):
         """ Automatically do the minimisation and stop based on energy convergence """
-
         if isinstance(initial_randomisation, str):
-            initial_randomisation = InitialRandomisation(initial_randomisation)
+            initial_randomisation = InitialRandomisation(initial_randomisation.lower())
 
         match initial_randomisation:
             case InitialRandomisation.NONE:
@@ -308,7 +321,8 @@ class ClassicalEnergyMinimisation:
 
             if np.abs(delta_energy) < rtol * np.abs(start_delta_energy):
                 if verbose:
-                    print(f"Converged to E={this_energy} after {i+1} iterations (dE = {delta_energy} < {rtol} x {start_delta_energy})")
+                    print(f"Converged to E={this_energy} after {i+1} iterations "
+                          f"(dE = {delta_energy} < {rtol} x {start_delta_energy})")
 
                 break
 
@@ -329,7 +343,7 @@ class ClassicalEnergyMinimisation:
 
 
     def iterate(self, step_size_factor=0.1):
-
+        """ Perform one step of gradient descent """
         # TODO: Modify account for supercells
 
 
