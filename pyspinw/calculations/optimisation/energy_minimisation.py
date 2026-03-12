@@ -213,8 +213,6 @@ class ClassicalEnergyMinimisation:
 
         unrotated_moments *= self.magnitudes[self.is_free].reshape(-1,1)
 
-        print(unrotated_moments)
-
         for param_index, (site_index, _) in enumerate(self.free_sites):
             self.moments[site_index, :] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
 
@@ -251,18 +249,27 @@ class ClassicalEnergyMinimisation:
 
     def energy(self):
         """ Energy of the current moments according to the hamiltonian """
+
         energy = 0.0
+
+        # Exchanges
         for coupling in self.hamiltonian.couplings:
             site_1_moment = self.moments[self._site_uid_to_index[coupling.site_1.unique_id], :]
             site_2_moment = self.moments[self._site_uid_to_index[coupling.site_2.unique_id], :]
 
             energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
 
+        # Anisotropies
         for anisotropy in self.hamiltonian.anisotropies:
             moment = self.moments[self._site_uid_to_index[anisotropy.site.unique_id], :]
+
             energy += moment @ anisotropy.anisotropy_matrix @ moment
 
-        # TODO: Anisotropies and fields
+        # Field contribution
+        for site_index in range(self.n_sites):
+            moment = self.moments[site_index]
+
+            energy += np.dot(self.field_contribution_vector[site_index], moment)
 
         return energy
 

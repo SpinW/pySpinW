@@ -252,3 +252,75 @@ def test_anisotropies_planar(axis):
 
     assert np.isclose(np.dot(axis, minimiser.moments[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
 
+rng = np.random.default_rng(118)
+test_fields = rng.normal(0,1, (20, 3))
+
+@pytest.mark.parametrize("field", test_fields)
+def test_field_free(field):
+
+    unit_cell = UnitCell(1, 1, 1, gamma=60)
+
+    x1 = LatticeSite(0.1, 0, 0.5, 0, 1, 0, name="X1")
+    x2 = LatticeSite(0.2, 0, 0.5, 1, 0, 0, name="X2")
+    x3 = LatticeSite(0.3, 0, 0.5, 1, 1, 0, name="X3")
+    x4 = LatticeSite(0.4, 0, 0.5, 1, -1, 0, name="X4")
+    x5 = LatticeSite(0.5, 0, 0.5, -1, -1, 0, name="X5")
+
+    sites = [x1, x2, x3, x4, x5]
+
+    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+
+    hamiltonian = Hamiltonian(s, couplings=[])
+
+    hamiltonian.print_summary()
+
+    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=Free,
+                                            field=field)
+
+    minimiser.minimise(verbose=True)
+
+
+    # Normalise moments and field
+    field_norm = field / np.sqrt(np.sum(field**2))
+    moments_norm = minimiser.moments.copy()
+    moments_norm /= np.sqrt(np.sum(moments_norm**2, axis=1)).reshape(-1, 1)
+
+    assert np.allclose(field_norm + moments_norm, 0.0, atol=1e-4)
+
+
+@pytest.mark.parametrize("field", test_fields)
+def test_field_planar(field):
+
+    unit_cell = UnitCell(1, 1, 1, gamma=60)
+
+    x1 = LatticeSite(0.1, 0, 0.5, 0, 1, 0, name="X1")
+    x2 = LatticeSite(0.2, 0, 0.5, 1, 0, 0, name="X2")
+    x3 = LatticeSite(0.3, 0, 0.5, 1, 1, 0, name="X3")
+    x4 = LatticeSite(0.4, 0, 0.5, 1, -1, 0, name="X4")
+    x5 = LatticeSite(0.5, 0, 0.5, -1, -1, 0, name="X5")
+
+    sites = [x1, x2, x3, x4, x5]
+
+    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+
+    hamiltonian = Hamiltonian(s, couplings=[])
+
+    hamiltonian.print_summary()
+
+    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=Planar([0, 0, 1]),
+                                            field=field)
+
+    minimiser.minimise(verbose=True)
+
+
+    # Project to check angles
+    field_project = field[:2]
+    field_project /= np.sqrt(np.sum(field_project**2))
+    field_project = field_project.reshape(1, 2)
+
+    jittered_project = minimiser.moments[:, :2]
+    jittered_project /= np.sqrt(np.sum(jittered_project**2, axis=1)).reshape(-1, 1)
+
+    dot_product = np.sum(field_project * jittered_project, axis=1)
+
+    assert np.allclose(dot_product, -1)
