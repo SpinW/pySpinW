@@ -52,7 +52,7 @@ def ferromagnet_gtensor(n_q = 100, classes = py_classes):
     couplings = [Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
                  Coupling(0, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])), ]
 
-    return rotations, magnitudes, q_vectors, couplings, positions, ext_field
+    return rotations, magnitudes, q_vectors, couplings, positions, np.eye(3, order='F'), ext_field
 
 if __name__ == "__main__":
 

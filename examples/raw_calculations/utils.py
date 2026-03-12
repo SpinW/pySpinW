@@ -80,11 +80,11 @@ def run_example(
     return structure, energies, sqw
 
 
-def plot(q, energies, sqw):
+def plot(q, energies, sqw, show=True):
     """Plot energies and sqw."""
     import matplotlib.pyplot as plt
 
-    plt.figure(figsize=(8, 6))
+    fg = plt.figure(figsize=(8, 6))
 
     plt.subplot(2, 1, 1)
     plt.plot(q, energies)
@@ -97,4 +97,7 @@ def plot(q, energies, sqw):
     plt.ylabel("S(q,ω) (arb. units)")
 
     plt.tight_layout()
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        return fg

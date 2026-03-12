@@ -48,7 +48,7 @@ def kagome_ferromagnet(n_q = 100, classes = py_classes):
                  ]
 
 
-    q_mags = 0.5*np.linspace(0, 1, n_q + 1).reshape(-1, 1)
+    q_mags = 0.5*np.linspace(0.001, 0.999, n_q + 1).reshape(-1, 1)
 
     # q_vectors = np.concatenate((
     #         q_mags[::-1].reshape(-1, 1) * np.array([1, 0, 1]).reshape(1, -1),

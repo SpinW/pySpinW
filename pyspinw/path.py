@@ -111,7 +111,10 @@ class Path:
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
 
-        plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
+        if hasattr(plt_or_fig, 'xticks'):
+            plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
+        else:
+            plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
 
 class Path1D():
     """ 1D Path, i.e. just values in absolute q """

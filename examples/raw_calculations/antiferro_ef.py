@@ -21,15 +21,15 @@ def antiferro_ef(n_q = 100, classes = py_classes):
     rotations = [np.eye(3, **rust_kw), np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], **rust_kw)]
 
     magnitudes = np.array([1.0]*2)
-    positions = np.array([[0., 0., 0.], [0., 1., 0.]])
+    positions = np.array([[0., 0., 0.], [0., 0.5, 0.]])
 
-    aniso_array = np.diag(np.array([0., 0., -0.1], **rust_kw))
+    aniso_array = np.diag(np.array([0., 0., -0.2], **rust_kw))
 
     couplings = [
         # bonds
+        Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 0., 0.])),
         Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
-        Coupling(0, 1, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])),
-        Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 1., 0.])),
+        Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., 0., 0.])),
         Coupling(1, 0, np.eye(3, **rust_kw), inter_site_vector=np.array([0., -1., 0.])),
         # anisotropies
         Coupling(0, 0, aniso_array, inter_site_vector=np.array([0., 0., 0.])),
@@ -38,13 +38,13 @@ def antiferro_ef(n_q = 100, classes = py_classes):
 
     g_tensors = [np.eye(3, **rust_kw) * 2] * 2
 
-    ext_field = MagneticField(vector=np.array([0., 0., 7.], **rust_kw),
+    ext_field = MagneticField(vector=np.array([0., 0., 14.], **rust_kw),
                               g_tensors=g_tensors)
 
     q_mags = np.linspace(0, 1, n_q).reshape(-1, 1)
-    q_vectors = np.array([0, 1, 0]).reshape(1, 3) * q_mags
+    q_vectors = np.array([0, 2, 0]).reshape(1, 3) * q_mags
 
-    return (rotations, magnitudes, q_vectors, couplings, positions, ext_field)
+    return (rotations, magnitudes, q_vectors, couplings, positions, np.eye(3, order='F'), ext_field)
 
 if __name__ == "__main__":
 

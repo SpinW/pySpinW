@@ -225,7 +225,8 @@ def numpy_serialise(data: np.ndarray) -> dict:
 
     return {
         "shape": list(shape),
-        "data": data.reshape(-1).tolist(),
+        "data": np.real(data).reshape(-1).tolist(),
+        "imag_data": np.imag(data).reshape(-1).tolist() if np.iscomplexobj(data) else None,
         "dtype": data.dtype.str
     }
 
@@ -241,7 +242,10 @@ def numpy_deserialise(json: dict) -> np.ndarray:
             if not np.all([isinstance(x, int) for x in json["data"]]):
                 raise SPWSerialisationError("Tried to make integer numpy array from non-integer data")
 
-        data = np.array(json["data"], dtype=dtype)
+        if json["imag_data"] is None:
+            data = np.array(json["data"], dtype=dtype)
+        else:
+            data = np.array(json["data"], dtype=dtype) + 1j*np.array(json["imag_data"])
 
     except KeyError as ke:
         raise SPWSerialisationError(f"Failed to deserialise numpy object, bad json keys") from ke

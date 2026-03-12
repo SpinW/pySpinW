@@ -45,9 +45,9 @@ def kagome_antiferromagnet(n_q = 100, classes = py_classes):
         rotation(-2 * np.pi / 3)
     ]
     magnitudes = np.array([1.0]*3)  # spin-1
-    positions = [np.array([0., 0., 0.]),
-                 np.array([1., 0., 0.,]),
-                 np.array([0., 1., 0.]),]
+    positions = [np.array([0.5, 0., 0.]),
+                 np.array([0., 0.5, 0.,]),
+                 np.array([0.5, 0.5, 0.]),]
 
     rust_kw = {'dtype':complex, 'order':'F'}
     Coupling = classes.coupling
@@ -56,7 +56,7 @@ def kagome_antiferromagnet(n_q = 100, classes = py_classes):
     # Run the example until the end and then run:
     # >> AFkagome.table('bond',1:2)
     # And use the values in idx1, idx2, and dl (idx1, idx2 indexed from 1 not 0)
-    J1mat = np.eye(3, **rust_kw) * 1.0
+    J1mat = np.eye(3, **rust_kw) * 0.5
     couplings = [
         Coupling(2, 0, J1mat, np.array([0., 1, 0])),
         Coupling(0, 1, J1mat, np.array([0., -1, 0])),
@@ -76,7 +76,7 @@ def kagome_antiferromagnet(n_q = 100, classes = py_classes):
     ])
 
     # Do the J2 (next-nearest-neigbour) couplings
-    J2mat = np.eye(3, **rust_kw) * 0.11
+    J2mat = np.eye(3, **rust_kw) * 0.055
     couplings.extend([
         Coupling(0, 1, J2mat, np.array([1., -1, 0])),
         Coupling(1, 2, J2mat, np.array([0., 1, 0])),
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     energies = [np.sort(energy.real) for energy in energies]
     positive_energies = [energy[energy>0] for energy in energies]
 
-    plot(indices, plot, sqw)
+    plot(indices, energies, sqw)
 
     # Compare with tutorial 7, 2nd last figure (https://spinw.org/tutorial7_05.png)
     # It looks slightly assymmetric because Matlab-SpinW adjusts the aspect-ratio

@@ -18,8 +18,11 @@ def _generate_unique_id():
 class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
-    :param: i,j,k - Fractional coordinates within unit cell
-    :param: mi,mj,mk - Magnetic moment along unit cell aligned axis
+    :param: i,j,k - *required* Fractional coordinates within unit cell
+    :param: mi,mj,mk - Magnetic moment (or complex basisvector) along unit cell aligned axis
+    :param: supercell_moments - Magnetic moment for each propagation vector
+    :param: g - g-tensor (3x3)
+    :param: name
     """
 
     serialisation_name = "site"
@@ -46,7 +49,7 @@ class LatticeSite(SPWSerialisable):
                 0.0 if mi is None else mi,
                 0.0 if mj is None else mj,
                 0.0 if mk is None else mk]],
-                    dtype=float)
+                    dtype=complex)
 
         else:
             if mi is not None or mj is not None or mk is not None:
@@ -89,7 +92,6 @@ class LatticeSite(SPWSerialisable):
                 raise ValueError("g-factor should be a scalar, a vector of length 3, or a 3-by-3 matrix")
 
         self._base_moment = np.sum(self._moment_data, axis=0)
-
         self._name = name
 
         self._ijk = np.array([i, j, k], dtype=float)
