@@ -439,6 +439,7 @@ class SummationSupercell(CommensurateSupercell):
 
 class RotationSupercell(CommensurateSupercell):
     """ A supercell defined by moments which rotates in a plane and a single propagation vector """
+
     supercell_name = "rotation"
 
     def __init__(self, perpendicular: ArrayLike, propagation_vector: ArrayLike | CommensuratePropagationVector):
@@ -448,6 +449,7 @@ class RotationSupercell(CommensurateSupercell):
         self.perpendicular = perpendicular
 
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Calculate moment at a given cell offset"""
         basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
         return basis * np.exp(-2j * np.pi * self._propagation_vectors[0].dot(cell_offset))
 
@@ -456,7 +458,7 @@ class RotationSupercell(CommensurateSupercell):
         raise NotImplementedError("Not implemented yet")
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        return [{"vector": self._propagation_vectors[0]._serialise(context), 
+        return [{"vector": self._propagation_vectors[0]._serialise(context),
                  "perpendicular": numpy_serialise(self.perpendicular)}]
 
     @staticmethod
