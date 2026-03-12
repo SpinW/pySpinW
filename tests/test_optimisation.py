@@ -7,7 +7,6 @@ from pyspinw.calculations.optimisation.energy_minimisation import ClassicalEnerg
 from pyspinw.util import rotation_from_z
 from pyspinw.interface import couplings, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
-from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
