@@ -311,9 +311,10 @@ pub fn calc_spinwave(
             let km: Col<f64> = rot_comps[0].to_owned();
             let n = Col::<C64>::from_iter(rot_comps[1].iter().map(|f| C64::new(*f, 0.)));
             // Computes the rotation matrices in Toth & Lake eq 39
-            let nx = mat![[C0, -n[2] * J, n[1] * J], [n[2] * J, C0, -n[0] * J], [-n[1] * J, n[0] * J, C0]];
+            let iNx = mat![[C0, -n[2] * J, n[1] * J], [n[2] * J, C0, -n[0] * J], [-n[1] * J, n[0] * J, C0]];
+            let nx = mat![[C0, -n[2], n[1]], [n[2], C0, -n[0]], [-n[1], n[0], C0]];
             let R2 = n.clone().as_mat() * n.as_mat().transpose();
-            let R1 = (Mat::<C64>::identity(3, 3) - nx.as_ref() - R2.as_ref()) / 2.;
+            let R1 = (Mat::<C64>::identity(3, 3) - iNx.as_ref() - R2.as_ref()) / 2.;
             new_couplings = Vec::from_iter(couplings.iter().map(|c| {
                 let phi = 2. * PI * km.transpose() * c.inter_site_vector.as_ref();
                 // R is the Rodrigues rotation matrix
@@ -546,8 +547,9 @@ fn spinwave_single_q(
         // Apply the rotation transformation (eq 40)
         match tri_id {
             n if n < 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1.conjugate()),
+            n if n > 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1),
             n if n == 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R2),
-            _ => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1),
+            _ => panic!(),
         }
         // Convert q back for qperp calculation
         q = q - tri_id * rotcomp.km.as_ref();
