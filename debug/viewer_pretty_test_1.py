@@ -1,6 +1,6 @@
 from multiprocessing import freeze_support
 
-from pyspinw.interface import couplings, axis_anisotropies
+from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian

@@ -4,6 +4,7 @@ from collections import defaultdict
 
 import re
 from dataclasses import dataclass
+from http.cookiejar import is_HDN
 
 import numpy as np
 
@@ -111,20 +112,17 @@ def batch_couplings(sites: list[LatticeSite],
 
         for site_2 in sites[site_2_start_index:]:
 
-            allow_self = site_1 is not site_2 # Flag to include (0,0,0) offset
+            is_self = site_1.unique_id == site_2.unique_id
 
             relative_position = site_2.ijk - site_1.ijk
-            same_cell_relative_position = (site_2.ijk - site_1.ijk) % 1.0
-            cell_correction = np.array(relative_position - same_cell_relative_position, dtype=float)
-
 
             positions = find_relative_positions(
-                same_cell_relative_position,
+                relative_position,
                 unit_cell._xyz,
                 max_distance=max_distance,
-                allow_self=allow_self)
+                is_self_interaction=is_self)
 
-            pair_data[site_1][site_2] = [(site_1, site_2, vector, cell_offset - cell_correction, distance)
+            pair_data[site_1][site_2] = [(site_1, site_2, vector, cell_offset, distance)
                                          for cell_offset, vector, distance in positions.expand()]
 
 

@@ -1,6 +1,6 @@
 from multiprocessing import freeze_support
 
-from pyspinw.interface import couplings, axis_anisotropies
+from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
@@ -22,11 +22,11 @@ if __name__ == "__main__":
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(3,3,1)))
 
-    exchanges = couplings(sites=[x, y, z],
-                           unit_cell=unit_cell,
-                           max_distance=0.6,
-                           coupling_type=HeisenbergCoupling,
-                           j=-1)
+    exchanges = generate_exchanges(sites=[x, y, z],
+                                   unit_cell=unit_cell,
+                                   max_distance=0.6,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=-1)
 
     anisotropies = axis_anisotropies([x], 1, (0,0,1)) + axis_anisotropies([x,y], 1, (0,1,0))
 
