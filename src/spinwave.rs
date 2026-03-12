@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 
 use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
-use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm};
+use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm, mat};
 use faer::mat::{AsMatRef, AsMatMut};
 use indicatif::ParallelProgressIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -13,6 +13,7 @@ use crate::{Coupling, MagneticField, C64};
 /// Minimum energy that isn't just set for zero (in meV)
 const ZERO_ENERGY_TOL: f64 = 1e-12;
 const J2PI: C64 = C64::new(0., 2. * PI);
+const C0: C64 = C64::new(0., 0.);
 
 /// The result of a single-Q spinwave calculation.
 ///
@@ -37,6 +38,19 @@ struct QIndependentComponents {
     z: Vec<Col<C64>>,
     spin_coefficients: Mat<C64>,
     Az: Option<Vec<C64>>,
+}
+
+/// Components required for the rotating frame calculations (Toth & Lake eq 39)
+/// Fields:
+/// - `km`: The propagation vector
+/// - `nx`: The cross-product matrix of the perpendicular vector in Rodrigues' formula
+/// - `R1`: The rotation matrix for the +/-km components
+/// - `R2`: The rotation matrix for the k=0 component
+struct RotatingFrameComponents {
+    km: Col<f64>,
+    nx: Mat<C64>,
+    R1: Mat<C64>,
+    R2: Mat<C64>,
 }
 
 /// Calculate the q-independent components of the calculation.
@@ -279,14 +293,43 @@ pub fn calc_spinwave(
     rotations: Vec<MatRef<C64>>,
     magnitudes: Vec<f64>,
     q_vectors: Vec<Vec<f64>>,
-    couplings: Vec<&Coupling>,
+    in_couplings: Vec<&Coupling>,
     positions: Vec<ColRef<f64>>,
     rlu_to_cart: Option<MatRef<f64>>,
     field: Option<MagneticField>,
+    rotating_frame: Option<Vec<ColRef<f64>>>,
     save_Sab: bool,
 ) -> Vec<SpinwaveResult> {
     let n_sites = rotations.len();
     let n_q = q_vectors.len() as u64;
+
+    let mut couplings = in_couplings;
+    // Need a second vector with mutable elements from which we can borrow due to Pyo3 limits.
+    let new_couplings: Vec<Coupling>;
+    let rotating_components: Option<RotatingFrameComponents> = match rotating_frame {
+        Some(rot_comps) => {
+            let km: Col<f64> = rot_comps[0].to_owned();
+            let n = Col::<C64>::from_iter(rot_comps[1].iter().map(|f| C64::new(*f, 0.)));
+            // Computes the rotation matrices in Toth & Lake eq 39
+            let nx = mat![[C0, -n[2] * J, n[1] * J], [n[2] * J, C0, -n[0] * J], [-n[1] * J, n[0] * J, C0]];
+            let R2 = n.clone().as_mat() * n.as_mat().transpose();
+            let R1 = (Mat::<C64>::identity(3, 3) - nx.as_ref() - R2.as_ref()) / 2.;
+            new_couplings = Vec::from_iter(couplings.iter().map(|c| {
+                let phi = 2. * PI * km.transpose() * c.inter_site_vector.as_ref();
+                // R is the Rodrigues rotation matrix
+                let R = Mat::<C64>::identity(3, 3) * phi.cos() + &nx * phi.sin() + (1. - phi.cos()) * &R2;
+                Coupling {
+                    index1: c.index1,
+                    index2: c.index2,
+                    matrix: (c.matrix.as_ref() * R.as_ref() + R.as_ref() * c.matrix.as_ref()) / 2.,
+                    inter_site_vector: c.inter_site_vector.clone(),
+                }
+            }));
+            couplings = Vec::from_iter(new_couplings.iter().map(|f| f));
+            Some(RotatingFrameComponents { km: km, nx: nx, R1: R1, R2: R2 })
+        },
+        _ => None,
+    };
 
     let QIndependentComponents = calc_q_independent(rotations, magnitudes, &couplings, field);
 
@@ -294,17 +337,51 @@ pub fn calc_spinwave(
         .into_par_iter()
         .progress_count(n_q)
         .map(|q| {
-            spinwave_single_q(
+            spinwave_triq(
                 Col::from_iter(q),
                 &QIndependentComponents,
                 n_sites,
                 &couplings,
                 &positions,
                 rlu_to_cart,
+                &rotating_components,
                 save_Sab,
             )
         })
         .collect()
+}
+
+/// Caculate energies and intensities for a triplet of q-vectors (rotating frame)
+/// For non-rotating frame calculations, just calls spinwave_single_q
+fn spinwave_triq(
+    q: Col<f64>,
+    q_indep: &QIndependentComponents,
+    n_sites: usize,
+    couplings: &[&Coupling],
+    pos: &[ColRef<f64>],
+    rlu_to_cart: Option<MatRef<f64>>,
+    rot: &Option<RotatingFrameComponents>,
+    save_Sab: bool,
+) -> SpinwaveResult {
+    match rot {
+        Some(..) => {
+            let Sm = spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, -1.);
+            let S0 = spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 0.);
+            let Sp = spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 1.);
+            let sab: Option<Vec<Mat<C64>>> = match save_Sab {
+                true => {
+                    Some(vec![Sm.sab.unwrap(), S0.sab.unwrap(), Sp.sab.unwrap()].concat())
+                },
+                false => None,
+            };
+            SpinwaveResult {
+                energies: vec![Sm.energies, S0.energies, Sp.energies].concat(),
+                sab: sab,
+                intensities: vec![Sm.intensities, S0.intensities, Sp.intensities].concat(),
+            }
+        },
+        _ => spinwave_single_q(q, &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 0.),
+    }
 }
 
 /// Calculate energies and intensities for a single q-vector.
@@ -321,16 +398,22 @@ pub fn calc_spinwave(
 /// - A vector containing the energies for the given q-vector.
 /// - A vector of S'^{alpha, beta} matrices for each eigenvalue at the given q-vector.
 fn spinwave_single_q(
-    q: Col<f64>,
+    mut q: Col<f64>,
     q_independent_components: &QIndependentComponents,
     n_sites: usize,
     couplings: &[&Coupling],
     positions: &[ColRef<f64>],
     rlu_to_cart: Option<MatRef<f64>>,
+    rotating_components: &Option<RotatingFrameComponents>,
     save_Sab: bool,
+    tri_id: f64,
 ) -> SpinwaveResult {
     let z = &q_independent_components.z;
     let spin_coefficients = &q_independent_components.spin_coefficients;
+
+    if let Some(rotcomp) = rotating_components {
+        q = q + tri_id * rotcomp.km.as_ref();
+    }
 
     let mut sqrt_hamiltonian =
         calc_sqrt_hamiltonian(q.clone(), q_independent_components, n_sites, couplings);
@@ -443,7 +526,7 @@ fn spinwave_single_q(
     });
 
     // now create S' for each eigenvalue (the only places where there are non-zero intensities)
-    let Sab: Vec<Mat<C64>> = (0..2 * n_sites)
+    let mut Sab: Vec<Mat<C64>> = (0..2 * n_sites)
         .map(|i| {
             // each element of S' over alpha, beta is created from an index over 2 * n_sites
             Mat::<C64>::from_fn(3, 3, |alpha, beta| -> C64 {
@@ -451,6 +534,24 @@ fn spinwave_single_q(
             })
         })
         .collect();
+
+    // For rotating frame calculation, apply rotation transformations to Sab
+    if let Some(rotcomp) = rotating_components {
+        // Convert back into lab frame (eq 37)
+        let R2I = &rotcomp.R2 - Mat::<C64>::identity(3, 3);
+        let R22I = (2. * &rotcomp.R2) - Mat::<C64>::identity(3, 3);
+        Sab.iter_mut().for_each(|m| *m = 0.5 * (&*m - (&rotcomp.nx * &*m * &rotcomp.nx)
+                                                    + (&R2I * &*m * &rotcomp.R2)
+                                                    + (&rotcomp.R2 * &*m * &R22I)));
+        // Apply the rotation transformation (eq 40)
+        match tri_id {
+            n if n < 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1.conjugate()),
+            n if n == 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R2),
+            _ => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1),
+        }
+        // Convert q back for qperp calculation
+        q = q - tri_id * rotcomp.km.as_ref();
+    }
 
     // gets the conversion from r.l.u. to Cartesian, for Sperp we need Q in Cartesians
     let qcart: Col<f64> = match rlu_to_cart {
