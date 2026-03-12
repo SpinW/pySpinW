@@ -49,7 +49,7 @@ class LatticeSite(SPWSerialisable):
                 0.0 if mi is None else mi,
                 0.0 if mj is None else mj,
                 0.0 if mk is None else mk]],
-                    dtype=complex)
+                    dtype=float)
 
         else:
             if mi is not None or mj is not None or mk is not None:
@@ -174,7 +174,7 @@ class LatticeSite(SPWSerialisable):
             return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
 
         else:
-            return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, base_moment={self.base_moment})"
+            return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, moment={self.base_moment})"
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         if not context.sites.has(self._unique_id):
