@@ -83,6 +83,7 @@ class CouplingGroup:
 
     def __init__(self,
                  name: str,
+                 bond: int,
                  min_distance: float,
                  max_distance: float,
                  max_order: int | None,
@@ -92,6 +93,7 @@ class CouplingGroup:
                  direction_filter: DirectionalityFilter | None):
 
         self.name = name
+        self.bond = bond
         self.min_distance = min_distance
         self.max_distance = max_distance
         self.max_order = max_order
@@ -103,19 +105,30 @@ class CouplingGroup:
 
     def couplings(self, sites: list[LatticeSite], unit_cell: UnitCell):
         """ Get the couplings defined by this groups given the sites and symmetry provided """
+        if self.bond > 0:
+            # Try to improve this heuristic for the maximum distance
+            distances = (0.0, np.sqrt(self.bond) * 2 * unit_cell.main_diagonal_length)
+        else:
+            distances = (self.min_distance, self.max_distance)
+
         abstract_couplings = batch_couplings(
             sites=sites,
             unit_cell=unit_cell,
-            max_distance=self.max_distance,
+            max_distance=distances[1],
             naming_pattern=default_naming_pattern if self.naming_pattern is None else self.naming_pattern,
             type_symbol=self.coupling_type.short_string)
+
+        if self.bond > 0:
+            bond_distances = np.sort(np.unique(np.round([c.distance for c in abstract_couplings], decimals=6)))
+            abstract_couplings = [c for c in abstract_couplings
+                                  if np.abs(c.distance - bond_distances[self.bond-1]) < 1e-5]
 
         kept_couplings = []
         for coupling in abstract_couplings:
             if self.max_order is not None and coupling.order > self.max_order:
                 continue
 
-            if self.min_distance <= coupling.distance <= self.max_distance:
+            if distances[0] <= coupling.distance <= distances[1]:
                 kept_couplings.append(self.coupling_type(
                     name=coupling.name,
                     site_1=coupling.site_1,

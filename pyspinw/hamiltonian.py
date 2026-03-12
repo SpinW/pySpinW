@@ -23,6 +23,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.units import IntensityUnits, intensity_units
 
 
 # pylint: disable=R0903
@@ -176,11 +177,21 @@ class Hamiltonian(SPWSerialisable):
         print(self.text_summary)
 
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
-    def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
-        """Calculate the energy levels of the system for the given q-vectors."""
-        #
-        # Set up choice of calculation
-        #
+    def energies_and_intensities(self,
+                                 q_vectors: np.ndarray,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool=True,
+                                 intensity_unit: IntensityUnits | str='cell'):
+        """Calculate the energy levels of the system for the given q-vectors.
+
+        :param q_vectors: *required* An array of q-vectors
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        """
+        intensity_unit = intensity_units(intensity_unit)
+        if intensity_unit == IntensityUnit.BARN:
+            raise NotImplementedError('Intensity scale in barn/sr/meV/atom not yet implemented.')
 
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
@@ -296,8 +307,9 @@ class Hamiltonian(SPWSerialisable):
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
-        scale_factor = rotations.shape[0] / np.prod(self.structure.supercell.scaling)
-        intensity = [res * scale_factor for res in result[1]]
+        if intensity_unit == IntensityUnit.PERCELL:
+            scale_factor = rotations.shape[0] / np.prod(self.structure.supercell.scaling)
+            intensity = [res * scale_factor for res in result[1]]
 
         return result[0], intensity
 
@@ -307,6 +319,7 @@ class Hamiltonian(SPWSerialisable):
              show: bool=True,
              new_figure: bool=True,
              use_rust: bool=True,
+             intensity_unit: IntensityUnits | str = 'cell',
              scale: str='linear'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
@@ -318,7 +331,7 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust))
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, intensity_unit))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, series[0], 'k')
