@@ -6,14 +6,13 @@ use faer::mat::{AsMatRef, AsMatMut};
 use indicatif::ParallelProgressIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-use crate::constants::{J, MU_B};
+use crate::constants::{J, MU_B, SCALAR_J};
 use crate::utils::*;
 use crate::{Coupling, MagneticField, C64};
 
 /// Minimum energy that isn't just set for zero (in meV)
 const ZERO_ENERGY_TOL: f64 = 1e-12;
 const J2PI: C64 = C64::new(0., 2. * PI);
-const C0: C64 = C64::new(0., 0.);
 
 /// The result of a single-Q spinwave calculation.
 ///
@@ -311,10 +310,9 @@ pub fn calc_spinwave(
             let km: Col<f64> = rot_comps[0].to_owned();
             let n = Col::<C64>::from_iter(rot_comps[1].iter().map(|f| C64::new(*f, 0.)));
             // Computes the rotation matrices in Toth & Lake eq 39
-            let iNx = mat![[C0, -n[2] * J, n[1] * J], [n[2] * J, C0, -n[0] * J], [-n[1] * J, n[0] * J, C0]];
-            let nx = mat![[C0, -n[2], n[1]], [n[2], C0, -n[0]], [-n[1], n[0], C0]];
-            let R2 = n.clone().as_mat() * n.as_mat().transpose();
-            let R1 = (Mat::<C64>::identity(3, 3) - iNx.as_ref() - R2.as_ref()) / 2.;
+            let nx = mat![[C64::ZERO, -n[2], n[1]], [n[2], C64::ZERO, -n[0]], [-n[1], n[0], C64::ZERO]];
+            let R2 = n.clone() * n.transpose();
+            let R1 = (Mat::<C64>::identity(3, 3) - (nx.as_ref() * SCALAR_J) - R2.as_ref()) / 2.;
             new_couplings = Vec::from_iter(couplings.iter().map(|c| {
                 let phi = 2. * PI * km.transpose() * c.inter_site_vector.as_ref();
                 // R is the Rodrigues rotation matrix
@@ -334,43 +332,26 @@ pub fn calc_spinwave(
 
     let QIndependentComponents = calc_q_independent(rotations, magnitudes, &couplings, field);
 
-    q_vectors
-        .into_par_iter()
-        .progress_count(n_q)
-        .map(|q| {
-            spinwave_triq(
-                Col::from_iter(q),
-                &QIndependentComponents,
-                n_sites,
-                &couplings,
-                &positions,
-                rlu_to_cart,
-                &rotating_components,
-                save_Sab,
-            )
-        })
-        .collect()
-}
-
-/// Caculate energies and intensities for a triplet of q-vectors (rotating frame)
-/// For non-rotating frame calculations, just calls spinwave_single_q
-fn spinwave_triq(
-    q: Col<f64>,
-    q_indep: &QIndependentComponents,
-    n_sites: usize,
-    couplings: &[&Coupling],
-    pos: &[ColRef<f64>],
-    rlu_to_cart: Option<MatRef<f64>>,
-    rot: &Option<RotatingFrameComponents>,
-    save_Sab: bool,
-) -> SpinwaveResult {
-    match rot {
-        Some(..) => {
-            // triplet IDs are -1, 0, 1 corresponding to the three components of the rotating frame
-            // transformation; we map over all three in parallel then concatenate the results
-            (-1..=1).into_par_iter().map(|tri_id| {
-                spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, tri_id as f64)
-            }).reduce_with(|mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
+    if rotating_components.is_some() {
+        // Caculate energies and intensities for a triplet of q-vectors in a rotating frame
+        q_vectors
+            .into_par_iter()
+            .progress_count(n_q)
+            .map(|q| {
+                let q_vec = Col::from_iter(q);
+                (-1..=1).into_par_iter().map(|tri_id| {
+                    spinwave_single_q(
+                        q_vec.clone(),
+                        &QIndependentComponents,
+                        n_sites,
+                        &couplings,
+                        &positions,
+                        rlu_to_cart,
+                        &rotating_components,
+                        save_Sab,
+                        tri_id as f64,
+                    )
+                }).reduce_with(|mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
                         triplet_results.energies.extend(result.energies);
                         if save_Sab {
                             triplet_results.sab.as_mut().unwrap().extend(result.sab.unwrap());
@@ -378,8 +359,26 @@ fn spinwave_triq(
                         triplet_results.intensities.extend(result.intensities);
                         triplet_results
                 }).unwrap() 
-        },
-        _ => spinwave_single_q(q, &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 0.),
+            })
+            .collect()
+    } else {
+        q_vectors
+            .into_par_iter()
+            .progress_count(n_q)
+            .map(|q| {
+                spinwave_single_q(
+                    Col::from_iter(q),
+                    &QIndependentComponents,
+                    n_sites,
+                    &couplings,
+                    &positions,
+                    rlu_to_cart,
+                    &rotating_components,
+                    save_Sab,
+                    0.,
+                )
+            })
+            .collect()
     }
 }
 
@@ -391,6 +390,9 @@ fn spinwave_triq(
 /// - `n_sites`: The number of sites in the system.
 /// - `couplings`: Slice of couplings between sites.
 /// - `positions`: The relative positions of each site within the unit cell.
+/// - `rotating_components`: Option with fields needed for rotating frame calculation.
+/// - `save_sab`: Whether to save the 3x3 Sab tensors or not.
+/// - `tri_id`: For optional rotating frame calculation, whether this is -k, 0 or +k
 ///
 ///# Returns
 /// A tuple containing:
