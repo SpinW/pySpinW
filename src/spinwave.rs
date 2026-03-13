@@ -325,7 +325,7 @@ pub fn calc_spinwave(
                 }
             }));
             couplings = Vec::from_iter(new_couplings.iter().map(|f| f));
-            Some(RotatingFrameComponents { km: km, nx: nx, R1: R1, R2: R2 })
+            Some(RotatingFrameComponents { km, nx, R1, R2 })
         },
         _ => None,
     };
