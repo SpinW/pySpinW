@@ -33,7 +33,7 @@ def test_jitter_free(size):
 
     minimiser.jitter(size)
 
-    amounts = np.sum(minimiser.moments * start_moments, axis=1)
+    amounts = np.sum(minimiser.moment_data * start_moments, axis=1)
 
     assert np.allclose(amounts, np.cos(size))
 
@@ -60,7 +60,7 @@ def test_jitter_planar(size):
     start_project = start_moments[:,:2]
     start_project /= np.sqrt(np.sum(start_project**2, axis=1)).reshape(-1, 1)
 
-    jittered_project = minimiser.moments[:, :2]
+    jittered_project = minimiser.moment_data[:, :2]
     jittered_project /= np.sqrt(np.sum(jittered_project**2, axis=1)).reshape(-1, 1)
 
     amounts = np.sum(start_project * jittered_project, axis=1)
@@ -92,7 +92,7 @@ def test_simple_ferromagnet_fixed_free():
 
     minimiser.minimise(verbose=True)
 
-    assert np.allclose(minimiser.moments[1,:], [0,0,1], atol=1e-5)
+    assert np.allclose(minimiser.moment_data[1, :], [0, 0, 1], atol=1e-5)
 
 
 def test_simple_antiferromagnet_fixed_free():
@@ -119,7 +119,7 @@ def test_simple_antiferromagnet_fixed_free():
 
     minimiser.minimise(verbose=True)
 
-    assert np.allclose(minimiser.moments[1, :], [0, 0, -1], atol=1e-5)
+    assert np.allclose(minimiser.moment_data[1, :], [0, 0, -1], atol=1e-5)
 
 
 def test_simple_antiferromagnet_fixed_planar():
@@ -146,7 +146,7 @@ def test_simple_antiferromagnet_fixed_planar():
 
     minimiser.minimise(verbose=True)
 
-    assert np.allclose(minimiser.moments[1, :], [0, 0, -1], atol=1e-5)
+    assert np.allclose(minimiser.moment_data[1, :], [0, 0, -1], atol=1e-5)
 
 @pytest.mark.parametrize("axis", [[1,0,0],[1,1,1]])
 def test_simple_antiferromagnet_free_planar(axis):
@@ -177,15 +177,15 @@ def test_simple_antiferromagnet_free_planar(axis):
 
     minimiser.minimise(verbose=True)
 
-    print(minimiser.moments)
+    print(minimiser.moment_data)
 
-    assert np.isclose(np.dot(minimiser.moments[0, :], minimiser.moments[1, :]), -1)
+    assert np.isclose(np.dot(minimiser.moment_data[0, :], minimiser.moment_data[1, :]), -1)
 
     # We would like to check something like this - but its not true if they don't start off perpendicular to axis:
     #   assert np.isclose(np.dot(axis, minimiser.moments[1, :]), 0)
     # Instead check component is the same as when it started
 
-    assert np.isclose(np.dot(axis, minimiser.moments[1, :]), np.dot(axis, sites[1].base_moment))
+    assert np.isclose(np.dot(axis, minimiser.moment_data[1, :]), np.dot(axis, sites[1].base_moment))
 
 
 @pytest.mark.parametrize("axis", [[1,0,0],[1,1,1],[0,1,0],[-1,-1,0]])
@@ -214,9 +214,9 @@ def test_anisotropies_free(axis, a):
     minimiser.minimise(verbose=True)
 
     if a < 0:
-        assert np.isclose(np.abs(np.dot(axis, minimiser.moments[0, :])), 1) # Should be aligned with axis (+-1)
+        assert np.isclose(np.abs(np.dot(axis, minimiser.moment_data[0, :])), 1) # Should be aligned with axis (+-1)
     elif a > 0:
-        assert np.isclose(np.dot(axis, minimiser.moments[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
+        assert np.isclose(np.dot(axis, minimiser.moment_data[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
     else:
         pass
 
@@ -249,7 +249,7 @@ def test_anisotropies_planar(axis):
 
     minimiser.minimise(verbose=True)
 
-    assert np.isclose(np.dot(axis, minimiser.moments[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
+    assert np.isclose(np.dot(axis, minimiser.moment_data[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
 
 rng = np.random.default_rng(118)
 test_fields = rng.normal(0,1, (20, 3))
@@ -281,7 +281,7 @@ def test_field_free(field):
 
     # Normalise moments and field
     field_norm = field / np.sqrt(np.sum(field**2))
-    moments_norm = minimiser.moments.copy()
+    moments_norm = minimiser.moment_data.copy()
     moments_norm /= np.sqrt(np.sum(moments_norm**2, axis=1)).reshape(-1, 1)
 
     assert np.allclose(field_norm + moments_norm, 0.0, atol=1e-4)
@@ -317,7 +317,7 @@ def test_field_planar(field):
     field_project /= np.sqrt(np.sum(field_project**2))
     field_project = field_project.reshape(1, 2)
 
-    jittered_project = minimiser.moments[:, :2]
+    jittered_project = minimiser.moment_data[:, :2]
     jittered_project /= np.sqrt(np.sum(jittered_project**2, axis=1)).reshape(-1, 1)
 
     dot_product = np.sum(field_project * jittered_project, axis=1)

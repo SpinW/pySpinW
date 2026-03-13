@@ -137,6 +137,7 @@ class ClassicalEnergyMinimisation:
 
         sites = hamiltonian.structure.sites
         self.n_sites = len(sites)
+        self.n_components = hamiltonian.structure.supercell.n_components()
 
         self.free_sites = []
         self.fixed_sites = []
@@ -147,21 +148,21 @@ class ClassicalEnergyMinimisation:
         self.is_fixed = np.zeros((self.n_sites,), dtype=bool)
         self.is_planar = np.zeros((self.n_sites,), dtype=bool)
 
-        for i, (site, constraint) in enumerate(zip(sites, constraints)):
+        for site_index, (site, constraint) in enumerate(zip(sites, constraints)):
             match constraint:
 
                 case FreeConstraint():
-                    self.free_sites.append((i, site.unique_id))
-                    self.is_free[i] = True
+                    self.free_sites.append((site_index, site.unique_id))
+                    self.is_free[site_index] = True
 
                 case FixedConstraint():
-                    self.fixed_sites.append((i, site.unique_id))
-                    self.is_fixed[i] = True
+                    self.fixed_sites.append((site_index, site.unique_id))
+                    self.is_fixed[site_index] = True
 
                 case Planar(axis):
-                    self.planar_sites.append((i, site.unique_id))
+                    self.planar_sites.append((site_index, site.unique_id))
                     self.planar_axes.append(axis)
-                    self.is_planar[i] = True
+                    self.is_planar[site_index] = True
 
 
         self.n_free = len(self.free_sites)
@@ -186,8 +187,11 @@ class ClassicalEnergyMinimisation:
             self.field_contribution_vector.append(field @ site.g)
 
         # Get the derived quantities
-        self.moments = np.array([site.base_moment for site in sites])
-        self.magnitudes = np.sqrt(np.sum(self.moments**2, axis=1))
+        self.moment_data = np.array([site.moment_data for site in sites])
+
+        assert self.moment_data.shape == (self.n_sites, self.n_components, 3)
+
+        self.magnitudes = np.sqrt(np.sum(self.moment_data ** 2, axis=1))
 
         self._site_uid_to_index = {site.unique_id: i for i, site in enumerate(sites)}
 
@@ -212,7 +216,7 @@ class ClassicalEnergyMinimisation:
         # Free rotations
         #
 
-        rotation_matrices = [rotation_from_z(self.moments[i]) for i, uid in self.free_sites]
+        rotation_matrices = [rotation_from_z(self.moment_data[i]) for i, uid in self.free_sites]
 
         # random direction in angle
         angles = (2*np.pi) * self.rng.random((self.n_free, ))
@@ -230,7 +234,7 @@ class ClassicalEnergyMinimisation:
         unrotated_moments *= self.magnitudes[self.is_free].reshape(-1,1)
 
         for param_index, (site_index, _) in enumerate(self.free_sites):
-            self.moments[site_index, :] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
+            self.moment_data[site_index, :] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
 
         #
         # Planar moments
@@ -238,7 +242,7 @@ class ClassicalEnergyMinimisation:
 
         for (site_index, _), axis in zip(self.planar_sites, self.planar_axes):
             angle = jitter_size_rad if self.rng.random() > 0.5 else -jitter_size_rad
-            self.moments[site_index, :] = rotation_matrix(angle, axis) @ self.moments[site_index, :]
+            self.moment_data[site_index, :] = rotation_matrix(angle, axis) @ self.moment_data[site_index, :]
 
     def randomise(self):
         """ Randomise method chooses random directions for spins"""
@@ -247,8 +251,8 @@ class ClassicalEnergyMinimisation:
         random_orientations = self._safe_randn(self.n_free, 3)
         random_orientations /= np.sqrt(np.sum(random_orientations**2, axis=1)).reshape(-1, 3)
 
-        self.moments[self.is_free] = random_orientations
-        self.moments[self.is_free] *= self.magnitudes[self.is_free]
+        self.moment_data[self.is_free] = random_orientations
+        self.moment_data[self.is_free] *= self.magnitudes[self.is_free]
 
         # Do planar sites by choosing a random number in [0,2pi)
 
@@ -260,7 +264,7 @@ class ClassicalEnergyMinimisation:
 
         for param_index, ((site_index, site_uid), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
 
-            self.moments[site_index, :] = rotation_from_z(axis) @ base_moments[param_index, :]
+            self.moment_data[site_index, :] = rotation_from_z(axis) @ base_moments[param_index, :]
 
     def energy(self):
         """ Energy of the current moments according to the hamiltonian """
@@ -268,20 +272,20 @@ class ClassicalEnergyMinimisation:
 
         # Exchanges
         for coupling in self.hamiltonian.couplings:
-            site_1_moment = self.moments[self._site_uid_to_index[coupling.site_1.unique_id], :]
-            site_2_moment = self.moments[self._site_uid_to_index[coupling.site_2.unique_id], :]
+            site_1_moment = self.moment_data[self._site_uid_to_index[coupling.site_1.unique_id], :]
+            site_2_moment = self.moment_data[self._site_uid_to_index[coupling.site_2.unique_id], :]
 
             energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
 
         # Anisotropies
         for anisotropy in self.hamiltonian.anisotropies:
-            moment = self.moments[self._site_uid_to_index[anisotropy.site.unique_id], :]
+            moment = self.moment_data[self._site_uid_to_index[anisotropy.site.unique_id], :]
 
             energy += moment @ anisotropy.anisotropy_matrix @ moment
 
         # Field contribution
         for site_index in range(self.n_sites):
-            moment = self.moments[site_index]
+            moment = self.moment_data[site_index]
 
             energy += np.dot(self.field_contribution_vector[site_index], moment)
 
@@ -349,7 +353,7 @@ class ClassicalEnergyMinimisation:
 
         # Free sites
 
-        rotation_matrices = [rotation_from_z(self.moments[i]) for i, uid in self.free_sites]
+        rotation_matrices = [rotation_from_z(self.moment_data[i]) for i, uid in self.free_sites]
 
         forces_free_alpha = np.zeros((self.n_free,))
         forces_free_beta = np.zeros((self.n_free,))
@@ -367,14 +371,14 @@ class ClassicalEnergyMinimisation:
             for coupling in self.site_to_coupling_side_1[site_uid]:
 
                 other_index = self._site_uid_to_index[coupling.site_2.unique_id]
-                other_moment = self.moments[other_index, :]
+                other_moment = self.moment_data[other_index, :]
 
                 forces_free_alpha[site_index] -= dS_dalpha @ coupling.coupling_matrix @ other_moment
                 forces_free_beta[site_index] -= dS_dbeta @ coupling.coupling_matrix @ other_moment
 
             for coupling in self.site_to_coupling_side_2[site_uid]:
                 other_index = self._site_uid_to_index[coupling.site_1.unique_id]
-                other_moment = self.moments[other_index, :]
+                other_moment = self.moment_data[other_index, :]
 
                 forces_free_alpha[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dalpha
                 forces_free_beta[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dbeta
@@ -382,7 +386,7 @@ class ClassicalEnergyMinimisation:
             # Anisotropies
             for anisotropy in self.site_to_anisotropy[site_uid]:
                 # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
-                current_moment = self.moments[param_index]
+                current_moment = self.moment_data[param_index]
 
                 forces_free_alpha[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
                 forces_free_alpha[param_index] -= dS_dalpha @ anisotropy.anisotropy_matrix @ current_moment
@@ -404,20 +408,20 @@ class ClassicalEnergyMinimisation:
         for param_index, ((site_index, site_uid), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
 
 
-            dS_dtheta = triple_product_matrix(-axis) @ self.moments[site_index, :]
+            dS_dtheta = triple_product_matrix(-axis) @ self.moment_data[site_index, :]
 
             # Couplings
             for coupling in self.site_to_coupling_side_1[site_uid]:
 
                 other_index = self._site_uid_to_index[coupling.site_2.unique_id]
-                other_moment = self.moments[other_index, :]
+                other_moment = self.moment_data[other_index, :]
 
                 forces_planar[site_index] -= dS_dtheta @ coupling.coupling_matrix @ other_moment
 
 
             for coupling in self.site_to_coupling_side_2[site_uid]:
                 other_index = self._site_uid_to_index[coupling.site_1.unique_id]
-                other_moment = self.moments[other_index, :]
+                other_moment = self.moment_data[other_index, :]
 
                 forces_planar[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dtheta
 
@@ -425,7 +429,7 @@ class ClassicalEnergyMinimisation:
             for anisotropy in self.site_to_anisotropy[site_uid]:
                 # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
 
-                current_moment = self.moments[param_index]
+                current_moment = self.moment_data[param_index]
 
                 forces_planar[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dtheta
                 forces_planar[param_index] -= dS_dtheta @ anisotropy.anisotropy_matrix @ current_moment
@@ -450,7 +454,7 @@ class ClassicalEnergyMinimisation:
 
         # Get the new moments
 
-        new_moments = self.moments.copy()
+        new_moments = self.moment_data.copy()
 
         cos_beta = np.cos(beta)
         unrotated_moments = np.array([
@@ -460,8 +464,8 @@ class ClassicalEnergyMinimisation:
         ]).T
 
         for param_index, (site_index, _) in enumerate(self.free_sites):
-            self.moments[site_index] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
+            self.moment_data[site_index] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
 
         for param_index, ((site_index, _), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
-            self.moments[site_index] = rotation_matrix(theta[param_index], axis) @ self.moments[site_index, :]
+            self.moment_data[site_index] = rotation_matrix(theta[param_index], axis) @ self.moment_data[site_index, :]
 

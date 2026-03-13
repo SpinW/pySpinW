@@ -90,6 +90,12 @@ class PropagationVector(SPWSerialisable):
         """ Get the position of a site along the propagation vector, from (0,0,0), including the phase correction"""
         return 2 * np.pi * (self.vector * site.ijk) + self.phase
 
+    def __repr__(self):
+        if self.phase == 0:
+            return f"{self.__class__.__name__}({self.i}, {self.j}, {self.k})"
+        else:
+            return f"{self.__class__.__name__}({self.i}, {self.j}, {self.k}, phase={self.phase})"
+
 class CommensuratePropagationVector(PropagationVector):
     """ Propagation vector with rational values"""
 
@@ -216,8 +222,12 @@ class Supercell(ABC, SPWSerialisable):
             raise ValueError("Scaling components should be >= 1")
 
     @abstractmethod
+    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
+        """ Get the moment for a given cell, and the specified moment data """
+
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Evaluate the moment of a lattice site in this unit cell """
+        """ Get the moment for a site in a specified cell according to the supercell"""
+        return self.moment_calculation(site.moment_data, cell_offset)
 
     def cell_position_and_moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Position within the unit cell, and moment"""
@@ -288,6 +298,10 @@ class Supercell(ABC, SPWSerialisable):
         """ The scaling triplet for this supercell """
         return self._scaling
 
+    @abstractmethod
+    def n_components(self) -> int:
+        """ Number of entries expected in the moment definition """
+
 
 
 class CommensurateSupercell(Supercell):
@@ -302,14 +316,6 @@ class CommensurateSupercell(Supercell):
         self._propagation_vectors = propagation_vectors
         super().__init__(scaling)
 
-
-    def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
-        """ Apply the transformation to a given moment """
-        raise NotImplementedError("evaluate not implemented in base class")
-
-    def moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Get the moment for a site in a specified cell according to the supercell"""
-        return self._transform_evaluate(cell_offset=cell_offset, moment=site.base_moment)
 
     def cell_size(self) -> tuple[int, int, int] | None:
         """ Get the smallest possible supercell"""
@@ -330,22 +336,23 @@ class CommensurateSupercell(Supercell):
         return self.cell_size()
 
     @abstractmethod
-    def derivative(self, supercell_component_index: int, cell: CellOffset):
+    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ The derivative of the calculated moment with respect to the specified component of supercell_moments"""
 
-    @abstractmethod
-    def n_components(self) -> int:
-        """ Number of entries expected in the moment definition """
 
 
 class TrivialSupercell(CommensurateSupercell):
     """ Trivial supercell, just a single unit cell """
 
+    def __init__(self, scaling):
+        super().__init__([], scaling)
+
     supercell_name = "trivial"
 
-    def moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Get the moment for a site with an offset within the supercell """
-        return site.base_moment
+
+    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
+        """ Get the moment for a given cell, and the specified moment data """
+        return moment_data
 
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
@@ -362,7 +369,7 @@ class TrivialSupercell(CommensurateSupercell):
     def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
         return TrivialSupercell(scale)
 
-    def derivative(self, supercell_component_index: int, cell: CellOffset):
+    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
         return np.eye(3)
 
     def n_components(self) -> int:
@@ -390,17 +397,17 @@ class TransformationSupercell(CommensurateSupercell):
 
         super().__init__(propagation_vectors, scaling)
 
-    def _transform_evaluate(self, cell_offset: CellOffset, moment: np.ndarray):
+    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
         for vector, transform in self._transforms:
-            moment = transform.apply(moment=moment, propagation_vector=vector, cell_offset=cell_offset)
+            moment = transform.apply(moment=moment_data[0, :], propagation_vector=vector, cell_offset=cell_offset)
 
         return moment
 
-    def derivative(self, supercell_component_index: int, cell: CellOffset):
+    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
         if supercell_component_index != 0:
             raise ValueError("Transformation supercell does not support multiple moment definitions")
 
-        self._transform_evaluate(cell_offset=cell, moment=np.ones((3, )))
+        self.moment_calculation(cell_offset=cell, moment_data=np.ones((1, 3))) # TODO: NOT CORRECT
 
     def summation_form(self) -> "Supercell":
         """ Convert into summation form """
@@ -438,22 +445,23 @@ class SummationSupercell(CommensurateSupercell):
 
         super().__init__(propagation_vectors, scaling)
 
-    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
         """ Calculate moment at a given cell offset"""
         moment = np.zeros(3, dtype=complex)
-        for component, propagation_vector in zip(site.moment_data, self._propagation_vectors):
-            # TODO: check
-            moment += component * np.exp(-2j * np.pi * propagation_vector.dot(cell_offset))
+        for component, propagation_vector in zip(moment_data, self._propagation_vectors):
+
+            factor = np.exp(-1j * (2* np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase))
+            moment += component * factor
 
         return moment.real
 
-    def derivative(self, supercell_component_index: int, cell: CellOffset):
+    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
         if supercell_component_index >= self.n_components():
             raise IndexError("Expected component index to be less than number of propagation vectors")
 
         pv = self._propagation_vectors[supercell_component_index]
 
-        return np.exp(-2j * np.pi * pv.dot(cell_offset)).real
+        return np.exp(-1j * (2* np.pi * pv.dot(cell) + pv.phase)).real # TODO, make sure this has the right form
 
     def n_components(self) -> int:
         return len(self._propagation_vectors)

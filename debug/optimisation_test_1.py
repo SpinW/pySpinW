@@ -36,16 +36,16 @@ if __name__ == "__main__":
 
     minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Fixed, Free], field=np.array([0.0,0.0,0.0]))
 
-    moment_history = [minimiser.moments.copy()]
+    moment_history = [minimiser.moment_data.copy()]
 
     for i in range(100):
         # print(minimiser.moments)
         minimiser.iterate(0.1)
         print(minimiser.energy())
 
-        moment_history.append(minimiser.moments.copy())
+        moment_history.append(minimiser.moment_data.copy())
 
-    print(minimiser.moments)
+    print(minimiser.moment_data)
 
     import matplotlib.pyplot as plt
     ax = plt.figure().add_subplot(projection='3d')
