@@ -289,30 +289,6 @@ class Supercell(ABC, SPWSerialisable):
         return self._scaling
 
 
-class TrivialSupercell(Supercell):
-    """ Trivial supercell, just a single unit cell """
-
-    supercell_name = "trivial"
-
-    def moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Get the moment for a site with an offset within the supercell """
-        return site.base_moment
-
-    def cell_size(self) -> tuple[int, int, int]:
-        """ How big is this supercell """
-        return self._scaling
-
-    def summation_form(self) -> "Supercell":
-        """ Get this supercell in summation form """
-        return self
-
-    def _serialise_supercell(self, context: SPWSerialisationContext):
-        return {}
-
-    @staticmethod
-    def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
-        return TrivialSupercell(scale)
-
 
 class CommensurateSupercell(Supercell):
     """ Base class for a commensurate supercell"""
@@ -353,6 +329,44 @@ class CommensurateSupercell(Supercell):
         """ The scaling triplet for this supercell """
         return self.cell_size()
 
+    @abstractmethod
+    def derivative(self, supercell_component_index: int, cell: CellOffset):
+        """ The derivative of the calculated moment with respect to the specified component of supercell_moments"""
+
+    @abstractmethod
+    def n_components(self) -> int:
+        """ Number of entries expected in the moment definition """
+
+
+class TrivialSupercell(CommensurateSupercell):
+    """ Trivial supercell, just a single unit cell """
+
+    supercell_name = "trivial"
+
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Get the moment for a site with an offset within the supercell """
+        return site.base_moment
+
+    def cell_size(self) -> tuple[int, int, int]:
+        """ How big is this supercell """
+        return self._scaling
+
+    def summation_form(self) -> "Supercell":
+        """ Get this supercell in summation form """
+        return self
+
+    def _serialise_supercell(self, context: SPWSerialisationContext):
+        return {}
+
+    @staticmethod
+    def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
+        return TrivialSupercell(scale)
+
+    def derivative(self, supercell_component_index: int, cell: CellOffset):
+        return np.eye(3)
+
+    def n_components(self) -> int:
+        return 1
 
 class TransformationSupercell(CommensurateSupercell):
     """ Supercell with moments defined by the following equation:
@@ -382,6 +396,12 @@ class TransformationSupercell(CommensurateSupercell):
 
         return moment
 
+    def derivative(self, supercell_component_index: int, cell: CellOffset):
+        if supercell_component_index != 0:
+            raise ValueError("Transformation supercell does not support multiple moment definitions")
+
+        self._transform_evaluate(cell_offset=cell, moment=np.ones((3, )))
+
     def summation_form(self) -> "Supercell":
         """ Convert into summation form """
         raise NotImplementedError("Not implemented yet")
@@ -398,6 +418,10 @@ class TransformationSupercell(CommensurateSupercell):
                       for part in json]
 
         return TransformationSupercell(transforms, scale)
+
+
+    def n_components(self) -> int:
+        return 1
 
 
 class SummationSupercell(CommensurateSupercell):
@@ -422,6 +446,17 @@ class SummationSupercell(CommensurateSupercell):
             moment += component * np.exp(-2j * np.pi * propagation_vector.dot(cell_offset))
 
         return moment.real
+
+    def derivative(self, supercell_component_index: int, cell: CellOffset):
+        if supercell_component_index >= self.n_components():
+            raise IndexError("Expected component index to be less than number of propagation vectors")
+
+        pv = self._propagation_vectors[supercell_component_index]
+
+        return np.exp(-2j * np.pi * pv.dot(cell_offset)).real
+
+    def n_components(self) -> int:
+        return len(self._propagation_vectors)
 
     def summation_form(self) -> "SummationSupercell":
         """ Convert to summation form (it is already in this form, but not all Supercells are)"""
