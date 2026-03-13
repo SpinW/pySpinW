@@ -366,20 +366,18 @@ fn spinwave_triq(
 ) -> SpinwaveResult {
     match rot {
         Some(..) => {
-            let Sm = spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, -1.);
-            let S0 = spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 0.);
-            let Sp = spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 1.);
-            let sab: Option<Vec<Mat<C64>>> = match save_Sab {
-                true => {
-                    Some(vec![Sm.sab.unwrap(), S0.sab.unwrap(), Sp.sab.unwrap()].concat())
-                },
-                false => None,
-            };
-            SpinwaveResult {
-                energies: vec![Sm.energies, S0.energies, Sp.energies].concat(),
-                sab: sab,
-                intensities: vec![Sm.intensities, S0.intensities, Sp.intensities].concat(),
-            }
+            // triplet IDs are -1, 0, 1 corresponding to the three components of the rotating frame
+            // transformation; we map over all three in parallel then concatenate the results
+            (-1..=1).into_par_iter().map(|tri_id| {
+                spinwave_single_q(q.clone(), &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, tri_id as f64)
+            }).reduce_with(|mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
+                        triplet_results.energies.extend(result.energies);
+                        if save_Sab {
+                            triplet_results.sab.as_mut().unwrap().extend(result.sab.unwrap());
+                        }
+                        triplet_results.intensities.extend(result.intensities);
+                        triplet_results
+                }).unwrap() 
         },
         _ => spinwave_single_q(q, &q_indep, n_sites, &couplings, &pos, rlu_to_cart, &rot, save_Sab, 0.),
     }
