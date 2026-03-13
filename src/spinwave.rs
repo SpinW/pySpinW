@@ -1,8 +1,8 @@
 use std::f64::consts::PI;
 
 use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
-use faer::{unzip, zip, Col, ColRef, Mat, MatRef, Par, Side, perm, mat};
-use faer::mat::{AsMatRef, AsMatMut};
+use faer::mat::{AsMatMut, AsMatRef};
+use faer::{mat, perm, unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
 use indicatif::ParallelProgressIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
@@ -90,7 +90,11 @@ fn calc_q_independent(
     C *= 2.;
 
     // Adds a small delta to diagonal to ensure we don't have an exact degeneracies
-    C.diagonal_mut().column_vector_mut().iter_mut().enumerate().for_each(|(i, x)| *x -= C64::from((i as f64)*1e-12) );
+    C.diagonal_mut()
+        .column_vector_mut()
+        .iter_mut()
+        .enumerate()
+        .for_each(|(i, x)| *x -= C64::from((i as f64) * 1e-12));
 
     // if an external magnetic field is provided, calculate the Az matrix
     // which is added to the diagonal of A in the Hamiltonian
@@ -188,9 +192,14 @@ fn calc_sqrt_hamiltonian(
             zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
             // need to apply permutations: in Python scipy does this for you
             let mut shm = Mat::<C64>::zeros(l.nrows(), l.ncols());
-            perm::permute_cols(shm.as_mat_mut(), (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(), ldl.P().inverse());
+            perm::permute_cols(
+                shm.as_mat_mut(),
+                (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(),
+                ldl.P().inverse(),
+            );
             shm
-        }} 
+        }
+    }
 }
 
 /// Calculate energies (eigenvalues of the Hamiltonian) for a set of q-vectors.
@@ -310,13 +319,19 @@ pub fn calc_spinwave(
             let km: Col<f64> = rot_comps[0].to_owned();
             let n = Col::<C64>::from_iter(rot_comps[1].iter().map(|f| C64::new(*f, 0.)));
             // Computes the rotation matrices in Toth & Lake eq 39
-            let nx = mat![[C64::ZERO, -n[2], n[1]], [n[2], C64::ZERO, -n[0]], [-n[1], n[0], C64::ZERO]];
+            let nx = mat![
+                [C64::ZERO, -n[2], n[1]],
+                [n[2], C64::ZERO, -n[0]],
+                [-n[1], n[0], C64::ZERO]
+            ];
             let R2 = n.clone() * n.transpose();
             let R1 = (Mat::<C64>::identity(3, 3) - (nx.as_ref() * SCALAR_J) - R2.as_ref()) / 2.;
             new_couplings = Vec::from_iter(couplings.iter().map(|c| {
                 let phi = 2. * PI * km.transpose() * c.inter_site_vector.as_ref();
                 // R is the Rodrigues rotation matrix
-                let R = Mat::<C64>::identity(3, 3) * phi.cos() + &nx * phi.sin() + (1. - phi.cos()) * &R2;
+                let R = Mat::<C64>::identity(3, 3) * phi.cos()
+                    + &nx * phi.sin()
+                    + (1. - phi.cos()) * &R2;
                 Coupling {
                     index1: c.index1,
                     index2: c.index2,
@@ -324,9 +339,9 @@ pub fn calc_spinwave(
                     inter_site_vector: c.inter_site_vector.clone(),
                 }
             }));
-            couplings = Vec::from_iter(new_couplings.iter().map(|f| f));
+            couplings = Vec::from_iter(new_couplings.iter());
             Some(RotatingFrameComponents { km, nx, R1, R2 })
-        },
+        }
         _ => None,
     };
 
@@ -339,26 +354,36 @@ pub fn calc_spinwave(
             .progress_count(n_q)
             .map(|q| {
                 let q_vec = Col::from_iter(q);
-                (-1..=1).into_par_iter().map(|tri_id| {
-                    spinwave_single_q(
-                        q_vec.clone(),
-                        &QIndependentComponents,
-                        n_sites,
-                        &couplings,
-                        &positions,
-                        rlu_to_cart,
-                        &rotating_components,
-                        save_Sab,
-                        tri_id as f64,
+                (-1..=1)
+                    .into_par_iter()
+                    .map(|tri_id| {
+                        spinwave_single_q(
+                            q_vec.clone(),
+                            &QIndependentComponents,
+                            n_sites,
+                            &couplings,
+                            &positions,
+                            rlu_to_cart,
+                            &rotating_components,
+                            save_Sab,
+                            tri_id as f64,
+                        )
+                    })
+                    .reduce_with(
+                        |mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
+                            triplet_results.energies.extend(result.energies);
+                            if save_Sab {
+                                triplet_results
+                                    .sab
+                                    .as_mut()
+                                    .unwrap()
+                                    .extend(result.sab.unwrap());
+                            }
+                            triplet_results.intensities.extend(result.intensities);
+                            triplet_results
+                        },
                     )
-                }).reduce_with(|mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
-                        triplet_results.energies.extend(result.energies);
-                        if save_Sab {
-                            triplet_results.sab.as_mut().unwrap().extend(result.sab.unwrap());
-                        }
-                        triplet_results.intensities.extend(result.intensities);
-                        triplet_results
-                }).unwrap() 
+                    .unwrap()
             })
             .collect()
     } else {
@@ -413,7 +438,7 @@ fn spinwave_single_q(
     let spin_coefficients = &q_independent_components.spin_coefficients;
 
     if let Some(rotcomp) = rotating_components {
-        q = q + tri_id * rotcomp.km.as_ref();
+        q += tri_id * rotcomp.km.as_ref();
     }
 
     let mut sqrt_hamiltonian =
@@ -479,7 +504,8 @@ fn spinwave_single_q(
         }
     }
 
-    let eigendecomp = (sqrt_hamiltonian.adjoint() * shc).self_adjoint_eigen(Side::Lower)
+    let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
+        .self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
     let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
@@ -512,7 +538,11 @@ fn spinwave_single_q(
 
     // T is NaN if sqrt_hamiltonian is singular; add a delta to the diagonal to avoid this
     if T.has_nan() {
-        sqrt_hamiltonian.diagonal_mut().column_vector_mut().iter_mut().for_each(|x| *x += C64::from(1e-7) );
+        sqrt_hamiltonian
+            .diagonal_mut()
+            .column_vector_mut()
+            .iter_mut()
+            .for_each(|x| *x += C64::from(1e-7));
         T = eigvecs * sqrt_E.as_diagonal();
         solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
     }
@@ -541,18 +571,23 @@ fn spinwave_single_q(
         // Convert back into lab frame (eq 37)
         let R2I = &rotcomp.R2 - Mat::<C64>::identity(3, 3);
         let R22I = (2. * &rotcomp.R2) - Mat::<C64>::identity(3, 3);
-        Sab.iter_mut().for_each(|m| *m = 0.5 * (&*m - (&rotcomp.nx * &*m * &rotcomp.nx)
-                                                    + (&R2I * &*m * &rotcomp.R2)
-                                                    + (&rotcomp.R2 * &*m * &R22I)));
+        Sab.iter_mut().for_each(|m| {
+            *m = 0.5
+                * (&*m - (&rotcomp.nx * &*m * &rotcomp.nx)
+                    + (&R2I * &*m * &rotcomp.R2)
+                    + (&rotcomp.R2 * &*m * &R22I))
+        });
         // Apply the rotation transformation (eq 40)
         match tri_id {
-            n if n < 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1.conjugate()),
+            n if n < 0. => Sab
+                .iter_mut()
+                .for_each(|m| *m = &*m * rotcomp.R1.conjugate()),
             n if n > 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R1),
-            n if n == 0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R2),
+            0. => Sab.iter_mut().for_each(|m| *m = &*m * &rotcomp.R2),
             _ => panic!(),
         }
         // Convert q back for qperp calculation
-        q = q - tri_id * rotcomp.km.as_ref();
+        q -= tri_id * rotcomp.km.as_ref();
     }
 
     // gets the conversion from r.l.u. to Cartesian, for Sperp we need Q in Cartesians
@@ -560,10 +595,13 @@ fn spinwave_single_q(
         Some(m) => (q.transpose() * m).transpose().to_owned(),
         None => q,
     };
-    
+
     // and finally, calculate the perpendicular component of Sab
     let intensities = {
-        let mut norm_q: Col<C64> = (qcart.as_ref() / qcart.norm_l2()).iter().map(C64::from).collect();
+        let mut norm_q: Col<C64> = (qcart.as_ref() / qcart.norm_l2())
+            .iter()
+            .map(C64::from)
+            .collect();
         if norm_q.has_nan() {
             norm_q = Col::<C64>::from_iter([C64::ZERO, C64::ZERO, C64::ZERO]);
         }

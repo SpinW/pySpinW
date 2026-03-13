@@ -57,9 +57,10 @@ impl Coupling {
 impl PartialEq for Coupling {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.index1 == other.index1 && self.index2 == other.index2 &&
-            (self.matrix.clone() - other.matrix.clone()).norm_l1() < 1e-6 &&
-            (self.inter_site_vector.clone() - other.inter_site_vector.clone()).norm_l1() < 1e-6
+        self.index1 == other.index1
+            && self.index2 == other.index2
+            && (self.matrix.clone() - other.matrix.clone()).norm_l1() < 1e-6
+            && (self.inter_site_vector.clone() - other.inter_site_vector.clone()).norm_l1() < 1e-6
     }
 }
 
@@ -162,10 +163,20 @@ pub fn spinwave_calculation<'py>(
         .collect();
 
     let to_cart: Option<MatRef<f64>> = rlu_to_cart.map(|f| f.into_faer());
-    let rotating: Option<Vec<ColRef<f64>>> = rotating_frame
-        .map(|f| f.into_iter().map(faer_ext::IntoFaer::into_faer).collect());
+    let rotating: Option<Vec<ColRef<f64>>> =
+        rotating_frame.map(|f| f.into_iter().map(faer_ext::IntoFaer::into_faer).collect());
 
-    let results = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, to_cart, field, rotating, false);
+    let results = calc_spinwave(
+        r,
+        magnitudes,
+        q_vectors.clone(),
+        c,
+        p,
+        to_cart,
+        field,
+        rotating,
+        false,
+    );
     Ok((
         results
             .iter()
@@ -205,10 +216,20 @@ pub fn spinwave_calculation_Sab<'py>(
         .collect();
 
     let to_cart: Option<MatRef<f64>> = rlu_to_cart.map(|f| f.into_faer());
-    let rotating: Option<Vec<ColRef<f64>>> = rotating_frame
-        .map(|f| f.into_iter().map(faer_ext::IntoFaer::into_faer).collect());
+    let rotating: Option<Vec<ColRef<f64>>> =
+        rotating_frame.map(|f| f.into_iter().map(faer_ext::IntoFaer::into_faer).collect());
 
-    let results = calc_spinwave(r, magnitudes, q_vectors.clone(), c, p, to_cart, field, rotating, true);
+    let results = calc_spinwave(
+        r,
+        magnitudes,
+        q_vectors.clone(),
+        c,
+        p,
+        to_cart,
+        field,
+        rotating,
+        true,
+    );
     Ok((
         results
             .iter()
