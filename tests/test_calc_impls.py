@@ -28,6 +28,7 @@ from examples.raw_calculations.antiferro_ef import antiferro_ef
 from examples.raw_calculations.kagome import kagome_ferromagnet
 from examples.raw_calculations.kagome_antiferro import kagome_antiferromagnet
 from examples.raw_calculations.kagome_supercell import kagome_supercell
+from examples.raw_calculations.triangular_antiferro import triangular_antiferro
 
 @pytest.mark.rust
 @pytest.mark.parametrize("example",
@@ -37,6 +38,7 @@ from examples.raw_calculations.kagome_supercell import kagome_supercell
                           antiferro_ef,
                           kagome_ferromagnet,
                           kagome_antiferromagnet,
+                          triangular_antiferro,
 #                          kagome_supercell,
                           ])
 def test_calc_impls(example):

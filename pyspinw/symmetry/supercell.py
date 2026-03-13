@@ -436,5 +436,37 @@ class SummationSupercell(CommensurateSupercell):
         vectors = [PropagationVector._deserialise(data, context) for data in json["vectors"]]
         return SummationSupercell(vectors, scale)
 
+
+class RotationSupercell(CommensurateSupercell):
+    """ A supercell defined by moments which rotates in a plane and a single propagation vector """
+
+    supercell_name = "rotation"
+
+    def __init__(self, perpendicular: ArrayLike, propagation_vector: ArrayLike | CommensuratePropagationVector):
+        if not isinstance(propagation_vector, CommensuratePropagationVector):
+            propagation_vector = CommensuratePropagationVector(*propagation_vector)
+        super().__init__([propagation_vector], (1, 1, 1))
+        self.perpendicular = perpendicular
+
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Calculate moment at a given cell offset"""
+        basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
+        return basis * np.exp(-2j * np.pi * self._propagation_vectors[0].dot(cell_offset))
+
+    def summation_form(self) -> "Supercell":
+        """ Convert into summation form """
+        raise NotImplementedError("Not implemented yet")
+
+    def _serialise_supercell(self, context: SPWSerialisationContext):
+        return [{"vector": self._propagation_vectors[0]._serialise(context),
+                 "perpendicular": numpy_serialise(self.perpendicular)}]
+
+    @staticmethod
+    def _deserialise_supercell(json, scale, context):
+        perpendicular = numpy_deserialise(json['perpendicular'])
+        propagation_vector = PropagationVector._deserialise(json["vector"], context)
+        return RotationSupercell(perpendicular, propagation_vector)
+
+
 supercell_types = {cls.supercell_name: cls
-                   for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell]}
+                   for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell, RotationSupercell]}

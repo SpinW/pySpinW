@@ -29,7 +29,7 @@ from pyspinw.symmetry.supercell import TrivialSupercell
 
 logger = logging.Logger("pyspinw.hamiltonian")
 
-def omegasum(energy, intensity, tol=1e-5, zeroint=0):
+def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0):
     """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
     energy, intensity = (np.array(energy), np.array(intensity))
     en_out, int_out = (energy * np.nan, intensity * np.nan)
@@ -176,7 +176,12 @@ class Hamiltonian(SPWSerialisable):
         print(self.text_summary)
 
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
-    def energies_and_intensities(self, q_vectors: np.ndarray, field: ArrayLike | None = None, use_rust: bool=True):
+    def energies_and_intensities(self,
+                                 q_vectors: np.ndarray,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool=True,
+                                 use_rotating: bool=True,
+                                 ):
         """Calculate the energy levels of the system for the given q-vectors."""
         #
         # Set up choice of calculation
@@ -208,17 +213,30 @@ class Hamiltonian(SPWSerialisable):
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
+        # default to using the rotating frame method if we can, otherwise warn and switch to supercell calculation
+        if use_rotating:
+            if not hasattr(self.structure.supercell, '_propagation_vectors'):
+                use_rotating = False  # Cannot use because supercell has no propagation vectors
+            elif not (hasattr(self.structure.supercell, 'perpendicular') and
+                      len(self.structure.supercell._propagation_vectors) == 1):
+                logger.warning("Could not use rotating frame calculation as no plane normal specified")
+                use_rotating = False
+
         #
         # Set up the system
         #
-
-        expanded = self.expanded()
+        if use_rotating:
+            expanded, scaling = (self, 1.)
+            nvec = self.structure.supercell.perpendicular
+            rotating_frame = [self.structure.supercell._propagation_vectors[0]._vector, nvec / np.linalg.norm(nvec)]
+        else:
+            expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.scaling, None)
 
         # Get the positions, rotations, moments for the sites
         moments = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
-        for index, site in enumerate(expanded._structure.sites):
+        for index, site in enumerate(expanded.structure.sites):
             # TODO: Sort out moments for supercells
             moments.append(site.base_moment)
 
@@ -233,7 +251,6 @@ class Hamiltonian(SPWSerialisable):
             g_tensors = []
             for site in expanded.structure.sites:
                 g_tensors.append(site.g)
-
             magnetic_field = magnetic_field_class(
                                 vector=np.array(field, **rust_kw),
                                 g_tensors=np.array(g_tensors, **rust_kw))
@@ -248,7 +265,6 @@ class Hamiltonian(SPWSerialisable):
         for input_coupling in expanded.couplings:
             # Normal coupling
 
-            # Factor of 1/2 is due to double counting correction
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
@@ -279,6 +295,7 @@ class Hamiltonian(SPWSerialisable):
             anisotropy = coupling_class(
                 unique_id_to_index[input_anisotropy.site._unique_id],
                 unique_id_to_index[input_anisotropy.site._unique_id],
+                # Factor 2 here is to agree with Matlab code (need to check if is correct)
                 np.array(input_anisotropy.anisotropy_matrix.T, **rust_kw) * 2.,
                 inter_site_vector=np.array([0,0,0], dtype=float)
             )
@@ -288,15 +305,16 @@ class Hamiltonian(SPWSerialisable):
         result = spinwave_calculation(
                         rotations=rotations,
                         magnitudes=magnitudes,
-                        q_vectors=q_vectors * self.structure.supercell.scaling,
+                        q_vectors=q_vectors * scaling,
                         couplings=couplings,
                         positions=positions,
                         rlu_to_cart=np.linalg.inv(self.structure.unit_cell._xyz).T * 2 * np.pi,
-                        field=magnetic_field)
+                        field=magnetic_field,
+                        rotating_frame=rotating_frame)
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
-        scale_factor = rotations.shape[0] / np.prod(self.structure.supercell.scaling)
+        scale_factor = rotations.shape[0] / np.prod(scaling)
         intensity = [res * scale_factor for res in result[1]]
 
         return result[0], intensity
@@ -307,6 +325,7 @@ class Hamiltonian(SPWSerialisable):
              show: bool=True,
              new_figure: bool=True,
              use_rust: bool=True,
+             use_rotating: bool=False,
              scale: str='linear'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
@@ -318,7 +337,8 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust))
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(),
+                                     field=field, use_rust=use_rust, use_rotating=use_rotating))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, series[0], 'k')
