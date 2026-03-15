@@ -94,10 +94,15 @@ class CommensuratePropagationVector(PropagationVector):
     """ Propagation vector with rational values"""
 
     def __init__(self,
-                 i: Fraction | float,
-                 j: Fraction | float,
-                 k: Fraction | float,
+                 i: Fraction | float | PropagationVector,
+                 j: Fraction | float | None = None,
+                 k: Fraction | float | None = None,
                  phase: float = 0.0):
+
+        if isinstance(i, PropagationVector):
+            i, j, k, phase = (i.i, i.j, i.k, i.phase)
+        elif j is None or k is None:
+            raise RuntimeError('Missing j and k components')
 
         i = _coerce_numeric_input(i)
         j = _coerce_numeric_input(j)
@@ -437,28 +442,38 @@ class SummationSupercell(CommensurateSupercell):
         return SummationSupercell(vectors, scale)
 
 
-class RotationSupercell(CommensurateSupercell):
+class RotationSupercell(Supercell):
     """ A supercell defined by moments which rotates in a plane and a single propagation vector """
 
     supercell_name = "rotation"
 
-    def __init__(self, perpendicular: ArrayLike, propagation_vector: ArrayLike | CommensuratePropagationVector):
-        if not isinstance(propagation_vector, CommensuratePropagationVector):
-            propagation_vector = CommensuratePropagationVector(*propagation_vector)
-        super().__init__([propagation_vector], (1, 1, 1))
+    def __init__(self, perpendicular: ArrayLike, propagation_vector: ArrayLike | PropagationVector):
+        if not isinstance(propagation_vector, PropagationVector):
+            propagation_vector = PropagationVector(*propagation_vector)
+        super().__init__((1, 1, 1))
         self.perpendicular = perpendicular
+        self.propagation_vector = propagation_vector
 
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Calculate moment at a given cell offset"""
         basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
-        return basis * np.exp(-2j * np.pi * self._propagation_vectors[0].dot(cell_offset))
+        return basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset))
+
+    def cell_size(self) -> tuple[int, int, int]:
+        """ How big is this supercell """
+        return (1, 1, 1)
 
     def summation_form(self) -> "Supercell":
         """ Convert into summation form """
         raise NotImplementedError("Not implemented yet")
 
+    def approximant(self) -> TransformationSupercell:
+        """ Convert to an approximate commensurate supercell """
+        k = CommensuratePropagationVector(self.propagation_vector)
+        return TransformationSupercell([(k, RotationTransform(self.perpendicular))])
+
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        return [{"vector": self._propagation_vectors[0]._serialise(context),
+        return [{"vector": self.propagation_vector._serialise(context),
                  "perpendicular": numpy_serialise(self.perpendicular)}]
 
     @staticmethod

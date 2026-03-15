@@ -213,23 +213,22 @@ class Hamiltonian(SPWSerialisable):
 
         rust_kw = {'dtype': complex, 'order': 'F'}
 
-        # default to using the rotating frame method if we can, otherwise warn and switch to supercell calculation
-        if use_rotating:
-            if not hasattr(self.structure.supercell, '_propagation_vectors'):
-                use_rotating = False  # Cannot use because supercell has no propagation vectors
-            elif not (hasattr(self.structure.supercell, 'perpendicular') and
-                      len(self.structure.supercell._propagation_vectors) == 1):
-                logger.warning("Could not use rotating frame calculation as no plane normal specified")
-                use_rotating = False
-
         #
         # Set up the system
         #
-        if use_rotating:
-            expanded, scaling = (self, 1.)
-            nvec = self.structure.supercell.perpendicular
-            rotating_frame = [self.structure.supercell._propagation_vectors[0]._vector, nvec / np.linalg.norm(nvec)]
+        if all([hasattr(self.structure.supercell, v) for v in ['propagation_vector', 'perpendicular']]):
+            if use_rotating:
+                expanded, scaling = (self, 1.)
+                nvec = self.structure.supercell.perpendicular
+                rotating_frame = [self.structure.supercell.propagation_vector._vector, nvec / np.linalg.norm(nvec)]
+            else:
+                newstruc = Structure(**{k:getattr(self.structure, k) for k in ['sites', 'unit_cell', 'spacegroup']},
+                               supercell=self.structure.supercell.approximant())
+                expanded = Hamiltonian(newstruc, self.couplings, self.anisotropies).expanded()
+                scaling, rotating_frame = (newstruc.supercell.scaling, None)
         else:
+            if use_rotating:
+                logger.warning("Cannot do rotating frame calculation propagation vector or plane normal not specified")
             expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.scaling, None)
 
         # Get the positions, rotations, moments for the sites

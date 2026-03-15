@@ -89,7 +89,6 @@ def genmagstr(
             if S is not None or unit == UnitSystem.LU:
                 _convert_moments()
             n = np.array(n, dtype='double')
-            k = CommensuratePropagationVector(k[0], k[1], k[2])
             return Structure(sites, unit_cell, supercell=RotationSupercell(perpendicular=n, propagation_vector=k))
 
         case GenMagStrMode.DIRECT:
