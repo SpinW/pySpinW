@@ -4,7 +4,6 @@ from collections import defaultdict
 
 import re
 from dataclasses import dataclass
-from http.cookiejar import is_HDN
 
 import numpy as np
 
