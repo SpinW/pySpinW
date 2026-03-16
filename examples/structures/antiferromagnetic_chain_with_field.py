@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings, filter, axis_anisotropies
+from pyspinw.interface import generate_exchanges, filter, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
@@ -44,12 +44,12 @@ if __name__ == "__main__":
 
     s = Structure(sites, unit_cell=unit_cell)
 
-    exchanges = couplings(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=2.1,
-                          coupling_type=HeisenbergCoupling,
-                          j=1,
-                          direction_filter=filter([1,0,0], symmetric=True))
+    exchanges = generate_exchanges(sites=sites,
+                                   unit_cell=unit_cell,
+                                   max_distance=2.1,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=1,
+                                   direction_filter=filter([1,0,0], symmetric=True))
 
     anisotropies = axis_anisotropies(sites, -0.1)
 
