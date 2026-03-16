@@ -4,8 +4,7 @@ import numpy as np
 
 
 from pyspinw.calculations.optimisation.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed, Planar
-from pyspinw.util import rotation_from_z
-from pyspinw.interface import couplings, axis_anisotropies
+from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -78,7 +77,7 @@ def test_simple_ferromagnet_fixed_free():
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    exchanges = couplings(sites=sites,
+    exchanges = generate_exchanges(sites=sites,
                           unit_cell=unit_cell,
                           max_distance=0.6,
                           coupling_type=HeisenbergCoupling,
@@ -105,7 +104,7 @@ def test_simple_antiferromagnet_fixed_free():
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    exchanges = couplings(sites=sites,
+    exchanges = generate_exchanges(sites=sites,
                           unit_cell=unit_cell,
                           max_distance=0.6,
                           coupling_type=HeisenbergCoupling,
@@ -132,7 +131,7 @@ def test_simple_antiferromagnet_fixed_planar():
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    exchanges = couplings(sites=sites,
+    exchanges = generate_exchanges(sites=sites,
                           unit_cell=unit_cell,
                           max_distance=0.6,
                           coupling_type=HeisenbergCoupling,
@@ -163,7 +162,7 @@ def test_simple_antiferromagnet_free_planar(axis):
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    exchanges = couplings(sites=sites,
+    exchanges = generate_exchanges(sites=sites,
                           unit_cell=unit_cell,
                           max_distance=0.6,
                           coupling_type=HeisenbergCoupling,
