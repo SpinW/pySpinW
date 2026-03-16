@@ -146,7 +146,7 @@ class Structure(SPWSerialisable):
 
         # Create a mapping between sites and offsets to the new sites
         mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
-        for offset in self.supercell.cells():
+        for index, offset in enumerate(self.supercell.cells()):
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)
                 moment = self.supercell.moment(site, cell_offset=offset)
@@ -157,7 +157,7 @@ class Structure(SPWSerialisable):
                     k=position[2],
                     supercell_moments=moment,
                     g=site.g,
-                    name=site.name)
+                    name=f"{site.name}[{index}]")
 
                 mapping[(site._unique_id, offset.as_tuple)] = new_site
 

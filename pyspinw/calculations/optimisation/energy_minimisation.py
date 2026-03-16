@@ -283,6 +283,9 @@ class ClassicalEnergyMinimisation:
                 site_1_moment = supercell.moment_calculation(site_1_moment_data, cell)
                 site_2_moment = supercell.moment_calculation(site_2_moment_data, cell)
 
+                d_energy = site_1_moment @ coupling.coupling_matrix @ site_2_moment
+                print(f"Energy contribution for {cell}, between {site_1_moment} and {site_2_moment}: {d_energy}, ")
+
                 energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
 
             # Anisotropies
