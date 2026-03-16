@@ -250,6 +250,21 @@ class Supercell(ABC, SPWSerialisable):
                 for k in range(c):
                     yield CellOffset(i,j,k)
 
+    def wrap_sum(self, offset_1: CellOffset, *other_offsets: CellOffset):
+        """ Calculate the sum of cell offsets, wrapped to the supercell, x,y,z % cell_dim"""
+
+        v = offset_1.vector
+
+        for other in other_offsets:
+            v += other.vector
+
+        a,b,c = self.cell_size()
+        return CellOffset(
+                    v[0] % a,
+                    v[1] % b,
+                    v[2] % c )
+
+
     @abstractmethod
     def summation_form(self) -> "Supercell":
         """Get a summation type supercell"""

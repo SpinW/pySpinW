@@ -281,7 +281,9 @@ class ClassicalEnergyMinimisation:
                 site_2_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_2.unique_id], :, :]
 
                 site_1_moment = supercell.moment_calculation(site_1_moment_data, cell)
-                site_2_moment = supercell.moment_calculation(site_2_moment_data, cell)
+                site_2_moment = supercell.moment_calculation(
+                                    site_2_moment_data,
+                                    supercell.wrap_sum(cell, coupling.cell_offset))
 
                 d_energy = site_1_moment @ coupling.coupling_matrix @ site_2_moment
                 print(f"Energy contribution for {cell}, between {site_1_moment} and {site_2_moment}: {d_energy}, ")
