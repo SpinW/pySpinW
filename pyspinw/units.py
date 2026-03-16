@@ -13,7 +13,8 @@ class IntensityUnits(Enum):
 
     PERCELL = 'spin length per cell'
     PERSPIN = 'spin length per spin'
-    BARN = 'barns / sr / meV / atom'
+    BARNPERATOM = 'barns / sr / meV / atom'
+    BARNPERCELL = 'barns / sr / meV / cell'
 
 
 def intensity_units(name):
@@ -25,4 +26,7 @@ def intensity_units(name):
     elif 'spin' in name:
         return IntensityUnits.PERSPIN
     elif 'barn' in name:
-        return IntensityUnits.BARN
+        if 'cell' in name:
+            return IntensityUnits.BARNPERCELL
+        else:
+            return IntensityUnits.BARNPERATOM

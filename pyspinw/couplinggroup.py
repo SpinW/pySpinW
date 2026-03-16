@@ -12,6 +12,7 @@ from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.symmetry.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.tolerances import tolerances
 
 
 class AbstractCouplingGroup:
@@ -120,9 +121,10 @@ class CouplingGroup:
             type_symbol=self.coupling_type.short_string)
 
         if self.bond > 0:
-            bond_distances = np.sort(np.unique(np.round([c.distance for c in abstract_couplings], decimals=6)))
+            dp = int(np.ceil(np.log10(1 / tolerances.BOND_TOL)))
+            bond_distances = np.sort(np.unique(np.round([c.distance for c in abstract_couplings], decimals=dp)))
             abstract_couplings = [c for c in abstract_couplings
-                                  if np.abs(c.distance - bond_distances[self.bond-1]) < 1e-5]
+                                  if np.abs(c.distance - bond_distances[self.bond-1]) < tolerances.BOND_TOL]
 
         kept_couplings = []
         for coupling in abstract_couplings:

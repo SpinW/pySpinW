@@ -193,7 +193,7 @@ class Hamiltonian(SPWSerialisable):
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
         """
         intensity_unit = intensity_units(intensity_unit)
-        if intensity_unit == IntensityUnits.BARN:
+        if intensity_unit == IntensityUnits.BARNPERATOM or intensity_unit == IntensityUnits.BARNPERCELL:
             raise NotImplementedError('Intensity scale in barn/sr/meV/atom not yet implemented.')
 
         #
