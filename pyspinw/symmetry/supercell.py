@@ -103,11 +103,12 @@ class CommensuratePropagationVector(PropagationVector):
                  i: Fraction | float,
                  j: Fraction | float,
                  k: Fraction | float,
-                 phase: float = 0.0):
+                 phase: float = 0.0,
+                 max_denominator=1000):
 
-        i = _coerce_numeric_input(i)
-        j = _coerce_numeric_input(j)
-        k = _coerce_numeric_input(k)
+        i = _coerce_numeric_input(i, max_denominator)
+        j = _coerce_numeric_input(j, max_denominator)
+        k = _coerce_numeric_input(k, max_denominator)
 
         super().__init__(i, j, k, phase=phase)
 
@@ -479,5 +480,53 @@ class SummationSupercell(CommensurateSupercell):
         vectors = [PropagationVector._deserialise(data, context) for data in json["vectors"]]
         return SummationSupercell(vectors, scale)
 
+
+class RotationSupercell(Supercell):
+    """ A supercell defined by moments which rotates in a plane and a single propagation vector """
+
+    supercell_name = "rotation"
+
+    def __init__(self, perpendicular: ArrayLike, propagation_vector: ArrayLike | PropagationVector):
+        if not isinstance(propagation_vector, PropagationVector):
+            propagation_vector = PropagationVector(*propagation_vector)
+        super().__init__((1, 1, 1))
+        self.perpendicular = perpendicular
+        self.propagation_vector = propagation_vector
+
+    def moment(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Calculate moment at a given cell offset"""
+        basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
+        return basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset))
+
+    def cell_size(self) -> tuple[int, int, int]:
+        """ How big is this supercell """
+        return (1, 1, 1)
+
+    def summation_form(self) -> "Supercell":
+        """ Convert into summation form """
+        raise NotImplementedError("Not implemented yet")
+
+    def approximant(self, max_denominator: int = 1000) -> TransformationSupercell:
+        """ Convert to an approximate commensurate supercell """
+        k = CommensuratePropagationVector(
+            i=self.propagation_vector.i,
+            j=self.propagation_vector.j,
+            k=self.propagation_vector.k,
+            phase=self.propagation_vector.phase,
+            max_denominator=max_denominator)
+
+        return TransformationSupercell([(k, RotationTransform(self.perpendicular))])
+
+    def _serialise_supercell(self, context: SPWSerialisationContext):
+        return [{"vector": self.propagation_vector._serialise(context),
+                 "perpendicular": numpy_serialise(self.perpendicular)}]
+
+    @staticmethod
+    def _deserialise_supercell(json, scale, context):
+        perpendicular = numpy_deserialise(json['perpendicular'])
+        propagation_vector = PropagationVector._deserialise(json["vector"], context)
+        return RotationSupercell(perpendicular, propagation_vector)
+
+
 supercell_types = {cls.supercell_name: cls
-                   for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell]}
+                   for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell, RotationSupercell]}

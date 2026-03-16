@@ -9,7 +9,7 @@ from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
-    SymmetricInDirectionFilter
+    BiDirectionFilter
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
@@ -268,28 +268,28 @@ def filter(direction: ArrayLike,
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
     else:
         if symmetric:
-            return SymmetricInDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
+            return BiDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
         else:
             return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
 
-def couplings(sites: list[LatticeSite],
-              unit_cell: UnitCell | Structure,
-              coupling_type: type[Coupling],
-              max_distance: float,
-              min_distance: float = 0.0,
-              direction_filter: DirectionalityFilter | None = None,
-              max_order: int | None = None,
-              j: float | None = None,
-              j_x: float | None = None,
-              j_y: float | None = None,
-              j_xy: float | None = None,
-              j_z: float | None = None,
-              d_x: float | None = None,
-              d_y: float | None = None,
-              d_z: float | None = None,
-              coupling_parameters: dict | None = None,
-              naming_pattern: str | None = None,):
+def generate_exchanges(sites: list[LatticeSite],
+                       unit_cell: UnitCell | Structure,
+                       coupling_type: type[Coupling],
+                       max_distance: float,
+                       min_distance: float = 0.0,
+                       direction_filter: DirectionalityFilter | None = None,
+                       max_order: int | None = None,
+                       j: float | None = None,
+                       j_x: float | None = None,
+                       j_y: float | None = None,
+                       j_xy: float | None = None,
+                       j_z: float | None = None,
+                       d_x: float | None = None,
+                       d_y: float | None = None,
+                       d_z: float | None = None,
+                       coupling_parameters: dict | None = None,
+                       naming_pattern: str | None = None, ):
     """ Automatically creates a list of couplings
 
     :param sites: *required* List of sites to make couplings between

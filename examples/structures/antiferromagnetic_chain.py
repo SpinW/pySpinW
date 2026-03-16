@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings
+from pyspinw.interface import generate_exchanges
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
@@ -45,11 +45,11 @@ if __name__ == "__main__":
     k = CommensuratePropagationVector(0.5, 0, 0)
     s = Structure(sites, unit_cell=unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
 
-    exchanges = couplings(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=3.1,
-                          coupling_type=HeisenbergCoupling,
-                          j=1)
+    exchanges = generate_exchanges(sites=sites,
+                                   unit_cell=unit_cell,
+                                   max_distance=3.1,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=1)
 
 
     hamiltonian = Hamiltonian(s, exchanges)

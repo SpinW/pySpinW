@@ -7,7 +7,8 @@ from typing import Callable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, CommensuratePropagationVector
+from pyspinw.symmetry.supercell import (TrivialSupercell, RotationSupercell, SummationSupercell,
+    CommensuratePropagationVector)
 
 
 class GenMagStrMode(Enum):
@@ -62,18 +63,20 @@ def genmagstr(
     elif magnitude is None:
         magnitude = [np.linalg.norm(site._base_moment) for site in sites]
 
+    def _convert_moments():
+        norm_transform = unit_cell._xyz / np.sqrt(np.sum(unit_cell._xyz**2, axis=1)).reshape(-1, 1)
+        for i, site in enumerate(sites):
+            if S is not None:
+                site._base_moment = S[i,:] * magnitude[ii] / np.linalg.norm(S[i,:])
+            elif unit == UnitSystem.LU:
+                Stmp = site._base_moment @ norm_transform
+                site._base_moment = Stmp * magnitude[i] / np.linalg.norm(Stmp)
+            site._moment_data = np.array([site._base_moment])
+
     match mode:
         case GenMagStrMode.TILE | GenMagStrMode.EXTEND:
-            if S is not None:
-                for i, site in enumerate(sites):
-                    site._base_moment = S[i,:]
-                    site._moment_data = np.array([site._base_moment])
-            elif unit == UnitSystem.LU:
-                norm_transform = unit_cell._xyz / np.sqrt(np.sum(unit_cell._xyz**2, axis=1)).reshape(-1, 1)
-                for i, site in enumerate(sites):
-                    Stmp = site._base_moment @ norm_transform
-                    site._base_moment = Stmp * magnitude[i] / np.linalg.norm(Stmp)
-                    site._moment_data = np.array([site._base_moment])
+            if S is not None or unit == UnitSystem.LU:
+                _convert_moments()
             return Structure(sites, unit_cell, supercell=TrivialSupercell(scaling=nExt))
 
         case GenMagStrMode.RANDOM:
@@ -83,23 +86,10 @@ def genmagstr(
             # Note: not all cases handled by Matlab are handled by this
             if n is None or k is None:
                 raise RuntimeError('You must provide the rotation axis "n" and propagation vector "k"')
+            if S is not None or unit == UnitSystem.LU:
+                _convert_moments()
             n = np.array(n, dtype='double')
-            norm_transform = unit_cell._xyz / np.sqrt(np.sum(unit_cell._xyz**2, axis=1)).reshape(-1, 1)
-            # Make the basis complex
-            for ii, site in enumerate(sites):
-                if S is not None:
-                    S = S * magnitude[ii] / np.linalg.norm(S)
-                    site._base_moment = S[:,ii] + 1j * np.cross(n, S[:,ii])
-                elif unit == UnitSystem.LU:
-                    Stmp = site._base_moment @ norm_transform
-                    Stmp = Stmp * magnitude[ii] / np.linalg.norm(Stmp)
-                    site._base_moment = Stmp + 1j * np.cross(n, Stmp)
-                else:
-                    site._base_moment = site._base_moment * magnitude[ii] / np.linalg.norm(site._base_moment)
-                    site._base_moment = site._base_moment + 1j * np.cross(n, site._base_moment)
-                site._moment_data = np.array([site._base_moment])
-            k = CommensuratePropagationVector(k[0], k[1], k[2])
-            return Structure(sites, unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
+            return Structure(sites, unit_cell, supercell=RotationSupercell(perpendicular=n, propagation_vector=k))
 
         case GenMagStrMode.DIRECT:
             raise NotImplementedError("'direct' mode to be implemented")
