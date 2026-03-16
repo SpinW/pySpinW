@@ -40,12 +40,12 @@ def test_triangular_antiferromagnet():
 
     supercell = TransformationSupercell([(k, rotmat)])
     moment = supercell.moment(x, delta)
-    assert np.allclose(moment, np.array([np.sqrt(3)/2, -0.5, 0]))
+    assert np.allclose(moment, np.array([-np.sqrt(3)/2, -0.5, 0]))
 
     # Now try it with the "incommensurate" supercell
     supercell = RotationSupercell(perpendicular=[0, 0, 1], propagation_vector=[1/3, 0, 0])
     moment = supercell.moment(x, delta)
-    assert np.allclose(moment, np.array([np.sqrt(3)/2, -0.5, 0]))
+    assert np.allclose(moment, np.array([-np.sqrt(3)/2, -0.5, 0]))
 
 def test_rotationsupercell_approximant():
     supercell = RotationSupercell(perpendicular=[0, 0, 1], propagation_vector=[1/3, 0, 0])

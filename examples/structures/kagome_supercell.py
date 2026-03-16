@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust, use_rotating=False)
     fig.axes[0].set_ylim(0, 3)
     fig.axes[1].set_ylim(0, 1)
     plt.show()

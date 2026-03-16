@@ -355,7 +355,7 @@ class Hamiltonian(SPWSerialisable):
              new_figure: bool=True,
              use_rust: bool=True,
              intensity_unit: IntensityUnits | str = 'cell',
-             use_rotating: bool=False,
+             use_rotating: bool=True,
              scale: str='linear'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
