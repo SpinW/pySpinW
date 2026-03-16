@@ -471,7 +471,7 @@ class RotationSupercell(Supercell):
             k=self.propagation_vector.k,
             phase=self.propagation_vector.phase,
             max_denominator=max_denominator)
-        
+
         return TransformationSupercell([(k, RotationTransform(self.perpendicular))])
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
