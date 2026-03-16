@@ -9,12 +9,12 @@ from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling, HeisenbergCoupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
-    SymmetricInDirectionFilter
+    BiDirectionFilter
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
-    TransformationSupercell, SummationSupercell
+    TransformationSupercell, SummationSupercell, RotationSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
 
@@ -43,7 +43,7 @@ def _check_positions_moments_shape(positions: ArrayLike,
     if moments is None:
         moments = np.zeros((n_sites, 3, 1))
     else:
-        moments = np.array(moments, dtype=complex)
+        moments = np.array(moments, dtype=float)
     match len(moments.shape):
         case 1:
             if n_sites != 1:
@@ -122,7 +122,7 @@ def _transform_site(unit_cell: UnitCell,
         positions = unit_cell.cartesian_to_fractional(np.array(positions))
     # convert moments
     if moments_unit == CoordsUnits.LU:
-        moments = np.array(moments, dtype=complex)
+        moments = np.array(moments, dtype=float)
         for i in range(moments.shape[0]):
             magnitude = np.linalg.norm(moments[i,:,:]) if magnitudes is None else magnitudes[i]
             moment = unit_cell.fractional_to_cartesian(moments[i,:,:])
@@ -188,14 +188,8 @@ def generate_helical_structure(unit_cell: UnitCell,
                                  (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
                                  `pyspinw.UnitCell.moment_cartesian_to_fractional`)
     """
-    positions, moments, _ = _transform_site(unit_cell, positions, moments, names,
-                                            magnitudes, positions_unit, moments_unit)
-    moments = np.array(moments, dtype='complex')
-    for i in range(moments.shape[0]):
-        moments[i,:,:] = moments[i,:,:] + 1j * np.cross(perpendicular, moments[i,:,:])
-    k = CommensuratePropagationVector(*propagation_vector)
-    sites = generate_sites(positions, moments, names)
-    return Structure(sites, unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
+    s = generate_sites(*_transform_site(unit_cell, positions, moments, names, magnitudes, positions_unit, moments_unit))
+    return Structure(s, unit_cell, supercell=RotationSupercell(perpendicular, propagation_vector))
 
 #
 # Supercell methods
@@ -357,37 +351,37 @@ def filter(direction: ArrayLike,
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
     else:
         if symmetric:
-            return SymmetricInDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
+            return BiDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
         else:
             return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
 
-def couplings(sites: list[LatticeSite] | Structure,
-              unit_cell: UnitCell | None = None,
-              coupling_type: type[Coupling] = HeisenbergCoupling,
-              bond: int = 0,
-              max_distance: float = 0.0,
-              min_distance: float = 0.0,
-              direction_filter: DirectionalityFilter | None = None,
-              max_order: int | None = None,
-              j: float | None = None,
-              j_x: float | None = None,
-              j_y: float | None = None,
-              j_xy: float | None = None,
-              j_z: float | None = None,
-              d_x: float | None = None,
-              d_y: float | None = None,
-              d_z: float | None = None,
-              coupling_parameters: dict | None = None,
-              naming_pattern: str | None = None,):
+def generate_exchanges(sites: list[LatticeSite] | Structure,
+                       unit_cell: UnitCell | None = None,
+                       coupling_type: type[Coupling] = HeisenbergCoupling,
+                       bond: int = 0,
+                       max_distance: float = 0.0,
+                       min_distance: float = 0.0,
+                       direction_filter: DirectionalityFilter | None = None,
+                       max_order: int | None = None,
+                       j: float | None = None,
+                       j_x: float | None = None,
+                       j_y: float | None = None,
+                       j_xy: float | None = None,
+                       j_z: float | None = None,
+                       d_x: float | None = None,
+                       d_y: float | None = None,
+                       d_z: float | None = None,
+                       coupling_parameters: dict | None = None,
+                       naming_pattern: str | None = None, ):
     """ Automatically creates a list of couplings
 
     :param sites: *required* List of sites to make couplings between or a Structure object
     :param unit_cell: Unit cell (needed if first argument is a list of sites)
     :param coupling_type: Type of coupling (defaults to HeisenbergCoupling)
     :param bond: The bond index (If this is given the _distance parameters are ignored)
-    :param max_distance: Maximum Cartesian distance at which couplings are made
-    :param min_distance: Minimum Cartesian distance at which couplings are made
+    :param max_distance: Maximum Cartesian distance (in Angstrom) at which couplings are made
+    :param min_distance: Minimum Cartesian distance (in Angstrom) at which couplings are made
     :param direction_filter: Supply a DirectionalityFilter object (e.g. using `filter`)
                              to only create couplings in certain directions
     :param max_order: Maximum "order" of couplings

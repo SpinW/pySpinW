@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings, generate_helical_structure
+from pyspinw.interface import generate_exchanges, generate_helical_structure
 from pyspinw.path import Path
 from pyspinw.symmetry.unitcell import UnitCell
 import sys
@@ -40,10 +40,10 @@ if __name__ == "__main__":
     sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], moments=[[0,1,0]],
                                        perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
-    exchanges = couplings(sites=sites,
-                          max_distance=3.1,
-                          coupling_type=HeisenbergCoupling,
-                          j=1)
+    exchanges = generate_exchanges(sites=sites,
+                                   max_distance=3.1,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=1)
 
     hamiltonian = Hamiltonian(sites, exchanges)
     hamiltonian.print_summary()

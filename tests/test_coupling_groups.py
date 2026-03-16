@@ -114,4 +114,5 @@ def test_coupling_bond_index():
     for coupling in couplings:
         assert np.allclose(coupling.distance(cell), 1.0), "Coupling distance should (almost) unity"
 
-    assert len(couplings) == 6, "There should be 6 couplings of the specified form"
+    # Only 3 couplings because we only have the forward directions, [100], [110] and [010]
+    assert len(couplings) == 3, "There should be 3 couplings of the specified form"
