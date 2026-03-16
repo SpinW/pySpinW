@@ -267,29 +267,41 @@ class ClassicalEnergyMinimisation:
             self.moment_data[site_index, :] = rotation_from_z(axis) @ base_moments[param_index, :]
 
     def energy(self):
-        """ Energy of the current moments according to the hamiltonian """
+        """ Energy of the current moments according to the hamiltonian, per unit cell """
+
+        supercell = self.hamiltonian.structure.supercell
+
         energy = 0.0
 
-        # Exchanges
-        for coupling in self.hamiltonian.couplings:
-            site_1_moment = self.moment_data[self._site_uid_to_index[coupling.site_1.unique_id], :]
-            site_2_moment = self.moment_data[self._site_uid_to_index[coupling.site_2.unique_id], :]
+        for cell in supercell.cells():
 
-            energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
+            # Exchanges
+            for coupling in self.hamiltonian.couplings:
+                site_1_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_1.unique_id], :, :]
+                site_2_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_2.unique_id], :, :]
 
-        # Anisotropies
-        for anisotropy in self.hamiltonian.anisotropies:
-            moment = self.moment_data[self._site_uid_to_index[anisotropy.site.unique_id], :]
+                site_1_moment = supercell.moment_calculation(site_1_moment_data, cell)
+                site_2_moment = supercell.moment_calculation(site_2_moment_data, cell)
 
-            energy += moment @ anisotropy.anisotropy_matrix @ moment
+                energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
 
-        # Field contribution
-        for site_index in range(self.n_sites):
-            moment = self.moment_data[site_index]
+            # Anisotropies
+            for anisotropy in self.hamiltonian.anisotropies:
+                moment_data = self.moment_data[self._site_uid_to_index[anisotropy.site.unique_id], :, :]
 
-            energy += np.dot(self.field_contribution_vector[site_index], moment)
+                moment = supercell.moment_calculation(moment_data, cell)
 
-        return energy
+                energy += moment @ anisotropy.anisotropy_matrix @ moment
+
+            # Field contribution
+            for site_index in range(self.n_sites):
+                moment_data = self.moment_data[site_index, :, :]
+
+                moment = supercell.moment_calculation(moment_data, cell)
+
+                energy += np.dot(self.field_contribution_vector[site_index], moment)
+
+        return energy / supercell.n_cells()
 
     def minimise(self, rtol=1e-10, atol=1e-12, max_iters=1000,
                  initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,

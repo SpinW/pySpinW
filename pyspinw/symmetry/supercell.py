@@ -345,7 +345,7 @@ class CommensurateSupercell(Supercell):
 class TrivialSupercell(CommensurateSupercell):
     """ Trivial supercell, just a single unit cell """
 
-    def __init__(self, scaling):
+    def __init__(self, scaling=(1,1,1)):
         super().__init__([], scaling)
 
     supercell_name = "trivial"
@@ -353,7 +353,7 @@ class TrivialSupercell(CommensurateSupercell):
 
     def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
         """ Get the moment for a given cell, and the specified moment data """
-        return moment_data
+        return moment_data[0, :]
 
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
