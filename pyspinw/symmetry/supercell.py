@@ -94,19 +94,15 @@ class CommensuratePropagationVector(PropagationVector):
     """ Propagation vector with rational values"""
 
     def __init__(self,
-                 i: Fraction | float | PropagationVector,
-                 j: Fraction | float | None = None,
-                 k: Fraction | float | None = None,
-                 phase: float = 0.0):
+                 i: Fraction | float,
+                 j: Fraction | float,
+                 k: Fraction | float,
+                 phase: float = 0.0,
+                 max_denominator=1000):
 
-        if isinstance(i, PropagationVector):
-            i, j, k, phase = (i.i, i.j, i.k, i.phase)
-        elif j is None or k is None:
-            raise RuntimeError('Missing j and k components')
-
-        i = _coerce_numeric_input(i)
-        j = _coerce_numeric_input(j)
-        k = _coerce_numeric_input(k)
+        i = _coerce_numeric_input(i, max_denominator)
+        j = _coerce_numeric_input(j, max_denominator)
+        k = _coerce_numeric_input(k, max_denominator)
 
         super().__init__(i, j, k, phase=phase)
 
@@ -467,9 +463,15 @@ class RotationSupercell(Supercell):
         """ Convert into summation form """
         raise NotImplementedError("Not implemented yet")
 
-    def approximant(self) -> TransformationSupercell:
+    def approximant(self, max_denominator: int = 1000) -> TransformationSupercell:
         """ Convert to an approximate commensurate supercell """
-        k = CommensuratePropagationVector(self.propagation_vector)
+        k = CommensuratePropagationVector(
+            i=self.propagation_vector.i,
+            j=self.propagation_vector.j,
+            k=self.propagation_vector.k,
+            phase=self.propagation_vector.phase,
+            max_denominator=max_denominator)
+        
         return TransformationSupercell([(k, RotationTransform(self.perpendicular))])
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
