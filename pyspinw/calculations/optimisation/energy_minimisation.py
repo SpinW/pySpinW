@@ -216,7 +216,9 @@ class ClassicalEnergyMinimisation:
         # Free rotations
         #
 
-        rotation_matrices = [rotation_from_z(self.moment_data[i]) for i, uid in self.free_sites]
+        rotation_matrices = [[rotation_from_z(self.moment_data[i, j, :])
+                              for i, uid in self.free_sites]
+                              for j in range(self.n_components)]
 
         # random direction in angle
         angles = (2*np.pi) * self.rng.random((self.n_free, ))
