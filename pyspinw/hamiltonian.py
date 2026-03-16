@@ -43,6 +43,21 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
         en_out[iQ,:len(eu)] = eu
         for iE in range(len(eu)):
             int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
+    # Ensure there are the same number of modes throughout
+    nans = np.isnan(en_out)
+    nanmodes = np.sum(nans, axis=0)
+    n_modes = len(np.where((nanmodes < en_out.shape[0]))[0])
+    for col in set([int(idx) for accidentals in np.where((nanmodes > 0) * (nanmodes < en_out.shape[0]))[0]
+                    for idx in np.where(nans[:,accidentals])[0]]):
+        idnxt = 1 if col < en_out.shape[0]-1 else -1
+        idnan = np.where(~np.isnan(en_out[col + idnxt,:]))[0]
+        idx = np.array([np.nanargmin(np.abs(en_out[col + idnxt,i] - en_out[col]))
+               for i in idnan])
+        en_out[col,idnan] = np.take(en_out[col, :], idx)
+        int_out[col,idnan] = np.take(int_out[col, np.where(~np.isnan(int_out[col,:]))] / np.bincount(idx), idx)
+    # Removes columns which are all NaNs
+    en_out = np.delete(en_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
+    int_out = np.delete(int_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
     return en_out, int_out
 
 class Hamiltonian(SPWSerialisable):
