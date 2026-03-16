@@ -453,7 +453,7 @@ class RotationSupercell(Supercell):
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Calculate moment at a given cell offset"""
         basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
-        return basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset))
+        return np.real(basis * np.exp(2j * np.pi * self.propagation_vector.dot(cell_offset)))
 
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
