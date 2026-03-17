@@ -1,6 +1,7 @@
 """Selection of different Hamiltonians"""
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 import numpy as np
 
@@ -59,6 +60,19 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
     en_out = np.delete(en_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
     int_out = np.delete(int_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
     return en_out, int_out
+
+
+def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float | Callable):
+    """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
+    esigma = dE(evect) if isinstance(dE, Callable) else np.ones(evect.shape) * dE
+    esigma /= 2 * np.sqrt(2* np.log(2))  # Convert from FWHM
+    spec = np.zeros((energy.shape[0], len(evect)))
+    ew_norm = np.array(list(np.diff(evect)) + [evect[-1] - evect[-2]]) / (np.sqrt(2 * np.pi) * esigma)
+    for iE in range(energy.shape[1]):
+        spec += intensity[:,iE,np.newaxis] * ew_norm * np.exp(-0.5 * ((evect[np.newaxis,:] - energy[:,iE,np.newaxis]) / esigma)**2)
+    spec[np.where(spec < np.finfo(np.float32).eps)] = np.nan
+    return spec
+
 
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
@@ -348,15 +362,15 @@ class Hamiltonian(SPWSerialisable):
 
         return result[0], intensity
 
-    def spaghetti_plot(self,
-             path: Path,
-             field: ArrayLike | None = None,
-             show: bool=True,
-             new_figure: bool=True,
-             use_rust: bool=True,
-             intensity_unit: IntensityUnits | str = 'cell',
-             use_rotating: bool=True,
-             scale: str='linear'):
+    def spaghetti_plot_dual(self,
+                            path: Path,
+                            field: ArrayLike | None = None,
+                            show: bool=True,
+                            new_figure: bool=True,
+                            use_rust: bool=True,
+                            use_rotating: bool=True,
+                            intensity_unit: IntensityUnits | str = 'cell',
+                            scale: str='linear'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
             fig, axs = plt.subplots(2, 1)
@@ -372,9 +386,11 @@ class Hamiltonian(SPWSerialisable):
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, series[0], 'k')
-            axs[1].plot(x_values, series[1])
+            axs[1].plot(x_values, series[1], 'k')
         if 'log' in scale:
             axs[1].set_yscale('log')
+        axs[0].set_ylabel('Magnon Energy (meV)')
+        axs[1].set_ylabel('Magnon Intensity')
 
         path.format_plot(axs[0])
         path.format_plot(axs[1])
@@ -383,6 +399,51 @@ class Hamiltonian(SPWSerialisable):
             plt.show()
         else:
             return fig
+
+    def spaghetti_plot(self,
+                       path: Path,
+                       evect: ArrayLike | None = None,
+                       dE: float | Callable | None = None,
+                       vmin: float=0,
+                       vmax: float | None = None,
+                       field: ArrayLike | None = None,
+                       show: bool=True,
+                       new_figure: bool=True,
+                       use_rust: bool=True,
+                       use_rotating: bool=True,
+                       intensity_unit: IntensityUnits | str = 'cell',
+                       scale: str='linear'):
+        """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
+        if new_figure:
+            fig, ax = plt.subplots()
+        else:
+            fig = plt.gcf()
+            ax = fig.get_axes()[0]
+
+        x_values = path.x_values()
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field,
+                                                                    use_rust, use_rotating, intensity_unit))
+        if evect is None:
+            emax = np.nanmax(energy)
+            denom = 10**np.floor(np.log10(emax))
+            evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
+        if dE is None:
+            dE = np.mean(np.diff(evect)) * 2.35
+        spec = egrid(energy, intensity, evect, dE)
+        if vmax is None:
+            vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
+        mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax)
+        ax.plot(x_values, energy, 'k')
+        ax.set_ylim(0, np.max(evect))
+        fig.colorbar(mesh, ax=ax)
+        path.format_plot(ax)
+        ax.set_ylabel('Magnon Energy (meV)')
+
+        if show:
+            plt.show()
+        else:
+            return fig
+
 
     def sorted_positive_energies(self,
                                  path: Path,
