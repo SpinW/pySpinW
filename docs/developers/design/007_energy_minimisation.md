@@ -93,9 +93,61 @@ With randomisation, however, the moment will be forced into the plane.
 
 When constrained to a plane, things are a bit easier as we don't have to worry about gimbal lock. It will suffice to just rotate about the specified axis.
 
+The matrix for rotation about an axis $v$ by angle $\theta$ can be written as
 
+$R(v, \theta) = (1 - \cos\theta) v \otimes v + cos\theta + (\sin\theta)\epsilon(-v)$
 
+where $\epsilon$ is the "tripple product matrix" such that $X^T \epsilon(Z) Y = (X \times Y) \cdot Z$.
+The derivative of this with respect to $\theta$ at $\theta=0$ is simply
 
+$\frac{\partial R}{\partial \theta} \vert_{\theta=0} = \epsilon(-v)$
+
+We therefore have the following for the change of the spin with respect to $\theta$:
+$\frac{\partial S}{\partial \theta} = \frac{\partial}{\partial \theta} R S = \frac{\partial R}{\partial \theta} S = \epsilon(-v) S$
+
+# Supercells
+
+Supercells introduce an added complexity. For the supercells in spinW, the spin at a given position in the cell is some function of "partial spins," $T_1 ... T_n$. The spin in cell indexed by $a$
+
+$S = f(T_1 ... T_n)$
+
+Each of these $T_i$ components can be rotated independently, with their magnitudes preserved, as such, each component needs to be parameterised separately.
+
+Other than this, the the minimisation proceeds as before, but with
+
+$\frac{\partial S}{\partial \alpha_k} = \sum_{i=0}^n \frac{\partial f}{\partial T_i} \cdot \frac{\partial T_i}{\partial \alpha_k}  = \frac{\partial f}{\partial T_k} \frac{\partial T_k}{\partial \alpha_k} $
+
+## Specific Supercells
+
+The derivative $\frac{\partial f}{\partial T_k}$ depends on the choice of supercell, in all cases of the supercells implemented in pySpinW it is a linear map 
+
+$\frac{\\partial f}{\partial T_k}: \mathbb{R}^3 \to \mathbb{R}^3$
+
+but sometimes it is a scalar, and sometimes a matrix. For efficiency we can code for either of these options, for uniformity we can multiply scalar values by the identity matrix.
+
+### Trivial supercell
+
+`TrivialSupercell`s are the identity and the derivative is also the identity. They only have one input component
+
+### Transformation supercells
+
+`TransformationSupercell`s are a linear map on one component, where $f(T) = M T$, where $M$ is matrix that depends on the which cell is selected in the supercell. This means that
+
+These also only have one input component.
+
+### Summation supercells
+
+`SummationSupercell`s have multiple components, which are defined by vectors $T_i$ with propagation vectors $p_i$ and phases $\varphi_i$, such that
+
+$f(T_1...T_n) = \sum_i T_i exp(2 \pi i p_i \cdot r + \varphi_i)$
+
+Where $r$ is the position of the cell within the unit cell. The derivative can be expressed by a scalar
+
+$\frac{\partial f}{\partial T_k} = exp(2\pi i p_i \cdot r + \varphi_i)$
+
+### Incommensurate supercells
+
+Incommensurate supercells, such as `RotationSupercell` cannot be used in this optimisation.
 
 
 
