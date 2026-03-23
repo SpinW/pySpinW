@@ -402,44 +402,45 @@ class ClassicalEnergyMinimisation:
 
         for param_index, (site_index, site_uid) in enumerate(self.free_sites):
             for component_index in range(self.n_components):
+                for cell in self.hamiltonian.structure.supercell.cells():
 
-                dS_dalpha = rotation_matrices[param_index][component_index] @ alpha_m # m.(0, -1, 0)
-                dS_dbeta = rotation_matrices[param_index][component_index] @ beta_m   # m.(1,  0, 0)
+                    dS_dalpha = rotation_matrices[param_index][component_index] @ alpha_m # m.(0, -1, 0)
+                    dS_dbeta = rotation_matrices[param_index][component_index] @ beta_m   # m.(1,  0, 0)
 
 
-                # Couplings
-                for coupling in self.site_to_coupling_side_1[site_uid]:
+                    # Couplings
+                    for coupling in self.site_to_coupling_side_1[site_uid]:
 
-                    other_index = self._site_uid_to_index[coupling.site_2.unique_id]
-                    other_moment = self.moment_data[other_index, :]
+                        other_index = self._site_uid_to_index[coupling.site_2.unique_id]
+                        other_moment = self.moment_data[other_index, :]
 
-                    forces_free_alpha[site_index] -= dS_dalpha @ coupling.coupling_matrix @ other_moment
-                    forces_free_beta[site_index] -= dS_dbeta @ coupling.coupling_matrix @ other_moment
+                        forces_free_alpha[site_index] -= dS_dalpha @ coupling.coupling_matrix @ other_moment
+                        forces_free_beta[site_index] -= dS_dbeta @ coupling.coupling_matrix @ other_moment
 
-                for coupling in self.site_to_coupling_side_2[site_uid]:
-                    other_index = self._site_uid_to_index[coupling.site_1.unique_id]
-                    other_moment = self.moment_data[other_index, :]
+                    for coupling in self.site_to_coupling_side_2[site_uid]:
+                        other_index = self._site_uid_to_index[coupling.site_1.unique_id]
+                        other_moment = self.moment_data[other_index, :]
 
-                    forces_free_alpha[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dalpha
-                    forces_free_beta[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dbeta
+                        forces_free_alpha[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dalpha
+                        forces_free_beta[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dbeta
 
-                # Anisotropies
-                for anisotropy in self.site_to_anisotropy[site_uid]:
-                    # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
-                    current_moment = self.moment_data[param_index]
+                    # Anisotropies
+                    for anisotropy in self.site_to_anisotropy[site_uid]:
+                        # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
+                        current_moment = self.moment_data[param_index]
 
-                    forces_free_alpha[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
-                    forces_free_alpha[param_index] -= dS_dalpha @ anisotropy.anisotropy_matrix @ current_moment
+                        forces_free_alpha[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
+                        forces_free_alpha[param_index] -= dS_dalpha @ anisotropy.anisotropy_matrix @ current_moment
 
-                    forces_free_beta[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dbeta
-                    forces_free_beta[param_index] -= dS_dbeta @ anisotropy.anisotropy_matrix @ current_moment
+                        forces_free_beta[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dbeta
+                        forces_free_beta[param_index] -= dS_dbeta @ anisotropy.anisotropy_matrix @ current_moment
 
-                # Field
-                field_force_alpha = self.field_contribution_vector[site_index] @ dS_dalpha
-                field_force_beta = self.field_contribution_vector[site_index] @ dS_dbeta
+                    # Field
+                    field_force_alpha = self.field_contribution_vector[site_index] @ dS_dalpha
+                    field_force_beta = self.field_contribution_vector[site_index] @ dS_dbeta
 
-                forces_free_alpha[param_index] -= field_force_alpha
-                forces_free_beta[param_index] -= field_force_beta
+                    forces_free_alpha[param_index] -= field_force_alpha
+                    forces_free_beta[param_index] -= field_force_beta
 
         # Planar sites
 
