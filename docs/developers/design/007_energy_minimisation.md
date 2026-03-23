@@ -88,6 +88,10 @@ The generalised force on each site is then just $\frac{dH}{dS_k} \frac{dS_k}{d\a
 
 ### Constrained to plane
 
+Note: We will actually constrain rotations to rotations about an axis, so that a moment that is out of plane will not be forced into the plane. Rotations will happen around the axis perpendicular to it. 
+With randomisation, however, the moment will be forced into the plane.
+
+When constrained to a plane, things are a bit easier as we don't have to worry about gimbal lock. It will suffice to just rotate about the specified axis.
 
 
 
