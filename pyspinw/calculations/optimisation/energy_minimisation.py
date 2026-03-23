@@ -197,20 +197,27 @@ class ClassicalEnergyMinimisation:
 
         self._site_uid_to_index = {site.unique_id: i for i, site in enumerate(sites)}
 
-    def _safe_randn(self, n, dim=3):
+    @staticmethod
+    def _random_orientations(rng, shape, dim=3):
         """ Make random gaussian vectors, avoiding 0,0,0..."""
-        output = self.rng.normal(0,1, (n, dim))
+        n = 1
+        for m in shape:
+            n *= m
+
+        output = rng.normal(0, 1, (n, dim))
 
         # Repeatedly replace any zero rows
         zero_rows = np.all(output == 0, axis=1)
         n_bad = np.sum(np.array(zero_rows, int))
 
         while n_bad > 0:
-            output[zero_rows, :] = self.rng.normal(0, 1, (n_bad, dim))
+            output[zero_rows, :] = rng.normal(0, 1, (n_bad, dim))
             zero_rows = np.all(output == 0, axis=1)
             n_bad = np.sum(np.array(zero_rows, int))
 
-        return output
+        output /= np.sqrt(np.sum(output**2, axis=1)).reshape(-1, 1)
+
+        return output.reshape(*(shape + (dim, ))) # reshape to expected shape
 
     def jitter(self, jitter_size_rad=0.1):
         """ Jitter method applies a movement of fixed size (radians) in a random direction """
@@ -257,23 +264,27 @@ class ClassicalEnergyMinimisation:
         """ Randomise method chooses random directions for spins"""
         # Do Free sites using Gaussian method
 
-        random_orientations = self._safe_randn(self.n_free, 3)
-        random_orientations /= np.sqrt(np.sum(random_orientations**2, axis=1)).reshape(-1, 3)
+        random_orientations = self._random_orientations(self.rng, (self.n_free, self.n_components), 3)
 
-        self.moment_data[self.is_free] = random_orientations
-        self.moment_data[self.is_free] *= self.magnitudes[self.is_free]
+        self.moment_data[self.is_free, :, :] = random_orientations
+        self.moment_data[self.is_free, :, :] *= self.magnitudes[self.is_free, :, :]
+
+
 
         # Do planar sites by choosing a random number in [0,2pi)
 
-        random_angles = (2*np.pi) * self.rng.random((self.n_planar, ))
-        base_moments = self.magnitudes.reshape(-1, 1)*np.array(
-            [np.sin(random_angles),
-             np.cos(random_angles),
-             np.zeros((self.n_planar, ))]).T
-
         for param_index, ((site_index, site_uid), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
+            for component_index in range(self.n_components):
 
-            self.moment_data[site_index, :] = rotation_from_z(axis) @ base_moments[param_index, :]
+                random_angle = (2 * np.pi) * self.rng.random()
+
+                random_z_perp = np.array([
+                    np.sin(random_angle),
+                    np.cos(random_angle),
+                    0.0]) * self.magnitudes[site_index, component_index, 0]
+
+                self.moment_data[site_index, component_index, :] = rotation_from_z(axis) @ random_z_perp
+
 
     def energy(self):
         """ Energy of the current moments according to the hamiltonian, per unit cell """

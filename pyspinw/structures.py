@@ -30,6 +30,17 @@ class Structure(SPWSerialisable):
 
         self._sites: list[LatticeSite] = self._extended_sites()
 
+        # Check that supercell components match site dimensions
+        bad_sites = []
+        for site in self.sites:
+            if site.n_components() != supercell.n_components():
+                bad_sites.append(site)
+
+        if bad_sites:
+            raise ValueError("Expected the shape of site moment data to match what the supercell requires "
+                             f"({supercell.n_components()}-by-3), "
+                             "bad sites are: " + ", ".join([site.name for site in bad_sites]))
+
     def full_structure_site_list(self):
         """ All the sites in the structure"""
         all_sites = []

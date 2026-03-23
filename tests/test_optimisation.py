@@ -9,7 +9,8 @@ from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, PropagationVector, \
+    CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 
 @pytest.mark.parametrize("size", [0.1, 0.4])
@@ -96,7 +97,7 @@ def test_simple_ferromagnet_fixed_free():
 
     minimiser.minimise(verbose=True)
 
-    assert np.allclose(minimiser.moment_data[1, :], [0, 0, 1], atol=1e-5)
+    assert np.allclose(minimiser.moment_data[1, 1, :], [0, 0, 1], atol=1e-5)
 
 
 def test_simple_antiferromagnet_fixed_free():
@@ -124,6 +125,130 @@ def test_simple_antiferromagnet_fixed_free():
     minimiser.minimise(verbose=True)
 
     assert np.allclose(minimiser.moment_data[1, :], [0, 0, -1], atol=1e-5)
+
+@pytest.mark.parametrize("dim", [2, 3])
+@pytest.mark.parametrize("shape", [(1,), (5,), (3, 4), (1, 2), (6, 1), (2, 2, 3)])
+def test_random_orientations(shape, dim):
+
+    # We want to check that the safety thing is only replacing rows that are all zeros
+    # the plan then is return an integer that is different each time it is called, this
+    # way we track which rows have been replaced
+
+    class RNGMock:
+        def __init__(self):
+            self.counter = 1.0
+            self.rng = np.random.default_rng(1979)
+
+        def normal(self, mu, sigma, shape):
+            out = np.array(self.rng.integers(0, 2, size=shape), dtype=float)
+            out *= self.counter
+            self.counter += 1
+            return out
+
+    rng = RNGMock()
+
+    random_vectors = ClassicalEnergyMinimisation._random_orientations(rng, shape, dim)
+
+    assert random_vectors.shape == shape + (dim, ), "Output array should have requested dimensions"
+
+    def check_row(row):
+        zeros = row == 0
+        assert sum(zeros) != len(row), "Row should not be all zeros"
+
+        others = row[~zeros]
+
+        # others[0] should exist if the previous assertion has not failed
+        assert np.all(others[0] == others[1:]), "All components should be the same"
+
+        assert np.isclose(np.sum(row**2), 1), "Length should be 1"
+
+    if len(shape) == 1:
+        for i in range(shape[0]):
+            check_row(random_vectors[i, :])
+
+    elif len(shape) == 2:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                check_row(random_vectors[i,j,:])
+
+    elif len(shape) == 3:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                for k in range(shape[2]):
+                    check_row(random_vectors[i,j,k,:])
+
+    else:
+        assert False, "test setup is bad"
+
+def test_randomisation_free():
+    """ Check that the randomisation method randomises as expected for free sites"""
+    n_sites = 30
+
+    rng = np.random.default_rng(911)
+    start_moments = rng.normal(0, 1, (n_sites, 2, 3))
+
+    assert start_moments.shape == (30, 2, 3), "Input shape must be n_sites-by-n_components-by-3"
+
+    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_moments=x) for x in [
+                start_moments[i, :, :] for i in range(n_sites) ]]
+
+    unit_cell = UnitCell(1, 1, 1, gamma=60)
+    s = Structure(sites, unit_cell=unit_cell, supercell=SummationSupercell([
+            CommensuratePropagationVector(1,1,1),
+            CommensuratePropagationVector(1,1,1)]))
+
+    hamiltonian = Hamiltonian(s, [])
+
+    hamiltonian.print_summary()
+
+    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=Free, seed=91210)
+
+    minimiser.randomise()
+
+    start_moment_square_mags = np.sum(start_moments**2, axis=2)
+
+    randomised_moment_square_mags = np.sum(minimiser.moment_data**2, axis=2)
+
+    assert np.allclose(start_moment_square_mags, randomised_moment_square_mags)
+
+@pytest.mark.parametrize("axis", [[1,1,1], [1,2,3], [0,1,0], [0,0,1]])
+def test_randomisation_free(axis):
+    """ Check that the randomisation method randomises as expected for free sites"""
+    n_sites = 30
+
+    rng = np.random.default_rng(911)
+    start_moments = rng.normal(0, 1, (n_sites, 2, 3))
+
+    assert start_moments.shape == (30, 2, 3), "Input shape must be n_sites-by-n_components-by-3"
+
+    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_moments=x) for x in [
+                start_moments[i, :, :] for i in range(n_sites) ]]
+
+    unit_cell = UnitCell(1, 1, 1, gamma=60)
+    s = Structure(sites, unit_cell=unit_cell, supercell=SummationSupercell([
+            CommensuratePropagationVector(1,1,1),
+            CommensuratePropagationVector(1,1,1)]))
+
+    hamiltonian = Hamiltonian(s, [])
+
+    hamiltonian.print_summary()
+
+    constraint = Planar(axis)
+    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=constraint, seed=91210)
+
+    minimiser.randomise()
+
+    start_moment_square_mags = np.sum(start_moments**2, axis=2)
+
+    randomised_moment_square_mags = np.sum(minimiser.moment_data**2, axis=2)
+
+    assert np.allclose(start_moment_square_mags, randomised_moment_square_mags), "Magnitudes should be conserved"
+
+    prod = minimiser.moment_data * np.array(axis).reshape((1, 1, 3))
+    moment_dot_axis = np.sum(prod, axis=2)
+
+    assert np.allclose(moment_dot_axis, 0), "Moment should be perpendicular to specified axis"
+
 
 
 def test_simple_antiferromagnet_fixed_planar():

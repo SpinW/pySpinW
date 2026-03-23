@@ -98,6 +98,10 @@ class LatticeSite(SPWSerialisable):
         self._values = np.concatenate((self._ijk, self._base_moment))
         self._unique_id = _generate_unique_id()
 
+    def n_components(self):
+        """ Number of moment components for this site """
+        return self.moment_data.shape[0]
+
     @property
     def unique_id(self):
         """ Unique ID for this site """
