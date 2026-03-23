@@ -16,10 +16,12 @@ from pyspinw.symmetry.unitcell import UnitCell
 def test_jitter_free(size):
     """ Check that the jitter method does jittering as expected for free sites"""
     rng = np.random.default_rng(911)
-    start_moments = rng.normal(0,1,(30, 3))
-    start_moments /= np.sqrt(np.sum(start_moments**2, axis=1)).reshape(-1, 1)
+    start_moments = rng.normal(0,1,(30, 1, 3))
+    start_moments /= np.sqrt(np.sum(start_moments**2, axis=2)).reshape(-1, 1, 1)
 
-    sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_moments]
+    assert start_moments.shape == (30, 1, 3), "Input shape must be n_sites-by-n_components-by-3"
+
+    sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_moments.reshape(30, 3)]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
@@ -32,17 +34,19 @@ def test_jitter_free(size):
 
     minimiser.jitter(size)
 
-    amounts = np.sum(minimiser.moment_data * start_moments, axis=1)
+    amounts = np.sum(minimiser.moment_data * start_moments, axis=2)
 
     assert np.allclose(amounts, np.cos(size))
 
 @pytest.mark.parametrize("size", [0.1, 0.4])
 def test_jitter_planar(size):
     rng = np.random.default_rng(911)
-    start_moments = rng.normal(0, 1, (30, 3))
-    start_moments /= np.sqrt(np.sum(start_moments ** 2, axis=1)).reshape(-1, 1)
+    start_moments = rng.normal(0,1,(30, 1, 3))
+    start_moments /= np.sqrt(np.sum(start_moments**2, axis=2)).reshape(-1, 1, 1)
 
-    sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_moments]
+    assert start_moments.shape == (30, 1, 3), "Input shape must be n_sites-by-n_components-by-3"
+
+    sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_moments.reshape(30, 3)]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
@@ -56,15 +60,16 @@ def test_jitter_planar(size):
     minimiser.jitter(size)
 
     # Project to check angles
-    start_project = start_moments[:,:2]
-    start_project /= np.sqrt(np.sum(start_project**2, axis=1)).reshape(-1, 1)
+    start_project = start_moments[:, :, :2]
+    start_project /= np.sqrt(np.sum(start_project**2, axis=2)).reshape(-1, 1, 1)
 
-    jittered_project = minimiser.moment_data[:, :2]
-    jittered_project /= np.sqrt(np.sum(jittered_project**2, axis=1)).reshape(-1, 1)
+    jittered_project = minimiser.moment_data[:, :, :2]
+    jittered_project /= np.sqrt(np.sum(jittered_project**2, axis=2)).reshape(-1, 1, 1)
 
-    amounts = np.sum(start_project * jittered_project, axis=1)
+    amounts = np.sum(start_project * jittered_project, axis=2)
 
     assert np.allclose(amounts, np.cos(size))
+
 
 
 def test_simple_ferromagnet_fixed_free():

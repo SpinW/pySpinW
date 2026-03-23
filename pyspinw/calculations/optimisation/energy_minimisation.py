@@ -191,7 +191,9 @@ class ClassicalEnergyMinimisation:
 
         assert self.moment_data.shape == (self.n_sites, self.n_components, 3)
 
-        self.magnitudes = np.sqrt(np.sum(self.moment_data ** 2, axis=1))
+        self.magnitudes = np.sqrt(np.sum(self.moment_data ** 2, axis=2)).reshape(-1, self.n_components, 1)
+
+        assert self.magnitudes.shape == (self.n_sites, self.n_components, 1)
 
         self._site_uid_to_index = {site.unique_id: i for i, site in enumerate(sites)}
 
@@ -228,23 +230,28 @@ class ClassicalEnergyMinimisation:
         cos_jitter = np.cos(jitter_size_rad)
         sin_jitter = np.sin(jitter_size_rad)
 
-        unrotated_moments = np.empty((self.n_free, 3), dtype=float)
-        unrotated_moments[:, 0] = sin_jitter * cos_angles
-        unrotated_moments[:, 1] = sin_jitter * sin_angles
-        unrotated_moments[:, 2] = cos_jitter
+        unrotated_moments = np.empty((self.n_free, self.n_components, 3), dtype=float)
+        for component_index in range(self.n_components):
+            unrotated_moments[:, component_index, 0] = sin_jitter * cos_angles
+            unrotated_moments[:, component_index, 1] = sin_jitter * sin_angles
+            unrotated_moments[:, component_index, 2] = cos_jitter
 
-        unrotated_moments *= self.magnitudes[self.is_free].reshape(-1,1)
+        unrotated_moments *= self.magnitudes[self.is_free, :]
 
         for param_index, (site_index, _) in enumerate(self.free_sites):
-            self.moment_data[site_index, :] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
+            for component_index in range(self.n_components):
+                self.moment_data[site_index, component_index, :] = \
+                    rotation_matrices[component_index][param_index] @ unrotated_moments[param_index, component_index, :]
 
         #
         # Planar moments
         #
 
         for (site_index, _), axis in zip(self.planar_sites, self.planar_axes):
-            angle = jitter_size_rad if self.rng.random() > 0.5 else -jitter_size_rad
-            self.moment_data[site_index, :] = rotation_matrix(angle, axis) @ self.moment_data[site_index, :]
+            for component_index in range(self.n_components):
+                angle = jitter_size_rad if self.rng.random() > 0.5 else -jitter_size_rad
+                self.moment_data[site_index, component_index, :] = \
+                    rotation_matrix(angle, axis) @ self.moment_data[site_index, component_index, :]
 
     def randomise(self):
         """ Randomise method chooses random directions for spins"""
