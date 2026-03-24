@@ -3,14 +3,13 @@ import pytest
 import numpy as np
 
 
-from pyspinw.calculations.optimisation.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed, Planar
+from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed, Planar
 from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, PropagationVector, \
-    CommensuratePropagationVector
+from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 
 @pytest.mark.parametrize("size", [0.1, 0.4])

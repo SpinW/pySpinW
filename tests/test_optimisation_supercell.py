@@ -1,11 +1,8 @@
-import pytest
-
 import numpy as np
 
-from pyspinw.calculations.optimisation.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed, Planar
+from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.util import rotation_from_z
-from pyspinw.interface import axis_anisotropies, generate_exchanges
+from pyspinw.interface import generate_exchanges
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
