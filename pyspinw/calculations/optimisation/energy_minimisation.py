@@ -533,7 +533,7 @@ class ClassicalEnergyMinimisation:
 
         for component_index in range(self.n_components):
             for param_index, (site_index, _) in enumerate(self.free_sites):
-                new_moments[site_index, component_index, :] = \
+                new_moments[site_index, component_index, :] = self.magnitudes[site_index, component_index] * \
                     rotation_matrices[param_index][component_index] @ unrotated_moments[param_index, component_index, :]
 
         for param_index, ((site_index, _), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):

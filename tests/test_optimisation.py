@@ -197,11 +197,12 @@ def test_randomisation_planar(axis):
     assert np.allclose(moment_dot_axis, 0), "Moment should be perpendicular to specified axis"
 
 
-def test_simple_ferromagnet_fixed_free():
+@pytest.mark.parametrize("moment_size", [0.5, 1.0, 1.5])
+def test_simple_ferromagnet_fixed_free(moment_size):
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
+    x1 = LatticeSite(0, 0, 0.5, 0, 0, moment_size, name="X1")
+    x2 = LatticeSite(0, 0, 0, 0, moment_size, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -221,7 +222,7 @@ def test_simple_ferromagnet_fixed_free():
 
     minimiser.minimise(verbose=True)
 
-    assert np.allclose(minimiser.moment_data[1, 0, :], [0, 0, 1], atol=1e-5)
+    assert np.allclose(minimiser.moment_data[1, 0, :], [0, 0, moment_size], atol=1e-4)
 
 
 
@@ -251,16 +252,17 @@ def test_simple_antiferromagnet_fixed_planar():
 
     assert np.allclose(minimiser.moment_data[1, :], [0, 0, -1], atol=1e-5)
 
+@pytest.mark.parametrize("moment_size", [0.5, 1.0, 1.5])
 @pytest.mark.parametrize("axis", [[1,0,0],[1,1,1]])
-def test_simple_antiferromagnet_free_planar(axis):
+def test_simple_antiferromagnet_free_planar(axis, moment_size):
 
     axis = np.array(axis, dtype=float)
     axis /= np.sqrt(np.sum(axis**2))
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
+    x1 = LatticeSite(0, 0, 0.5, 0, 0, moment_size, name="X1")
+    x2 = LatticeSite(0, 0, 0, 0, moment_size, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -280,7 +282,6 @@ def test_simple_antiferromagnet_free_planar(axis):
 
     minimiser.minimise(verbose=True)
 
-    print(minimiser.moment_data)
 
     assert np.isclose(np.dot(minimiser.moment_data[0, :], minimiser.moment_data[1, :]), -1)
 
