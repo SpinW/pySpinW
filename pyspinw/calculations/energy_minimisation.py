@@ -9,6 +9,7 @@ from numpy._typing import ArrayLike
 
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
+from pyspinw.structures import Structure
 from pyspinw.symmetry.supercell import CommensurateSupercell
 from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 
@@ -143,8 +144,8 @@ class ClassicalEnergyMinimisation:
 
         # Split sites by constraint type
 
-        sites = hamiltonian.structure.sites
-        self.n_sites = len(sites)
+        self.sites = hamiltonian.structure.sites
+        self.n_sites = len(self.sites)
         self.n_components = hamiltonian.structure.supercell.n_components()
 
         self.free_sites = []
@@ -156,7 +157,7 @@ class ClassicalEnergyMinimisation:
         self.is_fixed = np.zeros((self.n_sites,), dtype=bool)
         self.is_planar = np.zeros((self.n_sites,), dtype=bool)
 
-        for site_index, (site, constraint) in enumerate(zip(sites, constraints)):
+        for site_index, (site, constraint) in enumerate(zip(self.sites, constraints)):
             match constraint:
 
                 case FreeConstraint():
@@ -191,11 +192,11 @@ class ClassicalEnergyMinimisation:
 
         # Magnetic field contributions
         self.field_contribution_vector = [] # Vectors v such that E_field = v.S = B g S
-        for site in sites:
+        for site in self.sites:
             self.field_contribution_vector.append(field @ site.g)
 
         # Get the derived quantities
-        self.moment_data = np.array([site.moment_data for site in sites])
+        self.moment_data = np.array([site.moment_data for site in self.sites])
 
         assert self.moment_data.shape == (self.n_sites, self.n_components, 3)
 
@@ -203,7 +204,7 @@ class ClassicalEnergyMinimisation:
 
         assert self.magnitudes.shape == (self.n_sites, self.n_components, 1)
 
-        self._site_uid_to_index = {site.unique_id: i for i, site in enumerate(sites)}
+        self._site_uid_to_index = {site.unique_id: i for i, site in enumerate(self.sites)}
 
     @staticmethod
     def _random_orientations(rng, shape, dim=3):
@@ -588,3 +589,36 @@ class ClassicalEnergyMinimisation:
         # Update
         self.moment_data = new_moment_data
 
+    def create_hamiltonian(self):
+        """ Create a Hamiltonian from the current state """
+
+        # Create new spins
+        old_uid_to_new_site = {}
+        new_sites = []
+        for site_index, site in enumerate(self.sites):
+
+            spin_data = self.moment_data[site_index, :, :]
+
+            old_uid = site.unique_id
+            new_site = LatticeSite(site.i, site.j, site.k,
+                                   supercell_moments=spin_data,
+                                   g=site.g, name=site.name)
+
+            new_sites.append(new_site)
+            old_uid_to_new_site[old_uid] = new_site
+
+        structure = Structure(new_sites,
+                              self.hamiltonian.structure.unit_cell,
+                              self.hamiltonian.structure.spacegroup,
+                              self.hamiltonian.structure.supercell)
+
+        couplings = [coupling.updated(
+                        site_1 = old_uid_to_new_site[coupling.site_1.unique_id],
+                        site_2 = old_uid_to_new_site[coupling.site_2.unique_id])
+                      for coupling in self.hamiltonian.couplings]
+
+        anisotropies = [anisotropy.updated(
+                            site = old_uid_to_new_site[anisotropy.site.unique_id])
+                          for anisotropy in self.hamiltonian.anisotropies]
+
+        return Hamiltonian(structure, couplings, anisotropies)
