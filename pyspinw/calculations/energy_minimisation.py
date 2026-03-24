@@ -296,7 +296,6 @@ class ClassicalEnergyMinimisation:
 
     def energy(self):
         """ Energy of the current moments according to the hamiltonian, per unit cell """
-
         supercell = self.hamiltonian.structure.supercell
 
         energy = 0.0
@@ -398,7 +397,6 @@ class ClassicalEnergyMinimisation:
 
     def iterate(self, step_size_factor=0.1):
         """ Perform one step of gradient descent """
-
         # Free sites
 
         rotation_matrices = [[rotation_from_z(self.moment_data[site_index, component_index, :])

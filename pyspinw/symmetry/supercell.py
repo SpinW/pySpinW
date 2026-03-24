@@ -252,7 +252,6 @@ class Supercell(ABC, SPWSerialisable):
 
     def wrap_sum(self, offset_1: CellOffset, *other_offsets: CellOffset):
         """ Calculate the sum of cell offsets, wrapped to the supercell, x,y,z % cell_dim"""
-
         v = offset_1.vector
 
         for other in other_offsets:
@@ -386,9 +385,11 @@ class TrivialSupercell(CommensurateSupercell):
         return TrivialSupercell(scale)
 
     def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
+        """ Derivative of the spin at a given site with respect to one component of it """
         return np.eye(3)
 
     def n_components(self) -> int:
+        """ Number of spin components/propagation vectors"""
         return 1
 
 class TransformationSupercell(CommensurateSupercell):
@@ -414,12 +415,14 @@ class TransformationSupercell(CommensurateSupercell):
         super().__init__(propagation_vectors, scaling)
 
     def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
+        """ Calculate the spin based on the moment data for a given site """
         for vector, transform in self._transforms:
             moment = transform.apply(moment=moment_data[0, :], propagation_vector=vector, cell_offset=cell_offset)
 
         return moment
 
     def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
+        """ Derivative of the spin at a given site with respect to one component of it """
         if supercell_component_index != 0:
             raise ValueError("Transformation supercell does not support multiple moment definitions")
 
@@ -444,6 +447,7 @@ class TransformationSupercell(CommensurateSupercell):
 
 
     def n_components(self) -> int:
+        """ Number of spin components/propagation vectors"""
         return 1
 
 
@@ -472,6 +476,7 @@ class SummationSupercell(CommensurateSupercell):
         return moment.real
 
     def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
+        """ Derivative of the spin at a given site with respect to one component of it """
         if supercell_component_index >= self.n_components():
             raise IndexError("Expected component index to be less than number of propagation vectors")
 
@@ -480,6 +485,7 @@ class SummationSupercell(CommensurateSupercell):
         return np.eye(3) * np.exp(-1j * (2* np.pi * pv.dot(cell) + pv.phase)).real
 
     def n_components(self) -> int:
+        """ Number of spin components/propagation vectors"""
         return len(self._propagation_vectors)
 
     def summation_form(self) -> "SummationSupercell":
