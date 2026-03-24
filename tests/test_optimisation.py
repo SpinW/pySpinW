@@ -357,7 +357,7 @@ def test_anisotropies_planar(axis):
 
     minimiser.minimise(verbose=True)
 
-    assert np.isclose(np.dot(axis, minimiser.moment_data[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
+    assert np.isclose(np.dot(axis, minimiser.moment_data[0, 0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
 
 rng = np.random.default_rng(118)
 test_fields = rng.normal(0,1, (20, 3))
@@ -389,7 +389,7 @@ def test_field_free(field):
 
     # Normalise moments and field
     field_norm = field / np.sqrt(np.sum(field**2))
-    moments_norm = minimiser.moment_data.copy()
+    moments_norm = minimiser.moment_data.copy().reshape(-1, 3)
     moments_norm /= np.sqrt(np.sum(moments_norm**2, axis=1)).reshape(-1, 1)
 
     assert np.allclose(field_norm + moments_norm, 0.0, atol=1e-4)
@@ -425,7 +425,7 @@ def test_field_planar(field):
     field_project /= np.sqrt(np.sum(field_project**2))
     field_project = field_project.reshape(1, 2)
 
-    jittered_project = minimiser.moment_data[:, :2]
+    jittered_project = minimiser.moment_data[:, 0, :2]
     jittered_project /= np.sqrt(np.sum(jittered_project**2, axis=1)).reshape(-1, 1)
 
     dot_product = np.sum(field_project * jittered_project, axis=1)

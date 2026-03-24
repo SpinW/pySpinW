@@ -573,12 +573,12 @@ class ClassicalEnergyMinimisation:
             np.sin(beta),
             -np.sin(alpha) * cos_beta,
             np.cos(alpha) * cos_beta
-        ]).T
+        ])
 
         for component_index in range(self.n_components):
             for param_index, (site_index, _) in enumerate(self.free_sites):
                 new_moment_data[site_index, component_index, :] = self.magnitudes[site_index, component_index] * \
-                    rotation_matrices[param_index][component_index] @ unrotated_moments[param_index, component_index, :]
+                    rotation_matrices[param_index][component_index] @ unrotated_moments[:, param_index, component_index]
 
         ## Planar sites, apply the rotations to existing moments
         for component_index in range(self.n_components):
