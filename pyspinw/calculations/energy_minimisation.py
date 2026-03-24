@@ -416,18 +416,51 @@ class ClassicalEnergyMinimisation:
 
                 for cell in self.supercell.cells():
 
-                    # We want to calculate the derivative, which we can do from the supercell
+
+                    # Couplings
+
+                    for coupling in self.site_to_coupling_side_2[site_uid]:
+                        # This side of the couplings has the offset applied
+
+                        offset_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+
+                        df_dT = self.supercell.moment_derivative(component_index, offset_cell)
+
+                        dS_dalpha = df_dT @ dT_dalpha
+                        dS_dbeta = df_dT @ dT_dbeta
+
+                        # Get other moment in supercell
+                        other_index = self._site_uid_to_index[coupling.site_1.unique_id]
+                        other_moment_data = self.moment_data[other_index, :, :]
+                        other_moment = self.supercell.moment_calculation(other_moment_data, cell)
+
+                        # Get forces
+                        forces_free_alpha[param_index, component_index] -= \
+                            other_moment @ coupling.coupling_matrix @ dS_dalpha
+
+                        forces_free_beta[param_index, component_index] -= \
+                            other_moment @ coupling.coupling_matrix @ dS_dbeta
+
+                    # Calculate the derivative of the spin with respect to the parameters,
+                    #  this depended on the cell for the other couplings, but is the same for
+                    #  everything going forward
                     df_dT = self.supercell.moment_derivative(component_index, cell)
 
                     dS_dalpha = df_dT @ dT_dalpha
                     dS_dbeta = df_dT @ dT_dbeta
 
 
-                    # Couplings
                     for coupling in self.site_to_coupling_side_1[site_uid]:
 
+                        # The side without the offset applied
+
+                        # Get other moment in supercell
                         other_index = self._site_uid_to_index[coupling.site_2.unique_id]
-                        other_moment = self.moment_data[other_index, :]
+                        other_moment_data = self.moment_data[other_index, :, :]
+                        other_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+                        other_moment = self.supercell.moment_calculation(other_moment_data, other_cell)
+
+                        # Get the forces
 
                         forces_free_alpha[site_index, component_index] -= \
                             dS_dalpha @ coupling.coupling_matrix @ other_moment
@@ -435,20 +468,11 @@ class ClassicalEnergyMinimisation:
                         forces_free_beta[site_index, component_index] -= \
                             dS_dbeta @ coupling.coupling_matrix @ other_moment
 
-                    for coupling in self.site_to_coupling_side_2[site_uid]:
-                        other_index = self._site_uid_to_index[coupling.site_1.unique_id]
-                        other_moment = self.moment_data[other_index, :]
-
-                        forces_free_alpha[param_index, component_index] -= \
-                            other_moment @ coupling.coupling_matrix @ dS_dalpha
-
-                        forces_free_beta[param_index, component_index] -= \
-                            other_moment @ coupling.coupling_matrix @ dS_dbeta
-
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:
                         # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
-                        current_moment = self.moment_data[param_index]
+                        current_moment_data = self.moment_data[param_index, :, :]
+                        current_moment = self.supercell.moment_calculation(current_moment_data, cell)
 
                         forces_free_alpha[param_index, component_index] -= \
                             current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
@@ -471,40 +495,59 @@ class ClassicalEnergyMinimisation:
 
         # Planar sites
 
-        forces_planar = np.zeros((self.n_planar))
+        forces_planar = np.zeros((self.n_planar, self.n_components))
 
         for param_index, ((site_index, site_uid), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
+            for component_index in range(self.n_components):
+
+                dT_dtheta = triple_product_matrix(-axis) @ self.moment_data[site_index, component_index, :]
+
+                for cell in self.supercell.cells():
+
+                    for coupling in self.site_to_coupling_side_2[site_uid]:
+
+                        offset_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+
+                        dS_dT = self.supercell.moment_derivative(component_index, offset_cell)
+                        dS_dtheta = dS_dT @ dT_dtheta
+
+                        # Get other moment in supercell
+                        other_index = self._site_uid_to_index[coupling.site_1.unique_id]
+                        other_moment_data = self.moment_data[other_index, :, :]
+                        other_moment = self.supercell.moment_calculation(other_moment_data, cell)
+
+                        forces_planar[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dtheta
+
+                    dS_dT = self.supercell.moment_derivative(component_index, cell)
+                    dS_dtheta = dS_dT @ dT_dtheta
+
+                    # Couplings
+                    for coupling in self.site_to_coupling_side_1[site_uid]:
+
+                        other_index = self._site_uid_to_index[coupling.site_2.unique_id]
+                        other_moment_data = self.moment_data[other_index, :, :]
+                        other_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+                        other_moment = self.supercell.moment_calculation(other_moment_data, other_cell)
+
+                        forces_planar[site_index] -= dS_dtheta @ coupling.coupling_matrix @ other_moment
+
+                    # Anisotropies
+                    for anisotropy in self.site_to_anisotropy[site_uid]:
+                        # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
+
+                        current_moment_data = self.moment_data[param_index, :, :]
+                        current_moment = self.supercell.moment_calculation(current_moment_data, cell)
+
+                        forces_planar[param_index, component_index] -= \
+                            current_moment @ anisotropy.anisotropy_matrix @ dS_dtheta
+
+                        forces_planar[param_index, component_index] -= \
+                            dS_dtheta @ anisotropy.anisotropy_matrix @ current_moment
 
 
-            dS_dtheta = triple_product_matrix(-axis) @ self.moment_data[site_index, :]
-
-            # Couplings
-            for coupling in self.site_to_coupling_side_1[site_uid]:
-
-                other_index = self._site_uid_to_index[coupling.site_2.unique_id]
-                other_moment = self.moment_data[other_index, :]
-
-                forces_planar[site_index] -= dS_dtheta @ coupling.coupling_matrix @ other_moment
-
-
-            for coupling in self.site_to_coupling_side_2[site_uid]:
-                other_index = self._site_uid_to_index[coupling.site_1.unique_id]
-                other_moment = self.moment_data[other_index, :]
-
-                forces_planar[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dtheta
-
-            # Anisotropies
-            for anisotropy in self.site_to_anisotropy[site_uid]:
-                # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
-
-                current_moment = self.moment_data[param_index]
-
-                forces_planar[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dtheta
-                forces_planar[param_index] -= dS_dtheta @ anisotropy.anisotropy_matrix @ current_moment
-
-
-            # Field
-            forces_planar[param_index] -= self.field_contribution_vector[site_index] @ dS_dtheta
+                    # Field
+                    forces_planar[param_index, component_index] -= \
+                        self.field_contribution_vector[site_index] @ dS_dtheta
 
 
         # Move in direction of force
@@ -515,14 +558,15 @@ class ClassicalEnergyMinimisation:
 
         alpha = step_size_factor * forces_free_alpha
         beta = step_size_factor * forces_free_beta
-        theta = step_size_factor * np.array(forces_planar)
+        theta = step_size_factor * forces_planar
 
         # print("alpha change:", alpha)
         # print("beta change:", beta)
 
         # Get the new moments
+        ## Free sites
 
-        new_moments = self.moment_data.copy()
+        new_moment_data = self.moment_data.copy()
 
         cos_beta = np.cos(beta)
         unrotated_moments = np.array([
@@ -533,11 +577,16 @@ class ClassicalEnergyMinimisation:
 
         for component_index in range(self.n_components):
             for param_index, (site_index, _) in enumerate(self.free_sites):
-                new_moments[site_index, component_index, :] = self.magnitudes[site_index, component_index] * \
+                new_moment_data[site_index, component_index, :] = self.magnitudes[site_index, component_index] * \
                     rotation_matrices[param_index][component_index] @ unrotated_moments[param_index, component_index, :]
 
-        for param_index, ((site_index, _), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
-            new_moments[site_index] = rotation_matrix(theta[param_index], axis) @ self.moment_data[site_index, :]
+        ## Planar sites, apply the rotations to existing moments
+        for component_index in range(self.n_components):
+            for param_index, ((site_index, _), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
+                new_moment_data[site_index, component_index, :] = \
+                    rotation_matrix(theta[param_index, component_index], axis) \
+                        @ self.moment_data[site_index, component_index, :]
 
-        self.moment_data = new_moments
+        # Update
+        self.moment_data = new_moment_data
 

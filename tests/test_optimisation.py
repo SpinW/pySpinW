@@ -282,13 +282,18 @@ def test_simple_antiferromagnet_free_planar(axis, moment_size):
     minimiser.minimise(verbose=True)
 
 
-    assert np.isclose(np.dot(minimiser.moment_data[0, :], minimiser.moment_data[1, :]), -1)
+    assert np.isclose(
+            np.dot(
+                minimiser.moment_data[0, 0, :],
+                minimiser.moment_data[1, 0, :]),
+        -(moment_size*moment_size)), "Moments should be anti-aligned"
 
     # We would like to check something like this - but its not true if they don't start off perpendicular to axis:
     #   assert np.isclose(np.dot(axis, minimiser.moments[1, :]), 0)
     # Instead check component is the same as when it started
 
-    assert np.isclose(np.dot(axis, minimiser.moment_data[1, :]), np.dot(axis, sites[1].base_moment))
+    assert np.isclose(np.dot(axis, minimiser.moment_data[1, 0, :]), np.dot(axis, sites[1].moment_data[0, :])), \
+        "Component in rotation axis should be preserved"
 
 
 @pytest.mark.parametrize("axis", [[1,0,0],[1,1,1],[0,1,0],[-1,-1,0]])
@@ -317,9 +322,9 @@ def test_anisotropies_free(axis, a):
     minimiser.minimise(verbose=True)
 
     if a < 0:
-        assert np.isclose(np.abs(np.dot(axis, minimiser.moment_data[0, :])), 1) # Should be aligned with axis (+-1)
+        assert np.isclose(np.abs(np.dot(axis, minimiser.moment_data[0, 0, :])), 1) # Should be aligned with axis (+-1)
     elif a > 0:
-        assert np.isclose(np.dot(axis, minimiser.moment_data[0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
+        assert np.isclose(np.dot(axis, minimiser.moment_data[0, 0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
     else:
         pass
 
