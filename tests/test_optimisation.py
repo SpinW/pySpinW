@@ -73,59 +73,6 @@ def test_jitter_planar(size):
 
 
 
-def test_simple_ferromagnet_fixed_free():
-    unit_cell = UnitCell(1, 1, 1, gamma=60)
-
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
-
-    sites = [x1, x2]
-
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
-
-    exchanges = generate_exchanges(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=0.6,
-                          coupling_type=HeisenbergCoupling,
-                          j=-1)
-
-    hamiltonian = Hamiltonian(s, exchanges)
-
-    hamiltonian.print_summary()
-
-    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Fixed, Free], field=np.array([0.0, 0.0, 0.0]))
-
-    minimiser.minimise(verbose=True)
-
-    assert np.allclose(minimiser.moment_data[1, 1, :], [0, 0, 1], atol=1e-5)
-
-
-def test_simple_antiferromagnet_fixed_free():
-    unit_cell = UnitCell(1, 1, 1, gamma=60)
-
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
-
-    sites = [x1, x2]
-
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
-
-    exchanges = generate_exchanges(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=0.6,
-                          coupling_type=HeisenbergCoupling,
-                          j=1)
-
-    hamiltonian = Hamiltonian(s, exchanges)
-
-    hamiltonian.print_summary()
-
-    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Fixed, Free], field=np.array([0.0, 0.0, 0.0]))
-
-    minimiser.minimise(verbose=True)
-
-    assert np.allclose(minimiser.moment_data[1, :], [0, 0, -1], atol=1e-5)
-
 @pytest.mark.parametrize("dim", [2, 3])
 @pytest.mark.parametrize("shape", [(1,), (5,), (3, 4), (1, 2), (6, 1), (2, 2, 3)])
 def test_random_orientations(shape, dim):
@@ -212,7 +159,7 @@ def test_randomisation_free():
     assert np.allclose(start_moment_square_mags, randomised_moment_square_mags)
 
 @pytest.mark.parametrize("axis", [[1,1,1], [1,2,3], [0,1,0], [0,0,1]])
-def test_randomisation_free(axis):
+def test_randomisation_planar(axis):
     """ Check that the randomisation method randomises as expected for free sites"""
     n_sites = 30
 
@@ -248,6 +195,33 @@ def test_randomisation_free(axis):
     moment_dot_axis = np.sum(prod, axis=2)
 
     assert np.allclose(moment_dot_axis, 0), "Moment should be perpendicular to specified axis"
+
+
+def test_simple_ferromagnet_fixed_free():
+    unit_cell = UnitCell(1, 1, 1, gamma=60)
+
+    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
+    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
+
+    sites = [x1, x2]
+
+    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+
+    exchanges = generate_exchanges(sites=sites,
+                          unit_cell=unit_cell,
+                          max_distance=0.6,
+                          coupling_type=HeisenbergCoupling,
+                          j=-1)
+
+    hamiltonian = Hamiltonian(s, exchanges)
+
+    hamiltonian.print_summary()
+
+    minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Fixed, Free], field=np.array([0.0, 0.0, 0.0]))
+
+    minimiser.minimise(verbose=True)
+
+    assert np.allclose(minimiser.moment_data[1, 0, :], [0, 0, 1], atol=1e-5)
 
 
 

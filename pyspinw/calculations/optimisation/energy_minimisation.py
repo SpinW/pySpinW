@@ -9,6 +9,7 @@ from numpy._typing import ArrayLike
 
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.supercell import CommensurateSupercell
 from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 
 
@@ -96,6 +97,13 @@ class ClassicalEnergyMinimisation:
                  constraints: list[MinimisationConstraint] | MinimisationConstraintGenerator = Free,
                  field: ArrayLike | None = None,
                  seed: int | None = None):
+
+        # Check that the supercell is commensurate
+
+        if not isinstance(hamiltonian.structure.supercell, CommensurateSupercell):
+            raise TypeError("Classical energy minimisation only implemented for commensurate structures")
+
+        self.supercell: CommensurateSupercell = hamiltonian.structure.supercell
 
         # Check / normalise parameters
 
@@ -402,10 +410,17 @@ class ClassicalEnergyMinimisation:
 
         for param_index, (site_index, site_uid) in enumerate(self.free_sites):
             for component_index in range(self.n_components):
-                for cell in self.hamiltonian.structure.supercell.cells():
 
-                    dS_dalpha = rotation_matrices[param_index][component_index] @ alpha_m # m.(0, -1, 0)
-                    dS_dbeta = rotation_matrices[param_index][component_index] @ beta_m   # m.(1,  0, 0)
+                dT_dalpha = rotation_matrices[param_index][component_index] @ alpha_m  # m.(0, -1, 0)
+                dT_dbeta = rotation_matrices[param_index][component_index] @ beta_m  # m.(1,  0, 0)
+
+                for cell in self.supercell.cells():
+
+                    # We want to calculate the derivative, which we can do from the supercell
+                    df_dT = self.supercell.moment_derivative(component_index, cell)
+
+                    dS_dalpha = df_dT @ dT_dalpha
+                    dS_dbeta = df_dT @ dT_dbeta
 
 
                     # Couplings
@@ -414,33 +429,45 @@ class ClassicalEnergyMinimisation:
                         other_index = self._site_uid_to_index[coupling.site_2.unique_id]
                         other_moment = self.moment_data[other_index, :]
 
-                        forces_free_alpha[site_index] -= dS_dalpha @ coupling.coupling_matrix @ other_moment
-                        forces_free_beta[site_index] -= dS_dbeta @ coupling.coupling_matrix @ other_moment
+                        forces_free_alpha[site_index, component_index] -= \
+                            dS_dalpha @ coupling.coupling_matrix @ other_moment
+
+                        forces_free_beta[site_index, component_index] -= \
+                            dS_dbeta @ coupling.coupling_matrix @ other_moment
 
                     for coupling in self.site_to_coupling_side_2[site_uid]:
                         other_index = self._site_uid_to_index[coupling.site_1.unique_id]
                         other_moment = self.moment_data[other_index, :]
 
-                        forces_free_alpha[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dalpha
-                        forces_free_beta[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dbeta
+                        forces_free_alpha[param_index, component_index] -= \
+                            other_moment @ coupling.coupling_matrix @ dS_dalpha
+
+                        forces_free_beta[param_index, component_index] -= \
+                            other_moment @ coupling.coupling_matrix @ dS_dbeta
 
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:
                         # dE = m.A.dm + (dm.A.m).T (.T not needed when using 1D arrays)
                         current_moment = self.moment_data[param_index]
 
-                        forces_free_alpha[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
-                        forces_free_alpha[param_index] -= dS_dalpha @ anisotropy.anisotropy_matrix @ current_moment
+                        forces_free_alpha[param_index, component_index] -= \
+                            current_moment @ anisotropy.anisotropy_matrix @ dS_dalpha
 
-                        forces_free_beta[param_index] -= current_moment @ anisotropy.anisotropy_matrix @ dS_dbeta
-                        forces_free_beta[param_index] -= dS_dbeta @ anisotropy.anisotropy_matrix @ current_moment
+                        forces_free_alpha[param_index, component_index] -= \
+                            dS_dalpha @ anisotropy.anisotropy_matrix @ current_moment
+
+                        forces_free_beta[param_index, component_index] -= \
+                            current_moment @ anisotropy.anisotropy_matrix @ dS_dbeta
+
+                        forces_free_beta[param_index, component_index] -= \
+                            dS_dbeta @ anisotropy.anisotropy_matrix @ current_moment
 
                     # Field
                     field_force_alpha = self.field_contribution_vector[site_index] @ dS_dalpha
                     field_force_beta = self.field_contribution_vector[site_index] @ dS_dbeta
 
-                    forces_free_alpha[param_index] -= field_force_alpha
-                    forces_free_beta[param_index] -= field_force_beta
+                    forces_free_alpha[param_index, component_index] -= field_force_alpha
+                    forces_free_beta[param_index, component_index] -= field_force_beta
 
         # Planar sites
 
@@ -486,8 +513,8 @@ class ClassicalEnergyMinimisation:
         #
         # As we're in a coordinate system around current location, alpha = delta alpha
 
-        alpha = step_size_factor * np.array(forces_free_alpha)
-        beta = step_size_factor * np.array(forces_free_beta)
+        alpha = step_size_factor * forces_free_alpha
+        beta = step_size_factor * forces_free_beta
         theta = step_size_factor * np.array(forces_planar)
 
         # print("alpha change:", alpha)
@@ -504,9 +531,13 @@ class ClassicalEnergyMinimisation:
             np.cos(alpha) * cos_beta
         ]).T
 
-        for param_index, (site_index, _) in enumerate(self.free_sites):
-            self.moment_data[site_index] = rotation_matrices[param_index] @ unrotated_moments[param_index, :]
+        for component_index in range(self.n_components):
+            for param_index, (site_index, _) in enumerate(self.free_sites):
+                new_moments[site_index, component_index, :] = \
+                    rotation_matrices[param_index][component_index] @ unrotated_moments[param_index, component_index, :]
 
         for param_index, ((site_index, _), axis) in enumerate(zip(self.planar_sites, self.planar_axes)):
-            self.moment_data[site_index] = rotation_matrix(theta[param_index], axis) @ self.moment_data[site_index, :]
+            new_moments[site_index] = rotation_matrix(theta[param_index], axis) @ self.moment_data[site_index, :]
+
+        self.moment_data = new_moments
 

@@ -477,7 +477,7 @@ class SummationSupercell(CommensurateSupercell):
 
         pv = self._propagation_vectors[supercell_component_index]
 
-        return np.exp(-1j * (2* np.pi * pv.dot(cell) + pv.phase)).real # TODO, make sure this has the right form
+        return np.eye(3) * np.exp(-1j * (2* np.pi * pv.dot(cell) + pv.phase)).real
 
     def n_components(self) -> int:
         return len(self._propagation_vectors)
