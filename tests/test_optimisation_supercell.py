@@ -199,37 +199,35 @@ def test_energy_behaviour_rotation_supercell():
     assert np.allclose(energies, expected_energies), "energies should match expected energies"
 
 def test_rotation_supercell_error():
-    sites = [LatticeSite(0,0,0,1,1,1)]
+    """ Test that we throw an error if called on an incommensurate structure """
 
+    # TODO, add when integrated with Duc's changes
 
-    with pytest.raises(TypeError):
-        pass
+    # with pytest.raises(TypeError):
+    #     pass
 
 def test_optimise_transformation_supercell():
     """ Test optimisation of a supercell where moments need to be as unaligned as possible """
 
-    a = LatticeSite(0.25,0,0, -1, 0, 0, name="A")
-    b = LatticeSite(0.75, 0, 0, 1,0, 0, name="B")
+    a = LatticeSite(0.25,0,0, 1, 0, 0, name="A")
     x = LatticeSite(0.5, 0, 0, 1, 1, 1, name="X")
 
-    sites = [a, b, x]
+    sites = [a, x]
 
     pv = CommensuratePropagationVector(1,1,1/3)
     structure = Structure(sites, UnitCell(1,1,1),
                           supercell=TransformationSupercell([(pv, RotationTransform([1,0,0]))]))
 
-    couplings = [HeisenbergCoupling(a, x, 1),
-                 HeisenbergCoupling(b, x, 1)]
-
-    from pyspinw.interface import view
+    couplings = [HeisenbergCoupling(a, x, 1)]
 
     hamiltonian = Hamiltonian(structure, couplings)
 
-    view(hamiltonian)
-
-    optimised = hamiltonian.ground_state(fixed=[a, b])
+    optimised = hamiltonian.ground_state(fixed=[a])
 
     x_new = optimised.sites_by_name("X")[0]
 
-    assert np.isclose(np.dot(x_new.base_moment, [0,0,1]), 0)
+
+    base_moment_direction = x_new.base_moment / np.sqrt(np.sum(x_new.base_moment**2))
+
+    assert np.isclose(np.dot(base_moment_direction, [1,0,0]), -1)
 

@@ -94,8 +94,9 @@ def show_hamiltonian(hamiltonian):
     except Exception:
         pass
 
-
-    app = QApplication()
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
 
     app.setWindowIcon(png_icon("pyspinw"))
 
