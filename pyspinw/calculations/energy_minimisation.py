@@ -7,9 +7,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy._typing import ArrayLike
 
-from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
 from pyspinw.symmetry.supercell import CommensurateSupercell
 from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 
@@ -94,7 +91,7 @@ class ClassicalEnergyMinimisation:
     """
 
     def __init__(self,
-                 hamiltonian: Hamiltonian,
+                 hamiltonian: "Hamiltonian",
                  constraints: list[MinimisationConstraint] | MinimisationConstraintGenerator = Free,
                  field: ArrayLike | None = None,
                  seed: int | None = None):
@@ -588,37 +585,3 @@ class ClassicalEnergyMinimisation:
 
         # Update
         self.moment_data = new_moment_data
-
-    def create_hamiltonian(self):
-        """ Create a Hamiltonian from the current state """
-
-        # Create new spins
-        old_uid_to_new_site = {}
-        new_sites = []
-        for site_index, site in enumerate(self.sites):
-
-            spin_data = self.moment_data[site_index, :, :]
-
-            old_uid = site.unique_id
-            new_site = LatticeSite(site.i, site.j, site.k,
-                                   supercell_moments=spin_data,
-                                   g=site.g, name=site.name)
-
-            new_sites.append(new_site)
-            old_uid_to_new_site[old_uid] = new_site
-
-        structure = Structure(new_sites,
-                              self.hamiltonian.structure.unit_cell,
-                              self.hamiltonian.structure.spacegroup,
-                              self.hamiltonian.structure.supercell)
-
-        couplings = [coupling.updated(
-                        site_1 = old_uid_to_new_site[coupling.site_1.unique_id],
-                        site_2 = old_uid_to_new_site[coupling.site_2.unique_id])
-                      for coupling in self.hamiltonian.couplings]
-
-        anisotropies = [anisotropy.updated(
-                            site = old_uid_to_new_site[anisotropy.site.unique_id])
-                          for anisotropy in self.hamiltonian.anisotropies]
-
-        return Hamiltonian(structure, couplings, anisotropies)

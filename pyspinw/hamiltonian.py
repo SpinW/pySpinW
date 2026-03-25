@@ -394,17 +394,17 @@ class Hamiltonian(SPWSerialisable):
         if show:
             plt.show()
 
-    def classical_groundstate(self,
-                              fixed: list[LatticeSite] | None = None,
-                              planar: list[LatticeSite | tuple[LatticeSite, ArrayLike]] | None = None,
-                              planar_axis: ArrayLike | None = None,
-                              field: ArrayLike | None = None,
-                              initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
-                              seed: int | None = None,
-                              rtol: float=1e-10,
-                              atol: float=1e-12,
-                              max_iters: int=1000,
-                              verbose: bool=True):
+    def ground_state(self,
+                      fixed: list[LatticeSite] | None = None,
+                      planar: list[LatticeSite | tuple[LatticeSite, ArrayLike]] | None = None,
+                      planar_axis: ArrayLike | None = None,
+                      field: ArrayLike | None = None,
+                      initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
+                      seed: int | None = None,
+                      rtol: float=1e-10,
+                      atol: float=1e-12,
+                      max_iters: int=1000,
+                      verbose: bool=True):
 
         """ Get the classical ground state via gradient descent
 
@@ -476,7 +476,37 @@ class Hamiltonian(SPWSerialisable):
             initial_randomisation=initial_randomisation,
             verbose=verbose)
 
-        return minimiser.create_hamiltonian()
+
+        # Create new spins
+        old_uid_to_new_site = {}
+        new_sites = []
+        for site_index, site in enumerate(minimiser.sites):
+            spin_data = minimiser.moment_data[site_index, :, :]
+
+            old_uid = site.unique_id
+            new_site = LatticeSite(site.i, site.j, site.k,
+                                   supercell_moments=spin_data,
+                                   g=site.g, name=site.name)
+
+            new_sites.append(new_site)
+            old_uid_to_new_site[old_uid] = new_site
+
+        structure = Structure(new_sites,
+                              minimiser.hamiltonian.structure.unit_cell,
+                              minimiser.hamiltonian.structure.spacegroup,
+                              minimiser.hamiltonian.structure.supercell)
+
+        couplings = [coupling.updated(
+            site_1=old_uid_to_new_site[coupling.site_1.unique_id],
+            site_2=old_uid_to_new_site[coupling.site_2.unique_id])
+            for coupling in minimiser.hamiltonian.couplings]
+
+        anisotropies = [anisotropy.updated(
+            site=old_uid_to_new_site[anisotropy.site.unique_id])
+            for anisotropy in minimiser.hamiltonian.anisotropies]
+
+        return Hamiltonian(structure, couplings, anisotropies)
+
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),

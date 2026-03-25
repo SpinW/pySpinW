@@ -196,4 +196,3 @@ def test_energy_behaviour_rotation_supercell():
     expected_energies = np.array(expected_energies)
 
     assert np.allclose(energies, expected_energies), "energies should match expected energies"
-
