@@ -26,7 +26,6 @@ def format_triple(triple):
 
 def format_moment_data(moment_data):
     """ Rendering for moment data"""
-
     return ", ".join([format_triple(moment_data[i, :]) for i in range(moment_data.shape[0])])
 
 def format_anisotropies(anisotropies: list[Anisotropy]):

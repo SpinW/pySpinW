@@ -383,4 +383,5 @@ def matrix_anisotropies(
     return [Anisotropy(site, matrix) for site in sites]
 
 def view(hamiltonian: Hamiltonian):
+    """ Show the current Hamiltonian in the viewer"""
     show_hamiltonian(hamiltonian)

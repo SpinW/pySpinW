@@ -7,9 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy._typing import ArrayLike
 
-from pyspinw.anisotropy import Anisotropy
-from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, MinimisationConstraintGenerator, \
-    MinimisationConstraint, InitialRandomisation, Fixed, Planar
+from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, \
+    InitialRandomisation, Fixed, Planar
 from pyspinw.calculations.spinwave import (
     spinwave_calculation as py_spinwave,
     Coupling as PyCoupling,
@@ -410,7 +409,6 @@ class Hamiltonian(SPWSerialisable):
                       atol: float=1e-12,
                       max_iters: int=1000,
                       verbose: bool=True):
-
         """ Get the classical ground state via gradient descent
 
         For more direct control, use the `ClassicalEnergyMinimisation` class
@@ -430,7 +428,6 @@ class Hamiltonian(SPWSerialisable):
 
         :returns: A new `Hamiltonian` with optimised spin state
         """
-
         #
         # Build the constraints
         #
@@ -466,7 +463,7 @@ class Hamiltonian(SPWSerialisable):
 
                 try:
                     axis = np.array(site_or_tuple[1])
-                except:
+                except Exception:
                     raise TypeError("Expected second component of tuples to be an array")
 
                 index = site_uid_lookup[site_or_tuple[0].unique_id]
