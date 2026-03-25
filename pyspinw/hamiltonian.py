@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from numpy._typing import ArrayLike
 
 from pyspinw.anisotropy import Anisotropy
+from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, MinimisationConstraintGenerator, \
+    MinimisationConstraint, InitialRandomisation, Fixed, Planar
 from pyspinw.calculations.spinwave import (
     spinwave_calculation as py_spinwave,
     Coupling as PyCoupling,
@@ -391,6 +393,90 @@ class Hamiltonian(SPWSerialisable):
 
         if show:
             plt.show()
+
+    def classical_groundstate(self,
+                              fixed: list[LatticeSite] | None = None,
+                              planar: list[LatticeSite | tuple[LatticeSite, ArrayLike]] | None = None,
+                              planar_axis: ArrayLike | None = None,
+                              field: ArrayLike | None = None,
+                              initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
+                              seed: int | None = None,
+                              rtol: float=1e-10,
+                              atol: float=1e-12,
+                              max_iters: int=1000,
+                              verbose: bool=True):
+
+        """ Get the classical ground state via gradient descent
+
+        For more direct control, use the `ClassicalEnergyMinimisation` class
+
+        :param fixed: List of sites that should be ignored by the minimisation, i.e. fixed in place
+        :param planar: List of sites, or (site, axis) tuples that should be constrained to a plane
+        :param planar_axis: Axis to use for planar constraints if not specified explicitly, default=[0,0,1]
+        :param field: Magnetic field applied
+        :param initial_randomisation: Option to RANDOMISE or JITTER the starting state, default JITTER, can also be NONE
+        :param seed: Seed to use in any randomisation steps
+        :param rtol: Convergence criterion, stop when [energy change] < rtol x [initial energy change]
+        :param atol: Convergence criterion, stop when [energy change] < atol
+        :param max_iters: Limit on the number of iterations
+        :param verbose: Print information about the process to stdout
+
+        :returns: A new `Hamiltonian` with optimised spin state
+        """
+
+        #
+        # Build the constraints
+        #
+
+        default_axis = np.array([0,0,1]) if planar_axis is None else np.array(planar_axis)
+
+        site_uid_lookup = {site.unique_id: index for index, site in enumerate(self.structure.sites)}
+
+        constraints = [Free for _ in self.structure.sites]
+
+        for site in fixed:
+            constraints[site_uid_lookup[site.unique_id]] = Fixed
+
+        for site_or_tuple in planar:
+
+            if isinstance(site_or_tuple, LatticeSite):
+                index = site_uid_lookup[site_or_tuple.unique_id]
+                constraints[index] = Planar(default_axis)
+
+            elif isinstance(site_or_tuple, tuple):
+
+                if len(site_or_tuple) != 2:
+                    raise ValueError("Expected tuples in `planar` to be length 2")
+
+                if not isinstance(site_or_tuple[0], LatticeSite):
+                    raise TypeError("Expected first component of tuples to be a LatticeSite")
+
+                try:
+                    axis = np.array(site_or_tuple[1])
+                except:
+                    raise TypeError("Expected second component of tuples to be an array")
+
+                index = site_uid_lookup[site_or_tuple[0].unique_id]
+                constraints[index] = Planar(axis)
+
+            else:
+                raise TypeError("Expected entries in planar to be sites, or tuples of sites and axes")
+
+        # TODO: Apply constraints to symmetric sites?
+
+        #
+        # Run the minimisation
+        #
+
+        minimiser = ClassicalEnergyMinimisation(self, constraints, field, seed)
+        minimiser.minimise(
+            rtol=rtol,
+            atol=atol,
+            max_iters=max_iters,
+            initial_randomisation=initial_randomisation,
+            verbose=verbose)
+
+        return minimiser.create_hamiltonian()
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),
