@@ -1,5 +1,5 @@
 """ Classical minimisation of spin orientations """
-
+import warnings
 from collections import defaultdict
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -332,6 +332,7 @@ class ClassicalEnergyMinimisation:
 
     def minimise(self, rtol=1e-10, atol=1e-12, max_iters=1000,
                  initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
+                 step_size=0.1,
                  verbose=False):
         """ Automatically do the minimisation and stop based on energy convergence """
         if isinstance(initial_randomisation, str):
@@ -354,7 +355,7 @@ class ClassicalEnergyMinimisation:
         #
 
         last_energy = self.energy()
-        self.iterate()
+        self.iterate(step_size)
         this_energy = self.energy()
 
         start_delta_energy = this_energy - last_energy
@@ -365,7 +366,7 @@ class ClassicalEnergyMinimisation:
 
         for i in range(max_iters-1):
             last_energy = this_energy
-            self.iterate()
+            self.iterate(step_size)
             this_energy = self.energy()
 
             delta_energy = this_energy - last_energy
@@ -387,13 +388,13 @@ class ClassicalEnergyMinimisation:
 
         else:
             if verbose:
-                print(f"Failed to converge after {max_iters} iterations")
+                print(f"Failed to converge after {max_iters} iterations - maybe change the step_size?")
 
         # TODO: Return new Hamiltonian
 
 
 
-    def iterate(self, step_size_factor=0.1):
+    def iterate(self, step_size=0.1):
         """ Perform one step of gradient descent """
         # Free sites
 
@@ -552,9 +553,13 @@ class ClassicalEnergyMinimisation:
         #
         # As we're in a coordinate system around current location, alpha = delta alpha
 
-        alpha = step_size_factor * forces_free_alpha
-        beta = step_size_factor * forces_free_beta
-        theta = step_size_factor * forces_planar
+        alpha = step_size * forces_free_alpha
+        beta = step_size * forces_free_beta
+        theta = step_size * forces_planar
+
+        if np.any(np.abs(alpha) > 1.0) or np.any(np.abs(beta) > 1.0) or np.any(np.abs(theta) > 1.0):
+            warnings.warn("Taking a very large step, this is perhaps because the energy is large and/or"
+                          " step_size is too big")
 
         # print("alpha change:", alpha)
         # print("beta change:", beta)

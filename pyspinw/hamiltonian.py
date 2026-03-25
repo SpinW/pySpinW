@@ -403,6 +403,7 @@ class Hamiltonian(SPWSerialisable):
                       planar: list[LatticeSite | tuple[LatticeSite, ArrayLike]] | None = None,
                       planar_axis: ArrayLike | None = None,
                       field: ArrayLike | None = None,
+                      step_size: float = 0.1,
                       initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
                       seed: int | None = None,
                       rtol: float=1e-10,
@@ -418,6 +419,8 @@ class Hamiltonian(SPWSerialisable):
         :param planar: List of sites, or (site, axis) tuples that should be constrained to a plane
         :param planar_axis: Axis to use for planar constraints if not specified explicitly, default=[0,0,1]
         :param field: Magnetic field applied
+        :param step_size: Size of step to make relative to the force, smaller values than the default might be needed
+                          for systems with high energy.
         :param initial_randomisation: Option to RANDOMISE or JITTER the starting state, default JITTER, can also be NONE
         :param seed: Seed to use in any randomisation steps
         :param rtol: Convergence criterion, stop when [energy change] < rtol x [initial energy change]
@@ -484,6 +487,7 @@ class Hamiltonian(SPWSerialisable):
             atol=atol,
             max_iters=max_iters,
             initial_randomisation=initial_randomisation,
+            step_size=step_size,
             verbose=verbose)
 
 

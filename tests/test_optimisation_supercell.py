@@ -231,3 +231,21 @@ def test_optimise_transformation_supercell():
 
     assert np.isclose(np.dot(base_moment_direction, [1,0,0]), -1)
 
+def test_optimise_summation_supercell():
+    """ A system where we optimise one of the in the supercell but not the other, just check it doesn't crash """
+    x = LatticeSite(0.25,0,0, supercell_moments=[[0,0,1], [0,0,0]], name="X")
+    y = LatticeSite(0.75,0,0, supercell_moments=[[0,0,0], [1,1,1]], name="Y")
+
+    couplings = [HeisenbergCoupling(x, y, j=1)]
+
+    pv1 = CommensuratePropagationVector(1,1, 1/2)
+    pv2 = CommensuratePropagationVector(1,1, 1/3, phase=np.pi/2)
+
+    supercell = SummationSupercell([pv1, pv2])
+
+    structure = Structure([x, y], unit_cell=UnitCell(1,1,1), supercell=supercell)
+
+    hamiltonian = Hamiltonian(structure, couplings)
+
+    optimised = hamiltonian.ground_state(fixed=[x])
+
