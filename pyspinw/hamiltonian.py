@@ -1,6 +1,5 @@
 """Selection of different Hamiltonians"""
 import logging
-from abc import ABC, abstractmethod
 
 import numpy as np
 
