@@ -1,5 +1,5 @@
 """ Magnetic structures """
-
+import re
 
 import numpy as np
 
@@ -202,6 +202,11 @@ class Structure(SPWSerialisable):
         """ Set the input sites """
         self._input_sites = sites
         self._sites = self._build_sites()
+
+    def sites_by_name(self, regex) -> list[LatticeSite]:
+        """ Get sites where name matches regex"""
+        return [site for site in self.sites if re.match(regex, site.name) is not None]
+
 
     @property
     def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:

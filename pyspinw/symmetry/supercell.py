@@ -416,8 +416,9 @@ class TransformationSupercell(CommensurateSupercell):
 
     def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
         """ Calculate the spin based on the moment data for a given site """
+        moment = moment_data[0, :]
         for vector, transform in self._transforms:
-            moment = transform.apply(moment=moment_data[0, :], propagation_vector=vector, cell_offset=cell_offset)
+            moment = transform.apply(moment=moment, propagation_vector=vector, cell_offset=cell_offset)
 
         return moment
 
@@ -426,7 +427,12 @@ class TransformationSupercell(CommensurateSupercell):
         if supercell_component_index != 0:
             raise ValueError("Transformation supercell does not support multiple moment definitions")
 
-        self.moment_calculation(cell_offset=cell, moment_data=np.ones((1, 3))) # TODO: NOT CORRECT
+        # A little bit hacky in the sense that we're using things for something other than their intended purpose
+        transform_matrix = np.eye(3)
+        for vector, transform in self._transforms:
+            transform_matrix = transform.apply(transform_matrix, propagation_vector=vector, cell_offset=cell)
+
+        return transform_matrix
 
     def summation_form(self) -> "Supercell":
         """ Convert into summation form """

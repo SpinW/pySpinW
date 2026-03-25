@@ -173,6 +173,10 @@ class Hamiltonian(SPWSerialisable):
         return expanded
 
 
+    def sites_by_name(self, regex) -> list[LatticeSite]:
+        """ Get sites where name matches regex"""
+        return self.structure.sites_by_name(regex)
+
     def print_summary(self):
         """ Print a textual summary to stdout"""
         print(self.text_summary)
@@ -428,10 +432,16 @@ class Hamiltonian(SPWSerialisable):
         # Build the constraints
         #
 
+        # Deal with defaults
         default_axis = np.array([0,0,1]) if planar_axis is None else np.array(planar_axis)
+        fixed = [] if fixed is None else fixed
+        planar = [] if planar is None else planar
 
+        # Mapping
         site_uid_lookup = {site.unique_id: index for index, site in enumerate(self.structure.sites)}
 
+
+        # Actual building
         constraints = [Free for _ in self.structure.sites]
 
         for site in fixed:
