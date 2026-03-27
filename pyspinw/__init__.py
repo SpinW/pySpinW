@@ -23,7 +23,7 @@ from pyspinw.symmetry.supercell import SummationSupercell, RotationSupercell, Tr
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
 from pyspinw.path import Path, Path1D
 
-from windows_parallelisation import set_up_windows_python_parallelisation
+from pyspinw.windows_parallelisation import set_up_windows_python_parallelisation
 
 # TODO, add viewer and fitting things
 
