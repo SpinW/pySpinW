@@ -8,7 +8,6 @@ windows_python_parallelisation_enabled = False
 
 def get_Executor():
     """ Get an Executor appropriate for the current system """
-
     if platform.system() == "Windows":
         if not windows_python_parallelisation_enabled:
             return ThreadPoolExecutor
@@ -33,7 +32,7 @@ def set_up_windows_python_parallelisation():
     Applies freeze_support() and sets a flag to be used elsewhere
 
     """
-
+    # ruff: noqa: PLW0603
     global windows_python_parallelisation_enabled
 
     windows_python_parallelisation_enabled = True
