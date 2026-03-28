@@ -1,3 +1,5 @@
+""" Tests for things related to packaging """
+
 import types
 
 def test__all__is_present():
