@@ -530,6 +530,7 @@ class RotationSupercell(Supercell):
         return (1, 1, 1)
 
     def n_components(self) -> int:
+        """ Number of propagation vectors in this supercell """
         return 1
 
     def summation_form(self) -> "Supercell":

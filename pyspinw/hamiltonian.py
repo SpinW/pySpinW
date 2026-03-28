@@ -1,8 +1,8 @@
 """Selection of different Hamiltonians"""
 import logging
-from abc import ABC, abstractmethod
 import re
 from collections import Counter
+from typing import Sequence, Union
 
 import numpy as np
 
@@ -19,7 +19,7 @@ from pyspinw.calculations.spinwave import (
 from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling
+from pyspinw.coupling import Coupling, coupling_lookup
 from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
@@ -45,6 +45,118 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
         for iE in range(len(eu)):
             int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
     return en_out, int_out
+
+ParametrizationType = Union[str,
+                       Sequence[str],
+                       Sequence[tuple[Union[Coupling, Anisotropy, str], str]],
+                       tuple[Sequence[Union[Coupling, Anisotropy, str]], str],
+                       tuple[Coupling | Anisotropy | str, str]]
+
+def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: ParametrizationType):
+    """ Convert many options for defining parameters into a more regular form
+
+     This is used in the parameterisation method/class
+     """
+
+    # Step 1: convert everything to a Sequence
+
+    if isinstance(parameter_data, str):
+        parameter_data = [parameter_data]
+
+    elif isinstance(parameter_data, tuple):
+        if len(parameter_data) != 2:
+            raise ValueError(f"Expected tuple parameter definition to have length 2 (got {parameter_data})")
+
+        if not isinstance(parameter_data[1], str):
+            raise ValueError(f"Expected second component of tuple to be (got {type(parameter_data)}, {parameter_data})")
+
+        if isinstance(parameter_data[0], Sequence):
+            parameter_data = [(datum, parameter_data[1]) for datum in parameter_data[0]]
+
+        elif isinstance(parameter_data[0], (Coupling, Anisotropy, str)):
+            parameter_data = [parameter_data]
+
+        else:
+            raise TypeError(f"Expected parameters to be defined by Coupling, Anisotropy or str,"
+                            f" got {type(parameter_data[0])}: {parameter_data[0]}")
+
+    elif isinstance(parameter_data, Sequence):
+        pass
+
+    else:
+        raise TypeError(f"Expected to parameter definitions type to be str, Sequence, or tuple, "
+                        f"got {type(parameter_data)}: {parameter_data}")
+
+    #
+    # Step 2: convert plain strings into tuples
+    #
+
+    new_parameter_data = []
+    for datum in parameter_data:
+        if isinstance(datum, str):
+            parts = datum.split(".")
+
+            if len(parts) != 2:
+                raise ValueError(f"Expected strings to be of the form coupling_name.parameter_name, got '{datum}'")
+
+            new_parameter_data.append((parts[0], parts[1]))
+
+        else:
+            new_parameter_data.append(datum)
+
+    parameter_data = new_parameter_data
+
+    #
+    # Step 3: Check second part is always a string, and that tuples are the right length
+    #
+
+    for datum in parameter_data:
+        if not isinstance(datum, tuple):
+            raise Exception("A previous error has not been caught, parameters should all be tuples")
+
+        if len(datum) != 2:
+            raise ValueError(f"Expected all tuple entries to be length 2, found {datum}")
+
+        if not isinstance(datum[1], str):
+            raise ValueError(f"Expected second part of tuple to be a string, got {type(datum[1])}: {datum[1]}")
+
+    #
+    # Step 4: Resolve any string names, everything should now be tuple2
+    #
+
+    new_parameter_data = []
+    for target, parameter in parameter_data:
+        if isinstance(target, str):
+
+            couplings = hamiltonian.couplings_by_name(target)
+
+            if len(couplings) == 0:
+                raise ValueError(f"Could not find couplings that match {target}")
+
+            if len(couplings) > 1:
+                logger.warning(f"Found multiple matches for '{target}', attempting to use them all: {couplings}")
+
+            for coupling in couplings:
+                new_parameter_data.append((coupling, parameter))
+
+        else:
+            new_parameter_data.append((target, parameter))
+
+    parameter_data = new_parameter_data
+
+    #
+    # Step 5: Split into couplings and anisotopies
+    #
+
+    couplings = []
+    anisotropies = []
+    for target, parameter in parameter_data:
+        if isinstance(target, Coupling):
+            couplings.append((target, parameter))
+        elif isinstance(target, Anisotropy):
+            anisotropies.append((target, parameter))
+
+    return couplings, anisotropies
 
 
 class Hamiltonian(SPWSerialisable):
@@ -370,10 +482,9 @@ class Hamiltonian(SPWSerialisable):
             return fig
 
     def parameterize(self,
-                     *parameters: tuple[Coupling, str] | tuple[str, str] | str,
+                     *parameters: ParametrizationType,
                      find_ground_state_with: dict | None = None) -> "HamiltonianParameterization":
         """ Get a function that maps floats to a hamiltonian with the floats controlling the specified parameters"""
-
         return HamiltonianParameterization(self,*parameters,
                                            find_ground_state_with=find_ground_state_with)
 
@@ -553,9 +664,14 @@ class Hamiltonian(SPWSerialisable):
 
 
 class HamiltonianParameterization:
+    """ Parameterisation of a Hamiltonian
+
+    This is a callable class that returns a Hamiltonian with couplings set by specified parameters
+    """
+
     def __init__(self,
                  hamiltonian: Hamiltonian,
-                 *parameters: list[tuple[Coupling, str] | tuple[str, str] | str],
+                 *parameters: ParametrizationType,
                  find_ground_state_with: dict | None = None):
 
         self._hamiltonian = hamiltonian
@@ -563,82 +679,70 @@ class HamiltonianParameterization:
         self._ground_state_parameters = {} if find_ground_state_with is None else find_ground_state_with
 
         # Create a list of parameters that will be updated
-        base_parameter_definitions = []
-        for parameter_data in parameters:
+        base_coupling_parameters: list[list[tuple[Coupling, str]]] = []
+        base_anisotropy_parameters: list[list[tuple[Anisotropy, str]]] = []
 
-            # input case: str, split into a tuple, then parse like others
-            if isinstance(parameter_data, str):
+        for param in parameters:
+            couplings, anisotropies = _regularise_parameters(hamiltonian, param)
 
-                parts = parameter_data.split(".")
-                if len(parts) != 2:
-                    raise ValueError("Expected parameter definition to be of the form 'coupling_name.parameter', "
-                                     f"got '{parameter_data}'")
-
-                parameter_data = (parts[0], parts[1])
-
-            # Deal with tuples
-            if isinstance(parameter_data, tuple):
-
-                if len(parameter_data) != 2:
-                    raise ValueError(f"Expected tuple entries to be length 2, got {parameter_data}")
-
-                coupling, parameter = parameter_data
-                if isinstance(coupling, Coupling):
-                    # input case: (Coupling, str)
-
-                    base_parameter_definitions.append([(coupling, parameter)])
-
-
-                elif isinstance(coupling, str):
-                    # input case: (str, str)
-
-                    couplings = hamiltonian.couplings_by_name(coupling)
-
-                    if len(couplings) == 0:
-                        logger.warning(f"Coupling regex {coupling} does not match any couplings")
-
-                    elif len(couplings) > 1:
-                        logger.warning(f"Coupling regex {coupling} matches multiple couplings, adding all")
-
-                    base_parameter_definitions.append([(coupling, parameter) for coupling in couplings])
-
-                else:
-                    raise TypeError(f"Expected first component of tuple to be Coupling or str, got {type(coupling)}")
-
-            else:
-                # input case: bad
-                raise TypeError(f"Expected parameters to be tuples of Exchange/str and str, "
-                                f"or str, got {type(parameter_data)}")
+            base_coupling_parameters.append(couplings)
+            base_anisotropy_parameters.append(anisotropies)
 
         # Check that there is no conflicts, this means that each parameter is only set by only one entry
         # Basically, we can just check for duplicates
 
-        multicounts = [item for item, count in Counter(sum(base_parameter_definitions, [])).items() if count > 1]
-
+        multicounts = [item for item, count in Counter(sum(base_coupling_parameters, [])).items() if count > 1]
         if len(multicounts) > 0:
-            raise ValueError(f"Multiple parameters assigned to the same parameter {multicounts}")
+            raise ValueError(f"Multiple parameters assigned to the same coupling parameter {multicounts}")
+
+        multicounts = [item for item, count in Counter(sum(base_anisotropy_parameters, [])).items() if count > 1]
+        if len(multicounts) > 0:
+            raise ValueError(f"Multiple parameters assigned to the same anisotropy parameter {multicounts}")
 
         # Check that the couplings have the required parameters
-        for parameter_definition in base_parameter_definitions:
-            for coupling, attribute in parameter_definition:
-                if attribute not in coupling.parameters:
-                    valid_parameters = ", ".join(coupling.parameters)
-                    raise TypeError(f"{coupling} does not have parameter '{attribute}', it has: {valid_parameters}")
+        for parameter_definition in base_coupling_parameters:
+            for target, attribute in parameter_definition:
+                if attribute not in target.parameters:
+                    valid_parameters = ", ".join(target.parameters)
+                    raise TypeError(f"{target} does not have parameter '{attribute}', it has: {valid_parameters}")
 
+
+        # Check that the anisotropies have the required parameters
+        for parameter_definition in base_anisotropy_parameters:
+            for target, attribute in parameter_definition:
+                if attribute not in target.scalar_parameters:
+                    valid_parameters = ", ".join(target.scalar_parameters)
+                    raise TypeError(f"{target} does not have parameter '{attribute}', it has: {valid_parameters}")
 
         # Convert the coupling to index in the list of couplings
-        unique_id_to_index = {coupling.unique_id: index for index, coupling in enumerate(hamiltonian.couplings)}
-        self._parameter_definitions: list[list[tuple[int, str]]] = []
+        coupling_unique_id_to_index = {coupling.unique_id: index
+                                       for index, coupling in enumerate(hamiltonian.couplings)}
+        self._coupling_parameter_definitions: list[list[tuple[int, str]]] = []
 
-        for parameter_definition in base_parameter_definitions:
+        for parameter_definition in base_coupling_parameters:
             indexed_parameter_definition: list[tuple[int, str]] = []
-            for coupling, attribute in parameter_definition:
-                index = unique_id_to_index[coupling.unique_id]
+            for target, attribute in parameter_definition:
+                index = coupling_unique_id_to_index[target.unique_id]
                 indexed_parameter_definition.append((index, attribute))
-            self._parameter_definitions.append(indexed_parameter_definition)
+            self._coupling_parameter_definitions.append(indexed_parameter_definition)
+
+        # Convert the anisotropy to index for the list of anisotropies
+        anisotropy_unique_id_to_index = {anisotropy.unique_id: index
+                                       for index, anisotropy in enumerate(hamiltonian.anisotropies)}
+        self._anisotropy_parameter_definitions: list[list[tuple[int, str]]] = []
+
+        for parameter_definition in base_anisotropy_parameters:
+            indexed_parameter_definition: list[tuple[int, str]] = []
+            for target, attribute in parameter_definition:
+                index = anisotropy_unique_id_to_index[target.unique_id]
+                indexed_parameter_definition.append((index, attribute))
+            self._anisotropy_parameter_definitions.append(indexed_parameter_definition)
 
         # Number is useful
-        self._n_parameters = len(self._parameter_definitions)
+        self._n_parameters = len(self._coupling_parameter_definitions)
+
+        assert len(self._anisotropy_parameter_definitions) == len(self._coupling_parameter_definitions), \
+            "Should both be length n_parameters"
 
     @staticmethod
     def _legend_entry(coupling_name, parameter_name):
@@ -657,7 +761,6 @@ class HamiltonianParameterization:
                     show_legend=True,
                     use_rust: bool = True):
         """ Show a plot of the energies """
-
         # Check/regularise input values
         parameter_values = np.array(parameter_values)
         if len(parameter_values.shape) == 1:
@@ -687,7 +790,6 @@ class HamiltonianParameterization:
 
         x_values = path.x_values()
 
-        legend_data = []
         for i in range(n_curves):
             ham = self(*parameter_values[i, :])
             first = True
@@ -715,14 +817,20 @@ class HamiltonianParameterization:
         if len(parameters) != self._n_parameters:
             raise ValueError(f"Expected {self._n_parameters} parameters, got {len(parameters)}")
 
+        # Updated couplings
         new_couplings = [coupling for coupling in self._hamiltonian.couplings]
-        for parameter_definition, value in zip(self._parameter_definitions, parameters):
+        for parameter_definition, value in zip(self._coupling_parameter_definitions, parameters):
             for (coupling_index, attribute) in parameter_definition:
                 new_couplings[coupling_index] = new_couplings[coupling_index].updated(**{attribute: value})
 
+        # Updated anisotropies
+        new_anisotropies = [anisotropy for anisotropy in self._hamiltonian.anisotropies]
+        for parameter_definition, value in zip(self._anisotropy_parameter_definitions, parameters):
+            for anisotropy_index, attribute in parameter_definition:
+                new_anisotropies[anisotropy_index] = new_anisotropies[anisotropy_index].updated(**{attribute: value})
 
+        # Return new hamiltonian, optimise ground state if needed
         new_hamiltonian = Hamiltonian(self._hamiltonian.structure, new_couplings, self._hamiltonian.anisotropies)
-
         if self._find_ground_state:
             return new_hamiltonian.ground_state(**self._ground_state_parameters)
         else:

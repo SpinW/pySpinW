@@ -35,6 +35,8 @@ parameterized_hamiltonian = hamiltonian.parameterize(
     ("J", "j"),
     find_ground_state_with={"fixed": [x], "verbose": False})
 
+print(parameterized_hamiltonian._coupling_parameter_definitions)
+
 j_values = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
 
 for j in j_values:
