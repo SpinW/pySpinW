@@ -426,9 +426,11 @@ class Hamiltonian(SPWSerialisable):
 class HamiltonianParameterization:
     def __init__(self,
                  hamiltonian: Hamiltonian,
-                 *parameters: list[tuple[Coupling, str] | tuple[str, str] | str]):
+                 *parameters: list[tuple[Coupling, str] | tuple[str, str] | str],
+                 find_ground_state: bool=False):
 
         self.hamiltonian = hamiltonian
+        self.find_ground_state = find_ground_state
 
         # Create a list of parameters that will be updated
         base_parameter_definitions = []
@@ -538,7 +540,7 @@ class HamiltonianParameterization:
             logger.warning(str(ve))
             cmap = plt.get_cmap('jet')
 
-        colors = cmap(np.linspace(0, 1, n_curves+2)[1:-1])
+        colors = cmap(np.linspace(0, 1, n_curves+2)[1:-1]) # Generally a bit nicer if we avoid the endpoints
 
         # Figure
         if new_figure:
@@ -569,4 +571,9 @@ class HamiltonianParameterization:
                 new_couplings[coupling_index] = new_couplings[coupling_index].updated(**{attribute: value})
 
 
-        return Hamiltonian(self.hamiltonian.structure, new_couplings, self.hamiltonian.anisotropies)
+        new_hamiltonian = Hamiltonian(self.hamiltonian.structure, new_couplings, self.hamiltonian.anisotropies)
+        
+        if self.find_ground_state:
+            return new_hamiltonian.ground_state()
+        else:
+            return new_hamiltonian
