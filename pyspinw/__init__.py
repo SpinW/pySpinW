@@ -6,13 +6,13 @@ magnetic structures and excitations
 
 
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.structures import Structure
 from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
 from pyspinw.coupling import HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling
-
-from pyspinw.structures import Structure
 from pyspinw.hamiltonian import Hamiltonian
 
-from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.couplinggroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
 
 from pyspinw.interface import (
     sites, propagation_vectors, rotation_supercell, summation_supercell, spacegroup,
@@ -24,6 +24,8 @@ from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powd
 from pyspinw.path import Path, Path1D
 
 from pyspinw.windows_parallelisation import set_up_windows_python_parallelisation
+
+from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType
 
 # TODO, add viewer and fitting things
 
@@ -41,6 +43,11 @@ __all__ = [
     "XYCoupling",
     "IsingCoupling",
     "DMCoupling",
+
+    # coupling groups
+    "InPlaneFilter",
+    "InDirectionFilter",
+    "BiDirectionFilter",
 
     # structures / hamiltonian
     "Structure",
@@ -73,6 +80,9 @@ __all__ = [
     "Twin",
     "Powder",
     "ScalingMethod",
+
+    # Point generators
+    "SphericalPointGeneratorType",
 
     # path
     "Path",
