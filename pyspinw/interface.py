@@ -10,6 +10,8 @@ from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     BiDirectionFilter
+from pyspinw.gui.viewer import show_hamiltonian
+from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
@@ -379,3 +381,7 @@ def matrix_anisotropies(
         matrix: ArrayLike):
     """ Create anisotropy objects specified by a matrix, the same for each site """
     return [Anisotropy(site, matrix) for site in sites]
+
+def view(hamiltonian: Hamiltonian):
+    """ Show the current Hamiltonian in the viewer"""
+    show_hamiltonian(hamiltonian)
