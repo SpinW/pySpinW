@@ -24,8 +24,7 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
-from pyspinw.symmetry.supercell import TrivialSupercell
-
+from pyspinw.symmetry.supercell import TrivialSupercell, RotationSupercell
 
 # pylint: disable=R0903
 
@@ -194,6 +193,9 @@ class Hamiltonian(SPWSerialisable):
         #
         # Set up choice of calculation
         #
+
+        # Rotating frame calculations should only be run on RotationSupercells
+        use_rotating = use_rotating and isinstance(self.structure.supercell, RotationSupercell)
 
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
@@ -504,6 +506,57 @@ class HamiltonianParameterization:
 
         # Number is useful
         self.n_parameters = len(self.parameter_definitions)
+
+    def energy_plot(self,
+                    parameter_values: ArrayLike,
+                    path: Path,
+                    field: ArrayLike | None = None,
+                    show: bool = True,
+                    colormap_name: str = 'jet',
+                    new_figure: bool = True,
+                    use_rust: bool = True):
+        """ Show a plot of the energies """
+
+        # Check/regularise input values
+        parameter_values = np.array(parameter_values)
+        if len(parameter_values.shape) == 1:
+            parameter_values = parameter_values.reshape(-1, 1)
+
+        if parameter_values.shape[1] != self.n_parameters:
+            raise ValueError("Second dimension size of parameter_values should match number of parameters")
+
+        n_curves = parameter_values.shape[0]
+
+        #
+        # Do the plotting
+        #
+
+        # Colours
+        try:
+            cmap = plt.get_cmap(colormap_name)
+        except ValueError as ve:
+            logger.warning(str(ve))
+            cmap = plt.get_cmap('jet')
+
+        colors = cmap(np.linspace(0, 1, n_curves+2)[1:-1])
+
+        # Figure
+        if new_figure:
+            plt.figure("Energy")
+
+        x_values = path.x_values()
+
+        for i in range(n_curves):
+            ham = self(*parameter_values[i, :])
+            for series in ham.sorted_positive_energies(path, field=field, use_rust=use_rust):
+                plt.plot(x_values, series, color=colors[i])
+
+        path.format_plot(plt)
+
+        if show:
+            plt.show()
+
+
 
     def __call__(self, *parameters: float) -> Hamiltonian:
         """ Get the Hamiltonian with parameters set """

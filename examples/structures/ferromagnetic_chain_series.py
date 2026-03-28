@@ -39,3 +39,6 @@ if __name__ == "__main__":
         ham = parameterized_hamiltonian(j)
 
         ham.print_summary()
+
+    parameterized_hamiltonian.energy_plot([-0.5, -1.0, -1.5], path)
+
