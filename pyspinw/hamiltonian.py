@@ -588,6 +588,7 @@ class HamiltonianParameterization:
 
                     base_parameter_definitions.append([(coupling, parameter)])
 
+
                 elif isinstance(coupling, str):
                     # input case: (str, str)
 
@@ -639,6 +640,13 @@ class HamiltonianParameterization:
         # Number is useful
         self._n_parameters = len(self._parameter_definitions)
 
+    @staticmethod
+    def _legend_entry(coupling_name, parameter_name):
+        if coupling_name is None or coupling_name == "":
+            return parameter_name
+        else:
+            return coupling_name + "." + parameter_name
+
     def energy_plot(self,
                     parameter_values: ArrayLike,
                     path: Path,
@@ -646,6 +654,7 @@ class HamiltonianParameterization:
                     show: bool = True,
                     colormap_name: str = 'jet',
                     new_figure: bool = True,
+                    show_legend=True,
                     use_rust: bool = True):
         """ Show a plot of the energies """
 
@@ -678,11 +687,22 @@ class HamiltonianParameterization:
 
         x_values = path.x_values()
 
+        legend_data = []
         for i in range(n_curves):
             ham = self(*parameter_values[i, :])
+            first = True
             for series in ham.sorted_positive_energies(path, field=field, use_rust=use_rust):
-                plt.plot(x_values, series, color=colors[i])
+                if first:
+                    label = ", ".join([f"{value:.3g}" for value in parameter_values[i, :]])
+                    plt.plot(x_values, series, color=colors[i], label=label)
+                    first=False
+                else:
+                    plt.plot(x_values, series, color=colors[i])
 
+        if show_legend:
+            plt.legend(loc="upper right")
+
+        # Format the plot
         path.format_plot(plt)
 
         if show:

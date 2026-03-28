@@ -29,16 +29,15 @@ s = Structure(sites, unit_cell)
 
 hamiltonian = Hamiltonian(s, exchanges)
 
-path = Path([[0,0,0], [1,0,0]])
+path = Path([[0,0,0], [0,1,0]])
 
 parameterized_hamiltonian = hamiltonian.parameterize(
-    (exchanges[0], "j"),
-    find_ground_state_with={"fixed": [x]})
+    ("J", "j"),
+    find_ground_state_with={"fixed": [x], "verbose": False})
 
-j_values = [-1.5, -1.0, -0.5, 0.5, 1.0, 1.5]
+j_values = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
 
 for j in j_values:
-    parameterized_hamiltonian._ground_state_parameters()
+    parameterized_hamiltonian(j).print_summary()
 
-
-parameterized_hamiltonian.energy_plot([-1.5, -1.0, -0.5, 0.5, 1.0, 1.5], path)
+parameterized_hamiltonian.energy_plot(j_values, path)
