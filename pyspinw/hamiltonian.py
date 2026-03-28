@@ -1,6 +1,8 @@
 """Selection of different Hamiltonians"""
 import logging
 from abc import ABC, abstractmethod
+import re
+from collections import Counter
 
 import numpy as np
 
@@ -44,6 +46,7 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
             int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
     return en_out, int_out
 
+
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
 
@@ -67,6 +70,11 @@ class Hamiltonian(SPWSerialisable):
     def couplings(self):
         """ Get the couplings """
         return self._couplings
+
+    def couplings_by_name(self, regex):
+        """ Get list of couplings whose names match the regex """
+        return [coupling for coupling in self.couplings if re.match(regex, coupling.name) is not None]
+
 
     @property
     def anisotropies(self):
@@ -354,6 +362,12 @@ class Hamiltonian(SPWSerialisable):
         else:
             return fig
 
+    def parameterize(self, *parameters: tuple[Coupling, str] | tuple[str, str] | str) \
+            -> "HamiltonianParameterization":
+        """ Get a function that maps floats to a hamiltonian with the floats controlling the specified parameters"""
+
+        return HamiltonianParameterization(self, *parameters)
+
     def sorted_positive_energies(self,
                                  path: Path,
                                  field: ArrayLike | None = None,
@@ -405,3 +419,101 @@ class Hamiltonian(SPWSerialisable):
         anisotropies = [Anisotropy._deserialise(anisotropy, context) for anisotropy in json["anisotropies"]]
 
         return Hamiltonian(structure, couplings, anisotropies)
+
+
+class HamiltonianParameterization:
+    def __init__(self,
+                 hamiltonian: Hamiltonian,
+                 *parameters: list[tuple[Coupling, str] | tuple[str, str] | str]):
+
+        self.hamiltonian = hamiltonian
+
+        # Create a list of parameters that will be updated
+        base_parameter_definitions = []
+        for parameter_data in parameters:
+
+            # input case: str, split into a tuple, then parse like others
+            if isinstance(parameter_data, str):
+
+                parts = parameter_data.split(".")
+                if len(parts) != 2:
+                    raise ValueError("Expected parameter definition to be of the form 'coupling_name.parameter', "
+                                     f"got '{parameter_data}'")
+
+                parameter_data = (parts[0], parts[1])
+
+            # Deal with tuples
+            if isinstance(parameter_data, tuple):
+
+                if len(parameter_data) != 2:
+                    raise ValueError(f"Expected tuple entries to be length 2, got {parameter_data}")
+
+                coupling, parameter = parameter_data
+                if isinstance(coupling, Coupling):
+                    # input case: (Coupling, str)
+
+                    base_parameter_definitions.append([(coupling, parameter)])
+
+                elif isinstance(coupling, str):
+                    # input case: (str, str)
+
+                    couplings = hamiltonian.couplings_by_name(coupling)
+
+                    if len(couplings) == 0:
+                        logger.warning(f"Coupling regex {coupling} does not match any couplings")
+
+                    elif len(couplings) > 1:
+                        logger.warning(f"Coupling regex {coupling} matches multiple couplings, adding all")
+
+                    base_parameter_definitions.append([(coupling, parameter) for coupling in couplings])
+
+                else:
+                    raise TypeError(f"Expected first component of tuple to be Coupling or str, got {type(coupling)}")
+
+            else:
+                # input case: bad
+                raise TypeError(f"Expected parameters to be tuples of Exchange/str and str, "
+                                f"or str, got {type(parameter_data)}")
+
+        # Check that there is no conflicts, this means that each parameter is only set by only one entry
+        # Basically, we can just check for duplicates
+
+        multicounts = [item for item, count in Counter(sum(base_parameter_definitions, [])).items() if count > 1]
+
+        if len(multicounts) > 0:
+            raise ValueError(f"Multiple parameters assigned to the same parameter {multicounts}")
+
+        # Check that the couplings have the required parameters
+        for parameter_definition in base_parameter_definitions:
+            for coupling, attribute in parameter_definition:
+                if attribute not in coupling.parameters:
+                    valid_parameters = ", ".join(coupling.parameters)
+                    raise TypeError(f"{coupling} does not have parameter '{attribute}', it has: {valid_parameters}")
+
+
+        # Convert the coupling to index in the list of couplings
+        unique_id_to_index = {coupling.unique_id: index for index, coupling in enumerate(hamiltonian.couplings)}
+        self.parameter_definitions: list[list[tuple[int, str]]] = []
+
+        for parameter_definition in base_parameter_definitions:
+            indexed_parameter_definition: list[tuple[int, str]] = []
+            for coupling, attribute in parameter_definition:
+                index = unique_id_to_index[coupling.unique_id]
+                indexed_parameter_definition.append((index, attribute))
+            self.parameter_definitions.append(indexed_parameter_definition)
+
+        # Number is useful
+        self.n_parameters = len(self.parameter_definitions)
+
+    def __call__(self, *parameters: float) -> Hamiltonian:
+        """ Get the Hamiltonian with parameters set """
+        if len(parameters) != self.n_parameters:
+            raise ValueError(f"Expected {self.n_parameters} parameters, got {len(parameters)}")
+
+        new_couplings = [coupling for coupling in self.hamiltonian.couplings]
+        for parameter_definition, value in zip(self.parameter_definitions, parameters):
+            for (coupling_index, attribute) in parameter_definition:
+                new_couplings[coupling_index] = new_couplings[coupling_index].updated(**{attribute: value})
+
+
+        return Hamiltonian(self.hamiltonian.structure, new_couplings, self.hamiltonian.anisotropies)

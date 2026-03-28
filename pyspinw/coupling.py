@@ -12,6 +12,12 @@ from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import triple_product_matrix
 
+_coupling_id_counter = -1
+def _generate_unique_coupling_id():
+    """ Generate a unique ID for each site currently loaded"""
+    global _coupling_id_counter # noqa: PLW0603
+    _coupling_id_counter += 1
+    return _coupling_id_counter
 
 @dataclass
 class CouplingBaseDeserialisation:
@@ -42,6 +48,8 @@ class Coupling(SPWSerialisable):
         self._cell_offset = CellOffset.coerce(cell_offset)
         self._coupling_matrix = coupling_matrix
 
+        self._unique_id = _generate_unique_coupling_id()
+
 
     coupling_type = "General"
     parameters: list[str] = []
@@ -53,6 +61,11 @@ class Coupling(SPWSerialisable):
     def name(self):
         """ Name of this coupling """
         return self._name
+
+    @property
+    def unique_id(self) -> int:
+        """ Unique identifier for this coupling """
+        return self._unique_id
 
     @property
     def site_1(self):
