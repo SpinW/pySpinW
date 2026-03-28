@@ -459,10 +459,10 @@ class ClassicalEnergyMinimisation:
 
                         # Get the forces
 
-                        forces_free_alpha[site_index, component_index] -= \
+                        forces_free_alpha[param_index, component_index] -= \
                             dS_dalpha @ coupling.coupling_matrix @ other_moment
 
-                        forces_free_beta[site_index, component_index] -= \
+                        forces_free_beta[param_index, component_index] -= \
                             dS_dbeta @ coupling.coupling_matrix @ other_moment
 
                     # Anisotropies

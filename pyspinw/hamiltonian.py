@@ -369,11 +369,13 @@ class Hamiltonian(SPWSerialisable):
         else:
             return fig
 
-    def parameterize(self, *parameters: tuple[Coupling, str] | tuple[str, str] | str) \
-            -> "HamiltonianParameterization":
+    def parameterize(self,
+                     *parameters: tuple[Coupling, str] | tuple[str, str] | str,
+                     find_ground_state_with: dict | None = None) -> "HamiltonianParameterization":
         """ Get a function that maps floats to a hamiltonian with the floats controlling the specified parameters"""
 
-        return HamiltonianParameterization(self, *parameters)
+        return HamiltonianParameterization(self,*parameters,
+                                           find_ground_state_with=find_ground_state_with)
 
     def sorted_positive_energies(self,
                                  path: Path,
@@ -554,10 +556,11 @@ class HamiltonianParameterization:
     def __init__(self,
                  hamiltonian: Hamiltonian,
                  *parameters: list[tuple[Coupling, str] | tuple[str, str] | str],
-                 find_ground_state: bool=False):
+                 find_ground_state_with: dict | None = None):
 
-        self.hamiltonian = hamiltonian
-        self.find_ground_state = find_ground_state
+        self._hamiltonian = hamiltonian
+        self._find_ground_state = find_ground_state_with is not None
+        self._ground_state_parameters = {} if find_ground_state_with is None else find_ground_state_with
 
         # Create a list of parameters that will be updated
         base_parameter_definitions = []
@@ -624,17 +627,17 @@ class HamiltonianParameterization:
 
         # Convert the coupling to index in the list of couplings
         unique_id_to_index = {coupling.unique_id: index for index, coupling in enumerate(hamiltonian.couplings)}
-        self.parameter_definitions: list[list[tuple[int, str]]] = []
+        self._parameter_definitions: list[list[tuple[int, str]]] = []
 
         for parameter_definition in base_parameter_definitions:
             indexed_parameter_definition: list[tuple[int, str]] = []
             for coupling, attribute in parameter_definition:
                 index = unique_id_to_index[coupling.unique_id]
                 indexed_parameter_definition.append((index, attribute))
-            self.parameter_definitions.append(indexed_parameter_definition)
+            self._parameter_definitions.append(indexed_parameter_definition)
 
         # Number is useful
-        self.n_parameters = len(self.parameter_definitions)
+        self._n_parameters = len(self._parameter_definitions)
 
     def energy_plot(self,
                     parameter_values: ArrayLike,
@@ -651,7 +654,7 @@ class HamiltonianParameterization:
         if len(parameter_values.shape) == 1:
             parameter_values = parameter_values.reshape(-1, 1)
 
-        if parameter_values.shape[1] != self.n_parameters:
+        if parameter_values.shape[1] != self._n_parameters:
             raise ValueError("Second dimension size of parameter_values should match number of parameters")
 
         n_curves = parameter_values.shape[0]
@@ -689,18 +692,18 @@ class HamiltonianParameterization:
 
     def __call__(self, *parameters: float) -> Hamiltonian:
         """ Get the Hamiltonian with parameters set """
-        if len(parameters) != self.n_parameters:
-            raise ValueError(f"Expected {self.n_parameters} parameters, got {len(parameters)}")
+        if len(parameters) != self._n_parameters:
+            raise ValueError(f"Expected {self._n_parameters} parameters, got {len(parameters)}")
 
-        new_couplings = [coupling for coupling in self.hamiltonian.couplings]
-        for parameter_definition, value in zip(self.parameter_definitions, parameters):
+        new_couplings = [coupling for coupling in self._hamiltonian.couplings]
+        for parameter_definition, value in zip(self._parameter_definitions, parameters):
             for (coupling_index, attribute) in parameter_definition:
                 new_couplings[coupling_index] = new_couplings[coupling_index].updated(**{attribute: value})
 
 
-        new_hamiltonian = Hamiltonian(self.hamiltonian.structure, new_couplings, self.hamiltonian.anisotropies)
+        new_hamiltonian = Hamiltonian(self._hamiltonian.structure, new_couplings, self._hamiltonian.anisotropies)
 
-        if self.find_ground_state:
-            return new_hamiltonian.ground_state()
+        if self._find_ground_state:
+            return new_hamiltonian.ground_state(**self._ground_state_parameters)
         else:
             return new_hamiltonian
