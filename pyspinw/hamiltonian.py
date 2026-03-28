@@ -19,7 +19,7 @@ from pyspinw.calculations.spinwave import (
 from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling, coupling_lookup
+from pyspinw.coupling import Coupling
 from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
@@ -47,8 +47,8 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
     return en_out, int_out
 
 ParametrizationType = Union[str,
-                       Sequence[str],
-                       Sequence[tuple[Union[Coupling, Anisotropy, str], str]],
+                       list[str],
+                       list[tuple[Union[Coupling, Anisotropy, str], str]],
                        tuple[Sequence[Union[Coupling, Anisotropy, str]], str],
                        tuple[Coupling | Anisotropy | str, str]]
 
@@ -80,7 +80,7 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
             raise TypeError(f"Expected parameters to be defined by Coupling, Anisotropy or str,"
                             f" got {type(parameter_data[0])}: {parameter_data[0]}")
 
-    elif isinstance(parameter_data, Sequence):
+    elif isinstance(parameter_data, list):
         pass
 
     else:
@@ -835,3 +835,21 @@ class HamiltonianParameterization:
             return new_hamiltonian.ground_state(**self._ground_state_parameters)
         else:
             return new_hamiltonian
+
+    def __repr__(self):
+        parts = []
+        for index, (couplings, anisotropies) in enumerate(zip(self._coupling_parameter_definitions,
+                                                              self._anisotropy_parameter_definitions)):
+
+            coupling_parts = [f"{self._hamiltonian.couplings[index].name}.{parameter}"
+                                for index, parameter in couplings]
+
+            anisotropy_parts = [f"{self._hamiltonian.anisotropies[index]}.{parameter}"
+                                for index, parameter in anisotropies]
+
+            data = ", ".join(coupling_parts + anisotropy_parts)
+
+            parts.append(f"argument_{index} -> {data}")
+        s = "; ".join(parts)
+
+        return f"HamiltonianParameterization({s})"

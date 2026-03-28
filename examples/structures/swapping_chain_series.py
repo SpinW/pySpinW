@@ -31,11 +31,35 @@ hamiltonian = Hamiltonian(s, exchanges)
 
 path = Path([[0,0,0], [0,1,0]])
 
+# One option
+
+# parameterized_hamiltonian = hamiltonian.parameterize(
+#     ("J", "j"),
+#     find_ground_state_with={"fixed": [x], "verbose": False})
+
+
+# Another option
+
+# parameterized_hamiltonian = hamiltonian.parameterize(
+#     ("J.j"),
+#     find_ground_state_with={"fixed": [x], "verbose": False})
+
+
+# Yet another option
+
+# parameterized_hamiltonian = hamiltonian.parameterize(
+#     ((j1, j2), "j"),
+#     find_ground_state_with={"fixed": [x], "verbose": False})
+
+# Last option, we'll use this
+
+
 parameterized_hamiltonian = hamiltonian.parameterize(
-    ("J", "j"),
+    [(j1, "j"), (j2, "j")],
     find_ground_state_with={"fixed": [x], "verbose": False})
 
-print(parameterized_hamiltonian._coupling_parameter_definitions)
+
+print(parameterized_hamiltonian)
 
 j_values = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5]
 
