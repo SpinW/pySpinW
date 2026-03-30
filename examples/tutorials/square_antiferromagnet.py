@@ -10,8 +10,6 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from pyspinw.legacy.genmagstr import genmagstr
-from math import sqrt
 import sys
 
 """
@@ -29,9 +27,6 @@ sw_plotspec(lacuoSpec,'mode',2,'axLim',[0 20],'dashed',true,'colormap',[0 0 0])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 11: https://spinw.org/tutorials/11tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(3, 3, 9)
 
@@ -49,7 +44,7 @@ if __name__ == "__main__":
 
     path = Path([[3/4, 1/4, 0], [1/2, 1/2, 0], [1/2, 0, 0], [3/4, 1/4, 0], [1, 0, 0], [1/2, 0, 0]], n_points_per_segment=51)
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig = hamiltonian.spaghetti_plot(path, show=False)
     fig.axes[0].set_ylim(0, 600)
     fig.axes[1].set_ylim(0, 20)
     plt.show()

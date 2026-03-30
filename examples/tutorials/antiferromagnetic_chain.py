@@ -1,7 +1,5 @@
 """ Antiferromagnetic chain example """
 
-from multiprocessing.spawn import freeze_support
-
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges
@@ -10,9 +8,6 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-import sys
-
-from pyspinw.debug_plot import debug_plot
 
 """
 AFMchain = spinw;
@@ -34,9 +29,6 @@ sw_plotspec(afcSpec,'mode',2,'log',true,'axLim',[-4 10])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(3, 8, 8)
 
@@ -56,4 +48,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,0,0]])
-    hamiltonian.spaghetti_plot(path, scale='log', use_rust=use_rust)
+    hamiltonian.spaghetti_plot(path, scale='log')

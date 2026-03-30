@@ -1,7 +1,5 @@
 """ Kagome Ferromagnet example """
 
-from multiprocessing.spawn import freeze_support
-
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges
@@ -11,7 +9,6 @@ from pyspinw.sample import Powder
 from pyspinw.symmetry.supercell import TrivialSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-import sys
 
 """
 FMkagome = spinw;
@@ -30,9 +27,6 @@ figure; sw_plotspec(fmkPow,'colorbar',true,'axLim',[0 0.05])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 5: https://spinw.org/tutorials/05tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(6,6,5, gamma=120)
 
@@ -56,7 +50,7 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
-    hamiltonian.energy_plot(path, show=False, use_rust=use_rust)
+    hamiltonian.energy_plot(path, show=False)
 
     sample = Powder(hamiltonian)
     path1D = Path1D(0.1, 2.5, n_points=100)
