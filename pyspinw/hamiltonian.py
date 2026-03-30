@@ -55,9 +55,8 @@ ParametrizationType = Union[str,
 def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: ParametrizationType):
     """ Convert many options for defining parameters into a more regular form
 
-     This is used in the parameterisation method/class
-     """
-
+    This is used in the parameterisation method/class
+    """
     # Step 1: convert everything to a Sequence
 
     if isinstance(parameter_data, str):
