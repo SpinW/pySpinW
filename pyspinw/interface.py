@@ -10,7 +10,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     BiDirectionFilter
-from pyspinw.gui.viewer import show_hamiltonian
+#from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure

@@ -3,7 +3,7 @@ from multiprocessing import freeze_support
 import numpy as np
 
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed
-from pyspinw.interface import couplings
+from pyspinw.interface import generate_exchanges
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -23,11 +23,11 @@ if __name__ == "__main__":
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    exchanges = couplings(sites=sites,
-                           unit_cell=unit_cell,
-                           max_distance=0.6,
-                           coupling_type=HeisenbergCoupling,
-                           j=1)
+    exchanges = generate_exchanges(sites=sites,
+                                   unit_cell=unit_cell,
+                                   max_distance=0.6,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=1)
 
     hamiltonian = Hamiltonian(s, exchanges)
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     ax = plt.figure().add_subplot(projection='3d')
 
     for i in range(len(sites)):
-        xyz = np.array([moments[i,:] for moments in moment_history])
+        xyz = np.squeeze(np.array([moments[i,:] for moments in moment_history]))
         ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], "--x")
 
     plt.show()
