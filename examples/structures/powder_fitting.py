@@ -1,8 +1,11 @@
 """ Antiferromagnetic chain example """
-
+import numpy as np
+from scipy.optimize import minimize_scalar, Bounds, minimize, differential_evolution
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
+from pyspinw.path import Path1D
+from pyspinw.sample import Powder
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
@@ -22,7 +25,41 @@ s = Structure(sites, unit_cell)
 
 hamiltonian = Hamiltonian(s, exchanges)
 
-parameterized_hamiltonian = hamiltonian.parameterize(
-    ("J", "j"),
+sample = Powder(hamiltonian)
+
+path1D = Path1D(0.01, 1, n_points=20)
+
+n_energy = 20
+n_samples = 100
+
+sample.show_spectrum(path1D, n_energy_bins=n_energy, n_samples=n_samples, energy_stddev=0.4)
+
+spectrum = sample.parameterized_spectrum(
+    parameters=["J.j"],
+    path=path1D,
+    n_energy_bins=n_energy,
+    n_samples=n_samples,
+    energy_stddev=0.4,
     find_ground_state_with={"fixed": [x], "verbose": False})
 
+target = spectrum(1.2)
+
+def objective(x):
+    return np.sum((target - spectrum(x))**2)
+
+def callback(intermediate_result):
+    """ Callback to print out what is going on"""
+    print(intermediate_result)
+
+print("Optimising...")
+
+import time
+t0 = time.time()
+
+bounds = Bounds([0.5], [1.5])
+solution = differential_evolution(objective, bounds=bounds, callback=callback, disp=True, maxiter=50)
+
+print(solution)
+print(time.time() - t0)
+
+# Reaches 1.2... after 50 iterations and about 8 mins

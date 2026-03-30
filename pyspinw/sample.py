@@ -199,7 +199,7 @@ class ParameterizedPowderSpectrum:
             n_energy_bins=self._n_energy_bins,
             energy_stddev=self._energy_stddev,
             random_seed=self._random_seed,
-            use_rust=self._use_rust)
+            use_rust=self._use_rust)[2]
 
 
 class Powder(Sample1D):
@@ -292,7 +292,8 @@ class Powder(Sample1D):
             n_energy_bins: int | None = None,
             energy_stddev: float | None = None,
             random_seed: int | None = None,
-            use_rust: bool = True):
+            use_rust: bool = True,
+            find_ground_state_with: dict | None = None):
 
         return ParameterizedPowderSpectrum(
                         self,
@@ -305,7 +306,8 @@ class Powder(Sample1D):
                         n_energy_bins=n_energy_bins,
                         energy_stddev=energy_stddev,
                         random_seed=random_seed,
-                        use_rust=use_rust)
+                        use_rust=use_rust,
+                        find_ground_state_with=find_ground_state_with)
 
     def show_spectrum(self,
                       path: Path1D | EmpiricalPath1D | ArrayLike,
