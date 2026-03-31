@@ -152,21 +152,27 @@ class ClassicalEnergyMinimisation:
         self.planar_sites = []
         self.planar_axes = []
 
+        self.is_free = np.zeros((self.n_sites,), dtype=bool)
+        self.is_fixed = np.zeros((self.n_sites,), dtype=bool)
+        self.is_planar = np.zeros((self.n_sites,), dtype=bool)
+
         for site_index, (site, constraint) in enumerate(zip(self.sites, constraints)):
             match constraint:
 
                 case FreeConstraint():
                     self.free_sites.append((site_index, site.unique_id))
+                    self.is_free[site_index] = True
 
                 case FixedConstraint():
                     self.fixed_sites.append((site_index, site.unique_id))
+                    self.is_fixed[site_index] = True
 
                 case Planar(axis):
                     self.planar_sites.append((site_index, site.unique_id))
                     self.planar_axes.append(axis)
+                    self.is_planar[site_index] = True
 
 
-        self.is_free = np.array([self.free_sites[ii][0] for ii in range(len(self.free_sites))], dtype=int)
         self.n_free = len(self.free_sites)
         self.n_planar = len(self.planar_sites)
         self.n_fixed = len(self.fixed_sites)
@@ -202,7 +208,7 @@ class ClassicalEnergyMinimisation:
     @staticmethod
     def _random_orientations(rng, shape, dim=3):
         """ Make random gaussian vectors, avoiding 0,0,0..."""
-        n = np.prod(shape)
+        n = int(np.prod(shape))
 
         output = rng.normal(0, 1, (n, dim))
 
@@ -453,10 +459,10 @@ class ClassicalEnergyMinimisation:
 
                         # Get the forces
 
-                        forces_free_alpha[site_index, component_index] -= \
+                        forces_free_alpha[param_index, component_index] -= \
                             dS_dalpha @ coupling.coupling_matrix @ other_moment
 
-                        forces_free_beta[site_index, component_index] -= \
+                        forces_free_beta[param_index, component_index] -= \
                             dS_dbeta @ coupling.coupling_matrix @ other_moment
 
                     # Anisotropies

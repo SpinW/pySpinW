@@ -1,6 +1,12 @@
 """ Ferromagnetic chain example """
 
-from pyspinw import *
+from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.hamiltonian import Hamiltonian
+from pyspinw.interface import generate_exchanges, filter
+from pyspinw.path import Path
+from pyspinw.site import LatticeSite
+from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.structures import Structure
 
 
 unit_cell = UnitCell(1,1,1)
@@ -20,10 +26,7 @@ hamiltonian = Hamiltonian(s, exchanges)
 
 path = Path([[0,0,0], [1,0,0]])
 
+parameterized_hamiltonian = hamiltonian.parameterize((exchanges[0], "j"))
 
-hamiltonian.energy_plot(path)
+parameterized_hamiltonian.energy_plot([0.5, 1.0, 1.5], path)
 
-sample = Powder(hamiltonian)
-
-path1D = Path1D(0.01, 1)
-sample.show_spectrum(path1D, n_energy_bins=100, n_samples=500, energy_stddev=0.4)

@@ -2,14 +2,15 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Sequence
 
 import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType, point_generator
 from pyspinw.checks import check_sizes
-from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.path import Path, Path1D
+from pyspinw.hamiltonian import Hamiltonian, ParametrizationType
+from pyspinw.path import Path, Path1D, Path1DBase, EmpiricalPath1D
 from pyspinw.tolerances import tolerances
 
 
@@ -153,6 +154,56 @@ class ScalingMethod(Enum):
     LINEAR = 'linear'
     LOG = 'log'
 
+class ParameterizedPowderSpectrum:
+    """ A powder spectrum that has been parameterised"""
+
+    def __init__(self,
+                 powder: "Powder",
+                 parameters: Sequence[ParametrizationType],
+                 path: Path1D | EmpiricalPath1D | ArrayLike,
+                 n_samples: int = 100,
+                 method: SphericalPointGeneratorType | str = "fibonacci",
+                 min_energy: float | None = None,
+                 max_energy: float | None = None,
+                 n_energy_bins: int | None = None,
+                 energy_stddev: float | None = None,
+                 random_seed: int | None = None,
+                 use_rust: bool = True,
+                 find_ground_state_with: dict | None=None):
+
+        self._powder = Powder
+        self._parameters = parameters
+
+        self._path = path
+        self._n_samples = n_samples
+        self._method = method
+        self._min_energy = min_energy
+        self._max_energy = max_energy
+        self._n_energy_bins = n_energy_bins
+        self._energy_stddev = energy_stddev
+        self._random_seed = random_seed
+        self._use_rust = use_rust
+        self._find_ground_state_with = find_ground_state_with
+
+        self.parameterised_hamiltonian = powder.hamiltonian.parameterize(
+                                *parameters,
+                                           find_ground_state_with=find_ground_state_with)
+
+    def __call__(self, *parameters):
+        """ Evaluate the powder spectrum at specified parameter values """
+        powder = Powder(self.parameterised_hamiltonian(*parameters))
+        return powder.spectrum(
+            path=self._path,
+            n_samples=self._n_samples,
+            method=self._method,
+            min_energy=self._min_energy,
+            max_energy=self._max_energy,
+            n_energy_bins=self._n_energy_bins,
+            energy_stddev=self._energy_stddev,
+            random_seed=self._random_seed,
+            use_rust=self._use_rust)[2]
+
+
 class Powder(Sample1D):
     """Sample is a powder"""
 
@@ -161,15 +212,19 @@ class Powder(Sample1D):
         super().__init__(hamiltonian)
 
     def spectrum(self,
-                 path: Path1D,
+                 path: Path1D | EmpiricalPath1D | ArrayLike,
                  n_samples: int=100,
                  method: SphericalPointGeneratorType | str = "fibonacci",
                  min_energy: float | None = None,
                  max_energy: float | None = None,
                  n_energy_bins: int | None = None,
+                 energy_stddev: float | None = None,
                  random_seed: int | None = None,
                  use_rust: bool = True):
         """ Get the powder spectrum """
+        if not isinstance(path, Path1DBase):
+            path = EmpiricalPath1D(path)
+
         generator = point_generator(method)(n_samples, seed = random_seed)
 
         chunk_size = generator.actual_n_points
@@ -195,6 +250,12 @@ class Powder(Sample1D):
         # Output map
         output = np.zeros((path.n_points, n_energy_bins))
 
+        if energy_stddev is not None:
+            # Gausian scaling
+            exponent_factor = -0.5 / (energy_stddev**2)
+            # Gaussian normalisation
+            normalisation_factor = 1.0 / np.sqrt(2*np.pi*(energy_stddev**2))
+
         # at each q, bin the energies with weights of the intensities, but ignore the negative ones
         for i, q in enumerate(path.q_values()):
 
@@ -206,28 +267,68 @@ class Powder(Sample1D):
             energy = energy[positives]
             intensity = intensity[positives]
 
-            # Do the binning
-            binned, bin_edges = np.histogram(energy, bins=energy_bin_edges, weights=intensity)
+
+            if energy_stddev is None:
+                # Use a binning method
+                binned, bin_edges = np.histogram(energy, bins=energy_bin_edges, weights=intensity)
+            else:
+                binned = np.zeros((n_energy_bins,))
+                # Add up gaussians
+                for energy_value, intensity_value in zip(energy, intensity):
+                    gaussian = np.exp(((energy_bin_centres - energy_value)**2)*exponent_factor)
+                    binned += (intensity_value * normalisation_factor) * gaussian
+
 
             output[i, :] = binned
 
         return path.q_values(), energy_bin_centres, output
 
+    def parameterized_spectrum(self,
+            parameters: Sequence[ParametrizationType],
+            path: Path1D | EmpiricalPath1D | ArrayLike,
+            n_samples: int = 100,
+            method: SphericalPointGeneratorType | str = "fibonacci",
+            min_energy: float | None = None,
+            max_energy: float | None = None,
+            n_energy_bins: int | None = None,
+            energy_stddev: float | None = None,
+            random_seed: int | None = None,
+            use_rust: bool = True,
+            find_ground_state_with: dict | None = None):
+        """ Get the powder spectrum as a function of parameters """
+        return ParameterizedPowderSpectrum(
+                        self,
+                        parameters,
+                        path=path,
+                        n_samples=n_samples,
+                        method=method,
+                        min_energy=min_energy,
+                        max_energy=max_energy,
+                        n_energy_bins=n_energy_bins,
+                        energy_stddev=energy_stddev,
+                        random_seed=random_seed,
+                        use_rust=use_rust,
+                        find_ground_state_with=find_ground_state_with)
+
     def show_spectrum(self,
-                      path: Path1D,
+                      path: Path1D | EmpiricalPath1D | ArrayLike,
                       n_samples: int = 100,
                       method: SphericalPointGeneratorType | str = "fibonacci",
                       min_energy: float | None = None,
                       max_energy: float | None = None,
                       n_energy_bins: int | None = None,
+                      energy_stddev: float | None = None,
                       random_seed: int | None = None,
                       scaling_method: ScalingMethod | str = 'linear',
                       show_plot: bool = True,
                       new_figure: bool = True,
                       use_rust: bool = True):
         """ Show the powder spectrum """
+        if not isinstance(path, Path1DBase):
+            path = EmpiricalPath1D(path)
+
         q, e, data = self.spectrum(path, n_samples, method,
-                                   min_energy, max_energy, n_energy_bins,
+                                   min_energy, max_energy, n_energy_bins, energy_stddev,
                                    random_seed, use_rust)
 
         if isinstance(scaling_method, str):

@@ -32,7 +32,7 @@ class Structure(SPWSerialisable):
         # Check that supercell components match site dimensions
         bad_sites = []
         for site in self.sites:
-            if site.n_components() != supercell.n_components():
+            if site.n_components() != self._supercell.n_components():
                 bad_sites.append(site)
 
         if bad_sites:
