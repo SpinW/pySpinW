@@ -70,7 +70,8 @@ def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float |
     spec = np.zeros((energy.shape[0], len(evect)))
     ew_norm = np.array(list(np.diff(evect)) + [evect[-1] - evect[-2]]) / (np.sqrt(2 * np.pi) * esigma)
     for iE in range(energy.shape[1]):
-        spec += intensity[:,iE,np.newaxis] * ew_norm * np.exp(-0.5 * ((evect[np.newaxis,:] - energy[:,iE,np.newaxis]) / esigma)**2)
+        spec += intensity[:,iE,np.newaxis] * ew_norm * \
+            np.exp(-0.5 * ((evect[np.newaxis,:] - energy[:,iE,np.newaxis]) / esigma)**2)
     spec[np.where(spec < np.finfo(np.float32).eps)] = np.nan
     return spec
 

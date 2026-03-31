@@ -10,7 +10,6 @@ from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling, HeisenbergCoupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     BiDirectionFilter
-from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
@@ -20,6 +19,10 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
 
+try:
+    from pyspinw.gui.viewer import show_hamiltonian
+except ModuleNotFoundError:
+    def show_hamiltonian(*args, **kwargs): raise RuntimeError('PySide or OpenGL not installed')
 
 def _check_positions_moments_shape(positions: ArrayLike,
                                    moments: ArrayLike | None = None) -> tuple[ArrayLike, ArrayLike]:
