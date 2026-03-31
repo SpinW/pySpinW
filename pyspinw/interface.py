@@ -10,20 +10,20 @@ from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     BiDirectionFilter
-#from pyspinw.gui.viewer import show_hamiltonian
+from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
-    TransformationSupercell, SummationSupercell
+    TransformationSupercell, SummationSupercell, RotationSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-def sites(positions: ArrayLike,
-          moments: ArrayLike | None = None,
-          names: list[str] | None=None,
-          convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+def generate_sites(positions: ArrayLike,
+                   moments: ArrayLike | None = None,
+                   names: list[str] | None=None,
+                   convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
     """ Create lattice site
 
     :param positions: positions of the sites
@@ -144,6 +144,15 @@ def propagation_vectors(
 
         out.append(pv)
 
+@check_sizes(perpendicular=(3,), propagation=(3,))
+def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
+    """ Generate a helical supercell
+
+    :param perpendicular: (3-vector) Direction perpendicular to propagation vector, needed to specify "start" cell
+    :param propagation: (3-vector) Propagation vector
+
+    """
+    return RotationSupercell(perpendicular=perpendicular, propagation_vector=propagation)
 
 @check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
 def rotation_supercell(

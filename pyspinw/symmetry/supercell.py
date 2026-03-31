@@ -316,7 +316,7 @@ class Supercell(ABC, SPWSerialisable):
     @abstractmethod
     def n_components(self) -> int:
         """ Number of entries expected in the moment definition """
-
+        raise NotImplementedError(f"n_components not implemented in {self.__class__.__name__}")
 
 
 class CommensurateSupercell(Supercell):
@@ -520,6 +520,10 @@ class RotationSupercell(Supercell):
         self.perpendicular = perpendicular
         self.propagation_vector = propagation_vector
 
+    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
+        """ Calculation of the moment from moment data and cell offset """
+        raise NotImplementedError("Not needed here, should be refactored away in future")
+
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Calculate moment at a given cell offset"""
         basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
@@ -528,6 +532,10 @@ class RotationSupercell(Supercell):
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
         return (1, 1, 1)
+
+    def n_components(self) -> int:
+        """ Number of propagation vectors in this supercell """
+        return 1
 
     def summation_form(self) -> "Supercell":
         """ Convert into summation form """

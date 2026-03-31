@@ -1,4 +1,5 @@
 """ Paths through q-space"""
+from abc import ABC, abstractmethod
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -116,7 +117,15 @@ class Path:
         else:
             plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
 
-class Path1D():
+
+class Path1DBase(ABC):
+    """ Base class for 1D paths """
+
+    @abstractmethod
+    def q_values(self):
+        """ Get the q values for this path"""
+
+class Path1D(Path1DBase):
     """ 1D Path, i.e. just values in absolute q """
 
     def __init__(self,
@@ -139,6 +148,21 @@ class Path1D():
             base[-1] = 1 - 1e-8
 
         return self.q_min + (self.q_max - self.q_min) * base
+
+
+class EmpiricalPath1D(Path1DBase):
+    """ Path based on data specifying each q value, rather min, max, n"""
+
+    def __init__(self, q_values: ArrayLike):
+        self._q_values = np.array(q_values)
+
+        if len(self._q_values.shape) != 1:
+            raise ValueError("Expected q_values to be a 1D array")
+
+    def q_values(self):
+        """ Get the q values"""
+        return self._q_values
+
 
 if __name__ == "__main__":
 

@@ -29,30 +29,6 @@ subplot(2,1,2)
 sw_plotspec(afcSpec,'mode',2,'log',false,'axLim',[-4 10])
 """
 
-<<<<<<< HEAD
-unit_cell = UnitCell(4,6,6)
-
-sites = [LatticeSite(0, 0, 0, 0,0,1, name="X"),
-         LatticeSite(0.5,0,0, 0,0, -1, name="Y")]
-
-s = Structure(sites, unit_cell=unit_cell)
-
-exchanges = generate_exchanges(sites=sites,
-                               unit_cell=unit_cell,
-                               max_distance=2.1,
-                               coupling_type=HeisenbergCoupling,
-                               j=1,
-                               direction_filter=filter([1,0,0], symmetric=True))
-
-anisotropies = axis_anisotropies(sites, -0.1)
-
-hamiltonian = Hamiltonian(s, exchanges, anisotropies)
-
-hamiltonian.print_summary()
-
-path = Path([[0,0,0], [2,0,0]])
-hamiltonian.spaghetti_plot(path, field=[0,0,7])
-=======
 if __name__ == "__main__":
     unit_cell = UnitCell(4,6,6)
 
@@ -76,4 +52,3 @@ if __name__ == "__main__":
 
     path = Path([[0,0,0], [2,0,0]])
     hamiltonian.spaghetti_plot(path, field=[0,0,7])
->>>>>>> main

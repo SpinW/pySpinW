@@ -22,7 +22,7 @@ def test_trivial_supercell():
 
     expanded = structure.expand()
 
-    assert len(expanded.sites) == 1*2*3
+    assert len(expanded.sites) == 1 * 2 * 3
 
     assert supercell.n_components() == 1
 
