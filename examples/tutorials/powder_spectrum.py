@@ -9,6 +9,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 
+
 unit_cell = UnitCell(1,1,1)
 
 only_site = LatticeSite(0, 0, 0, 0,0,1, name="X")

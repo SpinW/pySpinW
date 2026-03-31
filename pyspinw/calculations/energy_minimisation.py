@@ -7,10 +7,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy._typing import ArrayLike
 
+from pyspinw.checks import check_sizes
 from pyspinw.symmetry.supercell import CommensurateSupercell
 from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 
-
+BIGSTEPSIZE = 1.0
 
 class MinimisationConstraintGenerator(ABC):
     """ Base class for constraint specifications that can be applied to all sites"""
@@ -49,6 +50,7 @@ class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
 
     __match_args__ = ('axis', )
 
+    @check_sizes(axis=(3,), force_numpy=True)
     def __init__(self, axis: ArrayLike):
         self.axis = np.array(axis, dtype=float)
         self.axis /= np.sqrt(np.sum(self.axis**2))
@@ -58,7 +60,7 @@ class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
         return [self for _ in range(n_constraints)]
 
     def __repr__(self):
-        return f"{self.name}(axis={self.axis[0]},{self.axis[1]},{self.axis[2]})"
+        return f"{self.name}(axis={self.axis[0]:.2f},{self.axis[1]:.2f},{self.axis[2]:.2f})"
 
 Free = FreeConstraint()
 Fixed = FixedConstraint()
@@ -116,7 +118,7 @@ class ClassicalEnergyMinimisation:
 
         else:
             raise TypeError("Expected constraints to be a MinimisationConstraintGenerator or "
-                            "list of MinimisationConstraints")
+                            f"list of MinimisationConstraints and not '{type(constraints)}'.")
 
 
         if field is None:
@@ -125,7 +127,7 @@ class ClassicalEnergyMinimisation:
             field = np.array(field)
 
         if field.shape != (3, ):
-            raise ValueError("Expected field to be a length 3 vector")
+            raise ValueError(f"Expected field to be a length 3 vector; found {field.shape}.")
 
         # Set up basic fields
 
@@ -206,9 +208,7 @@ class ClassicalEnergyMinimisation:
     @staticmethod
     def _random_orientations(rng, shape, dim=3):
         """ Make random gaussian vectors, avoiding 0,0,0..."""
-        n = 1
-        for m in shape:
-            n *= m
+        n = int(np.prod(shape))
 
         output = rng.normal(0, 1, (n, dim))
 
@@ -557,7 +557,9 @@ class ClassicalEnergyMinimisation:
         beta = step_size * forces_free_beta
         theta = step_size * forces_planar
 
-        if np.any(np.abs(alpha) > 1.0) or np.any(np.abs(beta) > 1.0) or np.any(np.abs(theta) > 1.0):
+        if np.any(np.abs(alpha) > BIGSTEPSIZE) \
+            or np.any(np.abs(beta) > BIGSTEPSIZE) \
+            or np.any(np.abs(theta) > BIGSTEPSIZE):
             warnings.warn("Taking a very large step, this is perhaps because the energy is large and/or"
                           " step_size is too big")
 

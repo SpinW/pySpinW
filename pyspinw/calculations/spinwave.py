@@ -2,16 +2,15 @@
 
 import multiprocessing
 import traceback
-from concurrent.futures import wait, ProcessPoolExecutor
+from concurrent.futures import wait
 from dataclasses import dataclass
-from enum import Enum
 from typing import Optional
 
 import numpy as np
 from scipy.linalg import ldl, solve
 
-from pyspinw.checks import check_sizes
 from pyspinw.constants import MU_B
+from pyspinw.windows_parallelisation import windows_python_parallelisation_enabled, get_Executor
 
 # smallest energy not considered negligible (in meV)
 ZERO_ENERGY_TOL = 1e-12
@@ -170,7 +169,9 @@ def energies(
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
     # for a single process, so we want to reduce contention by using fewer processes.
     n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
-    with ProcessPoolExecutor() as executor:
+    Executor = get_Executor()
+
+    with Executor() as executor:
         q_calculations = [
             executor.submit(_calc_chunk_energies, q, C, n_sites, z, spin_coefficients, couplings, Az)
             for q in _get_q_chunks(q_vectors, n_proc)
@@ -235,7 +236,9 @@ def spinwave_calculation(
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
     # for a single process, so we want to reduce contention by using fewer processes.
     n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
-    with ProcessPoolExecutor() as executor:
+    Executor = get_Executor()
+
+    with Executor() as executor:
         q_calculations = [
             executor.submit(
                 _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
