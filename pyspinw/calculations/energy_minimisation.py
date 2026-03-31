@@ -107,7 +107,7 @@ class ClassicalEnergyMinimisation:
 
         # Check / normalise parameters
 
-        n_sites = len(hamiltonian.structure.generate_sites)
+        n_sites = len(hamiltonian.structure.sites)
 
         if isinstance(constraints, list):
             if len(constraints) != n_sites:
@@ -143,7 +143,7 @@ class ClassicalEnergyMinimisation:
 
         # Split sites by constraint type
 
-        self.sites = hamiltonian.structure.generate_sites
+        self.sites = hamiltonian.structure.sites
         self.n_sites = len(self.sites)
         self.n_components = hamiltonian.structure.supercell.n_components()
 
