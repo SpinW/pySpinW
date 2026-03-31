@@ -119,6 +119,8 @@ class Path:
 
 
 class Path1DBase(ABC):
+    """ Base class for 1D paths """
+
     @abstractmethod
     def q_values(self):
         """ Get the q values for this path"""
@@ -149,6 +151,8 @@ class Path1D(Path1DBase):
 
 
 class EmpiricalPath1D(Path1DBase):
+    """ Path based on data specifying each q value, rather min, max, n"""
+
     def __init__(self, q_values: ArrayLike):
         self._q_values = np.array(q_values)
 
@@ -156,6 +160,7 @@ class EmpiricalPath1D(Path1DBase):
             raise ValueError("Expected q_values to be a 1D array")
 
     def q_values(self):
+        """ Get the q values"""
         return self._q_values
 
 

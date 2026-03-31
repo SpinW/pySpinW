@@ -155,6 +155,8 @@ class ScalingMethod(Enum):
     LOG = 'log'
 
 class ParameterizedPowderSpectrum:
+    """ A powder spectrum that has been parameterised"""
+
     def __init__(self,
                  powder: "Powder",
                  parameters: Sequence[ParametrizationType],
@@ -220,7 +222,6 @@ class Powder(Sample1D):
                  random_seed: int | None = None,
                  use_rust: bool = True):
         """ Get the powder spectrum """
-
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
@@ -294,7 +295,7 @@ class Powder(Sample1D):
             random_seed: int | None = None,
             use_rust: bool = True,
             find_ground_state_with: dict | None = None):
-
+        """ Get the powder spectrum as a function of parameters """
         return ParameterizedPowderSpectrum(
                         self,
                         parameters,
@@ -323,7 +324,6 @@ class Powder(Sample1D):
                       new_figure: bool = True,
                       use_rust: bool = True):
         """ Show the powder spectrum """
-
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
