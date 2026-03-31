@@ -18,7 +18,9 @@ from pyspinw.interface import (
     sites, propagation_vectors, rotation_supercell, summation_supercell, spacegroup,
     filter, generate_exchanges, axis_anisotropies, matrix_anisotropies)
 
-from pyspinw.symmetry.supercell import SummationSupercell, RotationSupercell, TransformationSupercell, TrivialSupercell
+from pyspinw.symmetry.supercell import (
+    SummationSupercell, RotationSupercell, TransformationSupercell, TrivialSupercell,
+    PropagationVector, CommensuratePropagationVector)
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
 from pyspinw.path import Path, Path1D
@@ -72,6 +74,8 @@ __all__ = [
     "RotationSupercell",
     "TransformationSupercell",
     "TrivialSupercell",
+    "PropagationVector",
+    "CommensuratePropagationVector",
 
     # sample
     "SingleCrystal",

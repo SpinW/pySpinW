@@ -1,13 +1,6 @@
 """ Ferromagnetic chain example """
 
-from pyspinw.coupling import HeisenbergCoupling
-from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import generate_exchanges, filter
-from pyspinw.path import Path, Path1D
-from pyspinw.sample import Powder
-from pyspinw.site import LatticeSite
-from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw import *
 
 unit_cell = UnitCell(1,1,1)
 
