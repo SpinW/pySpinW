@@ -1,13 +1,10 @@
 """ Antiferromagnetic chain example with applied magnetic field """
 
-from multiprocessing.spawn import freeze_support
-
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, filter, axis_anisotropies, generate_structure
 from pyspinw.path import Path
 from pyspinw.symmetry.unitcell import UnitCell
-import sys
 
 """
 afc = spinw;
@@ -31,10 +28,6 @@ sw_plotspec(afcSpec,'mode',2,'log',false,'axLim',[-4 10])
 """
 
 if __name__ == "__main__":
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
-
     unit_cell = UnitCell(4,6,6)
 
     sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], moments=[[0,0,1], [0,0,-1]], names=['X', 'Y'])
@@ -52,4 +45,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [2,0,0]])
-    hamiltonian.spaghetti_plot(path, field=[0,0,7], use_rust=use_rust)
+    hamiltonian.spaghetti_plot(path, field=[0,0,7])

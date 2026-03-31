@@ -7,7 +7,6 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, axis_anisotropies, generate_helical_structure
 from pyspinw.path import Path
 from pyspinw.symmetry.unitcell import UnitCell
-import sys
 
 """
 tri = spinw;
@@ -29,9 +28,6 @@ subplot(212); sw_plotspec(triSpec,'mode',2,'log',false,'axLim',[0 3])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(3, 3, 4, gamma=120)
 
@@ -50,7 +46,7 @@ if __name__ == "__main__":
 
     path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig = hamiltonian.spaghetti_plot(path, show=False)
     fig.axes[0].set_ylim(0, 4)
     fig.axes[1].set_ylim(0, 3)
     plt.show()

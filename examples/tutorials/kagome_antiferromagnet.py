@@ -30,9 +30,6 @@ subplot(212); sw_plotspec(afkSpec,'mode',2,'log',false,'axLim',[0 3])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 7: https://spinw.org/tutorials/07tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(6, 6, 10, gamma=120)
 
@@ -48,4 +45,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
-    hamiltonian.spaghetti_plot(path, use_rust=use_rust)
+    hamiltonian.spaghetti_plot(path)

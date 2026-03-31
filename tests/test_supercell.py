@@ -1,25 +1,72 @@
 """ Tests for supercells """
 import numpy as np
+import pytest
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import (PropagationVector, CommensuratePropagationVector, RotationTransform,
-                                        TrivialSupercell, TransformationSupercell, SummationSupercell,
-                                        RotationSupercell)
+from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.structures import Structure
+from pyspinw.symmetry.supercell import TransformationSupercell, CommensuratePropagationVector, RotationTransform, \
+    TrivialSupercell, SummationSupercell, RotationSupercell
 
-def test_minimal_cell_size_1():
-    v1 = CommensuratePropagationVector(i=1/2, j=1, k=1)
-    v2 = CommensuratePropagationVector(i=1/3, j=1, k=1)
 
-    supercell = SummationSupercell(propagation_vectors=[v1, v2])
+def test_trivial_supercell():
+    """ Test that trivial supercell works as it should """
 
-    i,j,k = supercell.cell_size()
+    unit_cell = UnitCell(1, 1, 1)
 
-    assert i == 6
-    assert j == 1
-    assert k == 1
+    x = LatticeSite(0, 0, 0, 1, 0, 0, name="X")
 
-    assert supercell.n_cells() == 6
-    assert supercell.scaling == (6, 1, 1)
+    supercell = TrivialSupercell((1, 2, 3))
+
+    structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
+
+    expanded = structure.expand()
+
+    assert len(expanded.sites) == 1*2*3
+
+    assert supercell.n_components() == 1
+
+
+@pytest.mark.parametrize("n", [3, 4, 5])
+def test_transform_supercell(n):
+    """ Check that transformation supercell works as it should """
+    unit_cell = UnitCell(1,1,1)
+
+    x = LatticeSite(0,0,0,1,0,0, name="X")
+
+    propagation_vector = CommensuratePropagationVector(0,0,1/n)
+
+    supercell = TransformationSupercell([(propagation_vector, RotationTransform([0,0,1]))])
+
+    structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
+
+    expanded = structure.expand()
+
+    for site1, site2 in zip(expanded.sites, expanded.sites[1:]):
+        assert np.isclose(np.dot(site1.base_moment, site2.base_moment), np.cos(2*np.pi/n))
+
+    assert supercell.n_components() == 1
+
+@pytest.mark.parametrize("n", [3, 4, 5])
+def test_summation_supercell(n):
+    """ Check that transformation supercell works as it should """
+    unit_cell = UnitCell(1,1,1)
+
+    x = LatticeSite(0,0,0,supercell_moments=[[1,0,0],[0,1,0]], name="X")
+
+    propagation_vector_1 = CommensuratePropagationVector(0,0, 1/n) # Cosine
+    propagation_vector_2 = CommensuratePropagationVector(0,0, 1/n, phase=np.pi/2) # -Sine
+
+    supercell = SummationSupercell([propagation_vector_1, propagation_vector_2])
+
+    structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
+
+    expanded = structure.expand()
+
+    for site1, site2 in zip(expanded.sites, expanded.sites[1:]):
+        assert np.isclose(np.dot(site1.base_moment, site2.base_moment), np.cos(2*np.pi/n))
+
+    assert supercell.n_components() == 2
 
 def test_antiferromagnet_chain():
     k = CommensuratePropagationVector(i=1/2, j=1, k=1)
