@@ -15,7 +15,7 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.couplinggroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
 
 from pyspinw.interface import (
-    generate_sites, propagation_vectors, rotation_supercell, summation_supercell, spacegroup,
+    generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
     filter, generate_exchanges, axis_anisotropies, matrix_anisotropies)
 
 from pyspinw.symmetry.supercell import (
@@ -62,6 +62,7 @@ __all__ = [
     "generate_sites",
     "propagation_vectors",
     "rotation_supercell",
+    "helical_supercell",
     "summation_supercell",
     "spacegroup",
     "filter",
