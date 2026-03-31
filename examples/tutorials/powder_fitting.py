@@ -1,6 +1,8 @@
 """ Antiferromagnetic chain example """
+from pickletools import optimize
+
 import numpy as np
-from scipy.optimize import minimize_scalar, Bounds, minimize, differential_evolution
+from scipy.optimize import minimize_scalar, Bounds, minimize, differential_evolution, least_squares
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
@@ -30,7 +32,7 @@ sample = Powder(hamiltonian)
 path1D = Path1D(0.01, 1, n_points=20)
 
 n_energy = 20
-n_samples = 100
+n_samples = 500
 
 sample.show_spectrum(path1D, n_energy_bins=n_energy, n_samples=n_samples, energy_stddev=0.4)
 
@@ -45,11 +47,20 @@ spectrum = sample.parameterized_spectrum(
 target = spectrum(1.2)
 
 def objective(x):
-    return np.sum((target - spectrum(x))**2)
+    return np.sum((target - spectrum(x))**2) / 1e10
+
+def objective_lin(x):
+    return (target - spectrum(x)).reshape(-1)
 
 def callback(intermediate_result):
     """ Callback to print out what is going on"""
     print(intermediate_result)
+
+x = np.linspace(0.9, 1.3, 31)
+import matplotlib.pyplot as plt
+plt.plot(x, [objective(xx) for xx in x])
+plt.show()
+
 
 print("Optimising...")
 
@@ -57,9 +68,8 @@ import time
 t0 = time.time()
 
 bounds = Bounds([0.5], [1.5])
-solution = differential_evolution(objective, bounds=bounds, callback=callback, disp=True, maxiter=50)
+solution = least_squares(objective_lin, x0=1.0, bounds=bounds, callback=callback, diff_step=1e-2)
 
 print(solution)
 print(time.time() - t0)
 
-# Reaches 1.2... after 50 iterations and about 8 mins

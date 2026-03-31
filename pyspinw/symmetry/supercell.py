@@ -511,7 +511,6 @@ class SummationSupercell(CommensurateSupercell):
 class RotationSupercell(Supercell):
     """ A supercell defined by moments which rotates in a plane and a single propagation vector """
 
-
     supercell_name = "rotation"
 
     def __init__(self, perpendicular: ArrayLike, propagation_vector: ArrayLike | PropagationVector):
@@ -522,6 +521,7 @@ class RotationSupercell(Supercell):
         self.propagation_vector = propagation_vector
 
     def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
+        """ Calculation of the moment from moment data and cell offset """
         raise NotImplementedError("Not needed here, should be refactored away in future")
 
     def moment(self, site: LatticeSite, cell_offset: CellOffset):
