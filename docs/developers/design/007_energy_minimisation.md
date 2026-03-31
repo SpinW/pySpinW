@@ -2,10 +2,11 @@
 
 ## Problem
 
-We will consider the Hamiltonian which includes bilinear terms (B), quadratic terms (A), and linear terms (C).
-Physically, the bilinear terms are couplings between different sites, the quadratic (single-ion anisotropy) terms
-are self-couplings (i.e. same site, but maybe different cell), and the linear terms describe the effect of an
-applied  magnetic field.
+We will think of the Hamiltonian in form, which is defined in terms of the mathematical form, not the physical meaning.
+There are mixed bilinear terms (B), quadratic terms (A), and linear terms (C).
+From a physical perspective, the bilinear terms are couplings between different sites, the quadratic terms
+are self-couplings (i.e. same site, but maybe different cell) and anisotropies, and the
+linear terms describe the effect of the magnetic field.
 
 $H = \sum_{i \neq j} A_{ij} S_i^T S_j + \sum_i S_i^T B_i S_i + \sum_i S_i \cdot C_i $
 
@@ -130,7 +131,9 @@ but sometimes it is a scalar, and sometimes a matrix. For efficiency we can code
 
 ### Transformation supercells
 
-`TransformationSupercell`s are a linear map on one component, where $f(T) = M T$, where $M$ is matrix that depends on the which cell is selected in the supercell. These also only have one input component.
+`TransformationSupercell`s are a linear map on one component, where $f(T) = M T$, where $M$ is matrix that depends on the which cell is selected in the supercell. This means that
+
+These also only have one input component.
 
 ### Summation supercells
 

@@ -50,7 +50,7 @@ if __name__ == "__main__":
     ax = plt.figure().add_subplot(projection='3d')
 
     for i in range(len(sites)):
-        xyz = np.squeeze(np.array([moments[i,:] for moments in moment_history]))
+        xyz = np.array([moments[i,:] for moments in moment_history])
         ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], "--x")
 
     plt.show()

@@ -10,7 +10,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.coupling import Coupling, HeisenbergCoupling
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     BiDirectionFilter
-#from pyspinw.gui.viewer import show_hamiltonian
+from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
@@ -77,6 +77,22 @@ def _check_positions_moments_shape(positions: ArrayLike,
 
     return positions, moments
 
+
+def generate_sites(positions: ArrayLike,
+                   moments: ArrayLike | None = None,
+                   names: list[str] | None=None,
+                   convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+    """ Create lattice site
+
+    :param positions: positions of the sites
+    :param moments: moments of the sites, if not specified, they will be set to zero
+    :param convert_to_cell_with: If this is None, we assume the position is in lattice units, and moments
+                                are in the unit cell moment coordinate system
+                                (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
+                                `pyspinw.UnitCell.moment_cartesian_to_fractional`)
+                                if instead it is a unit cell, we assume the coordinates are cartesian,
+                                and the positions will be converted into lattice units
+    """
 
 def generate_sites(positions: ArrayLike,
                    moments: ArrayLike | None = None,
@@ -227,6 +243,15 @@ def propagation_vectors(
 
         out.append(pv)
 
+@check_sizes(perpendicular=(3,), propagation=(3,))
+def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
+    """ Generate a helical supercell
+
+    :param perpendicular: (3-vector) Direction perpendicular to propagation vector, needed to specify "start" cell
+    :param propagation: (3-vector) Propagation vector
+
+    """
+    return RotationSupercell(perpendicular=perpendicular, propagation_vector=propagation)
 
 @check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
 def rotation_supercell(

@@ -9,15 +9,31 @@ from pyspinw.site import LatticeSite
 from pyspinw.tolerances import tolerances
 
 
+_anisotropy_id_counter = -1
+def _generate_unique_anisotropy_id():
+    """ Generate a unique ID for each anisotropy currently loaded"""
+    global _anisotropy_id_counter # noqa: PLW0603
+    _anisotropy_id_counter += 1
+    return _anisotropy_id_counter
+
+
 class Anisotropy(SPWSerialisable):
     """Defines the anisotropy at a given site"""
 
     serialisation_name = "anisotropy"
 
+    scalar_parameters = []
+
     @check_sizes(anisotropy_matrix=(3,3))
     def __init__(self, site: LatticeSite, anisotropy_matrix: ArrayLike):
         self._site = site
         self._anisotropy_matrix = np.array(anisotropy_matrix)
+        self._unique_id = _generate_unique_anisotropy_id()
+
+    @property
+    def unique_id(self):
+        """ Unique ID for this anisotropy """
+        return self._unique_id
 
     @property
     def site(self):
@@ -60,6 +76,8 @@ class Anisotropy(SPWSerialisable):
 
 class AxisMagnitudeAnisotropy(Anisotropy):
     """Anisotropy oriented with axes, but variable amount in x, y and z"""
+
+    scalar_parameters = ["a"]
 
     @check_sizes(direction=(3,), force_numpy=True)
     def __init__(self, site: LatticeSite, a: float, direction: np.ndarray = np.array([0, 0, 1])):

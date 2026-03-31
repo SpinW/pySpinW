@@ -24,7 +24,6 @@ class Structure(SPWSerialisable):
         self._input_sites = sites
         self._unit_cell = unit_cell
 
-
         self._spacegroup = database.spacegroups[1] if spacegroup is None else spacegroup
         self._supercell = TrivialSupercell() if supercell is None else supercell
 
@@ -33,7 +32,7 @@ class Structure(SPWSerialisable):
         # Check that supercell components match site dimensions
         bad_sites = []
         for site in self.sites:
-            if site.n_components() != supercell.n_components():
+            if site.n_components() != self._supercell.n_components():
                 bad_sites.append(site)
 
         if bad_sites:
