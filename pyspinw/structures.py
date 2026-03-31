@@ -24,7 +24,6 @@ class Structure(SPWSerialisable):
         self._input_sites = sites
         self._unit_cell = unit_cell
 
-
         self._spacegroup = database.spacegroups[1] if spacegroup is None else spacegroup
         self._supercell = TrivialSupercell() if supercell is None else supercell
 
