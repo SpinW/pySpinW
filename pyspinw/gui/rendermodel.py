@@ -138,7 +138,7 @@ class RenderModel:
         self.site_expanded_uid_to_original_uid: dict[int, int] = {}
         self.site_original_uid_to_expanded_uid: defaultdict[int, list[int]] = defaultdict(list)
 
-        self.original_sites = self.hamiltonian.structure.sites
+        self.original_sites = self.hamiltonian.structure.generate_sites
 
         for (parent_unique_id, offset), child_site in site_mapping.items():
             self.site_original_uid_to_expanded_uid[parent_unique_id].append(child_site.unique_id)
@@ -157,7 +157,7 @@ class RenderModel:
         self.expanded_site_unique_id_to_render_id: dict[int, int] = {}
 
         self.original_site_unique_id_to_index: dict[int, int] = {}
-        for index, site in enumerate(self.hamiltonian.structure.sites):
+        for index, site in enumerate(self.hamiltonian.structure.generate_sites):
             self.original_site_unique_id_to_index[site.unique_id] = index
 
         self.expanded_index_to_original_index = []
@@ -166,7 +166,7 @@ class RenderModel:
         # Create render data for sites
         #
         self.sites: list[RenderSite] = []
-        for site in self.expanded.structure.sites:
+        for site in self.expanded.structure.generate_sites:
 
             parent_index, offset = self.site_expanded_uid_to_original_index_and_offset[site.unique_id]
             render_site = RenderSite(render_id, site, self.expanded.structure.unit_cell, offset)

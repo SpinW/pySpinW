@@ -46,10 +46,10 @@ def test_expansion_chain_no_rot():
 
     # Check the sites
     ## First that there is the right number of them
-    assert len(expanded_hamiltonian.structure.sites) == 1 * 2 * 3
+    assert len(expanded_hamiltonian.structure.generate_sites) == 1 * 2 * 3
 
     ## That they have the right positions
-    for site in expanded_hamiltonian.structure.sites:
+    for site in expanded_hamiltonian.structure.generate_sites:
         ### Moment
         assert np.all(site.moment_data == np.array([0,0,1], dtype=float))
 
@@ -64,8 +64,8 @@ def test_expansion_chain_no_rot():
         assert 0 <= site.k < 1
 
     ## That they're all different
-    for i, site_1 in enumerate(expanded_hamiltonian.structure.sites):
-        for site_2 in expanded_hamiltonian.structure.sites[:i]:
+    for i, site_1 in enumerate(expanded_hamiltonian.structure.generate_sites):
+        for site_2 in expanded_hamiltonian.structure.generate_sites[:i]:
             assert not (site_1.i == site_2.i and site_1.j == site_2.j and site_1.k == site_2.k)
 
     # Check the anisotropies have different sites

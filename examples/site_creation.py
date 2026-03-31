@@ -1,9 +1,9 @@
 """ Example site creation """
 
-from pyspinw.interface import sites
+from pyspinw.interface import generate_sites
 
 
-s = sites(
+s = generate_sites(
     positions=[[0, 0, 0], [0.5, 0, 0], [0, 0.5, 0], [0, 0, 0.5]],
     moments=[[0., 0., i] for i in range(1, 5)],
     names=['X', 'Y', 'Z', 'W'])
@@ -16,7 +16,7 @@ print(z)
 print(w)
 
 # Specify supercell moments as a tensor
-s = sites(
+s = generate_sites(
     positions=[[0, 0, 0], [0.5, 0, 0], [0, 0.5, 0], [0, 0, 0.5]],
     moments=[[[0., 0., i]] for i in range(1, 5)],
     names=['X', 'Y', 'Z', 'W'])

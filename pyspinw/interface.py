@@ -20,10 +20,10 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
 from pyspinw.symmetry.unitcell import UnitCell
 
 
-def sites(positions: ArrayLike,
-          moments: ArrayLike | None = None,
-          names: list[str] | None=None,
-          convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
+def generate_sites(positions: ArrayLike,
+                   moments: ArrayLike | None = None,
+                   names: list[str] | None=None,
+                   convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
     """ Create lattice site
 
     :param positions: positions of the sites

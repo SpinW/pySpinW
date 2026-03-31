@@ -22,7 +22,7 @@ def test_trivial_supercell():
 
     expanded = structure.expand()
 
-    assert len(expanded.sites) == 1*2*3
+    assert len(expanded.generate_sites) == 1 * 2 * 3
 
     assert supercell.n_components() == 1
 
@@ -42,7 +42,7 @@ def test_transform_supercell(n):
 
     expanded = structure.expand()
 
-    for site1, site2 in zip(expanded.sites, expanded.sites[1:]):
+    for site1, site2 in zip(expanded.generate_sites, expanded.generate_sites[1:]):
         assert np.isclose(np.dot(site1.base_moment, site2.base_moment), np.cos(2*np.pi/n))
 
     assert supercell.n_components() == 1
@@ -63,7 +63,7 @@ def test_summation_supercell(n):
 
     expanded = structure.expand()
 
-    for site1, site2 in zip(expanded.sites, expanded.sites[1:]):
+    for site1, site2 in zip(expanded.generate_sites, expanded.generate_sites[1:]):
         assert np.isclose(np.dot(site1.base_moment, site2.base_moment), np.cos(2*np.pi/n))
 
     assert supercell.n_components() == 2
