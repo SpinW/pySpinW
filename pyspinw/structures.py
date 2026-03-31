@@ -1,5 +1,5 @@
 """ Magnetic structures """
-
+import re
 
 import numpy as np
 
@@ -28,6 +28,17 @@ class Structure(SPWSerialisable):
         self._supercell = TrivialSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
+
+        # Check that supercell components match site dimensions
+        bad_sites = []
+        for site in self.sites:
+            if site.n_components() != supercell.n_components():
+                bad_sites.append(site)
+
+        if bad_sites:
+            raise ValueError("Expected the shape of site moment data to match what the supercell requires "
+                             f"({supercell.n_components()}-by-3), "
+                             "bad sites are: " + ", ".join([site.name for site in bad_sites]))
 
     def full_structure_site_list(self):
         """ All the sites in the structure"""
@@ -145,7 +156,7 @@ class Structure(SPWSerialisable):
 
         # Create a mapping between sites and offsets to the new sites
         mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
-        for offset in self.supercell.cells():
+        for index, offset in enumerate(self.supercell.cells()):
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)
                 moment = self.supercell.moment(site, cell_offset=offset)
@@ -156,7 +167,7 @@ class Structure(SPWSerialisable):
                     k=position[2],
                     supercell_moments=moment,
                     g=site.g,
-                    name=site.name)
+                    name=f"{site.name}[{index}]")
 
                 mapping[(site._unique_id, offset.as_tuple)] = new_site
 
@@ -190,6 +201,11 @@ class Structure(SPWSerialisable):
         """ Set the input sites """
         self._input_sites = sites
         self._sites = self._build_sites()
+
+    def sites_by_name(self, regex) -> list[LatticeSite]:
+        """ Get sites where name matches regex"""
+        return [site for site in self.sites if re.match(regex, site.name) is not None]
+
 
     @property
     def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:

@@ -28,6 +28,8 @@ sw_plotspec(afcSpec,'mode',2,'log',true,'axLim',[-4 10])
 """
 
 
+"""Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial"""
+
 unit_cell = UnitCell(3, 8, 8)
 
 sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="MCu1")]

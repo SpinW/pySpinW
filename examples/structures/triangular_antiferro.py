@@ -8,7 +8,6 @@ from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
 from pyspinw.legacy.genmagstr import genmagstr
 import sys
 
@@ -30,11 +29,34 @@ triSpec = sw_omegasum(triSpec,'zeroint',1e-6);
 subplot(212); sw_plotspec(triSpec,'mode',2,'log',false,'axLim',[0 3])
 """
 
+<<<<<<< HEAD
+"""Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial"""
+
+unit_cell = UnitCell(3, 3, 4, gamma=120)
+
+sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="X")]
+s = genmagstr(sites, unit_cell, magnitude=[3./2],mode='helical', k=[1./3, 1./3, 0], n=[0, 0, 1])
+
+exchanges = generate_exchanges(sites=sites,
+                               unit_cell=unit_cell,
+                               max_distance=3.1,
+                               coupling_type=HeisenbergCoupling,
+                               j=1)
+
+anisotropies = axis_anisotropies(sites, 0.2)
+hamiltonian = Hamiltonian(s, exchanges, anisotropies)
+
+hamiltonian.print_summary()
+
+path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
+import matplotlib.pyplot as plt
+fig = hamiltonian.spaghetti_plot(path, show=False)
+fig.axes[0].set_ylim(0, 10)
+fig.axes[1].set_ylim(0, 5)
+plt.show()
+=======
 if __name__ == "__main__":
     """Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(3, 3, 4, gamma=120)
 
@@ -54,7 +76,8 @@ if __name__ == "__main__":
 
     path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig = hamiltonian.spaghetti_plot(path, show=False)
     fig.axes[0].set_ylim(0, 10)
     fig.axes[1].set_ylim(0, 5)
     plt.show()
+>>>>>>> main

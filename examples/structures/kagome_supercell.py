@@ -1,7 +1,5 @@
 """ Kagome 3x3 Antiferromagnet example """
 
-from multiprocessing.spawn import freeze_support
-
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges
@@ -9,8 +7,6 @@ from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.legacy.genmagstr import genmagstr
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
-import sys
 
 """
 AF33kagome = spinw;
@@ -32,11 +28,37 @@ kag33Spec = sw_omegasum(kag33Spec,'zeroint',1e-6);
 subplot(212); sw_plotspec(kag33Spec,'mode',2,'log',false,'axLim',[0 3])
 """
 
+<<<<<<< HEAD
+"""Reproduces Tutorial 8: https://spinw.org/tutorials/08tutorial"""
+
+unit_cell = UnitCell(6, 6, 40, gamma=120)
+
+x = LatticeSite(0.5, 0,   0, 0, 1, 0, name="X")
+y = LatticeSite(0,   0.5, 0, 0, 1, 0, name="Y")
+z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, name="Z")
+s = genmagstr([x, y, z], unit_cell, magnitude=[1,1,1], mode='helical', k=[-1./3, -1./3, 0], n=[0, 0, 1], unit='lu')
+
+exchanges = generate_exchanges(sites=[x, y, z],
+                               unit_cell=unit_cell,
+                               max_distance=3.1,
+                               coupling_type=HeisenbergCoupling,
+                               j=1)
+
+hamiltonian = Hamiltonian(s, exchanges)
+
+hamiltonian.print_summary()
+
+
+path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
+
+import matplotlib.pyplot as plt
+fig = hamiltonian.spaghetti_plot(path, show=False)
+fig.axes[0].set_ylim(0, 3)
+fig.axes[1].set_ylim(0, 1)
+plt.show()
+=======
 if __name__ == "__main__":
     """Reproduces Tutorial 8: https://spinw.org/tutorials/08tutorial"""
-    freeze_support()
-
-    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(6, 6, 40, gamma=120)
 
@@ -55,12 +77,12 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
-    #from pyspinw.gui.viewer import show_hamiltonian
-    #show_hamiltonian(hamiltonian)
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
+
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust)
+    fig = hamiltonian.spaghetti_plot(path, show=False)
     fig.axes[0].set_ylim(0, 3)
     fig.axes[1].set_ylim(0, 1)
     plt.show()
+>>>>>>> main

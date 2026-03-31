@@ -11,27 +11,7 @@ from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-
-
-def rotation_from_z(target_vector):
-    """ Rotation matrix from (0,0,1) to the target vector direction """
-    mag_sq = np.sum(target_vector**2)
-
-    if mag_sq < 1e-9:
-        return np.eye(3)
-
-    v = target_vector / np.sqrt(mag_sq)
-
-    x,y,z = v
-
-    if z < 1e-9 - 1:
-        return np.array([[-1,0,0],[0,1,0],[0,0,-1]])
-
-    return np.array([
-        [1-x**2 / (1+z), -x*y / (1+z), x],
-        [-x*y / (1+z), 1 - y**2 / (1+z), y],
-        [-x, -y, z]
-    ])
+from pyspinw.util import rotation_from_z
 
 
 class Component:

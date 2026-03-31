@@ -1,13 +1,13 @@
 """Selection of different Hamiltonians"""
 import logging
-from abc import ABC, abstractmethod
 
 import numpy as np
 
 import matplotlib.pyplot as plt
 from numpy._typing import ArrayLike
 
-from pyspinw.anisotropy import Anisotropy
+from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, \
+    InitialRandomisation, Fixed, Planar
 from pyspinw.calculations.spinwave import (
     spinwave_calculation as py_spinwave,
     Coupling as PyCoupling,
@@ -170,6 +170,10 @@ class Hamiltonian(SPWSerialisable):
         expanded, _, _, _ = self._expand_with_mapping()
         return expanded
 
+
+    def sites_by_name(self, regex) -> list[LatticeSite]:
+        """ Get sites where name matches regex"""
+        return self.structure.sites_by_name(regex)
 
     def print_summary(self):
         """ Print a textual summary to stdout"""
@@ -391,6 +395,128 @@ class Hamiltonian(SPWSerialisable):
 
         if show:
             plt.show()
+
+    def ground_state(self,
+                      fixed: list[LatticeSite] | None = None,
+                      planar: list[LatticeSite | tuple[LatticeSite, ArrayLike]] | None = None,
+                      planar_axis: ArrayLike | None = None,
+                      field: ArrayLike | None = None,
+                      step_size: float = 0.1,
+                      initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
+                      seed: int | None = None,
+                      rtol: float=1e-10,
+                      atol: float=1e-12,
+                      max_iters: int=1000,
+                      verbose: bool=True):
+        """ Get the classical ground state via gradient descent
+
+        For more direct control, use the `ClassicalEnergyMinimisation` class
+
+        :param fixed: List of sites that should be ignored by the minimisation, i.e. fixed in place
+        :param planar: List of sites, or (site, axis) tuples that should be constrained to a plane
+        :param planar_axis: Axis to use for planar constraints if not specified explicitly, default=[0,0,1]
+        :param field: Magnetic field applied
+        :param step_size: Size of step to make relative to the force, smaller values than the default might be needed
+                          for systems with high energy.
+        :param initial_randomisation: Option to RANDOMISE or JITTER the starting state, default JITTER, can also be NONE
+        :param seed: Seed to use in any randomisation steps
+        :param rtol: Convergence criterion, stop when [energy change] < rtol x [initial energy change]
+        :param atol: Convergence criterion, stop when [energy change] < atol
+        :param max_iters: Limit on the number of iterations
+        :param verbose: Print information about the process to stdout
+
+        :returns: A new `Hamiltonian` with optimised spin state
+        """
+        #
+        # Build the constraints
+        #
+
+        # Deal with defaults
+        default_axis = np.array([0,0,1]) if planar_axis is None else np.array(planar_axis)
+        fixed = [] if fixed is None else fixed
+        planar = [] if planar is None else planar
+
+        # Mapping
+        site_uid_lookup = {site.unique_id: index for index, site in enumerate(self.structure.sites)}
+
+
+        # Actual building
+        constraints = [Free for _ in self.structure.sites]
+
+        for site in fixed:
+            constraints[site_uid_lookup[site.unique_id]] = Fixed
+
+        for site_or_tuple in planar:
+
+            if isinstance(site_or_tuple, LatticeSite):
+                index = site_uid_lookup[site_or_tuple.unique_id]
+                constraints[index] = Planar(default_axis)
+
+            elif isinstance(site_or_tuple, tuple):
+
+                if len(site_or_tuple) != 2:
+                    raise ValueError("Expected tuples in `planar` to be length 2")
+
+                if not isinstance(site_or_tuple[0], LatticeSite):
+                    raise TypeError("Expected first component of tuples to be a LatticeSite")
+
+                try:
+                    axis = np.array(site_or_tuple[1])
+                except Exception:
+                    raise TypeError("Expected second component of tuples to be an array")
+
+                index = site_uid_lookup[site_or_tuple[0].unique_id]
+                constraints[index] = Planar(axis)
+
+            else:
+                raise TypeError("Expected entries in planar to be sites, or tuples of sites and axes")
+
+        # TODO: Apply constraints to symmetric sites?
+
+        #
+        # Run the minimisation
+        #
+
+        minimiser = ClassicalEnergyMinimisation(self, constraints, field, seed)
+        minimiser.minimise(
+            rtol=rtol,
+            atol=atol,
+            max_iters=max_iters,
+            initial_randomisation=initial_randomisation,
+            step_size=step_size,
+            verbose=verbose)
+
+
+        # Create new spins
+        old_uid_to_new_site = {}
+        new_sites = []
+        for site_index, site in enumerate(minimiser.sites):
+            spin_data = minimiser.moment_data[site_index, :, :]
+
+            old_uid = site.unique_id
+            new_site = LatticeSite(site.i, site.j, site.k,
+                                   supercell_moments=spin_data,
+                                   g=site.g, name=site.name)
+
+            new_sites.append(new_site)
+            old_uid_to_new_site[old_uid] = new_site
+
+        structure = Structure(new_sites,
+                              minimiser.hamiltonian.structure.unit_cell,
+                              minimiser.hamiltonian.structure.spacegroup,
+                              minimiser.hamiltonian.structure.supercell)
+
+        couplings = [coupling.updated(
+            site_1=old_uid_to_new_site[coupling.site_1.unique_id],
+            site_2=old_uid_to_new_site[coupling.site_2.unique_id])
+            for coupling in minimiser.hamiltonian.couplings]
+
+        anisotropies = [anisotropy.updated(
+            site=old_uid_to_new_site[anisotropy.site.unique_id])
+            for anisotropy in minimiser.hamiltonian.anisotropies]
+
+        return Hamiltonian(structure, couplings, anisotropies)
+
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),
