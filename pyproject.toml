@@ -1,6 +1,6 @@
 [project]
 name = "pySpinW"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dynamic = ["version"]
 readme = "README.md"
 license = {text = "GPLv3"}
@@ -22,14 +22,15 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "ase",
+    "ase>=3.26.0",
     "numpy>=2.0.0",
     "packaging",
     "pycifrw",
     "spglib>2.1.0",
-    "scipy",
-    "pyopengl",
-    "pyside6",
+    "scipy>=1.16.1",
+    "pyopengl>=3.1.10",
+    "pyside6>=3.9.2",
+    "matplotlib>=3.10.5",
 ]
 
 [tool.maturin]

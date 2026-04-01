@@ -25,7 +25,7 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
 
     # Avoid zero divisions by using np.divide instead of /
     zero_vectors = lengths < rcond
-    e_1 = np.divide(vectors, lengths.reshape(-1, 1), where=~zero_vectors.reshape(-1, 1))
+    e_1 = np.divide(vectors, lengths.reshape(-1, 1), where=~zero_vectors.reshape(-1, 1), out=None)
 
     # Assign zero vectors to z
     e_1[zero_vectors, :] = np.array([[0.0,0.0,1.0]])

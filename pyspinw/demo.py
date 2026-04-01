@@ -90,3 +90,5 @@ def demo_viewer():
 
     view(hamiltonian)
 
+if __name__ == "__main__":
+    run_demos()
