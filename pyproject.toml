@@ -36,6 +36,7 @@ dependencies = [
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "pyspinw.rust"
+universal2 = true  # produces arm64 + x86_64 macOS wheels
 
 [tool.setuptools.dynamic]
 version = {attr = "pyspinw.__version__"}
