@@ -7,7 +7,6 @@ def run_demos():
 
 def demo_chains():
     """ Antiferromagnetic chain example """
-
     from pyspinw import (UnitCell, LatticeSite, HeisenbergCoupling, Structure,
                          Hamiltonian, Path)
 
