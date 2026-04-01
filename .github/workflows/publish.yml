@@ -35,7 +35,7 @@ jobs:
         run: maturin build --release --manylinux off --strip
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: target/wheels/*.whl
