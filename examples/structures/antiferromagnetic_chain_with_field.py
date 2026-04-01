@@ -2,11 +2,10 @@
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import generate_exchanges, filter, axis_anisotropies
+from pyspinw.interface import generate_exchanges, filter, axis_anisotropies, generate_structure
 from pyspinw.path import Path
-from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+import sys
 
 """
 afc = spinw;
@@ -30,25 +29,23 @@ sw_plotspec(afcSpec,'mode',2,'log',false,'axLim',[-4 10])
 """
 
 if __name__ == "__main__":
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
+
     unit_cell = UnitCell(4,6,6)
 
-    sites = [LatticeSite(0, 0, 0, 0,0,1, name="X"),
-             LatticeSite(0.5,0,0, 0,0, -1, name="Y")]
-
-    s = Structure(sites, unit_cell=unit_cell)
+    sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], moments=[[0,0,1], [0,0,-1]], names=['X', 'Y'])
 
     exchanges = generate_exchanges(sites=sites,
-                                   unit_cell=unit_cell,
-                                   max_distance=2.1,
+                                   bond=1,
                                    coupling_type=HeisenbergCoupling,
                                    j=1,
                                    direction_filter=filter([1,0,0], symmetric=True))
 
     anisotropies = axis_anisotropies(sites, -0.1)
 
-    hamiltonian = Hamiltonian(s, exchanges, anisotropies)
+    hamiltonian = Hamiltonian(sites, exchanges, anisotropies)
 
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [2,0,0]])
-    hamiltonian.spaghetti_plot(path, field=[0,0,7])
+    hamiltonian.spaghetti_plot(path, field=[0,0,7], use_rust=use_rust)

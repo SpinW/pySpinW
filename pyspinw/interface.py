@@ -22,7 +22,9 @@ from pyspinw.units import CoordsUnits
 try:
     from pyspinw.gui.viewer import show_hamiltonian
 except ModuleNotFoundError:
-    def show_hamiltonian(*args, **kwargs): raise RuntimeError('PySide or OpenGL not installed')
+    def show_hamiltonian(*args, **kwargs):
+        """ Show a Hamiltonian in the viewer"""
+        raise RuntimeError('PySide or OpenGL not installed')
 
 def _check_positions_moments_shape(positions: ArrayLike,
                                    moments: ArrayLike | None = None) -> tuple[ArrayLike, ArrayLike]:
@@ -153,7 +155,8 @@ def _transform_site(unit_cell: UnitCell,
 def generate_structure(unit_cell: UnitCell,
                        positions: ArrayLike,
                        moments: ArrayLike,
-                       names: list[str] | None=None,
+                       propagation_vectors: ArrayLike | None = None,
+                       names: list[str] | None = None,
                        magnitudes: ArrayLike | None = None,
                        positions_unit: CoordsUnits | str = 'lu',
                        moments_unit: CoordsUnits | str = 'xyz') -> Structure:
@@ -163,7 +166,7 @@ def generate_structure(unit_cell: UnitCell,
     :param positions: positions of the sites
     :param moments: moments of the sites
     :param perpendicular: vector perpendicular to helix plane of rotation
-    :param propagation_vector: the propagation vector
+    :param propagation_vectors: the propagation vector(s)
     :param names: (optional) a list of names for sites
     :param magnitudes: (optional) a list of moment magnitudes (spin length S)
                        If not specified, the norm of the moments vectors will be used as the spin length
@@ -178,6 +181,12 @@ def generate_structure(unit_cell: UnitCell,
                                  `pyspinw.UnitCell.moment_cartesian_to_fractional`)
     """
     s = generate_sites(*_transform_site(unit_cell, positions, moments, names, magnitudes, positions_unit, moments_unit))
+    if propagation_vectors is not None:
+        pvs = np.array(propagation_vectors, ndmin=2)
+        if pvs.shape[0] != 3 and pvs.shape[1] == 3:
+            pvs = pvs.T
+        pvs = [CommensuratePropagationVector(*pvs[:,ip]) for ip in range(pvs.shape[1])]
+        return Structure(s, unit_cell, supercell=SummationSupercell(propagation_vectors=pvs))
     return Structure(s, unit_cell)
 
 def generate_helical_structure(unit_cell: UnitCell,
