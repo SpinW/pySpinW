@@ -28,6 +28,8 @@ dependencies = [
     "pycifrw",
     "spglib>2.1.0",
     "scipy",
+    "pyopengl",
+    "pyside6",
 ]
 
 [tool.maturin]
