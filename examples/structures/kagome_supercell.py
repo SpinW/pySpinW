@@ -2,11 +2,10 @@
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import generate_exchanges
+from pyspinw.interface import generate_exchanges, generate_helical_structure
 from pyspinw.path import Path
-from pyspinw.site import LatticeSite
-from pyspinw.legacy.genmagstr import genmagstr
 from pyspinw.symmetry.unitcell import UnitCell
+import sys
 
 """
 AF33kagome = spinw;
@@ -30,17 +29,16 @@ subplot(212); sw_plotspec(kag33Spec,'mode',2,'log',false,'axLim',[0 3])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 8: https://spinw.org/tutorials/08tutorial"""
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(6, 6, 40, gamma=120)
 
-    x = LatticeSite(0.5, 0,   0, 0, 1, 0, name="X")
-    y = LatticeSite(0,   0.5, 0, 0, 1, 0, name="Y")
-    z = LatticeSite(0.5, 0.5, 0, -1, -1, 0, name="Z")
-    s = genmagstr([x, y, z], unit_cell, magnitude=[1,1,1], mode='helical', k=[-1./3, -1./3, 0], n=[0, 0, 1], unit='lu')
+    s = generate_helical_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,0.5,0]],
+                                   moments=[[0,1,0], [0,1,0], [-1,-1,0]], magnitudes=[1,1,1], names=['X', 'Y', 'Z'],
+                                   moments_unit='lu', perpendicular=[0,0,1], propagation_vector=[-1./3., -1./3., 0])
 
-    exchanges = generate_exchanges(sites=[x, y, z],
-                                   unit_cell=unit_cell,
-                                   max_distance=3.1,
+    exchanges = generate_exchanges(sites=s,
+                                   bond=1,
                                    coupling_type=HeisenbergCoupling,
                                    j=1)
 
@@ -48,11 +46,13 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
+    #from pyspinw.gui.viewer import show_hamiltonian
+    #show_hamiltonian(hamiltonian)
 
     path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
 
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False)
+    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust, use_rotating=False)
     fig.axes[0].set_ylim(0, 3)
     fig.axes[1].set_ylim(0, 1)
     plt.show()

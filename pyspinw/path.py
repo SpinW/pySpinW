@@ -10,9 +10,9 @@ class Path:
 
     def __init__(self,
                  points: ArrayLike,
+                 n_points_per_segment: int=101,
                  labels: list[str] | None = None,
                  avoid_endpoints=True,
-                 n_points_per_segment: int=101,
                  scale_by_distance=False):
 
         self._points = np.array(points, dtype=float)

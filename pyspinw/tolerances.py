@@ -12,5 +12,6 @@ class Tolerances:
     COUPLING_ORDER_THRESHOLD = 1e-7
     IS_INTEGER_TOL = 1e-6
     IS_ZERO_TOL = 1e-10
+    BOND_TOL = 1e-6        # Distance tolerance to consider same bond
 
 tolerances = Tolerances()

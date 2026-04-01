@@ -12,9 +12,9 @@ sites = [LatticeSite(0, 0, 0, 1, 0, 0, name="X")]
 k = CommensuratePropagationVector(0.5, 0.5, 0)
 s = Structure(sites, unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
 
-j1 = generate_exchanges(sites, unit_cell, min_distance=0, max_distance=3.1, coupling_type=HeisenbergCoupling, j=59.65)
-j2 = generate_exchanges(sites, unit_cell, min_distance=4, max_distance=4.3, coupling_type=HeisenbergCoupling, j=-3.75)
-j3 = generate_exchanges(sites, unit_cell, min_distance=5, max_distance=6.1, coupling_type=HeisenbergCoupling, j=1)
+j1 = generate_exchanges(sites, unit_cell, bond=1, coupling_type=HeisenbergCoupling, j=59.65)
+j2 = generate_exchanges(sites, unit_cell, bond=2, coupling_type=HeisenbergCoupling, j=-3.75)
+j3 = generate_exchanges(sites, unit_cell, bond=3, coupling_type=HeisenbergCoupling, j=1)
 exchanges = j1 + j2 + j3
 
 hamiltonian = Hamiltonian(s, exchanges)

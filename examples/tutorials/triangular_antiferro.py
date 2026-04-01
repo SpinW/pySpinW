@@ -8,11 +8,10 @@ from pyspinw.legacy.genmagstr import genmagstr
 
 unit_cell = UnitCell(3, 3, 4, gamma=120)
 
-sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="X")]
-s = genmagstr(sites, unit_cell, magnitude=[3./2],mode='helical', k=[1./3, 1./3, 0], n=[0, 0, 1])
+sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], moments=[[0,1,0]], magnitudes=[3./2], names=['X'],
+                                   perpendicular=[0,0,1], propagation_vector=[1./3., 1./3., 0])
 
-exchanges = generate_exchanges(sites=sites,
-                               unit_cell=unit_cell,
+exchanges = generate_exchanges(sites=s,
                                max_distance=3.1,
                                coupling_type=HeisenbergCoupling,
                                j=1)

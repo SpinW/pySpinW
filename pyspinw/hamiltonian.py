@@ -1,5 +1,6 @@
 """Selection of different Hamiltonians"""
 import logging
+from collections.abc import Callable
 import re
 from collections import Counter
 from typing import Sequence, Union
@@ -26,6 +27,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TrivialSupercell, RotationSupercell
+from pyspinw.units import IntensityUnits, intensity_units
 
 # pylint: disable=R0903
 
@@ -44,7 +46,34 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
         en_out[iQ,:len(eu)] = eu
         for iE in range(len(eu)):
             int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
+    # Ensure there are the same number of modes throughout
+    nans = np.isnan(en_out)
+    nanmodes = np.sum(nans, axis=0)
+    n_modes = len(np.where((nanmodes < en_out.shape[0]))[0])
+    for col in set([int(idx) for accidentals in np.where((nanmodes > 0) * (nanmodes < en_out.shape[0]))[0]
+                    for idx in np.where(nans[:,accidentals])[0]]):
+        idnxt = 1 if col < en_out.shape[0]-1 else -1
+        idnan = np.where(~np.isnan(en_out[col + idnxt,:]))[0]
+        idx = np.array([np.nanargmin(np.abs(en_out[col + idnxt,i] - en_out[col]))
+               for i in idnan])
+        en_out[col,idnan] = np.take(en_out[col, :], idx)
+        int_out[col,idnan] = np.take(int_out[col, np.where(~np.isnan(int_out[col,:]))] / np.bincount(idx), idx)
+    # Removes columns which are all NaNs
+    en_out = np.delete(en_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
+    int_out = np.delete(int_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
     return en_out, int_out
+
+def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float | Callable):
+    """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
+    esigma = dE(evect) if isinstance(dE, Callable) else np.ones(evect.shape) * dE
+    esigma /= 2 * np.sqrt(2* np.log(2))  # Convert from FWHM
+    spec = np.zeros((energy.shape[0], len(evect)))
+    ew_norm = np.array(list(np.diff(evect)) + [evect[-1] - evect[-2]]) / (np.sqrt(2 * np.pi) * esigma)
+    for iE in range(energy.shape[1]):
+        spec += intensity[:,iE,np.newaxis] * ew_norm * \
+            np.exp(-0.5 * ((evect[np.newaxis,:] - energy[:,iE,np.newaxis]) / esigma)**2)
+    spec[np.where(spec < np.finfo(np.float32).eps)] = np.nan
+    return spec
 
 ParametrizationType = Union[str,
                        list[str],
@@ -304,8 +333,20 @@ class Hamiltonian(SPWSerialisable):
                                  field: ArrayLike | None = None,
                                  use_rust: bool=True,
                                  use_rotating: bool=True,
+                                 intensity_unit: IntensityUnits | str='cell',
                                  ):
-        """Calculate the energy levels of the system for the given q-vectors."""
+        """Calculate the energy levels of the system for the given q-vectors.
+
+        :param q_vectors: *required* An array of q-vectors
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        """
+        intensity_unit = intensity_units(intensity_unit)
+        if intensity_unit == IntensityUnits.BARNPERATOM or intensity_unit == IntensityUnits.BARNPERCELL:
+            raise NotImplementedError('Intensity scale in barn/sr/meV/atom not yet implemented.')
+
         #
         # Set up choice of calculation
         #
@@ -440,19 +481,21 @@ class Hamiltonian(SPWSerialisable):
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
-        scale_factor = rotations.shape[0] / np.prod(scaling)
-        intensity = [res * scale_factor for res in result[1]]
+        if intensity_unit == IntensityUnits.PERCELL:
+            scale_factor = rotations.shape[0] / np.prod(scaling)
+            intensity = [res * scale_factor for res in result[1]]
 
         return result[0], intensity
 
-    def spaghetti_plot(self,
-             path: Path,
-             field: ArrayLike | None = None,
-             show: bool=True,
-             new_figure: bool=True,
-             use_rust: bool=True,
-             use_rotating: bool=False,
-             scale: str='linear'):
+    def spaghetti_plot_dual(self,
+                            path: Path,
+                            field: ArrayLike | None = None,
+                            show: bool=True,
+                            new_figure: bool=True,
+                            use_rust: bool=True,
+                            use_rotating: bool=True,
+                            intensity_unit: IntensityUnits | str = 'cell',
+                            scale: str='linear'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
             fig, axs = plt.subplots(2, 1)
@@ -463,17 +506,63 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(),
-                                     field=field, use_rust=use_rust, use_rotating=use_rotating))
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field,
+                                                                    use_rust, use_rotating, intensity_unit))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, series[0], 'k')
-            axs[1].plot(x_values, series[1])
+            axs[1].plot(x_values, series[1], 'k')
         if 'log' in scale:
             axs[1].set_yscale('log')
+        axs[0].set_ylabel('Magnon Energy (meV)')
+        axs[1].set_ylabel('Magnon Intensity')
 
         path.format_plot(axs[0])
         path.format_plot(axs[1])
+
+        if show:
+            plt.show()
+        else:
+            return fig
+
+    def spaghetti_plot(self,
+                       path: Path,
+                       evect: ArrayLike | None = None,
+                       dE: float | Callable | None = None,
+                       vmin: float=0,
+                       vmax: float | None = None,
+                       field: ArrayLike | None = None,
+                       show: bool=True,
+                       new_figure: bool=True,
+                       use_rust: bool=True,
+                       use_rotating: bool=True,
+                       intensity_unit: IntensityUnits | str = 'cell',
+                       scale: str='linear'):
+        """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
+        if new_figure:
+            fig, ax = plt.subplots()
+        else:
+            fig = plt.gcf()
+            ax = fig.get_axes()[0]
+
+        x_values = path.x_values()
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field,
+                                                                    use_rust, use_rotating, intensity_unit))
+        if evect is None:
+            emax = np.nanmax(energy)
+            denom = 10**np.floor(np.log10(emax))
+            evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
+        if dE is None:
+            dE = np.mean(np.diff(evect)) * 2.35
+        spec = egrid(energy, intensity, evect, dE)
+        if vmax is None:
+            vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
+        mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax)
+        ax.plot(x_values, energy, 'k')
+        ax.set_ylim(0, np.max(evect))
+        fig.colorbar(mesh, ax=ax)
+        path.format_plot(ax)
+        ax.set_ylabel('Magnon Energy (meV)')
 
         if show:
             plt.show()

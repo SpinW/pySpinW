@@ -2,12 +2,10 @@
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import generate_exchanges
+from pyspinw.interface import generate_exchanges, generate_helical_structure
 from pyspinw.path import Path
-from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+import sys
 
 """
 AFMchain = spinw;
@@ -27,25 +25,22 @@ subplot(2,1,2)
 sw_plotspec(afcSpec,'mode',2,'log',true,'axLim',[-4 10])
 """
 
+if __name__ == "__main__":
+    """Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial"""
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
-"""Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial"""
+    unit_cell = UnitCell(3, 8, 8)
 
-unit_cell = UnitCell(3, 8, 8)
+    sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], moments=[[0,1,0]],
+                                       perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
-sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="MCu1")]
+    exchanges = generate_exchanges(sites=sites,
+                                   max_distance=3.1,
+                                   coupling_type=HeisenbergCoupling,
+                                   j=1)
 
-k = CommensuratePropagationVector(0.5, 0, 0)
-s = Structure(sites, unit_cell=unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
+    hamiltonian = Hamiltonian(sites, exchanges)
+    hamiltonian.print_summary()
 
-exchanges = generate_exchanges(sites=sites,
-                               unit_cell=unit_cell,
-                               max_distance=3.1,
-                               coupling_type=HeisenbergCoupling,
-                               j=1)
-
-
-hamiltonian = Hamiltonian(s, exchanges)
-hamiltonian.print_summary()
-
-path = Path([[0,0,0], [1,0,0]])
-hamiltonian.spaghetti_plot(path, scale='log')
+    path = Path([[0,0,0], [1,0,0]])
+    hamiltonian.spaghetti_plot(path, scale='log', use_rust=use_rust)

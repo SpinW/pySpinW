@@ -200,7 +200,7 @@ class RotationTransform(SupercellTransformation):
 
     def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
         """ Apply this transformation (rotation) to a moment in a specified cell """
-        angle = 2 * np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase
+        angle = -2 * np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase
         return moment @ rotation_matrix(angle, self._axis)
 
 transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, RotationTransform]}
@@ -521,13 +521,13 @@ class RotationSupercell(Supercell):
         self.propagation_vector = propagation_vector
 
     def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculation of the moment from moment data and cell offset """
-        raise NotImplementedError("Not needed here, should be refactored away in future")
-
-    def moment(self, site: LatticeSite, cell_offset: CellOffset):
         """ Calculate moment at a given cell offset"""
-        basis = site.moment_data + 1j * np.cross(self.perpendicular, site.moment_data)
-        return basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset))
+        basis = moment_data + 1j * np.cross(self.perpendicular, moment_data)
+        return np.real(basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset)))
+
+    def n_components(self) -> int:
+        """ Number of spin components/propagation vectors"""
+        return 1
 
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
