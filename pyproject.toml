@@ -1,6 +1,6 @@
 [project]
 name = "pySpinW"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dynamic = ["version"]
 readme = "README.md"
 license = {text = "GPLv3"}
@@ -8,8 +8,10 @@ keywords = [
     "Python",
     "physics",
     "magnons",
+    "spinwaves",
     "inelastic neutron scattering"
 ]
+
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
