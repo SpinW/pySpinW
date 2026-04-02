@@ -26,7 +26,7 @@ jobs:
       - name: Upload artefacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheelhouse
+          name: wheelhouse-windows
           path: wheelhouse
 
   build-macos:
@@ -55,7 +55,7 @@ jobs:
       - name: Upload artefacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheelhouse
+          name: wheelhouse-macos
           path: wheelhouse
 
   build-linux:
@@ -85,7 +85,7 @@ jobs:
       - name: Upload artefacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheelhouse
+          name: wheelhouse-linux
           path: wheelhouse
 
   publish:
@@ -97,8 +97,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wheelhouse
           path: wheelhouse
+
+      - name: Flatten wheelhouse
+        run: |
+          mkdir merged
+          find wheelhouse -name "*.whl" -exec mv {} merged/ \;
 
       - name: Install twine
         run: pip install twine
