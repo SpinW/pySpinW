@@ -62,37 +62,37 @@ jobs:
 
       - name: Make wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-#
-#  publish:
-#    needs: build
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/download-artifact@v3
-#        with:
-#          name: wheelhouse
-#          path: wheelhouse
-#
-#      - name: Install twine
-#        run: pip install twine
-#
-#
-#      - name: Select the target repository
-#        id: repo
-#        run: |
-#          TAG_NAME=${GITHUB_REF#refs/tags/}
-#          if [[ "$TAG_NAME" == *test ]]; then
-#            echo "repository=testpypi" >> $GITHUB_OUTPUT
-#          else
-#            echo "repository=pypi" >> $GITHUB_OUTPUT
-#          fi
-#
-#      - name: Publish
-#        env:
-#          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ steps.repo.outputs.repository == 'testpypi' && secrets.TEST_PYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
-#        run: |
-#          if [ "${{ steps.repo.outputs.repository }}" = "testpypi" ]; then
-#            twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*.whl
-#          else
-#            twine upload wheelhouse/*.whl
-#          fi
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheelhouse
+          path: wheelhouse
+
+      - name: Install twine
+        run: pip install twine
+
+
+      - name: Select the target repository
+        id: repo
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          if [[ "$TAG_NAME" == *test ]]; then
+            echo "repository=testpypi" >> $GITHUB_OUTPUT
+          else
+            echo "repository=pypi" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ steps.repo.outputs.repository == 'testpypi' && secrets.TEST_PYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ "${{ steps.repo.outputs.repository }}" = "testpypi" ]; then
+            twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*.whl
+          else
+            twine upload wheelhouse/*.whl
+          fi
