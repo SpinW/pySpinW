@@ -9,6 +9,7 @@ jobs:
     runs-on: windows-latest
     env:
       CIBW_SKIP: "*32"
+      CIBW_ARCHS_WINDOWS: "AMD64 ARM64"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -17,6 +18,8 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    env:
+      CIBW_ARCHS_MACOS: "x86_64 arm64"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -31,7 +34,8 @@ jobs:
         source $HOME/.cargo/env
         rustup target add x86_64-unknown-linux-musl
       CIBW_ENVIRONMENT: PATH="$HOME/.cargo/bin:$PATH"
-      
+      CIBW_ARCHS_LINUX: "x86_64 aarch64"
+
     steps:
 
       - name: Get repo
@@ -52,14 +56,30 @@ jobs:
 #    steps:
 #      - uses: actions/download-artifact@v3
 #        with:
-#          name: wheels
-#          path: wheels
+#          name: wheelhouse
+#          path: wheelhouse
 #
 #      - name: Install twine
 #        run: pip install twine
 #
-#      - name: Publish to PyPI
+#
+#      - name: Select the target repository
+#        id: repo
+#        run: |
+#          TAG_NAME=${GITHUB_REF#refs/tags/}
+#          if [[ "$TAG_NAME" == *test ]]; then
+#            echo "repository=testpypi" >> $GITHUB_OUTPUT
+#          else
+#            echo "repository=pypi" >> $GITHUB_OUTPUT
+#          fi
+#
+#      - name: Publish
 #        env:
 #          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-#        run: twine upload wheels/*.whl
+#          TWINE_PASSWORD: ${{ steps.repo.outputs.repository == 'testpypi' && secrets.TEST_PYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
+#        run: |
+#          if [ "${{ steps.repo.outputs.repository }}" = "testpypi" ]; then
+#            twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*.whl
+#          else
+#            twine upload wheelhouse/*.whl
+#          fi
