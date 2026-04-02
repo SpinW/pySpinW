@@ -24,7 +24,7 @@ jobs:
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Upload artefacts
-        uses: actions/uploat-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: wheelhouse
           path: wheelhouse
@@ -53,7 +53,7 @@ jobs:
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Upload artefacts
-        uses: actions/uploat-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: wheelhouse
           path: wheelhouse
@@ -83,7 +83,7 @@ jobs:
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Upload artefacts
-        uses: actions/uploat-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: wheelhouse
           path: wheelhouse
