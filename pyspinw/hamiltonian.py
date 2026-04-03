@@ -33,7 +33,14 @@ from pyspinw.units import IntensityUnits, intensity_units
 
 logger = logging.Logger("pyspinw.hamiltonian")
 
-def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0):
+def uniquetol(values: ArrayLike, tol: float=1e-5):
+    """ Returns floating point unique values within a given tolerance """
+    v = values.copy()
+    v.sort()
+    idif = np.append(True, np.diff(v))
+    return v[idif > tol]
+
+def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0, is_series: bool=True):
     """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
     energy, intensity = (np.array(energy), np.array(intensity))
     en_out, int_out = (energy * np.nan, intensity * np.nan)
@@ -42,22 +49,21 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
     if zeroint > 0:
         energy[np.where(np.abs(np.real(intensity)) < zeroint)] = np.nan
     for iQ in range(energy.shape[0]):
-        eu = np.unique(energy[iQ,:])
+        eu = uniquetol(energy[iQ,:])
         en_out[iQ,:len(eu)] = eu
         for iE in range(len(eu)):
             int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
-    # Ensure there are the same number of modes throughout
     nans = np.isnan(en_out)
     nanmodes = np.sum(nans, axis=0)
-    n_modes = len(np.where((nanmodes < en_out.shape[0]))[0])
-    for col in set([int(idx) for accidentals in np.where((nanmodes > 0) * (nanmodes < en_out.shape[0]))[0]
-                    for idx in np.where(nans[:,accidentals])[0]]):
-        idnxt = 1 if col < en_out.shape[0]-1 else -1
-        idnan = np.where(~np.isnan(en_out[col + idnxt,:]))[0]
-        idx = np.array([np.nanargmin(np.abs(en_out[col + idnxt,i] - en_out[col]))
-               for i in idnan])
-        en_out[col,idnan] = np.take(en_out[col, :], idx)
-        int_out[col,idnan] = np.take(int_out[col, np.where(~np.isnan(int_out[col,:]))] / np.bincount(idx), idx)
+    if is_series:
+        # Ensure there are the same number of modes throughout
+        for col in set([int(idx) for accidentals in np.where((nanmodes > 0) * (nanmodes < en_out.shape[0]))[0]
+                        for idx in np.where(nans[:,accidentals])[0]]):
+            idnxt = 1 if col < en_out.shape[0]-1 else -1
+            idnan = np.where(~np.isnan(en_out[col + idnxt,:]))[0]
+            idx = np.array([np.nanargmin(np.abs(en_out[col + idnxt,i] - en_out[col])) for i in idnan])
+            en_out[col,idnan] = np.take(en_out[col, :], idx)
+            int_out[col,idnan] = np.take(int_out[col, np.where(~np.isnan(int_out[col,:]))] / np.bincount(idx), idx)
     # Removes columns which are all NaNs
     en_out = np.delete(en_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
     int_out = np.delete(int_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
@@ -65,6 +71,7 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
 
 def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float | Callable):
     """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
+    energy, intensity = (np.array(energy), np.array(intensity))
     esigma = dE(evect) if isinstance(dE, Callable) else np.ones(evect.shape) * dE
     esigma /= 2 * np.sqrt(2* np.log(2))  # Convert from FWHM
     spec = np.zeros((energy.shape[0], len(evect)))
@@ -484,6 +491,8 @@ class Hamiltonian(SPWSerialisable):
         if intensity_unit == IntensityUnits.PERCELL:
             scale_factor = rotations.shape[0] / np.prod(scaling)
             intensity = [res * scale_factor for res in result[1]]
+        else:
+            intensity = result[1]
 
         return result[0], intensity
 
