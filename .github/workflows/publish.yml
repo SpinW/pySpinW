@@ -124,7 +124,7 @@ jobs:
           TWINE_PASSWORD: ${{ steps.repo.outputs.repository == 'testpypi' && secrets.TEST_PYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
         run: |
           if [ "${{ steps.repo.outputs.repository }}" = "testpypi" ]; then
-            twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse-flattened/*.whl
+            twine upload --repository testpypi wheelhouse-flattened/*.whl
           else
             twine upload wheelhouse-flattened/*.whl
           fi
