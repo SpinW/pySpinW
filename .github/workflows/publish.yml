@@ -101,8 +101,8 @@ jobs:
 
       - name: Flatten wheelhouse
         run: |
-          mkdir merged
-          find wheelhouse -name "*.whl" -exec mv {} merged/ \;
+          mkdir wheelhouse
+          find wheelhouse -name "*.whl" -exec mv {} wheelhouse/ \;
 
       - name: Install twine
         run: pip install twine
