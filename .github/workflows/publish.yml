@@ -124,7 +124,7 @@ jobs:
       - name: Publish
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ steps.repo.outputs.repository == 'testpypi' && secrets.TEST_PYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ steps.repo.outputs.repository == 'testpypi' && secrets.TEST_PYPI_TOKEN || secrets.PYPI_TOKEN }}
         run: |
           if [ "${{ steps.repo.outputs.repository }}" = "testpypi" ]; then
             echo "Uploading to TEST PyPI"
