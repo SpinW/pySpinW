@@ -3,13 +3,15 @@ name = "pySpinW"
 requires-python = ">=3.10"
 dynamic = ["version"]
 readme = "README.md"
-license = {text = "GPLv3"}
+license = {text = "GPL-3.0-or-later"}
 keywords = [
     "Python",
     "physics",
     "magnons",
+    "spinwaves",
     "inelastic neutron scattering"
 ]
+
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
@@ -22,17 +24,21 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "ase",
+    "ase>=3.26.0",
     "numpy>=2.0.0",
     "packaging",
     "pycifrw",
     "spglib>2.1.0",
     "scipy",
+    "pyopengl>=3.1.10",
+    "PySide6-Essentials",
+    "matplotlib>=3.10.5",
 ]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "pyspinw.rust"
+universal2 = true  # produces arm64 + x86_64 macOS wheels
 
 [tool.setuptools.dynamic]
 version = {attr = "pyspinw.__version__"}

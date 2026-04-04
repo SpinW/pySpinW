@@ -76,6 +76,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.hover_ids: list[int] = []
         self.current_selection: list[int] = []
         self.last_hover_id = 0
+        self.current_hover_id = 0
 
         # These variables are used for handling mouse dragging
         self.mouse_data: tuple[QPoint, Qt.MouseButton, int] | None= None
@@ -425,7 +426,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         if self.mouse_position is not None:
 
-            id = np.zeros(1, dtype=np.uint32) # Buffer to set data in
+            id = np.zeros((1,), dtype=np.uint32) # Buffer to set data in
 
             x, y = self.mouse_position.x(), self.height() - self.mouse_position.y()
 
@@ -437,7 +438,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                 id
             )
 
-            self.current_hover_id = int(id)
+            self.current_hover_id = int(id[0])
             if id != 0:
                 self.hover_ids = [self.current_hover_id]
             else:
