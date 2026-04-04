@@ -112,9 +112,12 @@ jobs:
         id: repo
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "Tag is $TAG_NAME"
           if [[ "$TAG_NAME" == *test ]]; then
+            echo "Tag ends with test"
             echo "repository=testpypi" >> $GITHUB_OUTPUT
           else
+            echo "Tag does not end with test"
             echo "repository=pypi" >> $GITHUB_OUTPUT
           fi
 
