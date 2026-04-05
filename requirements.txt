@@ -4,4 +4,4 @@ PyCifRW
 spglib == 2.5.0
 
 pyopengl
-pyside6
+PySide6-Essentials

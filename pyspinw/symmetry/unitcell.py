@@ -63,8 +63,6 @@ class RawUnitCell(SPWSerialisable):
 
             raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible moment definition")
 
-        # "Norm" transform for converting moments
-
     # @check_sizes(points=(-1, 3))
     def fractional_to_cartesian(self, points: np.ndarray):
         """ Convert a list of points  from the fractional (ijk) type to cartesian (xyz) """
