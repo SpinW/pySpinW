@@ -82,23 +82,6 @@ def _check_positions_moments_shape(positions: ArrayLike,
 
     return positions, moments
 
-
-def generate_sites(positions: ArrayLike,
-                   moments: ArrayLike | None = None,
-                   names: list[str] | None=None,
-                   convert_to_cell_with: UnitCell | None = None) -> list[LatticeSite]:
-    """ Create lattice site
-
-    :param positions: positions of the sites
-    :param moments: moments of the sites, if not specified, they will be set to zero
-    :param convert_to_cell_with: If this is None, we assume the position is in lattice units, and moments
-                                are in the unit cell moment coordinate system
-                                (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
-                                `pyspinw.UnitCell.moment_cartesian_to_fractional`)
-                                if instead it is a unit cell, we assume the coordinates are cartesian,
-                                and the positions will be converted into lattice units
-    """
-
 def generate_sites(positions: ArrayLike,
                    moments: ArrayLike | None = None,
                    names: list[str] | None=None) -> list[LatticeSite]:
@@ -150,6 +133,9 @@ def _transform_site(unit_cell: UnitCell,
             magnitude = np.linalg.norm(moments[i,:,:]) if magnitudes is None else magnitudes[i]
             moment = unit_cell.fractional_to_cartesian(moments[i,:,:])
             moments[i,:,:] = moment * (magnitude / np.linalg.norm(moment))
+    elif magnitudes is not None:
+        for i in range(moments.shape[0]):
+            moments[i,:,:] *= (magnitudes[i] / np.linalg.norm(moments[i,:,:]))
     return positions, moments, names
 
 def generate_structure(unit_cell: UnitCell,

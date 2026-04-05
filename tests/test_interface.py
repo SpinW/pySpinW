@@ -16,11 +16,14 @@ QVECS = np.array([[0.1, 0, 0], [0.2, 0, 0], [0.1, 0.1, 0], [0.1, 0.1, 0.1], [0, 
 REFDAT = scipy.io.loadmat(os.path.join(os.path.dirname(__file__), 'matlab_test_data.mat'))
 INTHIGH = 100
 
-def _test_ref_data(test_name, energy, intensity):
+def _test_ref_data(test_name, energy, intensity, ignoreQ=None):
     eref, intref = omegasum(REFDAT[test_name][0][0].T, REFDAT[test_name][0][1].T, is_series=False)
     # Remove very large intensities as this diverges near zone centre
     intensity[np.where(intensity > INTHIGH)] = np.nan 
     intref[np.where(intref > INTHIGH)] = np.nan 
+    if ignoreQ is not None:
+        idx = [i for i in range(energy.shape[0]) if i not in ignoreQ]
+        energy, intensity, eref, intref = (energy[idx,:], intensity[idx,:], eref[idx,:], intref[idx,:])
     np.testing.assert_allclose(energy, eref, atol=1e-5, rtol=0)
     np.testing.assert_allclose(intensity, intref, atol=1e-5, rtol=0.02)
 
@@ -73,4 +76,5 @@ def test_tri_antiferro():
     anisotropies = axis_anisotropies(sites, 0.2)
     hamiltonian = Hamiltonian(sites, exchanges, anisotropies)
     energy, intensity = hamiltonian.energies_and_intensities(QVECS, use_rust=False, use_rotating=True)
-    _test_ref_data('tri_antiferro', *omegasum(energy, intensity, is_series=False))
+    # Ignore last Q point as it is not positive definite and numerically different in Matlab and Python
+    _test_ref_data('tri_antiferro', *omegasum(energy, intensity, is_series=False), ignoreQ=[5])

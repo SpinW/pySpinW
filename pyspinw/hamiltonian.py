@@ -35,8 +35,7 @@ logger = logging.Logger("pyspinw.hamiltonian")
 
 def uniquetol(values: ArrayLike, tol: float=1e-5):
     """ Returns floating point unique values within a given tolerance """
-    v = values.copy()
-    v.sort()
+    v = np.sort(values)
     idif = np.append(True, np.diff(v))
     return v[idif > tol]
 
@@ -424,8 +423,9 @@ class Hamiltonian(SPWSerialisable):
             g_tensors = []
             for site in expanded.structure.sites:
                 g_tensors.append(site.g)
+            # Factor 2 in field below to agree with Matlab code (like with SIA term in L474)
             magnetic_field = magnetic_field_class(
-                                vector=np.array(field, **rust_kw),
+                                vector=2.0 * np.array(field, **rust_kw),
                                 g_tensors=np.array(g_tensors, **rust_kw))
 
         moments = np.array(moments, dtype=float)
@@ -482,7 +482,7 @@ class Hamiltonian(SPWSerialisable):
                         q_vectors=q_vectors * scaling,
                         couplings=couplings,
                         positions=positions,
-                        rlu_to_cart=np.linalg.inv(self.structure.unit_cell._xyz).T * 2 * np.pi,
+                        rlu_to_cart=np.linalg.inv(expanded.structure.unit_cell._xyz).T * 2 * np.pi,
                         field=magnetic_field,
                         rotating_frame=rotating_frame)
 
