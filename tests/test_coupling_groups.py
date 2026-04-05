@@ -15,6 +15,7 @@ def test_simple_coupling_group(lower, upper):
 
     group = CouplingGroup(
         name = "test_group",
+        bond = 0,
         min_distance = lower,
         max_distance = upper,
         max_order = None,
@@ -47,6 +48,7 @@ def test_coupling_group_direction_filtered():
 
     group = CouplingGroup(
         name = "test_group",
+        bond = 0,
         min_distance = 0,
         max_distance = 3,
         max_order = None,
@@ -72,6 +74,7 @@ def test_coupling_group_plane_filtered():
 
     group = CouplingGroup(
         name = "test_group",
+        bond = 0,
         min_distance = 0,
         max_distance = 3,
         max_order = None,
@@ -87,3 +90,29 @@ def test_coupling_group_plane_filtered():
         assert np.sum(np.dot(coupling.vector(cell), [0,0,1])**2) < 1e-10, "Coupling vector should (almost) zero z"
 
     assert len(couplings) > 1, "There should be a few couplings of the specified form"
+
+
+def test_coupling_bond_index():
+    sites = [LatticeSite(name="X", i=0., j=0., k=0.)]
+
+    cell = UnitCell(1, 1, 2, gamma=120.)
+
+    group = CouplingGroup(
+        name = "test_group",
+        bond = 1,
+        min_distance = 0,
+        max_distance = 0,
+        max_order = None,
+        naming_pattern = None,
+        coupling_type = HeisenbergCoupling,
+        coupling_parameters = {"j": 1.23},
+        direction_filter = None)
+
+    couplings = group.couplings(sites, cell)
+
+    # Check distances
+    for coupling in couplings:
+        assert np.allclose(coupling.distance(cell), 1.0), "Coupling distance should (almost) unity"
+
+    # Only 3 couplings because we only have the forward directions, [100], [110] and [010]
+    assert len(couplings) == 3, "There should be 3 couplings of the specified form"

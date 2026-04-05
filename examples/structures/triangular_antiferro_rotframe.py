@@ -4,12 +4,11 @@ from multiprocessing.spawn import freeze_support
 
 from pyspinw.coupling import HeisenbergCoupling
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.interface import couplings, axis_anisotropies
+from pyspinw.interface import generate_exchanges, generate_helical_structure, axis_anisotropies
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from pyspinw.legacy.genmagstr import genmagstr
 import sys
 
 """
@@ -34,23 +33,24 @@ subplot(212); sw_plotspec(triSpec,'mode',2,'log',false,'axLim',[0 5])
 
 if __name__ == "__main__":
     """Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial"""
+    use_rust = "py" not in sys.argv[1] if len(sys.argv) > 1 else True
 
     unit_cell = UnitCell(3, 3, 8, gamma=120)
 
-    sites = [LatticeSite(0, 0, 0, 0, 1, 0, name="X"), LatticeSite(0, 0, 0.5, 0, 1, 0, name="Y")]
-    s = genmagstr(sites, unit_cell, magnitude=[3./2, 3./2],mode='helical', k=[1./3, 1./3, 0], n=[0, 0, 1])
+    sites = generate_helical_structure(unit_cell, positions=[[0, 0, 0], [0, 0, 0.5]], moments=[[0, 1, 0], [0, 1, 0]],
+                magnitudes=[3./2, 3./2], propagation_vector=[1./3, 1./3, 0], perpendicular=[0, 0, 1])
 
-    exchanges = couplings(sites=sites, unit_cell=unit_cell, max_distance=3.1, coupling_type=HeisenbergCoupling, j=1) \
-              + couplings(sites=sites, unit_cell=unit_cell, min_distance=3.1, max_distance=4.1, j=-0.1, coupling_type=HeisenbergCoupling)
+    exchanges = generate_exchanges(sites=sites, bond=1, coupling_type=HeisenbergCoupling, j=1) \
+              + generate_exchanges(sites=sites, bond=2, coupling_type=HeisenbergCoupling, j=-0.1)
 
     anisotropies = axis_anisotropies(sites, 0.2)
-    hamiltonian = Hamiltonian(s, exchanges, anisotropies)
+    hamiltonian = Hamiltonian(sites, exchanges, anisotropies)
 
     hamiltonian.print_summary()
 
     path = Path([[0,0,0], [1,1,0]], n_points_per_segment=401)
     import matplotlib.pyplot as plt
-    fig = hamiltonian.spaghetti_plot(path, show=False, use_rotating=True)
+    fig = hamiltonian.spaghetti_plot(path, show=False, use_rust=use_rust, use_rotating=True)
     fig.axes[0].set_ylim(0, 7)
     fig.axes[1].set_ylim(0, 5)
     plt.show()

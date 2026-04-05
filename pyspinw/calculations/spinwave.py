@@ -391,7 +391,7 @@ def _calc_chunk_spinwave(
         perp_factor = np.eye(3) - np.outer(norm_q, norm_q)
         # the einsum here performs elementwise multiplication and then sums over alpha, beta
         s_perp = np.einsum("ijk,ij->k", sabs[:,:,:,ii], perp_factor)
-        intensities.append(s_perp)
+        intensities.append(s_perp.real)
 
     if save_sab:
         return energies, intensities, sabs

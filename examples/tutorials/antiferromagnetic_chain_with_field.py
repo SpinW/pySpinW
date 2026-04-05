@@ -6,14 +6,10 @@ from pyspinw import *
 
 unit_cell = UnitCell(4,6,6)
 
-sites = [LatticeSite(0, 0, 0, 0,0,1, name="X"),
-         LatticeSite(0.5,0,0, 0,0, -1, name="Y")]
-
-s = Structure(sites, unit_cell=unit_cell)
+sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], moments=[[0,0,1], [0,0,-1]], names=['X', 'Y'])
 
 exchanges = generate_exchanges(sites=sites,
-                               unit_cell=unit_cell,
-                               max_distance=2.1,
+                               bond=1,
                                coupling_type=HeisenbergCoupling,
                                j=1,
                                direction_filter=filter([1,0,0], symmetric=True))
