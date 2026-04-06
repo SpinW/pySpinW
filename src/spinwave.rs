@@ -520,10 +520,9 @@ fn spinwave_single_q(
     // these should be in nonincreasing order but it doesn't matter as the array comes out
     // the same once we apply the commutation sign flips
     let mut sqrt_E = eigvals.to_owned();
-    let mut negative_half = sqrt_E.subrows_mut(0, n_sites);
-    negative_half *= -1.;
     sqrt_E.iter_mut().for_each(|x| {
         *x = match *x {
+            x if x.re < -ZERO_ENERGY_TOL => (-x).sqrt(),
             x if x.re < ZERO_ENERGY_TOL => C64::ZERO,
             _ => x.sqrt(),
         }
