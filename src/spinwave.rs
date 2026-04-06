@@ -12,6 +12,8 @@ use crate::{Coupling, MagneticField, C64};
 
 /// Minimum energy that isn't just set for zero (in meV)
 const ZERO_ENERGY_TOL: f64 = 1e-12;
+const SINGULAR_FTOL: f64 = 1e-7;
+const SINGULAR_CTOL: C64 = C64::new(1e-7, 0.);
 const J2PI: C64 = C64::new(0., 2. * PI);
 
 /// The result of a single-Q spinwave calculation.
@@ -35,7 +37,7 @@ pub struct SpinwaveResult {
 struct QIndependentComponents {
     C: Mat<C64>,
     z: Vec<Col<C64>>,
-    sab_blocks: Mat< Mat<C64> >,
+    sab_blocks: Mat<Mat<C64>>,
     spin_coefficients: Mat<C64>,
     Az: Option<Vec<C64>>,
 }
@@ -95,7 +97,7 @@ fn calc_q_independent(
         .column_vector_mut()
         .iter_mut()
         .enumerate()
-        .for_each(|(i, x)| *x -= C64::from((i as f64) * 1e-12));
+        .for_each(|(i, x)| *x -= C64::from((i as f64) * ZERO_ENERGY_TOL));
 
     // if an external magnetic field is provided, calculate the Az matrix
     // which is added to the diagonal of A in the Hamiltonian
@@ -527,6 +529,21 @@ fn spinwave_single_q(
         }
     });
 
+    // Check if sqrt_hamiltonian is singular and if so add delta to diagonal to avoid this
+    // As sqrt_hamiltonian is triangular, it is singular if any diagonal element is zero
+    if sqrt_hamiltonian
+        .diagonal()
+        .column_vector()
+        .iter()
+        .any(|v| v.re.abs() < SINGULAR_FTOL)
+    {
+        sqrt_hamiltonian
+            .diagonal_mut()
+            .column_vector_mut()
+            .iter_mut()
+            .for_each(|x| *x += SINGULAR_CTOL);
+    }
+
     // instead of inverting K and calculating T = K^-1 U sqrt(E),
     // it's faster and more stable to solve the linear system K T = U sqrt(E)
     // note the `faer` solver is in-place so calculates it directly on the variable `T`
@@ -534,23 +551,13 @@ fn spinwave_single_q(
     let mut T = eigvecs * sqrt_E.as_diagonal();
     solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
 
-    // T is NaN if sqrt_hamiltonian is singular; add a delta to the diagonal to avoid this
-    if T.has_nan() {
-        sqrt_hamiltonian
-            .diagonal_mut()
-            .column_vector_mut()
-            .iter_mut()
-            .for_each(|x| *x += C64::from(1e-7));
-        T = eigvecs * sqrt_E.as_diagonal();
-        solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
-    }
-
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
     // and then we just take the diagonal elements as that's all we need for
     // S'^alpha,beta(k, omega) at each eigenvalue
     // We do the division required by 2 * n_sites here to save doing it later
     let block_diags = Mat::<Col<C64>>::from_fn(3, 3, |alpha, beta| -> Col<C64> {
-        let mat = T.adjoint() * component_mul(&sab_blocks[(alpha, beta)], &coefficients) * T.as_ref();
+        let mat =
+            T.adjoint() * component_mul(&sab_blocks[(alpha, beta)], &coefficients) * T.as_ref();
         mat.diagonal().column_vector().to_owned() / (2 * n_sites) as f64
     });
 
