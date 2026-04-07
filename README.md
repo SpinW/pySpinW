@@ -1,9 +1,9 @@
 
 ![](./docs/branding/logo_with_background_small.png)
 
-pySpinW is a tool for calculating magnon energies, simulating scattering experiments   
+pySpinW is a tool for calculating magnon energies and simulating scattering experiments   
 
-Details of its use can be found at <www.spinw.org/pyspinw >
+Details of its use can be found at www.spinw.org/pyspinw
 
 ## Example
 
@@ -21,18 +21,13 @@ x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
 
 # Create a magnetic structure (this could include a spacegroup, or 
 # supercell structure, but we don't do so here)
-s = Structure([x], unit_cell=unit_cell)
+structure = Structure([x], unit_cell=unit_cell)
 
-# Helper function for automatically generating exchanges
-exchanges = generate_exchanges(sites=[x],
-                               unit_cell=unit_cell,
-                               max_distance=1.1,
-                               coupling_type=HeisenbergCoupling,
-                               j=-1,
-                               direction_filter=filter([1,0,0]))
+# A single exchange between atoms in neighbouring unit cells (in the x direction)
+exchanges = [HeisenbergExchange(x, x, cell_offset=(1,0,0), j=-1)]
 
 # Create a Hamiltonian object that holds things together 
-hamiltonian = Hamiltonian(s, exchanges)
+hamiltonian = Hamiltonian(structure, exchanges)
 
 # Define a path through q-space for out dispersion curve
 path = Path([[0,0,0], [1,0,0]])
