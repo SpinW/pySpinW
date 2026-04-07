@@ -237,8 +237,8 @@ class DisplayOptionsToolbar(QWidget):
 
         self.spin_scale_slider = self._add_slider(
             0, 1, settings.atom_spin_scaling,
-            left_label=IconWidget("small_spins", "Smaller Sites"),
-            right_label=IconWidget("big_spins", "Larger Sites"),
+            left_label=IconWidget("small_moments", "Smaller Sites"),
+            right_label=IconWidget("big_moments", "Larger Sites"),
             alt_text="Site scale factor")
 
 
