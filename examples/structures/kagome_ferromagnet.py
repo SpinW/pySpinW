@@ -1,6 +1,6 @@
 """ Kagome Ferromagnet example """
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges
 from pyspinw.path import Path, Path1D
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     exchanges = generate_exchanges(sites=[x, y, z],
                                    unit_cell=unit_cell,
                                    max_distance=4.,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=-1)
 
     hamiltonian = Hamiltonian(s, exchanges)

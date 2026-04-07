@@ -1,7 +1,7 @@
 """ Tests for the decomposition into subsystems"""
 
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 
 from pyspinw.subsystems import find_components
 
@@ -47,8 +47,8 @@ def test_two_systems():
              LatticeSite(1,1,0)]
 
     couplings = [
-        HeisenbergCoupling(sites[0], sites[1], 1),
-        HeisenbergCoupling(sites[2], sites[3], 1)]
+        HeisenbergExchange(sites[0], sites[1], 1),
+        HeisenbergExchange(sites[2], sites[3], 1)]
 
     components = find_components(sites, couplings)
 
@@ -78,8 +78,8 @@ def test_parenting_connected_two_systems():
     sites += [ImpliedLatticeSite(parent, parent.i, 0, 0) for parent in sites]
 
     couplings = [
-        HeisenbergCoupling(sites[0], sites[1], 1),
-        HeisenbergCoupling(sites[2], sites[3], 1)]
+        HeisenbergExchange(sites[0], sites[1], 1),
+        HeisenbergExchange(sites[2], sites[3], 1)]
 
     components = find_components(sites, couplings)
 

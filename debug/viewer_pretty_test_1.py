@@ -1,7 +1,7 @@
 from multiprocessing import freeze_support
 
 from pyspinw.interface import generate_exchanges, axis_anisotropies
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(1,1,1)))
 
-    exchanges = [HeisenbergCoupling(x, x, cell_offset=(1, 4, 0), j=-1, name="Long Coupling")]
+    exchanges = [HeisenbergExchange(x, x, cell_offset=(1, 4, 0), j=-1, name="Long Coupling")]
     hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()

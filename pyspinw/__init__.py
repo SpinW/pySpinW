@@ -9,7 +9,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
-from pyspinw.coupling import HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling
+from pyspinw.exchange import HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange
 from pyspinw.hamiltonian import Hamiltonian
 
 from pyspinw.couplinggroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
@@ -44,11 +44,11 @@ __all__ = [
     "AxisMagnitudeAnisotropy",
 
     # coupling
-    "HeisenbergCoupling",
-    "DiagonalCoupling",
-    "XYCoupling",
-    "IsingCoupling",
-    "DMCoupling",
+    "HeisenbergExchange",
+    "DiagonalExchange",
+    "XYExchange",
+    "IsingExchange",
+    "DMExchange",
 
     # coupling groups
     "InPlaneFilter",

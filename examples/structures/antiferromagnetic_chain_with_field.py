@@ -1,6 +1,6 @@
 """ Antiferromagnetic chain example with applied magnetic field """
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, filter, axis_anisotropies, generate_structure
 from pyspinw.path import Path
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     exchanges = generate_exchanges(sites=sites,
                                    bond=1,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=1,
                                    direction_filter=filter([1,0,0], symmetric=True))
 

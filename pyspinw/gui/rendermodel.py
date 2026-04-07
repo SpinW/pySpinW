@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.gui.edge_cases import add_extra_edge_lines, add_extra_edge_points
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
@@ -91,7 +91,7 @@ class RenderCoupling(Selectable):
 
         return model_matrix
 
-    def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
+    def __init__(self, render_id: int, coupling: Exchange, unit_cell: UnitCell):
 
         self.coupling = coupling
 

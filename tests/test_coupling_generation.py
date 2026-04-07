@@ -1,6 +1,6 @@
 import pytest
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.couplinggroup import DirectionalityFilter, InDirectionFilter, BiDirectionFilter
 from pyspinw.interface import generate_exchanges
 from pyspinw.site import LatticeSite

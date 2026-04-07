@@ -13,7 +13,7 @@ sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], moments=[[0,1
 
 exchanges = generate_exchanges(sites=sites,
                                max_distance=3.1,
-                               coupling_type=HeisenbergCoupling,
+                               exchange_type=HeisenbergExchange,
                                j=1)
 
 

@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import MagneticSpaceGroup
 from pyspinw.symmetry.supercell import Supercell
@@ -47,7 +47,7 @@ def check_supercell_moment_consistency(
 
     return info
 
-def check_coupling_consistency(sites: list[LatticeSite], couplings: list[Coupling]):
+def check_coupling_consistency(sites: list[LatticeSite], couplings: list[Exchange]):
     """ Check that a coupling actually does something, not cancelled by symmetry """
     for coupling in couplings:
 

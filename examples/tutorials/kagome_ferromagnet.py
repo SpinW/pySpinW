@@ -18,7 +18,7 @@ s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(1,
 exchanges = generate_exchanges(sites=[x, y, z],
                                unit_cell=unit_cell,
                                max_distance=4.,
-                               coupling_type=HeisenbergCoupling,
+                               exchange_type=HeisenbergExchange,
                                j=-1)
 
 hamiltonian = Hamiltonian(s, exchanges)

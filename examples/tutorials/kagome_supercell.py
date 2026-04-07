@@ -13,7 +13,7 @@ s = generate_helical_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,
 
 exchanges = generate_exchanges(sites=s,
                                max_distance=3.1,
-                               coupling_type=HeisenbergCoupling,
+                               exchange_type=HeisenbergExchange,
                                j=1)
 
 hamiltonian = Hamiltonian(s, exchanges)

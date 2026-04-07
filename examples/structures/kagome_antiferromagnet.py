@@ -2,7 +2,7 @@
 
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, generate_structure
 from pyspinw.path import Path

@@ -20,7 +20,7 @@ from pyspinw.calculations.spinwave import (
 from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
@@ -83,9 +83,9 @@ def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float |
 
 ParametrizationType = Union[str,
                        list[str],
-                       list[tuple[Union[Coupling, Anisotropy, str], str]],
-                       tuple[Sequence[Union[Coupling, Anisotropy, str]], str],
-                       tuple[Coupling | Anisotropy | str, str]]
+                       list[tuple[Union[Exchange, Anisotropy, str], str]],
+                       tuple[Sequence[Union[Exchange, Anisotropy, str]], str],
+                       tuple[Exchange | Anisotropy | str, str]]
 
 def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: ParametrizationType):
     """ Convert many options for defining parameters into a more regular form
@@ -107,7 +107,7 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
         if isinstance(parameter_data[0], Sequence):
             parameter_data = [(datum, parameter_data[1]) for datum in parameter_data[0]]
 
-        elif isinstance(parameter_data[0], (Coupling, Anisotropy, str)):
+        elif isinstance(parameter_data[0], (Exchange, Anisotropy, str)):
             parameter_data = [parameter_data]
 
         else:
@@ -185,7 +185,7 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
     couplings = []
     anisotropies = []
     for target, parameter in parameter_data:
-        if isinstance(target, Coupling):
+        if isinstance(target, Exchange):
             couplings.append((target, parameter))
         elif isinstance(target, Anisotropy):
             anisotropies.append((target, parameter))
@@ -200,7 +200,7 @@ class Hamiltonian(SPWSerialisable):
 
     def __init__(self,
                  structure: Structure,
-                 couplings: list[Coupling],
+                 couplings: list[Exchange],
                  anisotropies: list[Anisotropy] | None = None):
 
         self._structure = structure
@@ -434,7 +434,7 @@ class Hamiltonian(SPWSerialisable):
         rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
 
         # Convert the couplings
-        couplings: list[Coupling] = []
+        couplings: list[Exchange] = []
         for input_coupling in expanded.couplings:
             # Normal coupling
 
@@ -754,7 +754,7 @@ class Hamiltonian(SPWSerialisable):
     @expects_keys("magnetic_structure, couplings, anisotropies")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         structure = Structure._deserialise(json["magnetic_structure"], context)
-        couplings = [Coupling._deserialise(coupling, context) for coupling in json["couplings"]]
+        couplings = [Exchange._deserialise(coupling, context) for coupling in json["couplings"]]
         anisotropies = [Anisotropy._deserialise(anisotropy, context) for anisotropy in json["anisotropies"]]
 
         return Hamiltonian(structure, couplings, anisotropies)
@@ -776,7 +776,7 @@ class HamiltonianParameterization:
         self._ground_state_parameters = {} if find_ground_state_with is None else find_ground_state_with
 
         # Create a list of parameters that will be updated
-        base_coupling_parameters: list[list[tuple[Coupling, str]]] = []
+        base_coupling_parameters: list[list[tuple[Exchange, str]]] = []
         base_anisotropy_parameters: list[list[tuple[Anisotropy, str]]] = []
 
         for param in parameters:

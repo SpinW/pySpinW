@@ -1,7 +1,7 @@
 from multiprocessing import freeze_support
 
 from pyspinw.interface import generate_exchanges, axis_anisotropies
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     exchanges = generate_exchanges(sites=[x, y, z],
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=-1)
 
     hamiltonian = Hamiltonian(s, exchanges)

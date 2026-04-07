@@ -7,7 +7,7 @@ from numpy._typing import ArrayLike
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling, HeisenbergCoupling
+from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
     BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
@@ -383,7 +383,7 @@ def filter(direction: ArrayLike,
 
 def generate_exchanges(sites: list[LatticeSite] | Structure,
                        unit_cell: UnitCell | None = None,
-                       coupling_type: type[Coupling] = HeisenbergCoupling,
+                       exchange_type: type[Exchange] = HeisenbergExchange,
                        bond: int = 0,
                        max_distance: float = 0.0,
                        min_distance: float = 0.0,
@@ -397,13 +397,13 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
                        d_x: float | None = None,
                        d_y: float | None = None,
                        d_z: float | None = None,
-                       coupling_parameters: dict | None = None,
+                       exchange_parameters: dict | None = None,
                        naming_pattern: str | None = None, ):
     """ Automatically creates a list of couplings
 
     :param sites: *required* List of sites to make couplings between or a Structure object
     :param unit_cell: Unit cell (needed if first argument is a list of sites)
-    :param coupling_type: Type of coupling (defaults to HeisenbergCoupling)
+    :param exchange_type: Type of coupling (defaults to HeisenbergCoupling)
     :param bond: The bond index (If this is given the _distance parameters are ignored)
     :param max_distance: Maximum Cartesian distance (in Angstrom) at which couplings are made
     :param min_distance: Minimum Cartesian distance (in Angstrom) at which couplings are made
@@ -418,7 +418,7 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
     :param d_x" Constant for x component of Dzyaloshinskii-Moriya coupling (DM)
     :param d_y" Constant for y component of Dzyaloshinskii-Moriya coupling (DM)
     :param d_z" Constant for z component of Dzyaloshinskii-Moriya coupling (DM)
-    :param coupling_parameters: Parameters can be supplied in a dictionary instead
+    :param exchange_parameters: Parameters can be supplied in a dictionary instead
     :param naming_pattern: String used to assign names to couplings, see `apply_naming_convention`
 
     :returns: list of couplings
@@ -432,38 +432,38 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
     if bond == 0 and max_distance == 0.0 and min_distance == 0.0:
         raise RuntimeError('You must specify either a bond index or maximum/minimum distance pairs')
 
-    if coupling_parameters is None:
-        coupling_parameters = {}
+    if exchange_parameters is None:
+        exchange_parameters = {}
 
     if j is not None:
-        coupling_parameters["j"] = j
+        exchange_parameters["j"] = j
 
     if j_x is not None:
-        coupling_parameters["j_x"] = j_x
+        exchange_parameters["j_x"] = j_x
 
     if j_y is not None:
-        coupling_parameters["j_y"] = j_y
+        exchange_parameters["j_y"] = j_y
 
     if j_z is not None:
-        coupling_parameters["j_z"] = j_z
+        exchange_parameters["j_z"] = j_z
 
     if j_xy is not None:
-        coupling_parameters["j_xy"] = j_xy
+        exchange_parameters["j_xy"] = j_xy
 
     if d_x is not None:
-        coupling_parameters["d_x"] = d_x
+        exchange_parameters["d_x"] = d_x
 
     if d_y is not None:
-        coupling_parameters["d_y"] = d_y
+        exchange_parameters["d_y"] = d_y
 
     if d_z is not None:
-        coupling_parameters["d_z"] = d_z
+        exchange_parameters["d_z"] = d_z
 
     # Only want parameters that apply to the specific type
     used_parameters = {}
-    for parameter, default in zip(coupling_type.parameters, coupling_type.parameter_defaults):
-        if parameter in coupling_parameters:
-            used_parameters[parameter] = coupling_parameters[parameter]
+    for parameter, default in zip(exchange_type.parameters, exchange_type.parameter_defaults):
+        if parameter in exchange_parameters:
+            used_parameters[parameter] = exchange_parameters[parameter]
         else:
             used_parameters[parameter] = default
 
@@ -474,7 +474,7 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
         max_distance = max_distance,
         max_order = max_order,
         naming_pattern = default_naming_pattern if naming_pattern is None else naming_pattern,
-        coupling_type = coupling_type,
+        coupling_type = exchange_type,
         coupling_parameters = used_parameters,
         direction_filter = direction_filter)
 

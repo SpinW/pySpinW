@@ -1,12 +1,12 @@
 """ Temporary plot of sites and couplings """
 import matplotlib.pyplot as plt
 
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 
 
-def debug_plot(structure: Structure, couplings: list[Coupling], show=True):
+def debug_plot(structure: Structure, couplings: list[Exchange], show=True):
     """ Plotting """
     fig = plt.figure()
 

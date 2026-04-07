@@ -5,7 +5,7 @@ import numpy as np
 
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed, Planar
 from pyspinw.interface import generate_exchanges, axis_anisotropies
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
@@ -208,10 +208,10 @@ def test_simple_ferromagnet_fixed_free(moment_size):
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
     exchanges = generate_exchanges(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=0.6,
-                          coupling_type=HeisenbergCoupling,
-                          j=-1)
+                                   unit_cell=unit_cell,
+                                   max_distance=0.6,
+                                   exchange_type=HeisenbergExchange,
+                                   j=-1)
 
     hamiltonian = Hamiltonian(s, exchanges)
 
@@ -236,10 +236,10 @@ def test_simple_antiferromagnet_fixed_planar():
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
     exchanges = generate_exchanges(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=0.6,
-                          coupling_type=HeisenbergCoupling,
-                          j=1)
+                                   unit_cell=unit_cell,
+                                   max_distance=0.6,
+                                   exchange_type=HeisenbergExchange,
+                                   j=1)
 
     hamiltonian = Hamiltonian(s, exchanges)
 
@@ -268,10 +268,10 @@ def test_simple_antiferromagnet_free_planar(axis, moment_size):
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
     exchanges = generate_exchanges(sites=sites,
-                          unit_cell=unit_cell,
-                          max_distance=0.6,
-                          coupling_type=HeisenbergCoupling,
-                          j=1)
+                                   unit_cell=unit_cell,
+                                   max_distance=0.6,
+                                   exchange_type=HeisenbergExchange,
+                                   j=1)
 
     hamiltonian = Hamiltonian(s, exchanges)
 

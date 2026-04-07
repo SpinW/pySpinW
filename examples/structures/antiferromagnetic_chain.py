@@ -1,6 +1,6 @@
 """ Antiferromagnetic chain example """
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, generate_helical_structure
 from pyspinw.path import Path
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     exchanges = generate_exchanges(sites=sites,
                                    max_distance=3.1,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=1)
 
     hamiltonian = Hamiltonian(sites, exchanges)

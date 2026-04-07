@@ -29,10 +29,10 @@ class CouplingBaseDeserialisation:
     cell_offset: CellOffset
 
 
-class Coupling(SPWSerialisable):
+class Exchange(SPWSerialisable):
     """Coupling between different sites"""
 
-    serialisation_name = "coupling"
+    serialisation_name = "exchange"
 
     @check_sizes(coupling_matrix=(3,3))
     def __init__(self,
@@ -143,7 +143,7 @@ class Coupling(SPWSerialisable):
                 name: str | None = None,
                 coupling_matrix: np.ndarray | None = None):
         """ Get version of this site with specified parameters updated"""
-        return Coupling(
+        return Exchange(
             site_1=self.site_1 if site_1 is None else site_1,
             site_2=self.site_2 if site_2 is None else site_2,
             cell_offset=self.cell_offset if cell_offset is None else cell_offset,
@@ -180,9 +180,9 @@ class Coupling(SPWSerialisable):
     @staticmethod
     @expects_keys("matrix")
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return Coupling(
+        return Exchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -194,7 +194,7 @@ class Coupling(SPWSerialisable):
         return np.all(np.abs(self.coupling_matrix - self.coupling_matrix.T) < tolerances.IS_ZERO_TOL)
 
 
-class HeisenbergCoupling(Coupling):
+class HeisenbergExchange(Exchange):
     """Heisenberg Coupling, which takes the form
 
     H_ij = J_ij (S_i . S_j)
@@ -238,9 +238,9 @@ class HeisenbergCoupling(Coupling):
     @staticmethod
     @expects_keys("j")
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return HeisenbergCoupling(
+        return HeisenbergExchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -258,7 +258,7 @@ class HeisenbergCoupling(Coupling):
                 name: str | None = None,
                 j: float | None = None):
         """ Get version of this coupling with specified parameters updated"""
-        return HeisenbergCoupling(
+        return HeisenbergExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
                 cell_offset = self.cell_offset if cell_offset is None else cell_offset,
@@ -268,7 +268,7 @@ class HeisenbergCoupling(Coupling):
 
 
 
-class DiagonalCoupling(Coupling):
+class DiagonalExchange(Exchange):
     """Diagonal coupling, which takes the form
 
     H_ij = Jxx_ij S^x_i S^x_j + Jyy_ij S^y_i S^y_j + Jzz_ij S^z_i S^z_j
@@ -329,9 +329,9 @@ class DiagonalCoupling(Coupling):
     @staticmethod
     @expects_keys("j_x, j_y, j_z")
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return DiagonalCoupling(
+        return DiagonalExchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -354,7 +354,7 @@ class DiagonalCoupling(Coupling):
                 j_z: float | None = None,
                 ):
         """ Get version of this coupling with specified parameters updated"""
-        return DiagonalCoupling(
+        return DiagonalExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
                 cell_offset = self.cell_offset if cell_offset is None else cell_offset,
@@ -363,7 +363,7 @@ class DiagonalCoupling(Coupling):
                 j_y = self.j_y if j_y is None else j_y,
                 j_z = self.j_z if j_z is None else j_z)
 
-class XYCoupling(Coupling):
+class XYExchange(Exchange):
     """ "XY"  coupling, which takes the form
 
     H_ij = J_ij (S^x_i S^x_j + S^y_i S^y_j)
@@ -406,9 +406,9 @@ class XYCoupling(Coupling):
 
     @staticmethod
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return XYCoupling(
+        return XYExchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -426,14 +426,14 @@ class XYCoupling(Coupling):
                 name: str | None = None,
                 j: float | None = None):
         """ Get version of this coupling with specified parameters updated"""
-        return XYCoupling(
+        return XYExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
                 name=self.name if name is None else name,
                 j=self.j if j is None else j)
 
-class XXZCoupling(Coupling):
+class XXZExchange(Exchange):
     """ "XXZ" coupling, which takes the form
 
     H_ij = J_xy (S^x_i S^x_j + S^y_i S^y_j) + J_z (S^z_i S^z_j)
@@ -487,9 +487,9 @@ class XXZCoupling(Coupling):
 
     @staticmethod
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return XXZCoupling(
+        return XXZExchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -507,7 +507,7 @@ class XXZCoupling(Coupling):
                 j_z: float | None = None,
                 ):
         """ Get version of this coupling with specified parameters updated"""
-        return XXZCoupling(
+        return XXZExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
@@ -518,7 +518,7 @@ class XXZCoupling(Coupling):
         """ Is this a symmetric coupling """
         return True
 
-class IsingCoupling(Coupling):
+class IsingExchange(Exchange):
     """Ising coupling (z component only), which takes the form
 
     H_ij = J_ij S^z_i S^z_j
@@ -561,9 +561,9 @@ class IsingCoupling(Coupling):
 
     @staticmethod
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return IsingCoupling(
+        return IsingExchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -578,7 +578,7 @@ class IsingCoupling(Coupling):
                 name: str | None = None,
                 j_z: float | None = None):
         """ Get version of this coupling with specified parameters updated"""
-        return IsingCoupling(
+        return IsingExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
@@ -589,7 +589,7 @@ class IsingCoupling(Coupling):
         """ Is this a symmetric coupling """
         return True
 
-class DMCoupling(Coupling):
+class DMExchange(Exchange):
     """Dzyaloshinskii–Moriya coupling, which takes the form
 
     H_ij = D_ij (S_i x S_j)
@@ -650,9 +650,9 @@ class DMCoupling(Coupling):
 
     @staticmethod
     def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
-        base = Coupling._base_deserialisation(data, context)
+        base = Exchange._base_deserialisation(data, context)
 
-        return DMCoupling(
+        return DMExchange(
             site_1=base.site_1,
             site_2=base.site_2,
             cell_offset=base.cell_offset,
@@ -671,7 +671,7 @@ class DMCoupling(Coupling):
                 d_y: float | None = None,
                 d_z: float | None = None):
         """ Get version of this coupling with specified parameters updated"""
-        return DMCoupling(
+        return DMExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
@@ -686,6 +686,6 @@ class DMCoupling(Coupling):
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
 
-couplings = [HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling]
+couplings = [HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange]
 coupling_lookup = {coupling.coupling_type: coupling for coupling in couplings}
 lowercase_coupling_lookup = {coupling.coupling_type.lower(): coupling for coupling in couplings}

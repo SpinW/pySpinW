@@ -3,7 +3,7 @@ import pytest
 
 from pyspinw.site import LatticeSite
 from pyspinw.couplinggroup import CouplingGroup, DirectionalityFilter, InDirectionFilter, InPlaneFilter
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.symmetry.unitcell import UnitCell
 
 
@@ -20,7 +20,7 @@ def test_simple_coupling_group(lower, upper):
         max_distance = upper,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergCoupling,
+        coupling_type = HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = None)
 
@@ -53,7 +53,7 @@ def test_coupling_group_direction_filtered():
         max_distance = 3,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergCoupling,
+        coupling_type = HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = InDirectionFilter([0,0,1]))
 
@@ -79,7 +79,7 @@ def test_coupling_group_plane_filtered():
         max_distance = 3,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergCoupling,
+        coupling_type = HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = InPlaneFilter([0,0,1]))
 
@@ -104,7 +104,7 @@ def test_coupling_bond_index():
         max_distance = 0,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergCoupling,
+        coupling_type = HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = None)
 

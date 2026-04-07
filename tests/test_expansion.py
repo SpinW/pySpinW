@@ -2,7 +2,7 @@
 import numpy as np
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
@@ -19,9 +19,9 @@ def test_expansion_chain_no_rot():
     unexpanded_unit_cell = UnitCell(1,1,1)
     unexpanded_sites = [site]
     unexpanded_couplings = [
-        HeisenbergCoupling(site, site, cell_offset=(1,0,0), j=-1, name="X"),
-        HeisenbergCoupling(site, site, cell_offset=(0,1,0), j=-1, name="Y"),
-        HeisenbergCoupling(site, site, cell_offset=(0,0,1), j=-1, name="Z")]
+        HeisenbergExchange(site, site, cell_offset=(1, 0, 0), j=-1, name="X"),
+        HeisenbergExchange(site, site, cell_offset=(0, 1, 0), j=-1, name="Y"),
+        HeisenbergExchange(site, site, cell_offset=(0, 0, 1), j=-1, name="Z")]
 
     unexpanded_anisotropies = [AxisMagnitudeAnisotropy(site, a=3)]
 

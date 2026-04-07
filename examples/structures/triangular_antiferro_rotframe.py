@@ -2,7 +2,7 @@
 
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, generate_helical_structure, axis_anisotropies
 from pyspinw.path import Path
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     sites = generate_helical_structure(unit_cell, positions=[[0, 0, 0], [0, 0, 0.5]], moments=[[0, 1, 0], [0, 1, 0]],
                 magnitudes=[3./2, 3./2], propagation_vector=[1./3, 1./3, 0], perpendicular=[0, 0, 1])
 
-    exchanges = generate_exchanges(sites=sites, bond=1, coupling_type=HeisenbergCoupling, j=1) \
-              + generate_exchanges(sites=sites, bond=2, coupling_type=HeisenbergCoupling, j=-0.1)
+    exchanges = generate_exchanges(sites=sites, bond=1, exchange_type=HeisenbergExchange, j=1) \
+              + generate_exchanges(sites=sites, bond=2, exchange_type=HeisenbergExchange, j=-0.1)
 
     anisotropies = axis_anisotropies(sites, 0.2)
     hamiltonian = Hamiltonian(sites, exchanges, anisotropies)

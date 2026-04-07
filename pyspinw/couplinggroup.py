@@ -7,7 +7,7 @@ TODO: Currently broken - WIP
 import numpy as np
 from numpy._typing import ArrayLike
 
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
 from pyspinw.symmetry.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
@@ -90,7 +90,7 @@ class CouplingGroup:
                  max_distance: float,
                  max_order: int | None,
                  naming_pattern: str | None,
-                 coupling_type: type[Coupling],
+                 coupling_type: type[Exchange],
                  coupling_parameters: dict,
                  direction_filter: DirectionalityFilter | None):
 
