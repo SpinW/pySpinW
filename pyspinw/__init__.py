@@ -43,14 +43,14 @@ __all__ = [
     "Anisotropy",
     "AxisMagnitudeAnisotropy",
 
-    # coupling
+    # exchanges
     "HeisenbergExchange",
     "DiagonalExchange",
     "XYExchange",
     "IsingExchange",
     "DMExchange",
 
-    # coupling groups
+    # filters
     "InPlaneFilter",
     "InDirectionFilter",
     "BiDirectionFilter",

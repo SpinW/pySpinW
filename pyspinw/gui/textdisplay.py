@@ -8,7 +8,7 @@ from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont, 
 from PySide6.QtWidgets import QWidget, QSplitter, QTextEdit, QTreeView, QVBoxLayout
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.gui.rendermodel import RenderModel, RenderCoupling
+from pyspinw.gui.rendermodel import RenderModel, RenderExchange
 
 
 class DisplayItem(QStandardItem):
@@ -52,7 +52,7 @@ def format_g(g_matrix: np.ndarray):
                 f" [{m[6]:.3g}, {m[7]:.3g}, {m[8]:.3g}]]")
 
 class ParameterTable(QTreeView):
-    """ Derivative class for both the text based site viewer and text based coupling viewer """
+    """ Derivative class for both the text based site viewer and text based exchange viewer """
 
     hoverChanged = Signal()
 
@@ -209,56 +209,56 @@ class TextDisplay(QWidget):
 
 
         #
-        # Couplings
+        # Exchanges
         #
         # Mapping from render ID to first row item, use default dict to avoid key errors
-        self.coupling_render_id_to_row_item: dict[int, list[DisplayItem]] = defaultdict(list)
+        self.exchange_render_id_to_row_item: dict[int, list[DisplayItem]] = defaultdict(list)
 
         # Get mapping from original to expanded
-        self.couplings_original_to_expanded = defaultdict(list)
-        for expanded_index, unexpanded_index in enumerate(render_model.coupling_mapping):
-            self.couplings_original_to_expanded[unexpanded_index].append(expanded_index)
+        self.exchanges_original_to_expanded = defaultdict(list)
+        for expanded_index, unexpanded_index in enumerate(render_model.exchange_mapping):
+            self.exchanges_original_to_expanded[unexpanded_index].append(expanded_index)
 
 
-        # Fill out the coupling table
-        self.coupling_tree = ParameterTable()
+        # Fill out the exchange table
+        self.exchange_tree = ParameterTable()
 
-        coupling_model = QStandardItemModel()
-        coupling_model.setHorizontalHeaderLabels(["Name", "Offset", "Type", "Site 1", "Site 2", "Parameters"])
+        exchange_model = QStandardItemModel()
+        exchange_model.setHorizontalHeaderLabels(["Name", "Offset", "Type", "Site 1", "Site 2", "Parameters"])
 
-        coupling_root = coupling_model.invisibleRootItem()
+        exchange_root = exchange_model.invisibleRootItem()
 
-        for unexpanded_index, unexpanded_coupling in enumerate(render_model.hamiltonian.exchanges):
+        for unexpanded_index, unexpanded_exchange in enumerate(render_model.hamiltonian.exchanges):
 
             # Note unexpanded is type Coupling, expanded is type RenderCoupling
 
             parent_ids = []
-            unexpanded_name = DisplayItem(unexpanded_coupling.name, parent_ids)
-            unexpanded_offset = DisplayItem(str(unexpanded_coupling.cell_offset.as_tuple), parent_ids)
-            unexpanded_type = DisplayItem(unexpanded_coupling.exchange_type, parent_ids)
-            unexpanded_site_1 = DisplayItem(unexpanded_coupling.site_1.name, parent_ids)
-            unexpanded_site_2 = DisplayItem(unexpanded_coupling.site_2.name, parent_ids)
-            unexpanded_parameters = DisplayItem(unexpanded_coupling.parameter_string, parent_ids)
+            unexpanded_name = DisplayItem(unexpanded_exchange.name, parent_ids)
+            unexpanded_offset = DisplayItem(str(unexpanded_exchange.cell_offset.as_tuple), parent_ids)
+            unexpanded_type = DisplayItem(unexpanded_exchange.exchange_type, parent_ids)
+            unexpanded_site_1 = DisplayItem(unexpanded_exchange.site_1.name, parent_ids)
+            unexpanded_site_2 = DisplayItem(unexpanded_exchange.site_2.name, parent_ids)
+            unexpanded_parameters = DisplayItem(unexpanded_exchange.parameter_string, parent_ids)
 
 
-            for expanded_index in self.couplings_original_to_expanded[unexpanded_index]:
-                expanded_coupling: RenderCoupling = render_model.couplings[expanded_index]
+            for expanded_index in self.exchanges_original_to_expanded[unexpanded_index]:
+                expanded_exchange: RenderExchange = render_model.exchanges[expanded_index]
 
                 # Set the render ids
-                ids = [expanded_coupling.render_id]
+                ids = [expanded_exchange.render_id]
                 parent_ids += ids # This doesn't replace the list, adds to existing one
 
-                site_1_offset = site_expanded_uid_to_offset[expanded_coupling.coupling.site_1.unique_id]
-                site_1_name = f"{expanded_coupling.coupling.site_1.name} {site_1_offset}"
-                site_2_offset = site_expanded_uid_to_offset[expanded_coupling.coupling.site_2.unique_id]
-                site_2_name = f"{expanded_coupling.coupling.site_2.name} {site_2_offset}"
+                site_1_offset = site_expanded_uid_to_offset[expanded_exchange.exchange.site_1.unique_id]
+                site_1_name = f"{expanded_exchange.exchange.site_1.name} {site_1_offset}"
+                site_2_offset = site_expanded_uid_to_offset[expanded_exchange.exchange.site_2.unique_id]
+                site_2_name = f"{expanded_exchange.exchange.site_2.name} {site_2_offset}"
 
-                expanded_name = DisplayItem(expanded_coupling.coupling.name, ids)
-                expanded_offset = DisplayItem(str(expanded_coupling.coupling.cell_offset.as_tuple), ids)
-                expanded_type = DisplayItem(expanded_coupling.coupling.exchange_type, ids)
+                expanded_name = DisplayItem(expanded_exchange.exchange.name, ids)
+                expanded_offset = DisplayItem(str(expanded_exchange.exchange.cell_offset.as_tuple), ids)
+                expanded_type = DisplayItem(expanded_exchange.exchange.exchange_type, ids)
                 expanded_site_1 = DisplayItem(site_1_name, ids)
                 expanded_site_2 = DisplayItem(site_2_name, ids)
-                expanded_parameters = DisplayItem(expanded_coupling.coupling.parameter_string, ids)
+                expanded_parameters = DisplayItem(expanded_exchange.exchange.parameter_string, ids)
 
                 unexpanded_name.appendRow([
                     expanded_name,
@@ -271,10 +271,10 @@ class TextDisplay(QWidget):
 
                 # Save column zero items
                 for id in ids:
-                    self.coupling_render_id_to_row_item[id] = [unexpanded_name, expanded_name]
+                    self.exchange_render_id_to_row_item[id] = [unexpanded_name, expanded_name]
 
 
-            coupling_root.appendRow([
+            exchange_root.appendRow([
                 unexpanded_name,
                 unexpanded_offset,
                 unexpanded_type,
@@ -283,7 +283,7 @@ class TextDisplay(QWidget):
                 unexpanded_parameters
             ])
 
-        self.coupling_tree.setModel(coupling_model)
+        self.exchange_tree.setModel(exchange_model)
 
         #
         # Layout components
@@ -291,7 +291,7 @@ class TextDisplay(QWidget):
 
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(self.site_tree)
-        splitter.addWidget(self.coupling_tree)
+        splitter.addWidget(self.exchange_tree)
 
         layout = QVBoxLayout()
         layout.addWidget(splitter)
@@ -308,7 +308,7 @@ class TextDisplay(QWidget):
         self.current_selection = []
         self.site_tree.hoverChanged.connect(self.on_hover_changed)
         self.site_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
-        self.coupling_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
+        self.exchange_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def on_hover_changed(self):
         """ Called when items are hovered """
@@ -330,8 +330,8 @@ class TextDisplay(QWidget):
                 render_ids += model.itemFromIndex(index).ids
 
         # Couplings
-        model = self.coupling_tree.model()
-        for index in self.coupling_tree.selectionModel().selectedIndexes():
+        model = self.exchange_tree.model()
+        for index in self.exchange_tree.selectionModel().selectedIndexes():
             if index.column() == 0:
                 render_ids += model.itemFromIndex(index).ids
 
@@ -378,13 +378,13 @@ class TextDisplay(QWidget):
             for item in self.site_render_id_to_row_item[render_id]:
                 self.set_row_boldness(item, True)
 
-        for items in self.coupling_render_id_to_row_item.values():
+        for items in self.exchange_render_id_to_row_item.values():
             # TODO Be more efficient
             for item in items:
                 self.set_row_boldness(item, False)
 
         for render_id in render_ids:
-            for item in self.coupling_render_id_to_row_item[render_id]:
+            for item in self.exchange_render_id_to_row_item[render_id]:
                 self.set_row_boldness(item, True)
 
     def set_selection(self, render_ids: list[int]):
@@ -433,11 +433,11 @@ class TextDisplay(QWidget):
 
         # Get the selection items, and expand where needed
         for render_id in render_ids:
-            for item in self.coupling_render_id_to_row_item[render_id]:
+            for item in self.exchange_render_id_to_row_item[render_id]:
                 parent = item.parent()
                 if parent is not None:
                     selected_items.append(item)
-                    self.coupling_tree.expand(parent.index())
+                    self.exchange_tree.expand(parent.index())
 
         selection = QItemSelection()
 
@@ -446,7 +446,7 @@ class TextDisplay(QWidget):
             selection.select(index, index)
 
         # Set selection on tree
-        selection_model = self.coupling_tree.selectionModel()
+        selection_model = self.exchange_tree.selectionModel()
 
         selection_model.blockSignals(True)  # Block the signals when sending
         try:
@@ -455,4 +455,4 @@ class TextDisplay(QWidget):
             selection_model.blockSignals(False)
 
         # Repaint signals will have got lost, so we need to manually refresh
-        self.coupling_tree.viewport().update()
+        self.exchange_tree.viewport().update()

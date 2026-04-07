@@ -218,9 +218,9 @@ def test_optimise_transformation_supercell():
     structure = Structure(sites, UnitCell(1,1,1),
                           supercell=TransformationSupercell([(pv, RotationTransform([1,0,0]))]))
 
-    couplings = [HeisenbergExchange(a, x, 1)]
+    exchanges = [HeisenbergExchange(a, x, 1)]
 
-    hamiltonian = Hamiltonian(structure, couplings)
+    hamiltonian = Hamiltonian(structure, exchanges)
 
     optimised = hamiltonian.ground_state(fixed=[a])
 
@@ -236,7 +236,7 @@ def test_optimise_summation_supercell():
     x = LatticeSite(0.25,0,0, supercell_moments=[[0,0,1], [0,0,0]], name="X")
     y = LatticeSite(0.75,0,0, supercell_moments=[[0,0,0], [1,1,1]], name="Y")
 
-    couplings = [HeisenbergExchange(x, y, j=1)]
+    exchanges = [HeisenbergExchange(x, y, j=1)]
 
     pv1 = CommensuratePropagationVector(1,1, 1/2)
     pv2 = CommensuratePropagationVector(1,1, 1/3, phase=np.pi/2)
@@ -245,7 +245,7 @@ def test_optimise_summation_supercell():
 
     structure = Structure([x, y], unit_cell=UnitCell(1,1,1), supercell=supercell)
 
-    hamiltonian = Hamiltonian(structure, couplings)
+    hamiltonian = Hamiltonian(structure, exchanges)
 
     optimised = hamiltonian.ground_state(fixed=[x])
 

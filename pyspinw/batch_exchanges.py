@@ -1,4 +1,4 @@
-""" Functions and classes for automatically creating multiple couplings"""
+""" Functions and classes for automatically creating multiple exchanges"""
 
 from collections import defaultdict
 
@@ -94,7 +94,7 @@ def batch_exchanges(sites: list[LatticeSite],
     :param unit_cell: Unit cell, needed for working out cartesian distances
     :param max_distance: Maximum distance to get exchanges for
     :param naming_convention: Formatting string for the naming, see `apply_naming_convention` for details
-    :param both_directions: Couplings in both directions
+    :param both_directions: Exchanges in both directions
 
 
     Most of the work here is about constraining by order and giving it a sensible name
@@ -170,7 +170,7 @@ def batch_exchanges(sites: list[LatticeSite],
                 last_distance = distances[0][1]
                 order = 1
                 for index, distance in distances[1:]:
-                    if distance - last_distance > tolerances.COUPLING_ORDER_THRESHOLD:
+                    if distance - last_distance > tolerances.EXCHANGE_ORDER_THRESHOLD:
                         order += 1
 
                     orders.append((index, order))

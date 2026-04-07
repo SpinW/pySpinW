@@ -17,7 +17,7 @@ class DisplayOptions:
     """ Options for how things should display """
 
     show_sites: bool = True
-    show_couplings: bool = True
+    show_exchanges: bool = True
     show_anisotropies: bool = True
     show_unit_cell: bool = False
     show_supercell: bool = False
@@ -29,7 +29,7 @@ class DisplayOptions:
     show_atoms_not_moments: bool = False
 
     atom_moment_scaling: float = 0.35
-    coupling_scaling: float = 0.20
+    exchange_scaling: float = 0.20
 
     show_cartesian_axes: bool = True
     show_lattice_axes: bool = False
@@ -201,9 +201,9 @@ class DisplayOptionsToolbar(QWidget):
                                                   value=settings.show_sites)
 
 
-        self.show_couplings = self._add_toggle_button(alt_text="Show Exchanges",
+        self.show_exchanges = self._add_toggle_button(alt_text="Show Exchanges",
                                                       icon="show_exchanges",
-                                                      value=settings.show_couplings)
+                                                      value=settings.show_exchanges)
 
         self.show_anisotropies = self._add_toggle_button(alt_text="Show Anisotropies",
                                                          icon="anisotropies",
@@ -250,8 +250,8 @@ class DisplayOptionsToolbar(QWidget):
                                                    icon="atomsizes",
                                                    value=settings.use_atomic_radii)
 
-        self.coupling_scale_slider = self._add_slider(
-            0, 1, settings.coupling_scaling,
+        self.exchange_scale_slider = self._add_slider(
+            0, 1, settings.exchange_scaling,
             left_label=IconWidget("small_exchange", "Smaller Exchanges"),
             right_label=IconWidget("big_exchange", "Larger Exchanges"),
             alt_text="Exchange thickness")
@@ -302,14 +302,14 @@ class DisplayOptionsToolbar(QWidget):
         """ Get the current render options """
         return DisplayOptions(
             show_sites = self.show_sites.isChecked(),
-            show_couplings = self.show_couplings.isChecked(),
+            show_exchanges= self.show_exchanges.isChecked(),
             show_anisotropies = self.show_anisotropies.isChecked(),
             show_unit_cell = self.show_cell.isChecked(),
             show_supercell = self.show_supercell.isChecked(),
             show_nonmagnetic_atoms = self.show_nonmagnetic.isChecked(),
             use_atomic_radii = self.scale_atoms.isChecked(),
             atom_moment_scaling = self.moment_scale_slider.value(),
-            coupling_scaling = self.coupling_scale_slider.value(),
+            exchange_scaling = self.exchange_scale_slider.value(),
             show_cartesian_axes = self.show_cartesian_axes.isChecked(),
             show_lattice_axes = self.show_lattice_axes.isChecked(),
             orthogonal_lattice_axes = self.orthogonal_lattice_axes.isChecked(),

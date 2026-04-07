@@ -1,4 +1,4 @@
-""" Identification of subsystems of a collection of sites and couplings """
+""" Identification of subsystems of a collection of sites and exchanges """
 
 from pyspinw.exchange import Exchange
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
@@ -22,13 +22,13 @@ class Node:
         else:
             return False
 
-def find_components(sites: list[LatticeSite], couplings: list[Exchange]) \
+def find_components(sites: list[LatticeSite], exchanges: list[Exchange]) \
         -> list[tuple[list[LatticeSite], list[Exchange]]]:
     """Find components (maximal disjoint subsystems) of the given system
 
     or in other words, group the sites by being coupled to each other.
 
-    Important: Assumes that all the sites in the couplings are in the list of sites
+    Important: Assumes that all the sites in the exchanges are in the list of sites
     """
     unique_sites = [site for site in sites if not isinstance(site, ImpliedLatticeSite)]
     n_unique_sites = len(unique_sites)
@@ -37,9 +37,9 @@ def find_components(sites: list[LatticeSite], couplings: list[Exchange]) \
     # Set up graph
     nodes = [Node() for _ in unique_sites]
 
-    for coupling in couplings:
-        a = unique_id_to_index[coupling.site_1.parent_site._unique_id]
-        b = unique_id_to_index[coupling.site_2.parent_site._unique_id]
+    for exchange in exchanges:
+        a = unique_id_to_index[exchange.site_1.parent_site._unique_id]
+        b = unique_id_to_index[exchange.site_2.parent_site._unique_id]
 
         nodes[a].connected.append(nodes[b])
         nodes[b].connected.append(nodes[a])
@@ -52,7 +52,7 @@ def find_components(sites: list[LatticeSite], couplings: list[Exchange]) \
 
     # collect together into groups
     site_groups = [[] for _ in range(group)]
-    coupling_groups = [[] for _ in range(group)]
+    exchange_groups = [[] for _ in range(group)]
 
     # Collect sites together
     for site in sites:
@@ -60,14 +60,14 @@ def find_components(sites: list[LatticeSite], couplings: list[Exchange]) \
         group_index = nodes[node_index].group
         site_groups[group_index].append(site)
 
-    # Collect couplings together
-    for coupling in couplings:
+    # Collect exchanges together
+    for exchange in exchanges:
 
         # Group should be the same for both sites
-        node_index = unique_id_to_index[coupling.site_1.parent_site._unique_id]
+        node_index = unique_id_to_index[exchange.site_1.parent_site._unique_id]
 
         group_index = nodes[node_index].group
-        coupling_groups[group_index].append(coupling)
+        exchange_groups[group_index].append(exchange)
 
     # groups as list of tuples
-    return [pair for pair in zip(site_groups, coupling_groups)]
+    return [pair for pair in zip(site_groups, exchange_groups)]

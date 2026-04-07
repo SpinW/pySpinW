@@ -1,4 +1,4 @@
-""" Groups of couplings, a neater way of representing multiple, similar couplings
+""" Groups of exchanges, a neater way of representing multiple, similar exchanges
 
 TODO: Currently broken - WIP
 
@@ -8,22 +8,22 @@ import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.exchange import Exchange
-from pyspinw.batch_couplings import batch_exchanges, default_naming_pattern
+from pyspinw.batch_exchanges import batch_exchanges, default_naming_pattern
 from pyspinw.symmetry.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 
 
-class AbstractCouplingGroup:
-    """ Base class for coupling groups"""
+class AbstractExchangeGroup:
+    """ Base class for exchange groups"""
 
-    def couplings(self, sites: list[LatticeSite], symmetry: SymmetrySettings):
-        """ Get the couplings defined by this groups given the sites and symmetry provided """
-        raise NotImplementedError("couplings not available in base class")
+    def exchanges(self, sites: list[LatticeSite], symmetry: SymmetrySettings):
+        """ Get the exchanges defined by this groups given the sites and symmetry provided """
+        raise NotImplementedError("exchanges not available in base class")
 
 class DirectionalityFilter:
-    """ Base class for filtering couplings by direction"""
+    """ Base class for filtering exchanges by direction"""
 
     def accept(self, vector: np.ndarray) -> bool:
         """ return True if in an allowed direction"""
@@ -81,7 +81,7 @@ class InPlaneFilter(DirectionalityFilter):
 
 
 class ExchangeGroup:
-    """ Class representing the batch creation of couplings"""
+    """ Class representing the batch creation of exchanges"""
 
     def __init__(self,
                  name: str,
@@ -91,7 +91,7 @@ class ExchangeGroup:
                  max_order: int | None,
                  naming_pattern: str | None,
                  exchange_type: type[Exchange],
-                 coupling_parameters: dict,
+                 exchange_parameters: dict,
                  direction_filter: DirectionalityFilter | None):
 
         self.name = name
@@ -101,12 +101,12 @@ class ExchangeGroup:
         self.max_order = max_order
         self.naming_pattern = naming_pattern
         self.exchange_type = exchange_type
-        self.coupling_parameters = coupling_parameters
+        self.exchange_parameters = exchange_parameters
         self.direction_filter = direction_filter
 
 
     def exchanges(self, sites: list[LatticeSite], unit_cell: UnitCell):
-        """ Get the couplings defined by this groups given the sites and symmetry provided """
+        """ Get the exchanges defined by this groups given the sites and symmetry provided """
         if self.bond > 0:
             # Try to improve this heuristic for the maximum distance
             distances = (0.0, np.sqrt(self.bond) * 2 * unit_cell.main_diagonal_length)
@@ -137,7 +137,7 @@ class ExchangeGroup:
                     site_1=exchange.site_1,
                     site_2=exchange.site_2,
                     cell_offset=exchange.cell_offset,
-                    **self.coupling_parameters))
+                    **self.exchange_parameters))
 
         # Apply the filtering
         if self.direction_filter is not None:

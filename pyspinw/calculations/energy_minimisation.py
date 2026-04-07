@@ -177,14 +177,14 @@ class ClassicalEnergyMinimisation:
         self.n_planar = len(self.planar_sites)
         self.n_fixed = len(self.fixed_sites)
 
-        # Make lists of sites for each coupling, anisotropy
-        self.site_to_coupling_side_1 = defaultdict(list)
-        self.site_to_coupling_side_2 = defaultdict(list)
+        # Make lists of sites for each exchange, anisotropy
+        self.site_to_exchange_side_1 = defaultdict(list)
+        self.site_to_exchange_side_2 = defaultdict(list)
         self.site_to_anisotropy = defaultdict(list)
 
-        for coupling in hamiltonian.exchanges:
-            self.site_to_coupling_side_1[coupling.site_1.unique_id].append(coupling)
-            self.site_to_coupling_side_2[coupling.site_2.unique_id].append(coupling)
+        for exchange in hamiltonian.exchanges:
+            self.site_to_exchange_side_1[exchange.site_1.unique_id].append(exchange)
+            self.site_to_exchange_side_2[exchange.site_2.unique_id].append(exchange)
 
         for anisotropy in hamiltonian.anisotropies:
             self.site_to_anisotropy[anisotropy.site.unique_id].append(anisotropy)
@@ -301,16 +301,16 @@ class ClassicalEnergyMinimisation:
         for cell in supercell.cells():
 
             # Exchanges
-            for coupling in self.hamiltonian.exchanges:
-                site_1_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_1.unique_id], :, :]
-                site_2_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_2.unique_id], :, :]
+            for exchange in self.hamiltonian.exchanges:
+                site_1_moment_data = self.moment_data[self._site_uid_to_index[exchange.site_1.unique_id], :, :]
+                site_2_moment_data = self.moment_data[self._site_uid_to_index[exchange.site_2.unique_id], :, :]
 
                 site_1_moment = supercell.moment_calculation(site_1_moment_data, cell)
                 site_2_moment = supercell.moment_calculation(
                                     site_2_moment_data,
-                                    supercell.wrap_sum(cell, coupling.cell_offset))
+                                    supercell.wrap_sum(cell, exchange.cell_offset))
 
-                energy += site_1_moment @ coupling.exchange_matrix @ site_2_moment
+                energy += site_1_moment @ exchange.exchange_matrix @ site_2_moment
 
             # Anisotropies
             for anisotropy in self.hamiltonian.anisotropies:
@@ -414,12 +414,12 @@ class ClassicalEnergyMinimisation:
                 for cell in self.supercell.cells():
 
 
-                    # Couplings
+                    # Exchanges
 
-                    for coupling in self.site_to_coupling_side_2[site_uid]:
-                        # This side of the couplings has the offset applied
+                    for exchange in self.site_to_exchange_side_2[site_uid]:
+                        # This side of the exchanges has the offset applied
 
-                        offset_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+                        offset_cell = self.supercell.wrap_sum(cell, exchange.cell_offset)
 
                         df_dT = self.supercell.moment_derivative(component_index, offset_cell)
 
@@ -427,19 +427,19 @@ class ClassicalEnergyMinimisation:
                         dS_dbeta = df_dT @ dT_dbeta
 
                         # Get other moment in supercell
-                        other_index = self._site_uid_to_index[coupling.site_1.unique_id]
+                        other_index = self._site_uid_to_index[exchange.site_1.unique_id]
                         other_moment_data = self.moment_data[other_index, :, :]
                         other_moment = self.supercell.moment_calculation(other_moment_data, cell)
 
                         # Get forces
                         forces_free_alpha[param_index, component_index] -= \
-                            other_moment @ coupling.exchange_matrix @ dS_dalpha
+                            other_moment @ exchange.exchange_matrix @ dS_dalpha
 
                         forces_free_beta[param_index, component_index] -= \
-                            other_moment @ coupling.exchange_matrix @ dS_dbeta
+                            other_moment @ exchange.exchange_matrix @ dS_dbeta
 
                     # Calculate the derivative of the spin with respect to the parameters,
-                    #  this depended on the cell for the other couplings, but is the same for
+                    #  this depended on the cell for the other exchanges, but is the same for
                     #  everything going forward
                     df_dT = self.supercell.moment_derivative(component_index, cell)
 
@@ -447,23 +447,23 @@ class ClassicalEnergyMinimisation:
                     dS_dbeta = df_dT @ dT_dbeta
 
 
-                    for coupling in self.site_to_coupling_side_1[site_uid]:
+                    for exchange in self.site_to_exchange_side_1[site_uid]:
 
                         # The side without the offset applied
 
                         # Get other moment in supercell
-                        other_index = self._site_uid_to_index[coupling.site_2.unique_id]
+                        other_index = self._site_uid_to_index[exchange.site_2.unique_id]
                         other_moment_data = self.moment_data[other_index, :, :]
-                        other_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+                        other_cell = self.supercell.wrap_sum(cell, exchange.cell_offset)
                         other_moment = self.supercell.moment_calculation(other_moment_data, other_cell)
 
                         # Get the forces
 
                         forces_free_alpha[param_index, component_index] -= \
-                            dS_dalpha @ coupling.exchange_matrix @ other_moment
+                            dS_dalpha @ exchange.exchange_matrix @ other_moment
 
                         forces_free_beta[param_index, component_index] -= \
-                            dS_dbeta @ coupling.exchange_matrix @ other_moment
+                            dS_dbeta @ exchange.exchange_matrix @ other_moment
 
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:
@@ -501,32 +501,32 @@ class ClassicalEnergyMinimisation:
 
                 for cell in self.supercell.cells():
 
-                    for coupling in self.site_to_coupling_side_2[site_uid]:
+                    for exchange in self.site_to_exchange_side_2[site_uid]:
 
-                        offset_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+                        offset_cell = self.supercell.wrap_sum(cell, exchange.cell_offset)
 
                         dS_dT = self.supercell.moment_derivative(component_index, offset_cell)
                         dS_dtheta = dS_dT @ dT_dtheta
 
                         # Get other moment in supercell
-                        other_index = self._site_uid_to_index[coupling.site_1.unique_id]
+                        other_index = self._site_uid_to_index[exchange.site_1.unique_id]
                         other_moment_data = self.moment_data[other_index, :, :]
                         other_moment = self.supercell.moment_calculation(other_moment_data, cell)
 
-                        forces_planar[param_index] -= other_moment @ coupling.exchange_matrix @ dS_dtheta
+                        forces_planar[param_index] -= other_moment @ exchange.exchange_matrix @ dS_dtheta
 
                     dS_dT = self.supercell.moment_derivative(component_index, cell)
                     dS_dtheta = dS_dT @ dT_dtheta
 
-                    # Couplings
-                    for coupling in self.site_to_coupling_side_1[site_uid]:
+                    # Exchanges
+                    for exchange in self.site_to_exchange_side_1[site_uid]:
 
-                        other_index = self._site_uid_to_index[coupling.site_2.unique_id]
+                        other_index = self._site_uid_to_index[exchange.site_2.unique_id]
                         other_moment_data = self.moment_data[other_index, :, :]
-                        other_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
+                        other_cell = self.supercell.wrap_sum(cell, exchange.cell_offset)
                         other_moment = self.supercell.moment_calculation(other_moment_data, other_cell)
 
-                        forces_planar[site_index] -= dS_dtheta @ coupling.exchange_matrix @ other_moment
+                        forces_planar[site_index] -= dS_dtheta @ exchange.exchange_matrix @ other_moment
 
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:

@@ -5,7 +5,7 @@ import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
-from pyspinw.batch_couplings import default_naming_pattern
+from pyspinw.batch_exchanges import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, ExchangeGroup, \
@@ -362,15 +362,15 @@ def filter(direction: ArrayLike,
            perpendicular: bool=False,
            symmetric: bool=False,
            max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
-    """ Create a filter for directions (helper method for couplings)
+    """ Create a filter for directions (helper method for exchanges)
 
-    :param direction: If not perpendicular, allowed direction of coupling
-                      If perpendicular, normal to plane containing coupling
+    :param direction: If not perpendicular, allowed direction of exchange
+                      If perpendicular, normal to plane containing exchange
     :param perpendicular: Constrain to a line (perpendicular=False) or a plane (perpendicular=True)
-    :param symmetric: In the not perpendicular case, symmetric True generates couplings in both directions
+    :param symmetric: In the not perpendicular case, symmetric True generates exchanges in both directions
     :param max_dev_angle_deg: Angular tolerance for the direction/normal in degrees
 
-    :returns: A DirectionalityFilter object that can be used to select couplings in particular directions
+    :returns: A DirectionalityFilter object that can be used to select exchanges in particular directions
     """
     if perpendicular:
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
@@ -399,29 +399,29 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
                        d_z: float | None = None,
                        exchange_parameters: dict | None = None,
                        naming_pattern: str | None = None, ):
-    """ Automatically creates a list of couplings
+    """ Automatically creates a list of exchanges
 
-    :param sites: *required* List of sites to make couplings between or a Structure object
+    :param sites: *required* List of sites to make exchanges between or a Structure object
     :param unit_cell: Unit cell (needed if first argument is a list of sites)
-    :param exchange_type: Type of coupling (defaults to HeisenbergCoupling)
+    :param exchange_type: Type of exchange (defaults to HeisenbergExchange)
     :param bond: The bond index (If this is given the _distance parameters are ignored)
-    :param max_distance: Maximum Cartesian distance (in Angstrom) at which couplings are made
-    :param min_distance: Minimum Cartesian distance (in Angstrom) at which couplings are made
+    :param max_distance: Maximum Cartesian distance (in Angstrom) at which exchanges are made
+    :param min_distance: Minimum Cartesian distance (in Angstrom) at which exchanges are made
     :param direction_filter: Supply a DirectionalityFilter object (e.g. using `filter`)
-                             to only create couplings in certain directions
-    :param max_order: Maximum "order" of couplings
-    :param j" Constant for scalar valued Heisenberg couplings (only needed for Heisenberg)
-    :param j_x" Constant for x component of Heisenberg-like couplings (only needed for Diagonal)
-    :param j_y" Constant for y component of Heisenberg-like couplings (only needed for Diagonal)
-    :param j_z" Constant for z component of Heisenberg-like couplings (only needed for Diagonal, Ising and XY)
-    :param j_xy" Constant for x and y components of Heisenberg-like couplings (only needed for XY and XXZ)
-    :param d_x" Constant for x component of Dzyaloshinskii-Moriya coupling (DM)
-    :param d_y" Constant for y component of Dzyaloshinskii-Moriya coupling (DM)
-    :param d_z" Constant for z component of Dzyaloshinskii-Moriya coupling (DM)
+                             to only create exchanges in certain directions
+    :param max_order: Maximum "order" of exchanges
+    :param j" Constant for scalar valued Heisenberg exchanges (only needed for Heisenberg)
+    :param j_x" Constant for x component of Heisenberg-like exchanges (only needed for Diagonal)
+    :param j_y" Constant for y component of Heisenberg-like exchanges (only needed for Diagonal)
+    :param j_z" Constant for z component of Heisenberg-like exchanges (only needed for Diagonal, Ising and XY)
+    :param j_xy" Constant for x and y components of Heisenberg-like exchanges (only needed for XY and XXZ)
+    :param d_x" Constant for x component of Dzyaloshinskii-Moriya exchange (DM)
+    :param d_y" Constant for y component of Dzyaloshinskii-Moriya exchange (DM)
+    :param d_z" Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
     :param exchange_parameters: Parameters can be supplied in a dictionary instead
-    :param naming_pattern: String used to assign names to couplings, see `apply_naming_convention`
+    :param naming_pattern: String used to assign names to exchanges, see `apply_naming_convention`
 
-    :returns: list of couplings
+    :returns: list of exchanges
     """
     if isinstance(sites, Structure):
         unit_cell = sites.unit_cell
@@ -475,7 +475,7 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
         max_order = max_order,
         naming_pattern = default_naming_pattern if naming_pattern is None else naming_pattern,
         exchange_type= exchange_type,
-        coupling_parameters = used_parameters,
+        exchange_parameters= used_parameters,
         direction_filter = direction_filter)
 
     return group.exchanges(sites, unit_cell)

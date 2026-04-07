@@ -69,8 +69,8 @@ class RenderSite(Selectable):
             return [self.model_matrix]
 
 
-class RenderCoupling(Selectable):
-    """ Render information for each coupling """
+class RenderExchange(Selectable):
+    """ Render information for each exchange """
 
     @staticmethod
     def segment_model_matrix(a, b, unit_cell):
@@ -91,12 +91,12 @@ class RenderCoupling(Selectable):
 
         return model_matrix
 
-    def __init__(self, render_id: int, coupling: Exchange, unit_cell: UnitCell):
+    def __init__(self, render_id: int, exchange: Exchange, unit_cell: UnitCell):
 
-        self.coupling = coupling
+        self.exchange = exchange
 
-        p1 = coupling.site_1.ijk
-        p2 = coupling.site_2.ijk + coupling.cell_offset.vector
+        p1 = exchange.site_1.ijk
+        p2 = exchange.site_2.ijk + exchange.cell_offset.vector
 
         model_matrix = self.segment_model_matrix(p1, p2, unit_cell)
 
@@ -132,7 +132,7 @@ class RenderModel:
 
         self.hamiltonian = hamiltonian
 
-        self.expanded, site_mapping, self.coupling_mapping, self.anisotropy_mapping = \
+        self.expanded, site_mapping, self.exchange_mapping, self.anisotropy_mapping = \
             self.hamiltonian._expand_with_mapping()
 
         self.site_expanded_uid_to_original_uid: dict[int, int] = {}
@@ -186,14 +186,14 @@ class RenderModel:
             self.original_index_to_expanded[original].append(expanded)
 
         #
-        # Create render data for couplings
+        # Create render data for exchanges
         #
 
-        self.couplings = []
-        for coupling in self.expanded.exchanges:
-            render_coupling = RenderCoupling(render_id, coupling, self.expanded.structure.unit_cell)
-            self.couplings.append(render_coupling)
-            self.render_map[render_id] = render_coupling
+        self.exchanges = []
+        for exchange in self.expanded.exchanges:
+            render_exchange = RenderExchange(render_id, exchange, self.expanded.structure.unit_cell)
+            self.exchanges.append(render_exchange)
+            self.render_map[render_id] = render_exchange
             render_id += 1
 
         self.anisotropies = []

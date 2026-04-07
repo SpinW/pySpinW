@@ -18,14 +18,14 @@ if __name__ == "__main__":
     c = LatticeSite(0,0,1, name="c")
 
     sites = [origin, a, b, c]
-    couplings = [HeisenbergExchange(origin, a, j=0, name="a"),
+    exchanges = [HeisenbergExchange(origin, a, j=0, name="a"),
                  HeisenbergExchange(origin, b, j=0, name="b"),
                  HeisenbergExchange(origin, c, j=0, name="c")]
 
 
     s = Structure(sites, unit_cell=unit_cell)
 
-    hamiltonian = Hamiltonian(s, couplings)
+    hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()
 
