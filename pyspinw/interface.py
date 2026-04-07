@@ -8,7 +8,7 @@ from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_couplings import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange, HeisenbergExchange
-from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
+from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, ExchangeGroup, \
     BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -467,18 +467,18 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
         else:
             used_parameters[parameter] = default
 
-    group = CouplingGroup(
+    group = ExchangeGroup(
         name = "<unnamed group>",
         bond = bond,
         min_distance = min_distance,
         max_distance = max_distance,
         max_order = max_order,
         naming_pattern = default_naming_pattern if naming_pattern is None else naming_pattern,
-        coupling_type = exchange_type,
+        exchange_type= exchange_type,
         coupling_parameters = used_parameters,
         direction_filter = direction_filter)
 
-    return group.couplings(sites, unit_cell)
+    return group.exchanges(sites, unit_cell)
 
 
 @check_sizes(axis=(3, ), force_numpy=True)

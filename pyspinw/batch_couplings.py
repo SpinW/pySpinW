@@ -82,7 +82,7 @@ def apply_naming_convention(naming_pattern: str,
 
 default_naming_pattern = "[type][order]:[site1]-[site2]" #[type]_[order]([site1], [site2])"
 
-def batch_couplings(sites: list[LatticeSite],
+def batch_exchanges(sites: list[LatticeSite],
                     unit_cell: UnitCell,
                     max_distance: float,
                     naming_pattern: str=default_naming_pattern,

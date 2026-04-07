@@ -190,7 +190,7 @@ class RenderModel:
         #
 
         self.couplings = []
-        for coupling in self.expanded.couplings:
+        for coupling in self.expanded.exchanges:
             render_coupling = RenderCoupling(render_id, coupling, self.expanded.structure.unit_cell)
             self.couplings.append(render_coupling)
             self.render_map[render_id] = render_coupling

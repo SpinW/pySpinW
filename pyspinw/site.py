@@ -8,12 +8,12 @@ from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
     numpy_deserialise, numpy_serialise
 
-_coupling_id_counter = -1
+_unique_id_counter = -1
 def _generate_unique_id():
     """ Generate a unique ID for each site currently loaded"""
-    global _coupling_id_counter # noqa: PLW0603
-    _coupling_id_counter += 1
-    return _coupling_id_counter
+    global _unique_id_counter # noqa: PLW0603
+    _unique_id_counter += 1
+    return _unique_id_counter
 
 class LatticeSite(SPWSerialisable):
     """A spin site within a lattice

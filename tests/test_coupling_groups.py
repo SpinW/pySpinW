@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pyspinw.site import LatticeSite
-from pyspinw.couplinggroup import CouplingGroup, DirectionalityFilter, InDirectionFilter, InPlaneFilter
+from pyspinw.exchangegroup import ExchangeGroup, DirectionalityFilter, InDirectionFilter, InPlaneFilter
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.symmetry.unitcell import UnitCell
 
@@ -13,18 +13,18 @@ def test_simple_coupling_group(lower, upper):
 
     cell = UnitCell(1, 1, 1)
 
-    group = CouplingGroup(
+    group = ExchangeGroup(
         name = "test_group",
         bond = 0,
         min_distance = lower,
         max_distance = upper,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergExchange,
+        exchange_type= HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = None)
 
-    couplings = group.couplings(sites, cell)
+    couplings = group.exchanges(sites, cell)
 
 
     # # Can be useful to print this info
@@ -46,18 +46,18 @@ def test_coupling_group_direction_filtered():
 
     cell = UnitCell(1, 1, 1)
 
-    group = CouplingGroup(
+    group = ExchangeGroup(
         name = "test_group",
         bond = 0,
         min_distance = 0,
         max_distance = 3,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergExchange,
+        exchange_type= HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = InDirectionFilter([0,0,1]))
 
-    couplings = group.couplings(sites, cell)
+    couplings = group.exchanges(sites, cell)
 
     # Check distances
     for coupling in couplings:
@@ -72,18 +72,18 @@ def test_coupling_group_plane_filtered():
 
     cell = UnitCell(1, 1, 1)
 
-    group = CouplingGroup(
+    group = ExchangeGroup(
         name = "test_group",
         bond = 0,
         min_distance = 0,
         max_distance = 3,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergExchange,
+        exchange_type= HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = InPlaneFilter([0,0,1]))
 
-    couplings = group.couplings(sites, cell)
+    couplings = group.exchanges(sites, cell)
 
     # Check distances
     for coupling in couplings:
@@ -97,18 +97,18 @@ def test_coupling_bond_index():
 
     cell = UnitCell(1, 1, 2, gamma=120.)
 
-    group = CouplingGroup(
+    group = ExchangeGroup(
         name = "test_group",
         bond = 1,
         min_distance = 0,
         max_distance = 0,
         max_order = None,
         naming_pattern = None,
-        coupling_type = HeisenbergExchange,
+        exchange_type= HeisenbergExchange,
         coupling_parameters = {"j": 1.23},
         direction_filter = None)
 
-    couplings = group.couplings(sites, cell)
+    couplings = group.exchanges(sites, cell)
 
     # Check distances
     for coupling in couplings:

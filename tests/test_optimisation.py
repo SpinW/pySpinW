@@ -313,7 +313,7 @@ def test_anisotropies_free(axis, a):
 
     ai = axis_anisotropies(sites, a, axis)
 
-    hamiltonian = Hamiltonian(s, couplings=[], anisotropies=ai)
+    hamiltonian = Hamiltonian(s, exchanges=[], anisotropies=ai)
 
     hamiltonian.print_summary()
 
@@ -349,7 +349,7 @@ def test_anisotropies_planar(axis):
 
     ai = axis_anisotropies(sites, 1, axis)
 
-    hamiltonian = Hamiltonian(s, couplings=[], anisotropies=ai)
+    hamiltonian = Hamiltonian(s, exchanges=[], anisotropies=ai)
 
     hamiltonian.print_summary()
 
@@ -377,7 +377,7 @@ def test_field_free(field):
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    hamiltonian = Hamiltonian(s, couplings=[])
+    hamiltonian = Hamiltonian(s, exchanges=[])
 
     hamiltonian.print_summary()
 
@@ -410,7 +410,7 @@ def test_field_planar(field):
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
 
-    hamiltonian = Hamiltonian(s, couplings=[])
+    hamiltonian = Hamiltonian(s, exchanges=[])
 
     hamiltonian.print_summary()
 

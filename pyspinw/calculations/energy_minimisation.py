@@ -182,7 +182,7 @@ class ClassicalEnergyMinimisation:
         self.site_to_coupling_side_2 = defaultdict(list)
         self.site_to_anisotropy = defaultdict(list)
 
-        for coupling in hamiltonian.couplings:
+        for coupling in hamiltonian.exchanges:
             self.site_to_coupling_side_1[coupling.site_1.unique_id].append(coupling)
             self.site_to_coupling_side_2[coupling.site_2.unique_id].append(coupling)
 
@@ -301,7 +301,7 @@ class ClassicalEnergyMinimisation:
         for cell in supercell.cells():
 
             # Exchanges
-            for coupling in self.hamiltonian.couplings:
+            for coupling in self.hamiltonian.exchanges:
                 site_1_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_1.unique_id], :, :]
                 site_2_moment_data = self.moment_data[self._site_uid_to_index[coupling.site_2.unique_id], :, :]
 
@@ -310,7 +310,7 @@ class ClassicalEnergyMinimisation:
                                     site_2_moment_data,
                                     supercell.wrap_sum(cell, coupling.cell_offset))
 
-                energy += site_1_moment @ coupling.coupling_matrix @ site_2_moment
+                energy += site_1_moment @ coupling.exchange_matrix @ site_2_moment
 
             # Anisotropies
             for anisotropy in self.hamiltonian.anisotropies:
@@ -433,10 +433,10 @@ class ClassicalEnergyMinimisation:
 
                         # Get forces
                         forces_free_alpha[param_index, component_index] -= \
-                            other_moment @ coupling.coupling_matrix @ dS_dalpha
+                            other_moment @ coupling.exchange_matrix @ dS_dalpha
 
                         forces_free_beta[param_index, component_index] -= \
-                            other_moment @ coupling.coupling_matrix @ dS_dbeta
+                            other_moment @ coupling.exchange_matrix @ dS_dbeta
 
                     # Calculate the derivative of the spin with respect to the parameters,
                     #  this depended on the cell for the other couplings, but is the same for
@@ -460,10 +460,10 @@ class ClassicalEnergyMinimisation:
                         # Get the forces
 
                         forces_free_alpha[param_index, component_index] -= \
-                            dS_dalpha @ coupling.coupling_matrix @ other_moment
+                            dS_dalpha @ coupling.exchange_matrix @ other_moment
 
                         forces_free_beta[param_index, component_index] -= \
-                            dS_dbeta @ coupling.coupling_matrix @ other_moment
+                            dS_dbeta @ coupling.exchange_matrix @ other_moment
 
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:
@@ -513,7 +513,7 @@ class ClassicalEnergyMinimisation:
                         other_moment_data = self.moment_data[other_index, :, :]
                         other_moment = self.supercell.moment_calculation(other_moment_data, cell)
 
-                        forces_planar[param_index] -= other_moment @ coupling.coupling_matrix @ dS_dtheta
+                        forces_planar[param_index] -= other_moment @ coupling.exchange_matrix @ dS_dtheta
 
                     dS_dT = self.supercell.moment_derivative(component_index, cell)
                     dS_dtheta = dS_dT @ dT_dtheta
@@ -526,7 +526,7 @@ class ClassicalEnergyMinimisation:
                         other_cell = self.supercell.wrap_sum(cell, coupling.cell_offset)
                         other_moment = self.supercell.moment_calculation(other_moment_data, other_cell)
 
-                        forces_planar[site_index] -= dS_dtheta @ coupling.coupling_matrix @ other_moment
+                        forces_planar[site_index] -= dS_dtheta @ coupling.exchange_matrix @ other_moment
 
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:

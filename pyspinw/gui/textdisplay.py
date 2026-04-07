@@ -228,14 +228,14 @@ class TextDisplay(QWidget):
 
         coupling_root = coupling_model.invisibleRootItem()
 
-        for unexpanded_index, unexpanded_coupling in enumerate(render_model.hamiltonian.couplings):
+        for unexpanded_index, unexpanded_coupling in enumerate(render_model.hamiltonian.exchanges):
 
             # Note unexpanded is type Coupling, expanded is type RenderCoupling
 
             parent_ids = []
             unexpanded_name = DisplayItem(unexpanded_coupling.name, parent_ids)
             unexpanded_offset = DisplayItem(str(unexpanded_coupling.cell_offset.as_tuple), parent_ids)
-            unexpanded_type = DisplayItem(unexpanded_coupling.coupling_type, parent_ids)
+            unexpanded_type = DisplayItem(unexpanded_coupling.exchange_type, parent_ids)
             unexpanded_site_1 = DisplayItem(unexpanded_coupling.site_1.name, parent_ids)
             unexpanded_site_2 = DisplayItem(unexpanded_coupling.site_2.name, parent_ids)
             unexpanded_parameters = DisplayItem(unexpanded_coupling.parameter_string, parent_ids)
@@ -255,7 +255,7 @@ class TextDisplay(QWidget):
 
                 expanded_name = DisplayItem(expanded_coupling.coupling.name, ids)
                 expanded_offset = DisplayItem(str(expanded_coupling.coupling.cell_offset.as_tuple), ids)
-                expanded_type = DisplayItem(expanded_coupling.coupling.coupling_type, ids)
+                expanded_type = DisplayItem(expanded_coupling.coupling.exchange_type, ids)
                 expanded_site_1 = DisplayItem(site_1_name, ids)
                 expanded_site_2 = DisplayItem(site_2_name, ids)
                 expanded_parameters = DisplayItem(expanded_coupling.coupling.parameter_string, ids)

@@ -9,7 +9,7 @@ b = LatticeSite(0.5,0.5,0.5, name="B")
 def test_create_heisenberg():
     hc = HeisenbergExchange(site_1=a, site_2=b, j=10, name="J1")
 
-    assert np.all(np.abs(hc.coupling_matrix - 10*np.eye(3)) < 1e-10)
+    assert np.all(np.abs(hc.exchange_matrix - 10 * np.eye(3)) < 1e-10)
 
 
 def test_create_dm():
@@ -21,5 +21,5 @@ def test_create_dm():
         [4, -10, 0]
     ])
 
-    assert np.all(np.abs(hc.coupling_matrix - expected) < 1e-10)
+    assert np.all(np.abs(hc.exchange_matrix - expected) < 1e-10)
 

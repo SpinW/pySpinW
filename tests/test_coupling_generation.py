@@ -1,7 +1,7 @@
 import pytest
 
 from pyspinw.exchange import HeisenbergExchange
-from pyspinw.couplinggroup import DirectionalityFilter, InDirectionFilter, BiDirectionFilter
+from pyspinw.exchangegroup import DirectionalityFilter, InDirectionFilter, BiDirectionFilter
 from pyspinw.interface import generate_exchanges
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell

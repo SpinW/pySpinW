@@ -1,5 +1,6 @@
 """Coupling Terms"""
 from dataclasses import dataclass
+from ftplib import all_errors
 
 import numpy as np
 
@@ -12,15 +13,15 @@ from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import triple_product_matrix
 
-_coupling_id_counter = -1
-def _generate_unique_coupling_id():
+_exchange_id_counter = -1
+def _generate_unique_exchange_id():
     """ Generate a unique ID for each site currently loaded"""
-    global _coupling_id_counter # noqa: PLW0603
-    _coupling_id_counter += 1
-    return _coupling_id_counter
+    global _exchange_id_counter # noqa: PLW0603
+    _exchange_id_counter += 1
+    return _exchange_id_counter
 
 @dataclass
-class CouplingBaseDeserialisation:
+class ExchangeBaseDeserialisation:
     """ Class to hold basic properties of the coupling """
 
     name: str
@@ -34,24 +35,24 @@ class Exchange(SPWSerialisable):
 
     serialisation_name = "exchange"
 
-    @check_sizes(coupling_matrix=(3,3))
+    @check_sizes(exchange_matrix=(3,3))
     def __init__(self,
                  site_1: LatticeSite,
                  site_2: LatticeSite,
                  cell_offset: CellOffsetCoercible,
-                 coupling_matrix: np.ndarray,
+                 exchange_matrix: np.ndarray,
                  name: str = ""):
 
         self._name = name
         self._site_1 = site_1
         self._site_2 = site_2
         self._cell_offset = CellOffset.coerce(cell_offset)
-        self._coupling_matrix = coupling_matrix
+        self._exchange_matrix = exchange_matrix
 
-        self._unique_id = _generate_unique_coupling_id()
+        self._unique_id = _generate_unique_exchange_id()
 
 
-    coupling_type = "General"
+    exchange_type = "General"
     parameters: list[str] = []
     parameter_defaults: list[float] = []
     short_string = "M"
@@ -83,15 +84,15 @@ class Exchange(SPWSerialisable):
         return self._cell_offset
 
     @property
-    def coupling_matrix(self) -> np.ndarray:
-        """The coupling matrix for this coupling
+    def exchange_matrix(self) -> np.ndarray:
+        """The exchange matrix for this exchange
 
         i.e. if H is the energy contribution for this coupling, S is the spin state, and
         M is the coupling matrix, we have
 
         H = S^T M S
         """
-        return self._coupling_matrix
+        return self._exchange_matrix
 
     @property
     def parameter_string(self) -> str:
@@ -135,25 +136,25 @@ class Exchange(SPWSerialisable):
             "cell_offset": self._cell_offset._serialise(context)
         }
 
-    @check_sizes(coupling_matrix=(3,3), force_numpy=True, allow_nones=True)
+    @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
     def updated(self,
                 site_1 :LatticeSite | None = None,
                 site_2: LatticeSite | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
-                coupling_matrix: np.ndarray | None = None):
+                exchange_matrix: np.ndarray | None = None):
         """ Get version of this site with specified parameters updated"""
         return Exchange(
             site_1=self.site_1 if site_1 is None else site_1,
             site_2=self.site_2 if site_2 is None else site_2,
             cell_offset=self.cell_offset if cell_offset is None else cell_offset,
             name=self.name if name is None else name,
-            coupling_matrix=self.coupling_matrix if coupling_matrix is None else coupling_matrix)
+            exchange_matrix=self.exchange_matrix if exchange_matrix is None else exchange_matrix)
 
     @staticmethod
     @expects_keys("name, site_1, site_2, cell_offset")
     def _base_deserialisation(json, context: SPWSerialisationContext):
-        return CouplingBaseDeserialisation(
+        return ExchangeBaseDeserialisation(
             name=json["name"],
             site_1=LatticeSite._deserialise(json["site_1"], context),
             site_2=LatticeSite._deserialise(json["site_2"], context),
@@ -161,25 +162,25 @@ class Exchange(SPWSerialisable):
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
-            "type": self.coupling_type.lower(),
+            "type": self.exchange_type.lower(),
             "data": self._coupling_serialise(context)
         }
 
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
-        json["matrix"] = numpy_serialise(self.coupling_matrix)
+        json["matrix"] = numpy_serialise(self._exchange_matrix)
         return json
 
     @staticmethod
     @expects_keys("type, data")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         type_name = json["type"]
-        return lowercase_coupling_lookup[type_name]._coupling_deserialise(json["data"], context)
+        return lowercase_coupling_lookup[type_name]._exchange_deserialise(json["data"], context)
 
 
     @staticmethod
     @expects_keys("matrix")
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return Exchange(
@@ -187,11 +188,11 @@ class Exchange(SPWSerialisable):
             site_2=base.site_2,
             cell_offset=base.cell_offset,
             name=base.name,
-            coupling_matrix=numpy_deserialise(data["matrix"]))
+            exchange_matrix=numpy_deserialise(data["matrix"]))
 
     def is_symmetric(self):
         """ Is this a symmetric coupling """
-        return np.all(np.abs(self.coupling_matrix - self.coupling_matrix.T) < tolerances.IS_ZERO_TOL)
+        return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
 
 
 class HeisenbergExchange(Exchange):
@@ -205,7 +206,7 @@ class HeisenbergExchange(Exchange):
 
     """
 
-    coupling_type = "Heisenberg"
+    exchange_type = "Heisenberg"
     parameters = ["j"]
     parameter_defaults = [1.0]
     short_string = "J"
@@ -217,12 +218,12 @@ class HeisenbergExchange(Exchange):
                  name: str=""):
 
         self._j = j
-        self._coupling_matrix = j * np.eye(3)
+        self._exchange_matrix = j * np.eye(3)
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
-                         coupling_matrix=self._coupling_matrix,
+                         exchange_matrix=self._exchange_matrix,
                          name=name)
 
     @property
@@ -237,7 +238,7 @@ class HeisenbergExchange(Exchange):
 
     @staticmethod
     @expects_keys("j")
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return HeisenbergExchange(
@@ -280,7 +281,7 @@ class DiagonalExchange(Exchange):
 
     """
 
-    coupling_type = "Diagonal"
+    exchange_type = "Diagonal"
     parameters = ["j_x", "j_y", "j_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "J"
@@ -299,7 +300,7 @@ class DiagonalExchange(Exchange):
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
-                         coupling_matrix=self._coupling_matrix,
+                         exchange_matrix=self._coupling_matrix,
                          name=name)
 
     @property
@@ -328,7 +329,7 @@ class DiagonalExchange(Exchange):
 
     @staticmethod
     @expects_keys("j_x, j_y, j_z")
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return DiagonalExchange(
@@ -374,7 +375,7 @@ class XYExchange(Exchange):
 
     """
 
-    coupling_type = "XY"
+    exchange_type = "XY"
     parameters = ["j"]
     parameter_defaults = [1.0]
     short_string = "J"
@@ -396,7 +397,7 @@ class XYExchange(Exchange):
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
-                         coupling_matrix=self._coupling_matrix,
+                         exchange_matrix=self._coupling_matrix,
                          name=name)
 
     def _coupling_serialise(self, context: SPWSerialisationContext) -> dict:
@@ -405,7 +406,7 @@ class XYExchange(Exchange):
         return json
 
     @staticmethod
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return XYExchange(
@@ -445,7 +446,7 @@ class XXZExchange(Exchange):
 
     """
 
-    coupling_type = "XXZ"
+    exchange_type = "XXZ"
     parameters = ["j_xy", "j_z"]
     parameter_defaults = [1.0, 1.0]
     short_string = "J"
@@ -463,7 +464,7 @@ class XXZExchange(Exchange):
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
-                         coupling_matrix=self._coupling_matrix,
+                         exchange_matrix=self._coupling_matrix,
                          name=name)
 
 
@@ -486,7 +487,7 @@ class XXZExchange(Exchange):
         return json
 
     @staticmethod
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return XXZExchange(
@@ -529,7 +530,7 @@ class IsingExchange(Exchange):
 
     """
 
-    coupling_type = "Ising"
+    exchange_type = "Ising"
     parameters = ["j_z"]
     parameter_defaults = [1.0]
     short_string = "J"
@@ -546,7 +547,7 @@ class IsingExchange(Exchange):
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
-                         coupling_matrix=self._coupling_matrix,
+                         exchange_matrix=self._coupling_matrix,
                          name=name)
 
     @property
@@ -560,7 +561,7 @@ class IsingExchange(Exchange):
         return json
 
     @staticmethod
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return IsingExchange(
@@ -602,7 +603,7 @@ class DMExchange(Exchange):
 
     """
 
-    coupling_type = "Dzyaloshinskii-Moriya"
+    exchange_type = "Dzyaloshinskii-Moriya"
     parameters = ["d_x", "d_y", "d_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "DM"
@@ -622,7 +623,7 @@ class DMExchange(Exchange):
         super().__init__(site_1=site_1,
                          site_2=site_2,
                          cell_offset=cell_offset,
-                         coupling_matrix=self._coupling_matrix,
+                         exchange_matrix=self._coupling_matrix,
                          name=name)
 
 
@@ -649,7 +650,7 @@ class DMExchange(Exchange):
         return json
 
     @staticmethod
-    def _coupling_deserialise(data: dict, context: SPWSerialisationContext):
+    def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
         base = Exchange._base_deserialisation(data, context)
 
         return DMExchange(
@@ -686,6 +687,6 @@ class DMExchange(Exchange):
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
 
-couplings = [HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange]
-coupling_lookup = {coupling.coupling_type: coupling for coupling in couplings}
-lowercase_coupling_lookup = {coupling.coupling_type.lower(): coupling for coupling in couplings}
+all_exchanges = [HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange]
+exchanges_lookup = {exchange.exchange_type: exchange for exchange in all_exchanges}
+lowercase_coupling_lookup = {exchange.exchange_type.lower(): exchange for exchange in all_exchanges}

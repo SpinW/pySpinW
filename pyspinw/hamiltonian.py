@@ -200,11 +200,11 @@ class Hamiltonian(SPWSerialisable):
 
     def __init__(self,
                  structure: Structure,
-                 couplings: list[Exchange],
+                 exchanges: list[Exchange],
                  anisotropies: list[Anisotropy] | None = None):
 
         self._structure = structure
-        self._couplings = couplings
+        self._exchanges = exchanges
         self._anisotropies = [] if anisotropies is None else anisotropies
 
     @property
@@ -213,13 +213,13 @@ class Hamiltonian(SPWSerialisable):
         return self._structure
 
     @property
-    def couplings(self):
+    def exchanges(self):
         """ Get the couplings """
-        return self._couplings
+        return self._exchanges
 
     def couplings_by_name(self, regex):
         """ Get list of couplings whose names match the regex """
-        return [coupling for coupling in self.couplings if re.match(regex, coupling.name) is not None]
+        return [exchange for exchange in self.exchanges if re.match(regex, coupling.name) is not None]
 
 
     @property
@@ -235,7 +235,7 @@ class Hamiltonian(SPWSerialisable):
             lines.append(f"  {site}")
 
         lines.append("Couplings:")
-        for exchange in self.couplings:
+        for exchange in self.exchanges:
             lines.append(f"  {exchange}") # vector =", exchange.vector(unit_cell=unit_cell))
 
         if self.anisotropies:
@@ -268,7 +268,7 @@ class Hamiltonian(SPWSerialisable):
         anisotropy_mapping = []
 
         for first_site_offset in self.structure.supercell.cells():
-            for original_index, coupling in enumerate(self.couplings):
+            for original_index, coupling in enumerate(self.exchanges):
                 # Convert the offset in the coupling, into
                 #  1) an offset in the supercell, and
                 #  2) an offset between supercells
@@ -316,7 +316,7 @@ class Hamiltonian(SPWSerialisable):
             supercell=TrivialSupercell(scaling=(1,1,1))
         )
 
-        return (Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies),
+        return (Hamiltonian(structure=structure, exchanges=new_couplings, anisotropies=new_anisotropies),
                 site_mapping, coupling_mapping, anisotropy_mapping)
 
     def expanded(self):
@@ -397,7 +397,7 @@ class Hamiltonian(SPWSerialisable):
             else:
                 newstruc = Structure(**{k:getattr(self.structure, k) for k in ['sites', 'unit_cell', 'spacegroup']},
                                supercell=self.structure.supercell.approximant())
-                expanded = Hamiltonian(newstruc, self.couplings, self.anisotropies).expanded()
+                expanded = Hamiltonian(newstruc, self.exchanges, self.anisotropies).expanded()
                 scaling, rotating_frame = (newstruc.supercell.scaling, None)
         else:
             if use_rotating:
@@ -435,13 +435,13 @@ class Hamiltonian(SPWSerialisable):
 
         # Convert the couplings
         couplings: list[Exchange] = []
-        for input_coupling in expanded.couplings:
+        for input_coupling in expanded.exchanges:
             # Normal coupling
 
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_1._unique_id],
                 unique_id_to_index[input_coupling.site_2._unique_id],
-                np.array(input_coupling.coupling_matrix, **rust_kw),
+                np.array(input_coupling.exchange_matrix, **rust_kw),
                 input_coupling.cell_offset.vector.astype('double')
             )
 
@@ -452,7 +452,7 @@ class Hamiltonian(SPWSerialisable):
             coupling = coupling_class(
                 unique_id_to_index[input_coupling.site_2._unique_id],
                 unique_id_to_index[input_coupling.site_1._unique_id],
-                np.array(input_coupling.coupling_matrix.T, **rust_kw),
+                np.array(input_coupling.exchange_matrix.T, **rust_kw),
                 -input_coupling.cell_offset.vector.astype('double')
             )
 
@@ -736,7 +736,7 @@ class Hamiltonian(SPWSerialisable):
         couplings = [coupling.updated(
             site_1=old_uid_to_new_site[coupling.site_1.unique_id],
             site_2=old_uid_to_new_site[coupling.site_2.unique_id])
-            for coupling in minimiser.hamiltonian.couplings]
+            for coupling in minimiser.hamiltonian.exchanges]
 
         anisotropies = [anisotropy.updated(
             site=old_uid_to_new_site[anisotropy.site.unique_id])
@@ -747,7 +747,7 @@ class Hamiltonian(SPWSerialisable):
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),
-                "couplings": [coupling._serialise(context) for coupling in self.couplings],
+                "couplings": [coupling._serialise(context) for coupling in self.exchanges],
                 "anisotropies": [anisotropy._serialise(context) for anisotropy in self.anisotopies]}
 
     @staticmethod
@@ -813,7 +813,7 @@ class HamiltonianParameterization:
 
         # Convert the coupling to index in the list of couplings
         coupling_unique_id_to_index = {coupling.unique_id: index
-                                       for index, coupling in enumerate(hamiltonian.couplings)}
+                                       for index, coupling in enumerate(hamiltonian.exchanges)}
         self._coupling_parameter_definitions: list[list[tuple[int, str]]] = []
 
         for parameter_definition in base_coupling_parameters:
@@ -915,7 +915,7 @@ class HamiltonianParameterization:
             raise ValueError(f"Expected {self._n_parameters} parameters, got {len(parameters)}")
 
         # Updated couplings
-        new_couplings = [coupling for coupling in self._hamiltonian.couplings]
+        new_couplings = [coupling for coupling in self._hamiltonian.exchanges]
         for parameter_definition, value in zip(self._coupling_parameter_definitions, parameters):
             for (coupling_index, attribute) in parameter_definition:
                 new_couplings[coupling_index] = new_couplings[coupling_index].updated(**{attribute: value})
@@ -938,7 +938,7 @@ class HamiltonianParameterization:
         for index, (couplings, anisotropies) in enumerate(zip(self._coupling_parameter_definitions,
                                                               self._anisotropy_parameter_definitions)):
 
-            coupling_parts = [f"{self._hamiltonian.couplings[index].name}.{parameter}"
+            coupling_parts = [f"{self._hamiltonian.exchanges[index].name}.{parameter}"
                                 for index, parameter in couplings]
 
             anisotropy_parts = [f"{self._hamiltonian.anisotropies[index]}.{parameter}"
