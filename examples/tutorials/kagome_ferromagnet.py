@@ -12,7 +12,7 @@ z = LatticeSite(0.5, 0.5, 0, 0, 1, 0, name="Z")
 
 sites = [x, y, z]
 
-s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(1,1,1)))
+s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(1, 1, 1)))
 
 
 exchanges = generate_exchanges(sites=[x, y, z],

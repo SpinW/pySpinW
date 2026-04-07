@@ -63,7 +63,7 @@ def demo_chains():
 def demo_viewer():
     """ Show the viewer with an example """
     from pyspinw import (
-        UnitCell, LatticeSite, Structure, TrivialSupercell,
+        UnitCell, LatticeSite, Structure, TiledSupercell,
         generate_exchanges, HeisenbergExchange, Hamiltonian, view)
 
     unit_cell = UnitCell(1,1,1, gamma=60)
@@ -75,7 +75,7 @@ def demo_viewer():
 
     sites = [x, y, z, w]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(3,3,1)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(3, 3, 1)))
 
     exchanges = generate_exchanges(sites=[x, y, z],
                                    unit_cell=unit_cell,

@@ -356,7 +356,7 @@ class CommensurateSupercell(Supercell):
 
 
 
-class TrivialSupercell(CommensurateSupercell):
+class TiledSupercell(CommensurateSupercell):
     """ Trivial supercell, just a single unit cell """
 
     def __init__(self, scaling=(1,1,1)):
@@ -382,7 +382,7 @@ class TrivialSupercell(CommensurateSupercell):
 
     @staticmethod
     def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
-        return TrivialSupercell(scale)
+        return TiledSupercell(scale)
 
     def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ Derivative of the spin at a given site with respect to one component of it """
@@ -564,4 +564,4 @@ class RotationSupercell(Supercell):
 
 
 supercell_types = {cls.supercell_name: cls
-                   for cls in [TrivialSupercell, TransformationSupercell, SummationSupercell, RotationSupercell]}
+                   for cls in [TiledSupercell, TransformationSupercell, SummationSupercell, RotationSupercell]}

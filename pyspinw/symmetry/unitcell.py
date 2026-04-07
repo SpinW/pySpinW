@@ -64,32 +64,32 @@ class RawUnitCell(SPWSerialisable):
             raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible moment definition")
 
     # @check_sizes(points=(-1, 3))
-    def fractional_to_cartesian(self, points: np.ndarray):
+    def lattice_units_to_cartesian(self, points: np.ndarray):
         """ Convert a list of points  from the fractional (ijk) type to cartesian (xyz) """
         return points @ self._xyz
 
     # @check_sizes(points=(-1, 3))
-    def cartesian_to_fractional(self, points: np.ndarray):
+    def cartesian_to_lattice_units(self, points: np.ndarray):
         """ Convert a list of points from cartesian (xyz) to fractional (ijk) """
         return points @ self._xyz_inv
 
-    def moment_fractional_to_cartesian(self, moments: np.ndarray):
+    def moment_lattice_units_to_cartesian(self, moments: np.ndarray):
         """ Convert a list of moments from fractional (mi, mj, mk) to cartesian (mx, my, mz) """
         return moments @ self._xyz_moments
 
-    def moment_cartesian_to_fractional(self, moments: np.ndarray):
+    def moment_cartesian_to_lattice_units(self, moments: np.ndarray):
         """ Convert a list of moments from cartesian (mx, my, mz) to fractional (mi, mj, mk)"""
         return moments @ self._xyz_moments_inv
 
     @property
     def centre(self):
         """ Point at centre of cell in cartesian coordinates"""
-        return self.fractional_to_cartesian(np.array([[0.5,0.5,0.5]]))[0, :]
+        return self.lattice_units_to_cartesian(np.array([[0.5, 0.5, 0.5]]))[0, :]
 
     @property
     def main_diagonal_length(self):
         """ Length of primary diagonal """
-        return np.sqrt(np.sum(self.fractional_to_cartesian(np.array([[1,1,1]]))[0, :]**2))
+        return np.sqrt(np.sum(self.lattice_units_to_cartesian(np.array([[1, 1, 1]]))[0, :] ** 2))
 
     def __eq__(self, other: "UnitCell"):
         """Equality (approximate)"""

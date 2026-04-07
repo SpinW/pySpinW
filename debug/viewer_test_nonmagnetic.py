@@ -6,7 +6,7 @@ from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 if __name__ == "__main__":
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     sites = [x, y, z, w]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(3,3,1)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(3, 3, 1)))
 
     exchanges = generate_exchanges(sites=[x, y, z],
                                    unit_cell=unit_cell,

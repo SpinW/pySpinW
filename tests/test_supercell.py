@@ -6,7 +6,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from pyspinw.symmetry.supercell import TransformationSupercell, CommensuratePropagationVector, RotationTransform, \
-    TrivialSupercell, SummationSupercell, RotationSupercell
+    TiledSupercell, SummationSupercell, RotationSupercell
 
 
 def test_trivial_supercell():
@@ -16,7 +16,7 @@ def test_trivial_supercell():
 
     x = LatticeSite(0, 0, 0, 1, 0, 0, name="X")
 
-    supercell = TrivialSupercell((1, 2, 3))
+    supercell = TiledSupercell((1, 2, 3))
 
     structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
 

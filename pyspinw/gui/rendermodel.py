@@ -36,7 +36,7 @@ class RenderSite(Selectable):
     def site_model_matrix(position, moment, unit_cell):
         """ Model matrix for a site """
         rotation = rotation_from_z(moment)
-        translation = unit_cell.fractional_to_cartesian(position)
+        translation = unit_cell.lattice_units_to_cartesian(position)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
         model_matrix[3,3] = 1.0
@@ -77,8 +77,8 @@ class RenderExchange(Selectable):
         """ Model matrix for a line segment """
         # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
 
-        translation = unit_cell.fractional_to_cartesian(a)
-        delta = unit_cell.fractional_to_cartesian(b) - translation
+        translation = unit_cell.lattice_units_to_cartesian(a)
+        delta = unit_cell.lattice_units_to_cartesian(b) - translation
 
         length = np.sqrt(np.sum(delta**2))
 

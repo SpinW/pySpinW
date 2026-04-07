@@ -6,7 +6,7 @@ from pyspinw.gui.viewer import show_hamiltonian
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 if __name__ == "__main__":

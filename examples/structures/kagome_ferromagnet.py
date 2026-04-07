@@ -6,7 +6,7 @@ from pyspinw.interface import generate_exchanges
 from pyspinw.path import Path, Path1D
 from pyspinw.site import LatticeSite
 from pyspinw.sample import Powder
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 import sys
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     sites = [x, y, z]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(1,1,1)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(1, 1, 1)))
 
 
     exchanges = generate_exchanges(sites=[x, y, z],

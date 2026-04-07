@@ -8,7 +8,7 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 if __name__ == "__main__":
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     sites = [x1, x2]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     exchanges = generate_exchanges(sites=sites,
                                    unit_cell=unit_cell,

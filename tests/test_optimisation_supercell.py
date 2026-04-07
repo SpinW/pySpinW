@@ -8,7 +8,7 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, CommensuratePropagationVector, \
+from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector, \
     TransformationSupercell, RotationTransform
 
 from pyspinw.symmetry.unitcell import UnitCell
@@ -29,7 +29,7 @@ def test_energy_invariance_trivial_supercell():
                                    j=-1)
 
     energies = []
-    for supercell in [TrivialSupercell(), TrivialSupercell((2,2,2)), TrivialSupercell((1,2,3))]:
+    for supercell in [TiledSupercell(), TiledSupercell((2, 2, 2)), TiledSupercell((1, 2, 3))]:
 
         s = Structure(sites, unit_cell=unit_cell, supercell=supercell)
         hamiltonian = Hamiltonian(s, exchanges)

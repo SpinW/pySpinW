@@ -1,17 +1,17 @@
 """ Tests for the serialisation of supercells """
 import numpy as np
 
-from pyspinw.symmetry.supercell import TrivialSupercell, Supercell, \
+from pyspinw.symmetry.supercell import TiledSupercell, Supercell, \
     CommensuratePropagationVector, SummationSupercell, TransformationSupercell, RotationTransform
 
 
 def test_trivial_supercell_serialisation():
     """ Check that the trivial supercell works """
-    supercell = TrivialSupercell(scaling=(1,2,3))
+    supercell = TiledSupercell(scaling=(1, 2, 3))
     json = supercell.serialise()
     deserialised = Supercell.deserialise(json)
 
-    assert isinstance(deserialised, TrivialSupercell)
+    assert isinstance(deserialised, TiledSupercell)
 
     assert deserialised._scaling == supercell._scaling
 

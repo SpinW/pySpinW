@@ -6,7 +6,7 @@ import numpy as np
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
-from pyspinw.symmetry.supercell import Supercell, TrivialSupercell
+from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import connected_components, arraylike_equality
@@ -25,7 +25,7 @@ class Structure(SPWSerialisable):
         self._unit_cell = unit_cell
 
         self._spacegroup = database.spacegroups[1] if spacegroup is None else spacegroup
-        self._supercell = TrivialSupercell() if supercell is None else supercell
+        self._supercell = TiledSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
 
@@ -61,7 +61,7 @@ class Structure(SPWSerialisable):
 
     def matplotlib_site_data(self):
         """ Data for making matplotlib scatter plots of sites """
-        array_data = np.array([self.unit_cell.fractional_to_cartesian(site._ijk)
+        array_data = np.array([self.unit_cell.lattice_units_to_cartesian(site._ijk)
                          for site in self.full_structure_site_list()])
 
         return array_data[:,0], array_data[:, 1], array_data[:, 2]
@@ -182,7 +182,7 @@ class Structure(SPWSerialisable):
             sites=[site for site in mapping.values()],
             unit_cell=cell,
             spacegroup=self.spacegroup.for_supercell(self.supercell),
-            supercell=TrivialSupercell(scaling=(1,1,1))
+            supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
 

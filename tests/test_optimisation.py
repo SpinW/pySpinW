@@ -9,7 +9,7 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, CommensuratePropagationVector
+from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 
 @pytest.mark.parametrize("size", [0.1, 0.4])
@@ -24,7 +24,7 @@ def test_jitter_free(size):
     sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_moments.reshape(30, 3)]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     hamiltonian = Hamiltonian(s, [])
 
@@ -49,7 +49,7 @@ def test_jitter_planar(size):
     sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_moments.reshape(30, 3)]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     hamiltonian = Hamiltonian(s, [])
 
@@ -205,7 +205,7 @@ def test_simple_ferromagnet_fixed_free(moment_size):
 
     sites = [x1, x2]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     exchanges = generate_exchanges(sites=sites,
                                    unit_cell=unit_cell,
@@ -233,7 +233,7 @@ def test_simple_antiferromagnet_fixed_planar():
 
     sites = [x1, x2]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     exchanges = generate_exchanges(sites=sites,
                                    unit_cell=unit_cell,
@@ -265,7 +265,7 @@ def test_simple_antiferromagnet_free_planar(axis, moment_size):
 
     sites = [x1, x2]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     exchanges = generate_exchanges(sites=sites,
                                    unit_cell=unit_cell,
@@ -309,7 +309,7 @@ def test_anisotropies_free(axis, a):
 
     sites = [x]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     ai = axis_anisotropies(sites, a, axis)
 
@@ -345,7 +345,7 @@ def test_anisotropies_planar(axis):
 
     sites = [x]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     ai = axis_anisotropies(sites, 1, axis)
 
@@ -375,7 +375,7 @@ def test_field_free(field):
 
     sites = [x1, x2, x3, x4, x5]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     hamiltonian = Hamiltonian(s, exchanges=[])
 
@@ -408,7 +408,7 @@ def test_field_planar(field):
 
     sites = [x1, x2, x3, x4, x5]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     hamiltonian = Hamiltonian(s, exchanges=[])
 

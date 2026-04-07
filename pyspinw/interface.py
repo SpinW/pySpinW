@@ -125,13 +125,13 @@ def _transform_site(unit_cell: UnitCell,
     moments_unit = CoordsUnits(moments_unit)
     # Convert cell positions
     if positions_unit == CoordsUnits.XYZ:
-        positions = unit_cell.cartesian_to_fractional(np.array(positions))
+        positions = unit_cell.cartesian_to_lattice_units(np.array(positions))
     # convert moments
     if moments_unit == CoordsUnits.LU:
         moments = np.array(moments, dtype=float)
         for i in range(moments.shape[0]):
             magnitude = np.linalg.norm(moments[i,:,:]) if magnitudes is None else magnitudes[i]
-            moment = unit_cell.fractional_to_cartesian(moments[i,:,:])
+            moment = unit_cell.lattice_units_to_cartesian(moments[i, :, :])
             moments[i,:,:] = moment * (magnitude / np.linalg.norm(moment))
     elif magnitudes is not None:
         for i in range(moments.shape[0]):

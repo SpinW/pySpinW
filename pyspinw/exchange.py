@@ -121,7 +121,7 @@ class Exchange(SPWSerialisable):
 
     def vector(self, unit_cell: UnitCell):
         """ Vector from site 1 to site 2 in cartesian coordinates (requires a unit cell definition)"""
-        return unit_cell.fractional_to_cartesian(self.lattice_vector)
+        return unit_cell.lattice_units_to_cartesian(self.lattice_vector)
 
     def distance(self, unit_cell: UnitCell):
         """ Distance between sites """

@@ -7,7 +7,7 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 
@@ -29,7 +29,7 @@ def test_expansion_chain_no_rot():
                             sites=unexpanded_sites,
                             unit_cell=unexpanded_unit_cell,
                             spacegroup=database.spacegroup_by_name("P1"),
-                            supercell=TrivialSupercell((1,2,3)))
+                            supercell=TiledSupercell((1, 2, 3)))
 
     unexpanded_hamiltonian = Hamiltonian(
         structure=unexpanded_structure,
@@ -88,10 +88,10 @@ def test_expansion_chain_no_rot():
             case _:
                 raise ValueError("Expected names 'X', 'Y' or 'Z'")
 
-        position_1 = expanded_hamiltonian.structure.unit_cell.fractional_to_cartesian(exchange.site_1.ijk)
-        position_2 = expanded_hamiltonian.structure.unit_cell.fractional_to_cartesian(exchange.site_2.ijk)
+        position_1 = expanded_hamiltonian.structure.unit_cell.lattice_units_to_cartesian(exchange.site_1.ijk)
+        position_2 = expanded_hamiltonian.structure.unit_cell.lattice_units_to_cartesian(exchange.site_2.ijk)
 
-        offset = expanded_hamiltonian.structure.unit_cell.fractional_to_cartesian(exchange.cell_offset.vector)
+        offset = expanded_hamiltonian.structure.unit_cell.lattice_units_to_cartesian(exchange.cell_offset.vector)
 
         assert np.all(position_2 + offset - position_1 == expected_offset)
 

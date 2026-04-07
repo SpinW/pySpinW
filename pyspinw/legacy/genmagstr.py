@@ -7,8 +7,8 @@ from typing import Callable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import (TrivialSupercell, RotationSupercell, SummationSupercell,
-    CommensuratePropagationVector)
+from pyspinw.symmetry.supercell import (TiledSupercell, RotationSupercell, SummationSupercell,
+                                        CommensuratePropagationVector)
 
 
 class GenMagStrMode(Enum):
@@ -59,7 +59,7 @@ def genmagstr(
         if magnitude is None:
             magnitude = [np.linalg.norm(S[i,:]) for i in S.shape[0]]
         if unit == UnitSystem.LU:
-            S = unit_cell.fractional_to_cartesian(S)
+            S = unit_cell.lattice_units_to_cartesian(S)
     elif magnitude is None:
         magnitude = [np.linalg.norm(site._base_moment) for site in sites]
 
@@ -77,7 +77,7 @@ def genmagstr(
         case GenMagStrMode.TILE | GenMagStrMode.EXTEND:
             if S is not None or unit == UnitSystem.LU:
                 _convert_moments()
-            return Structure(sites, unit_cell, supercell=TrivialSupercell(scaling=nExt))
+            return Structure(sites, unit_cell, supercell=TiledSupercell(scaling=nExt))
 
         case GenMagStrMode.RANDOM:
             pass

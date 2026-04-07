@@ -26,7 +26,7 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
-from pyspinw.symmetry.supercell import TrivialSupercell, RotationSupercell
+from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
 
 # pylint: disable=R0903
@@ -313,7 +313,7 @@ class Hamiltonian(SPWSerialisable):
             sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
             spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
-            supercell=TrivialSupercell(scaling=(1,1,1))
+            supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
         return (Hamiltonian(structure=structure, exchanges=new_exchanges, anisotropies=new_anisotropies),

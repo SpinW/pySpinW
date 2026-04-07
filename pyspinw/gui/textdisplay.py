@@ -156,7 +156,7 @@ class TextDisplay(QWidget):
 
             unexpanded_name = DisplayItem(site.name, parent_ids)
             unexpanded_pos = DisplayItem(format_triple(site.ijk), parent_ids)
-            unexpanded_cart = DisplayItem(format_triple(small_cell.fractional_to_cartesian(site.ijk)), parent_ids)
+            unexpanded_cart = DisplayItem(format_triple(small_cell.lattice_units_to_cartesian(site.ijk)), parent_ids)
             unexpanded_moment = DisplayItem(format_moment_data(site.moment_data), parent_ids)
             unexpanded_anisotropies = DisplayItem(
                 format_anisotropies(site_uid_to_anisotropies[site.unique_id]), parent_ids)
@@ -178,7 +178,7 @@ class TextDisplay(QWidget):
 
                 # rest of items
                 expanded_pos = DisplayItem(format_triple(expanded_site.ijk), ids=ids)
-                expanded_cart = DisplayItem(format_triple(big_cell.fractional_to_cartesian(expanded_site.ijk)), ids=ids)
+                expanded_cart = DisplayItem(format_triple(big_cell.lattice_units_to_cartesian(expanded_site.ijk)), ids=ids)
                 expanded_moment = DisplayItem(format_triple(expanded_site.base_moment), ids=ids)
                 expanded_anisotropies = DisplayItem(
                     format_anisotropies(site_uid_to_anisotropies[expanded_site.unique_id]), ids=ids)
