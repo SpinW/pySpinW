@@ -55,8 +55,8 @@ def test_energy_behaviour_summation_supercell():
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, supercell_moments=[[0, 0, 1],[0,0,0]], name="X1")
-    x2 = LatticeSite(0, 0, 0, supercell_moments=[[0, 0, 0], [0, 0, 1]], name="X2")
+    x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
+    x2 = LatticeSite(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
 
     sites = [x1, x2]
 
@@ -110,8 +110,8 @@ def test_energy_behaviour_summation_supercell():
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, supercell_moments=[[0, 0, 1],[0,0,0]], name="X1")
-    x2 = LatticeSite(0, 0, 0, supercell_moments=[[0, 0, 0], [0, 0, 1]], name="X2")
+    x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
+    x2 = LatticeSite(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
 
     sites = [x1, x2]
 
@@ -227,14 +227,14 @@ def test_optimise_transformation_supercell():
     x_new = optimised.sites_by_name("X")[0]
 
 
-    base_moment_direction = x_new.base_moment / np.sqrt(np.sum(x_new.base_moment**2))
+    base_moment_direction = x_new.base_spin / np.sqrt(np.sum(x_new.base_spin ** 2))
 
     assert np.isclose(np.dot(base_moment_direction, [1,0,0]), -1)
 
 def test_optimise_summation_supercell():
     """ A system where we optimise one of the in the supercell but not the other, just check it doesn't crash """
-    x = LatticeSite(0.25,0,0, supercell_moments=[[0,0,1], [0,0,0]], name="X")
-    y = LatticeSite(0.75,0,0, supercell_moments=[[0,0,0], [1,1,1]], name="Y")
+    x = LatticeSite(0.25, 0, 0, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X")
+    y = LatticeSite(0.75, 0, 0, supercell_spins=[[0, 0, 0], [1, 1, 1]], name="Y")
 
     exchanges = [HeisenbergExchange(x, y, j=1)]
 

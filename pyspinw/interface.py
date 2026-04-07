@@ -105,7 +105,7 @@ def generate_sites(positions: ArrayLike,
             i = position[0],
             j = position[1],
             k = position[2],
-            supercell_moments=np.squeeze(moments[i, :, :]),
+            supercell_spins=np.squeeze(moments[i, :, :]),
             name = names[i]
         ))
 

@@ -410,7 +410,7 @@ class Hamiltonian(SPWSerialisable):
         unique_id_to_index: dict[int, int] = {}
         for index, site in enumerate(expanded.structure.sites):
             # TODO: Sort out moments for supercells
-            moments.append(site.base_moment)
+            moments.append(site.base_spin)
 
             positions.append(site.ijk)
 
@@ -722,7 +722,7 @@ class Hamiltonian(SPWSerialisable):
 
             old_uid = site.unique_id
             new_site = LatticeSite(site.i, site.j, site.k,
-                                   supercell_moments=spin_data,
+                                   supercell_spins=spin_data,
                                    g=site.g, name=site.name)
 
             new_sites.append(new_site)

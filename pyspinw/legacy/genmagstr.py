@@ -61,17 +61,17 @@ def genmagstr(
         if unit == UnitSystem.LU:
             S = unit_cell.lattice_units_to_cartesian(S)
     elif magnitude is None:
-        magnitude = [np.linalg.norm(site._base_moment) for site in sites]
+        magnitude = [np.linalg.norm(site._base_spin) for site in sites]
 
     def _convert_moments():
         norm_transform = unit_cell._xyz / np.sqrt(np.sum(unit_cell._xyz**2, axis=1)).reshape(-1, 1)
         for i, site in enumerate(sites):
             if S is not None:
-                site._base_moment = S[i,:] * magnitude[i] / np.linalg.norm(S[i,:])
+                site._base_spin = S[i, :] * magnitude[i] / np.linalg.norm(S[i, :])
             elif unit == UnitSystem.LU:
-                Stmp = site._base_moment @ norm_transform
-                site._base_moment = Stmp * magnitude[i] / np.linalg.norm(Stmp)
-            site._moment_data = np.array([site._base_moment])
+                Stmp = site._base_spin @ norm_transform
+                site._base_spin = Stmp * magnitude[i] / np.linalg.norm(Stmp)
+            site._spin_data = np.array([site._base_spin])
 
     match mode:
         case GenMagStrMode.TILE | GenMagStrMode.EXTEND:

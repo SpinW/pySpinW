@@ -170,7 +170,7 @@ class SpaceGroup(SymmetryGroup):
                 i=coordinates[0][0],
                 j=coordinates[0][1],
                 k=coordinates[0][2],
-                supercell_moments=site._moment_data,
+                supercell_spins=site._spin_data,
                 name=site.name + f" [{i+1}]"
                 )
 

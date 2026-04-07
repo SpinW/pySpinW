@@ -18,7 +18,7 @@ def draw_supercell(figure: Figure, supercell: Supercell, sites: list[LatticeSite
     for cell in supercell.cells():
         for site in sites:
 
-            this_moment = supercell.moment(site, cell)
+            this_moment = supercell.spin(site, cell)
 
             xs.append(site.i + cell.i)
             ys.append(site.j + cell.j)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         CommensuratePropagationVector(1/2, 1/2, 0)])
 
     sites = [
-        LatticeSite(0.5, 0.5, 0.5, supercell_moments=[[1.0,0,0], [0.0, 1.0, 0]])
+        LatticeSite(0.5, 0.5, 0.5, supercell_spins=[[1.0, 0, 0], [0.0, 1.0, 0]])
     ]
 
 

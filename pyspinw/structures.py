@@ -53,7 +53,7 @@ class Structure(SPWSerialisable):
                 i=site.i + cell.i,
                 j=site.j + cell.j,
                 k=site.k + cell.k,
-                supercell_moments=site.moment_data,
+                supercell_spins=site.spin_data,
                 name=site.name
             ) for site in cell_sites]
 
@@ -118,8 +118,8 @@ class Structure(SPWSerialisable):
             site_1 = sites[0]
             for site_2 in sites[1:]:
                 if not arraylike_equality(
-                          site_1._moment_data,
-                          site_2._moment_data,
+                          site_1._spin_data,
+                          site_2._spin_data,
                           tolerances.SAME_SITE_ABS_TOL):
 
                     same_moment = False
@@ -129,7 +129,7 @@ class Structure(SPWSerialisable):
                     site_1.i,
                     site_1.j,
                     site_1.k,
-                    supercell_moments=site_1.moment_data,
+                    supercell_spins=site_1.spin_data,
                     name = site_1.name # TODO: Check if this is sensible
                 ))
 
@@ -138,7 +138,7 @@ class Structure(SPWSerialisable):
                     site_1.i,
                     site_1.j,
                     site_1.k,
-                    supercell_moments=np.zeros_like(site_1.moment_data),
+                    supercell_spins=np.zeros_like(site_1.spin_data),
                     name=site_1.name  # TODO: Check if this is sensible
                 ))
 
@@ -159,13 +159,13 @@ class Structure(SPWSerialisable):
         for index, offset in enumerate(self.supercell.cells()):
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)
-                moment = self.supercell.moment(site, cell_offset=offset)
+                moment = self.supercell.spin(site, cell_offset=offset)
 
                 new_site = LatticeSite(
                     i=position[0],
                     j=position[1],
                     k=position[2],
-                    supercell_moments=moment,
+                    supercell_spins=moment,
                     g=site.g,
                     name=f"{site.name}[{index}]")
 

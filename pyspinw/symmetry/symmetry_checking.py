@@ -19,7 +19,7 @@ def check_supercell_moment_consistency(
     offsets = []
     for cell_offset in supercell.cells():
         for site in sites:
-            position_and_moments.append(supercell.cell_position_and_moment(site, cell_offset))
+            position_and_moments.append(supercell.cell_position_and_spin(site, cell_offset))
             offsets.append(cell_offset.as_tuple)
 
     position_and_moments = np.array(position_and_moments)

@@ -135,7 +135,7 @@ def test_randomisation_free():
 
     assert start_moments.shape == (30, 2, 3), "Input shape must be n_sites-by-n_components-by-3"
 
-    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_moments=x) for x in [
+    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_spins=x) for x in [
                 start_moments[i, :, :] for i in range(n_sites) ]]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
@@ -167,7 +167,7 @@ def test_randomisation_planar(axis):
 
     assert start_moments.shape == (30, 2, 3), "Input shape must be n_sites-by-n_components-by-3"
 
-    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_moments=x) for x in [
+    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_spins=x) for x in [
                 start_moments[i, :, :] for i in range(n_sites) ]]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
@@ -292,7 +292,7 @@ def test_simple_antiferromagnet_free_planar(axis, moment_size):
     #   assert np.isclose(np.dot(axis, minimiser.moments[1, :]), 0)
     # Instead check component is the same as when it started
 
-    assert np.isclose(np.dot(axis, minimiser.moment_data[1, 0, :]), np.dot(axis, sites[1].moment_data[0, :])), \
+    assert np.isclose(np.dot(axis, minimiser.moment_data[1, 0, :]), np.dot(axis, sites[1].spin_data[0, :])), \
         "Component in rotation axis should be preserved"
 
 

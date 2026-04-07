@@ -135,8 +135,8 @@ class SupercellTransformation(ABC, SPWSerialisable):
     transformation_name = "<transform base class>"
 
     @abstractmethod
-    def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
-        """ Apply this transformation to a moment with a given offset """
+    def apply(self, spin: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        """ Apply this transformation to a spin with a given offset """
 
     @abstractmethod
     def _serialise_transform(self) -> dict:
@@ -177,9 +177,9 @@ class IdentityTransform(SupercellTransformation):
     def _deserialise_transform(json) -> "SupercellTransformation":
         return IdentityTransform()
 
-    def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
-        """ Apply this transformation to a given moment (as it is the identity it does nothing to it)"""
-        return moment
+    def apply(self, spin: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        """ Apply this transformation to a given spin (as it is the identity it does nothing to it)"""
+        return spin
 
 class RotationTransform(SupercellTransformation):
     """ Rotation transformation in a supercell"""
@@ -198,10 +198,10 @@ class RotationTransform(SupercellTransformation):
     def _deserialise_transform(json) -> "SupercellTransformation":
         return RotationTransform(axis=numpy_deserialise(json["axis"]))
 
-    def apply(self, moment: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
-        """ Apply this transformation (rotation) to a moment in a specified cell """
+    def apply(self, spin: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
+        """ Apply this transformation (rotation) to a spin in a specified cell """
         angle = -2 * np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase
-        return moment @ rotation_matrix(angle, self._axis)
+        return spin @ rotation_matrix(angle, self._axis)
 
 transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, RotationTransform]}
 
@@ -223,20 +223,20 @@ class Supercell(ABC, SPWSerialisable):
             raise ValueError("Scaling components should be >= 1")
 
     @abstractmethod
-    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
-        """ Get the moment for a given cell, and the specified moment data """
+    def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
+        """ Get the spin for a given cell, and the specified spin data """
 
-    def moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Get the moment for a site in a specified cell according to the supercell"""
-        return self.moment_calculation(site.moment_data, cell_offset)
+    def spin(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Get the spin for a site in a specified cell according to the supercell"""
+        return self.spin_calculation(site.spin_data, cell_offset)
 
-    def cell_position_and_moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Position within the unit cell, and moment"""
-        return np.concatenate((site.ijk, self.moment(site, cell_offset)))
+    def cell_position_and_spin(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Position within the unit cell, and spin"""
+        return np.concatenate((site.ijk, self.spin(site, cell_offset)))
 
-    def supercell_position_and_moment(self, site: LatticeSite, cell_offset: CellOffset):
-        """ Position within the supercell and moment """
-        return np.concatenate((site.ijk + cell_offset.vector, self.moment(site, cell_offset)))
+    def supercell_position_and_spin(self, site: LatticeSite, cell_offset: CellOffset):
+        """ Position within the supercell and spin """
+        return np.concatenate((site.ijk + cell_offset.vector, self.spin(site, cell_offset)))
 
     @abstractmethod
     def cell_size(self) -> tuple[int, int, int]:
@@ -315,7 +315,7 @@ class Supercell(ABC, SPWSerialisable):
 
     @abstractmethod
     def n_components(self) -> int:
-        """ Number of entries expected in the moment definition """
+        """ Number of entries expected in the spin definition """
         raise NotImplementedError(f"n_components not implemented in {self.__class__.__name__}")
 
 
@@ -351,8 +351,8 @@ class CommensurateSupercell(Supercell):
         return self.cell_size()
 
     @abstractmethod
-    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
-        """ The derivative of the calculated moment with respect to the specified component of supercell_moments"""
+    def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
+        """ The derivative of the calculated spin with respect to the specified component of supercell_spins"""
 
 
 
@@ -365,9 +365,9 @@ class TiledSupercell(CommensurateSupercell):
     supercell_name = "trivial"
 
 
-    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
-        """ Get the moment for a given cell, and the specified moment data """
-        return moment_data[0, :]
+    def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
+        """ Get the spin for a given cell, and the specified spin data """
+        return spin_data[0, :]
 
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
@@ -384,7 +384,7 @@ class TiledSupercell(CommensurateSupercell):
     def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
         return TiledSupercell(scale)
 
-    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
+    def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ Derivative of the spin at a given site with respect to one component of it """
         return np.eye(3)
 
@@ -393,11 +393,11 @@ class TiledSupercell(CommensurateSupercell):
         return 1
 
 class TransformationSupercell(CommensurateSupercell):
-    """ Supercell with moments defined by the following equation:
+    """ Supercell with spins defined by the following equation:
 
     m = prod(M_i^{r.k}) m0
 
-    where m0 is the existing moment at a given site
+    where m0 is the existing spin at a given site
     """
 
     supercell_name = "transformation"
@@ -414,18 +414,18 @@ class TransformationSupercell(CommensurateSupercell):
 
         super().__init__(propagation_vectors, scaling)
 
-    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculate the spin based on the moment data for a given site """
-        moment = moment_data[0, :]
+    def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
+        """ Calculate the spin based on the spin data for a given site """
+        spin = spin_data[0, :]
         for vector, transform in self._transforms:
-            moment = transform.apply(moment=moment, propagation_vector=vector, cell_offset=cell_offset)
+            spin = transform.apply(spin=spin, propagation_vector=vector, cell_offset=cell_offset)
 
-        return moment
+        return spin
 
-    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
+    def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ Derivative of the spin at a given site with respect to one component of it """
         if supercell_component_index != 0:
-            raise ValueError("Transformation supercell does not support multiple moment definitions")
+            raise ValueError("Transformation supercell does not support multiple spin definitions")
 
         # A little bit hacky in the sense that we're using things for something other than their intended purpose
         transform_matrix = np.eye(3)
@@ -458,7 +458,7 @@ class TransformationSupercell(CommensurateSupercell):
 
 
 class SummationSupercell(CommensurateSupercell):
-    """ Supercell with moments defined by
+    """ Supercell with spins defined by
 
     m = sum(m_j exp(2 pi i r.k_j)).real
     """
@@ -471,17 +471,17 @@ class SummationSupercell(CommensurateSupercell):
 
         super().__init__(propagation_vectors, scaling)
 
-    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculate moment at a given cell offset"""
-        moment = np.zeros(3, dtype=complex)
-        for component, propagation_vector in zip(moment_data, self._propagation_vectors):
+    def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
+        """ Calculate spin at a given cell offset"""
+        spin = np.zeros(3, dtype=complex)
+        for component, propagation_vector in zip(spin_data, self._propagation_vectors):
 
             factor = np.exp(-1j * (2* np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase))
-            moment += component * factor
+            spin += component * factor
 
-        return moment.real
+        return spin.real
 
-    def moment_derivative(self, supercell_component_index: int, cell: CellOffset):
+    def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ Derivative of the spin at a given site with respect to one component of it """
         if supercell_component_index >= self.n_components():
             raise IndexError("Expected component index to be less than number of propagation vectors")
@@ -509,7 +509,7 @@ class SummationSupercell(CommensurateSupercell):
 
 
 class RotationSupercell(Supercell):
-    """ A supercell defined by moments which rotates in a plane and a single propagation vector """
+    """ A supercell defined by spins which rotates in a plane and a single propagation vector """
 
     supercell_name = "rotation"
 
@@ -520,9 +520,9 @@ class RotationSupercell(Supercell):
         self.perpendicular = perpendicular
         self.propagation_vector = propagation_vector
 
-    def moment_calculation(self, moment_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculate moment at a given cell offset"""
-        basis = moment_data + 1j * np.cross(self.perpendicular, moment_data)
+    def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
+        """ Calculate spin at a given cell offset"""
+        basis = spin_data + 1j * np.cross(self.perpendicular, spin_data)
         return np.real(basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset)))
 
     def n_components(self) -> int:
