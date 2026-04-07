@@ -178,7 +178,8 @@ class TextDisplay(QWidget):
 
                 # rest of items
                 expanded_pos = DisplayItem(format_triple(expanded_site.ijk), ids=ids)
-                expanded_cart = DisplayItem(format_triple(big_cell.lattice_units_to_cartesian(expanded_site.ijk)), ids=ids)
+                expanded_cart = DisplayItem(format_triple(
+                    big_cell.lattice_units_to_cartesian(expanded_site.ijk)), ids=ids)
                 expanded_moment = DisplayItem(format_triple(expanded_site.base_moment), ids=ids)
                 expanded_anisotropies = DisplayItem(
                     format_anisotropies(site_uid_to_anisotropies[expanded_site.unique_id]), ids=ids)
