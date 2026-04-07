@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(4,6,6)
 
-    sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], moments=[[0,0,1], [0,0,-1]], names=['X', 'Y'])
+    sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], spins=[[0, 0, 1], [0, 0, -1]], names=['X', 'Y'])
 
     exchanges = generate_exchanges(sites=sites,
                                    bond=1,

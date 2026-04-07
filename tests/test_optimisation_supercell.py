@@ -207,7 +207,7 @@ def test_rotation_supercell_error():
     #     pass
 
 def test_optimise_transformation_supercell():
-    """ Test optimisation of a supercell where moments need to be as unaligned as possible """
+    """ Test optimisation of a supercell where spins need to be as unaligned as possible """
 
     a = LatticeSite(0.25,0,0, 1, 0, 0, name="A")
     x = LatticeSite(0.5, 0, 0, 1, 1, 1, name="X")
@@ -227,9 +227,9 @@ def test_optimise_transformation_supercell():
     x_new = optimised.sites_by_name("X")[0]
 
 
-    base_moment_direction = x_new.base_spin / np.sqrt(np.sum(x_new.base_spin ** 2))
+    base_spin_direction = x_new.base_spin / np.sqrt(np.sum(x_new.base_spin ** 2))
 
-    assert np.isclose(np.dot(base_moment_direction, [1,0,0]), -1)
+    assert np.isclose(np.dot(base_spin_direction, [1,0,0]), -1)
 
 def test_optimise_summation_supercell():
     """ A system where we optimise one of the in the supercell but not the other, just check it doesn't crash """

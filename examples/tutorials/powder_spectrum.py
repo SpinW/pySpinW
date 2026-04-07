@@ -20,9 +20,6 @@ hamiltonian = Hamiltonian(s, exchanges)
 
 path = Path([[0,0,0], [1,0,0]])
 
-
-hamiltonian.energy_plot(path)
-
 sample = Powder(hamiltonian)
 
 path1D = Path1D(0.01, 1)

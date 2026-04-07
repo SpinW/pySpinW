@@ -36,7 +36,7 @@ class Structure(SPWSerialisable):
                 bad_sites.append(site)
 
         if bad_sites:
-            raise ValueError("Expected the shape of site moment data to match what the supercell requires "
+            raise ValueError("Expected the shape of site spin data to match what the supercell requires "
                              f"({supercell.n_components()}-by-3), "
                              "bad sites are: " + ", ".join([site.name for site in bad_sites]))
 
@@ -76,8 +76,8 @@ class Structure(SPWSerialisable):
         # collides with an implied site, choose the input site
         # if there is a collision between two implied sites,
         # create a new one with:
-        #  1: the same momement if the moments agree
-        #  2: zero moment (of same shape) if they do not agree
+        #  1: the same momement if the spins agree
+        #  2: zero spin (of same shape) if they do not agree
 
         n_sites_raw = len(site_list)
         collisions = np.zeros((n_sites_raw, n_sites_raw), dtype=bool)
@@ -113,8 +113,8 @@ class Structure(SPWSerialisable):
 
             # At this point, there are no non-implied sites
 
-            # Do they all have the same moment
-            same_moment = True
+            # Do they all have the same spin
+            same_spin = True
             site_1 = sites[0]
             for site_2 in sites[1:]:
                 if not arraylike_equality(
@@ -122,9 +122,9 @@ class Structure(SPWSerialisable):
                           site_2._spin_data,
                           tolerances.SAME_SITE_ABS_TOL):
 
-                    same_moment = False
+                    same_spin = False
 
-            if same_moment:
+            if same_spin:
                 unique_sites.append(LatticeSite(
                     site_1.i,
                     site_1.j,
@@ -159,13 +159,13 @@ class Structure(SPWSerialisable):
         for index, offset in enumerate(self.supercell.cells()):
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)
-                moment = self.supercell.spin(site, cell_offset=offset)
+                spin = self.supercell.spin(site, cell_offset=offset)
 
                 new_site = LatticeSite(
                     i=position[0],
                     j=position[1],
                     k=position[2],
-                    supercell_spins=moment,
+                    supercell_spins=spin,
                     g=site.g,
                     name=f"{site.name}[{index}]")
 

@@ -404,13 +404,13 @@ class Hamiltonian(SPWSerialisable):
                 logger.warning("Cannot do rotating frame calculation propagation vector or plane normal not specified")
             expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.scaling, None)
 
-        # Get the positions, rotations, moments for the sites
-        moments = []
+        # Get the positions, rotations, spins for the sites
+        spins = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
         for index, site in enumerate(expanded.structure.sites):
-            # TODO: Sort out moments for supercells
-            moments.append(site.base_spin)
+            # TODO: Sort out spins for supercells
+            spins.append(site.base_spin)
 
             positions.append(site.ijk)
 
@@ -428,9 +428,9 @@ class Hamiltonian(SPWSerialisable):
                                 vector=2.0 * np.array(field, **rust_kw),
                                 g_tensors=np.array(g_tensors, **rust_kw))
 
-        moments = np.array(moments, dtype=float)
-        rotations = site_rotations(moments)
-        magnitudes = np.sqrt(np.sum(moments**2, axis=1))
+        spins = np.array(spins, dtype=float)
+        rotations = site_rotations(spins)
+        magnitudes = np.sqrt(np.sum(spins**2, axis=1))
         rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
 
         # Convert the couplings
@@ -718,7 +718,7 @@ class Hamiltonian(SPWSerialisable):
         old_uid_to_new_site = {}
         new_sites = []
         for site_index, site in enumerate(minimiser.sites):
-            spin_data = minimiser.moment_data[site_index, :, :]
+            spin_data = minimiser.spin_data[site_index, :, :]
 
             old_uid = site.unique_id
             new_site = LatticeSite(site.i, site.j, site.k,

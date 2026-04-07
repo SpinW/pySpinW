@@ -176,8 +176,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # Do actual the rendering
 
-        moment_scale = 2 * self.display_options.atom_moment_scaling
-        moment_scale_matrix = np.diag([moment_scale, moment_scale, moment_scale, 1])
+        spin_scale = 2 * self.display_options.atom_spin_scaling
+        spin_scale_matrix = np.diag([spin_scale, spin_scale, spin_scale, 1])
 
         exchange_scale = 0.1 * self.display_options.exchange_scaling
         exchange_scaling = np.diag([exchange_scale, exchange_scale, 1, 1])
@@ -212,7 +212,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                         render_object = self.arrow if site.is_magnetic else self.small_sphere
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
-                            site_model_matrix = model_matrix @ moment_scale_matrix
+                            site_model_matrix = model_matrix @ spin_scale_matrix
 
                             if mode != SelectionMode.NOT_SELECTED:
 
@@ -401,7 +401,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
 
-                            site_model_matrix = model_matrix @ moment_scale_matrix
+                            site_model_matrix = model_matrix @ spin_scale_matrix
 
                             self.id_shader.model_matrix = site_model_matrix
                             self.id_shader.id_value = site.render_id

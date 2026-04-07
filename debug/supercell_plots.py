@@ -18,15 +18,15 @@ def draw_supercell(figure: Figure, supercell: Supercell, sites: list[LatticeSite
     for cell in supercell.cells():
         for site in sites:
 
-            this_moment = supercell.spin(site, cell)
+            this_spin = supercell.spin(site, cell)
 
             xs.append(site.i + cell.i)
             ys.append(site.j + cell.j)
             zs.append(site.k + cell.k)
 
-            mxs.append(this_moment[0])
-            mys.append(this_moment[1])
-            mzs.append(this_moment[2])
+            mxs.append(this_spin[0])
+            mys.append(this_spin[1])
+            mzs.append(this_spin[2])
 
     ax.quiver(xs,ys,zs, mxs, mys, mzs, normalize=False, length=vector_length)
 

@@ -28,7 +28,7 @@ class RawUnitCell(SPWSerialisable):
             raise BadCellDefinition(f"{self._xyz} is not invertible")
 
         #
-        # Matrices to convert moments
+        # Matrices to convert spins
         #
 
         a_vector = xyz[0, :]
@@ -36,32 +36,32 @@ class RawUnitCell(SPWSerialisable):
         c_vector = xyz[2, :]
 
         # The fist coordinate only needs to be normalised
-        moment_a = a_vector / np.sqrt(np.sum(a_vector**2))
+        spin_a = a_vector / np.sqrt(np.sum(a_vector**2))
 
         # The second component is "in the ab plane and perpendicular to b"
         #  we want to take away the component of b that is in the direction of a
 
-        b_in_a = np.dot(moment_a, b_vector)    # scalar projection of b into a
+        b_in_a = np.dot(spin_a, b_vector)    # scalar projection of b into a
 
-        moment_b = b_vector - b_in_a * moment_a  # unnormalised
-        moment_b /= np.sqrt(np.sum(moment_b**2)) # normalise
+        spin_b = b_vector - b_in_a * spin_a  # unnormalised
+        spin_b /= np.sqrt(np.sum(spin_b**2)) # normalise
 
-        # assert np.dot(moment_a, moment_b) < 1e-10, "moment_a and moment_b should be orthogonal"
+        # assert np.dot(spin_a, spin_b) < 1e-10, "spin_a and spin_b should be orthogonal"
 
         # last one should just be the cross product, though we need to be careful about handedness
-        moment_c = np.cross(moment_a, moment_b)
+        spin_c = np.cross(spin_a, spin_b)
 
-        # assert np.dot(c_vector, moment_c) > 0, "moment c vector should in the direction of input c"
+        # assert np.dot(c_vector, spin_c) > 0, "spin c vector should in the direction of input c"
 
-        # build the moment matrix, the row/column format has been checked and is the same as xyz
-        self._xyz_moments = np.array([moment_a, moment_b, moment_c])
+        # build the spin matrix, the row/column format has been checked and is the same as xyz
+        self._xyz_spins = np.array([spin_a, spin_b, spin_c])
 
         try:
-            self._xyz_moments_inv = np.linalg.inv(self._xyz_moments)
+            self._xyz_spins_inv = np.linalg.inv(self._xyz_spins)
 
         except np.linalg.LinAlgError as e:
 
-            raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible moment definition")
+            raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible spin definition")
 
     # @check_sizes(points=(-1, 3))
     def lattice_units_to_cartesian(self, points: np.ndarray):
@@ -73,13 +73,13 @@ class RawUnitCell(SPWSerialisable):
         """ Convert a list of points from cartesian (xyz) to fractional (ijk) """
         return points @ self._xyz_inv
 
-    def moment_lattice_units_to_cartesian(self, moments: np.ndarray):
-        """ Convert a list of moments from fractional (mi, mj, mk) to cartesian (mx, my, mz) """
-        return moments @ self._xyz_moments
+    def spin_lattice_units_to_cartesian(self, spins: np.ndarray):
+        """ Convert a list of spins from lattice units to cartesian """
+        return spins @ self._xyz_spins
 
-    def moment_cartesian_to_lattice_units(self, moments: np.ndarray):
-        """ Convert a list of moments from cartesian (mx, my, mz) to fractional (mi, mj, mk)"""
-        return moments @ self._xyz_moments_inv
+    def spin_cartesian_to_lattice_units(self, spins: np.ndarray):
+        """ Convert a list of spins from cartesian to lattice units """
+        return spins @ self._xyz_spins_inv
 
     @property
     def centre(self):

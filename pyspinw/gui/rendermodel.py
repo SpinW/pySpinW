@@ -33,9 +33,9 @@ class RenderSite(Selectable):
     """ Render information for each site """
 
     @staticmethod
-    def site_model_matrix(position, moment, unit_cell):
+    def site_model_matrix(position, spin, unit_cell):
         """ Model matrix for a site """
-        rotation = rotation_from_z(moment)
+        rotation = rotation_from_z(spin)
         translation = unit_cell.lattice_units_to_cartesian(position)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
@@ -48,17 +48,17 @@ class RenderSite(Selectable):
     def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
         # Build model matrix
 
-        position, moment = site.ijk, site.base_spin
-        model_matrix = self.site_model_matrix(position, moment, unit_cell)
+        position, spin = site.ijk, site.base_spin
+        model_matrix = self.site_model_matrix(position, spin, unit_cell)
 
         super().__init__(render_id, model_matrix)
         self.site = site
         self.offset = offset
 
-        self.pretty_render_model_matrices = [self.site_model_matrix(new_position, moment, unit_cell)
+        self.pretty_render_model_matrices = [self.site_model_matrix(new_position, spin, unit_cell)
                                              for new_position in add_extra_edge_points(position)]
 
-        self.is_magnetic = np.sum(moment**2) > 1e-12
+        self.is_magnetic = np.sum(spin**2) > 1e-12
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
@@ -211,7 +211,7 @@ class RenderModel:
 
         # get orthogonal axes transforms
 
-        unit_cell_orthobasis = hamiltonian.structure.unit_cell._xyz_moments
+        unit_cell_orthobasis = hamiltonian.structure.unit_cell._xyz_spins
 
         self.unit_cell_orthobasis_transforms = []
         for direction in unit_cell_orthobasis:

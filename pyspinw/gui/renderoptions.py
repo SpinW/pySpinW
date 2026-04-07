@@ -26,9 +26,9 @@ class DisplayOptions:
 
     show_nonmagnetic_atoms: bool = True
     use_atomic_radii: bool = True
-    show_atoms_not_moments: bool = False
+    show_atoms_not_spins: bool = False
 
-    atom_moment_scaling: float = 0.35
+    atom_spin_scaling: float = 0.35
     exchange_scaling: float = 0.20
 
     show_cartesian_axes: bool = True
@@ -228,17 +228,17 @@ class DisplayOptionsToolbar(QWidget):
         # Various visual properties
         #
 
-        self.atom_or_moments = self._add_toggle_button("Switch between showing atoms and moments",
+        self.atom_or_spins = self._add_toggle_button("Switch between showing atoms and spins",
                                                        icon="momentatoms",
-                                                       value=settings.show_atoms_not_moments)
+                                                       value=settings.show_atoms_not_spins)
 
 
 
 
-        self.moment_scale_slider = self._add_slider(
-            0, 1, settings.atom_moment_scaling,
-            left_label=IconWidget("small_moments", "Smaller Sites"),
-            right_label=IconWidget("big_moments", "Larger Sites"),
+        self.spin_scale_slider = self._add_slider(
+            0, 1, settings.atom_spin_scaling,
+            left_label=IconWidget("small_spins", "Smaller Sites"),
+            right_label=IconWidget("big_spins", "Larger Sites"),
             alt_text="Site scale factor")
 
 
@@ -287,7 +287,7 @@ class DisplayOptionsToolbar(QWidget):
 
         # TODO: Temporally disabled until implemented
         self.show_anisotropies.setVisible(False)
-        self.atom_or_moments.setVisible(False)
+        self.atom_or_spins.setVisible(False)
         self.scale_atoms.setVisible(False)
 
     def _on_change(self):
@@ -308,7 +308,7 @@ class DisplayOptionsToolbar(QWidget):
             show_supercell = self.show_supercell.isChecked(),
             show_nonmagnetic_atoms = self.show_nonmagnetic.isChecked(),
             use_atomic_radii = self.scale_atoms.isChecked(),
-            atom_moment_scaling = self.moment_scale_slider.value(),
+            atom_spin_scaling= self.spin_scale_slider.value(),
             exchange_scaling = self.exchange_scale_slider.value(),
             show_cartesian_axes = self.show_cartesian_axes.isChecked(),
             show_lattice_axes = self.show_lattice_axes.isChecked(),

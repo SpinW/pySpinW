@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(3, 8, 8)
 
-    sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], moments=[[0,1,0]],
+    sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0,1,0]],
                                        perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
     exchanges = generate_exchanges(sites=sites,

@@ -50,7 +50,7 @@ def test_expansion_chain_no_rot():
 
     ## That they have the right positions
     for site in expanded_hamiltonian.structure.sites:
-        ### Moment
+        ### Spin
         assert np.all(site.spin_data == np.array([0, 0, 1], dtype=float))
 
         ### Position, can't assume they're ordered, but they should be in one of a few positions
