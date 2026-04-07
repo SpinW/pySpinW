@@ -1,7 +1,11 @@
 
 ![](./docs/branding/logo_with_background_small.png)
 
-pySpinW is a tool for calculating
+pySpinW is a tool for calculating magnon energies, simulating scattering experiments   
+
+Details of its use can be found at <www.spinw.org/pyspinw >
+
+## Example
 
 Here is an example of calculating dispersion curves for simple ferromagnetic chain in python:
 
@@ -33,11 +37,14 @@ hamiltonian = Hamiltonian(s, exchanges)
 # Define a path through q-space for out dispersion curve
 path = Path([[0,0,0], [1,0,0]])
 
-# Show the spaghetti plot
-hamiltonian.spaghetti_plot(path)
+# Show the spaghetti plot, with constant energy smearing of 0.4
+hamiltonian.spaghetti_plot(path, dE=0.4)
 
 ```
 
+This should produce a plot like this:
+
+![](./docs/heisenberg_ferromagnet.png)
 
 
 
