@@ -15,8 +15,8 @@ from pyspinw.tolerances import tolerances
 
 
 @dataclass
-class AbstractCoupling:
-    """ Used to internally represent some coupling properties, and some properties that are only needed internally"""
+class AbstractExchange:
+    """ Used to internally represent some exchange properties, and some properties that are only needed internally"""
 
     name: str
     site_1: LatticeSite
@@ -45,9 +45,9 @@ def apply_naming_convention(naming_pattern: str,
     :param naming_pattern: string describing how to name things
     :param name_1: name of the first site - specified with $SITE1$
     :param name_2: name of the second site - specified with $SITE2$
-    :param type_symbol: string that denotes the type of the coupling (e.g. 'J', 'DM')
+    :param type_symbol: string that denotes the type of the exchange (e.g. 'J', 'DM')
     :param order: index of the "shell", i.e. an index that increases with distance - use $ORDER$
-    :param xyz_direction: direction of coupling, use $DIRECTION$ to give a string that denotes
+    :param xyz_direction: direction of exchange, use $DIRECTION$ to give a string that denotes
                            this concisely (hopefully)
 
     """
@@ -88,11 +88,11 @@ def batch_exchanges(sites: list[LatticeSite],
                     naming_pattern: str=default_naming_pattern,
                     type_symbol: str="J",
                     both_directions: bool=False):
-    """ Find all the couplings within a certain distance
+    """ Find all the exchanges within a certain distance
 
-    :param sites: List of LatticeSite or ImpliedLatticeSite to find couplings between
+    :param sites: List of LatticeSite or ImpliedLatticeSite to find exchanges between
     :param unit_cell: Unit cell, needed for working out cartesian distances
-    :param max_distance: Maximum distance to get couplings for
+    :param max_distance: Maximum distance to get exchanges for
     :param naming_convention: Formatting string for the naming, see `apply_naming_convention` for details
     :param both_directions: Couplings in both directions
 
@@ -150,9 +150,9 @@ def batch_exchanges(sites: list[LatticeSite],
             reduced_pair_data[pair[0]][pair[1]] += pair_data[site_1][site_2]
 
 
-    all_couplings = []
+    all_exchanges = []
 
-    # Find shells and create abstract couplings
+    # Find shells and create abstract exchanges
     for root_site_1 in reduced_pair_data:
         for root_site_2 in reduced_pair_data[root_site_1]:
             all_links = reduced_pair_data[root_site_1][root_site_2]
@@ -199,7 +199,7 @@ def batch_exchanges(sites: list[LatticeSite],
                                                order,
                                                vector)
 
-                all_couplings.append(AbstractCoupling(
+                all_exchanges.append(AbstractExchange(
                     name = name,
                     site_1 = site_1,
                     site_2 = site_2,
@@ -208,6 +208,6 @@ def batch_exchanges(sites: list[LatticeSite],
                     order = order ))
 
     # Return sorted list by distance
-    return sorted(all_couplings, key=lambda coupling: coupling.distance)
+    return sorted(all_exchanges, key=lambda exchange: exchange.distance)
 
 
