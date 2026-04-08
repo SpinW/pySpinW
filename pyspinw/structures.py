@@ -185,7 +185,23 @@ class Structure(SPWSerialisable):
             supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
+    def _without_nonmagnetic_with_removed_uids(self) -> tuple["Structure", set[int]]:
+        """ Get a copy of the structure without magnetic sites, along with a list of uids for the removed sites """
+        new_sites: list[LatticeSite] = []
+        excluded_uids: set[int] = set()
+        for site in self._input_sites:
+            if np.isclose(site.spin_data, 0.0):
+                excluded_uids.add(site.unique_id)
+            else:
+                new_sites.append(site)
 
+        return Structure(new_sites, self.unit_cell, self.spacegroup, self.supercell), excluded_uids
+
+    def without_nonmagnetic(self) -> "Structure":
+        """ Get a copy of this structure with non-magnetic sites removed"""
+        structure, _ = self._without_nonmagnetic_with_removed_uids()
+
+        return structure
 
     def _build_sites(self):
         """ Updates the site variable on parameter changes"""

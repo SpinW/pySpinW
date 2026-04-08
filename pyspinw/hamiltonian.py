@@ -324,6 +324,19 @@ class Hamiltonian(SPWSerialisable):
         expanded, _, _, _ = self._expand_with_mapping()
         return expanded
 
+    def without_nonmagnetic(self):
+        """ Get a copy of this Hamiltonian with the nonmagnetic sites removed """
+
+        new_structure, removed_uids = self.structure.without_nonmagnetic()
+
+        new_exchanges = [exchange for exchange in self.exchanges
+                         if exchange.site_1.unique_id not in removed_uids and
+                            exchange.site_2.unique_id not in removed_uids]
+
+        new_anisotropies = [anisotropy for anisotropy in self.anisotropies
+                            if anisotropy.site.unique_id not in removed_uids]
+
+        return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
     def sites_by_name(self, regex) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
@@ -342,6 +355,31 @@ class Hamiltonian(SPWSerialisable):
                                  intensity_unit: IntensityUnits | str='cell',
                                  ):
         """Calculate the energy levels of the system for the given q-vectors.
+
+        :param q_vectors: *required* An array of q-vectors
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        """
+        
+        return self.without_nonmagnetic()._energies_and_intensities(
+            q_vectors=q_vectors,
+            field=field,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit)
+
+    def _energies_and_intensities(self,
+                                 q_vectors: np.ndarray,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool=True,
+                                 use_rotating: bool=True,
+                                 intensity_unit: IntensityUnits | str='cell',
+                                 ):
+        """Calculate the energy levels of the system for the given q-vectors.
+
+        ** Does not remove nonmagnetic sites **
 
         :param q_vectors: *required* An array of q-vectors
         :param field: Optional field direction
