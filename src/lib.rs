@@ -11,7 +11,7 @@ use pyo3::prelude::*;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 mod spinwave;
-use crate::spinwave::{calc_energies, calc_spinwave};
+use crate::spinwave::calc_spinwave;
 
 mod constants;
 mod utils;
@@ -83,41 +83,6 @@ impl MagneticField {
                 .collect(),
         }
     }
-}
-
-/// Calculate the energies (eigenvalues) for a system.
-///
-/// # Parameters
-/// - `rotations`: A list of 2D numpy arrays representing rotation matrices for each atom.
-/// - `magnitudes`: A list of magnitudes for each atom.
-/// - `q_vectors`: A list of q-vectors where the energies should be calculated.
-/// - `couplings`: A list of `Coupling` objects representing the interactions between atoms
-/// - `field`: An optional `MagneticField` object representing an external magnetic field.
-///
-/// # Returns
-/// A list of 1D numpy arrays, each containing the energies for the corresponding q-vector.
-#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, field=None))]
-pub fn energies<'py>(
-    py: Python<'py>,
-    rotations: Vec<PyReadonlyArray2<C64>>,
-    magnitudes: Vec<f64>,
-    q_vectors: Vec<Vec<f64>>,
-    couplings: Vec<Py<Coupling>>,
-    field: Option<MagneticField>,
-) -> PyResult<Energies<'py>> {
-    // convert PyO3-friendly array types to faer matrices
-    let r: Vec<MatRef<C64>> = rotations
-        .into_iter()
-        .map(faer_ext::IntoFaer::into_faer)
-        .collect();
-
-    let c = couplings.par_iter().map(pyo3::Py::get).collect();
-
-    let results = calc_energies(r, magnitudes, q_vectors, c, field);
-    Ok(results
-        .into_iter()
-        .map(|result| result.to_pyarray(py))
-        .collect())
 }
 
 /// Calculate energies and neutron scattering cross-section for a system.
@@ -254,7 +219,6 @@ pub fn spinwave_calculation_Sab<'py>(
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(energies, m)?)?;
     m.add_function(wrap_pyfunction!(spinwave_calculation, m)?)?;
     m.add_function(wrap_pyfunction!(spinwave_calculation_Sab, m)?)?;
     m.add_class::<Coupling>()?;
