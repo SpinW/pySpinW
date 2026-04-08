@@ -326,7 +326,6 @@ class Hamiltonian(SPWSerialisable):
 
     def without_nonmagnetic(self):
         """ Get a copy of this Hamiltonian with the nonmagnetic sites removed """
-
         new_structure, removed_uids = self.structure.without_nonmagnetic()
 
         new_exchanges = [exchange for exchange in self.exchanges
@@ -362,7 +361,6 @@ class Hamiltonian(SPWSerialisable):
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
         """
-        
         return self.without_nonmagnetic()._energies_and_intensities(
             q_vectors=q_vectors,
             field=field,
