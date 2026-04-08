@@ -219,27 +219,25 @@ fn calc_sqrt_hamiltonian(
     // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
     if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
         chol.L().to_owned()
+    } else if let Ok(ldl) = hamiltonian.ldlt(Side::Lower) {
+        let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
+        zip!(&mut sqrt_d, ldl.D().column_vector()).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
+        ldl.L() * sqrt_d.as_diagonal()
     } else {
-        if let Ok(ldl) = hamiltonian.ldlt(Side::Lower) {
-            let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
-            zip!(&mut sqrt_d, ldl.D().column_vector()).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
-            ldl.L() * sqrt_d.as_diagonal()
-        } else {
-            let ldl = hamiltonian.lblt(Side::Lower);
-            let l = ldl.L();
-            let d = ldl.B_diag().column_vector(); // we're ignoring off-diagonals... this may be
-                                                  // dangerous
-            let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
-            zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
-            // need to apply permutations: in Python scipy does this for you
-            let mut shm = Mat::<C64>::zeros(l.nrows(), l.ncols());
-            perm::permute_cols(
-                shm.as_mat_mut(),
-                (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(),
-                ldl.P().inverse(),
-            );
-            shm
-        }
+        let ldl = hamiltonian.lblt(Side::Lower);
+        let l = ldl.L();
+        let d = ldl.B_diag().column_vector(); // we're ignoring off-diagonals... this may be
+                                              // dangerous
+        let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
+        zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
+        // need to apply permutations: in Python scipy does this for you
+        let mut shm = Mat::<C64>::zeros(l.nrows(), l.ncols());
+        perm::permute_cols(
+            shm.as_mat_mut(),
+            (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(),
+            ldl.P().inverse(),
+        );
+        shm
     }
 }
 
