@@ -5,6 +5,7 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
 
+from pyspinw import Structure
 from pyspinw.gui.crystalview import CrystalViewerWidget
 from pyspinw.gui.icons.iconload import png_icon
 from pyspinw.gui.rendermodel import RenderModel
@@ -87,12 +88,18 @@ class Viewer(QWidget):
         super().closeEvent(event)
 
 
-def show_hamiltonian(hamiltonian):
+def show_hamiltonian(object: Hamiltonian | Structure):
     """ Show a Hamiltonian in the viewer"""
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
     except Exception:
         pass
+
+    if isinstance(object, Structure):
+        object = Hamiltonian(object, [])
+
+    if not isinstance(object, Hamiltonian):
+        raise TypeError("Viewer needs to be given a Hamiltonian or Structure")
 
     app = QApplication.instance()
     if app is None:
@@ -104,7 +111,7 @@ def show_hamiltonian(hamiltonian):
     # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
     # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
-    viewer = Viewer(hamiltonian)
+    viewer = Viewer(object)
     viewer.setWindowTitle("Hamiltonian Viewer")
     viewer.resize(800, 600)
     viewer.show()
