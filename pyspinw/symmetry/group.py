@@ -1,5 +1,6 @@
 """ Space groups and magnetic space groups"""
-
+import os.path
+import pickle
 from collections import defaultdict
 from enum import Enum
 from typing import Callable
@@ -312,6 +313,7 @@ class SpacegroupDatabase:
             self.spacegroups.append(group)
             self._lattice_symbol_to_spacegroups[bravais_lattice].append(group)
 
+
         # Lookup for spacegroups by long/short international symbol
         self._spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in self.spacegroups}
         self._spacegroup_symbol_lookup.update({group.short_symbol: group for group in self.spacegroups})
@@ -406,8 +408,15 @@ class SpacegroupDatabase:
         #
         # raise NoSuchGroup(message_string)
 
-
-database = SpacegroupDatabase()
+# Create/load the database
+_spacegroup_filename = "spacegroup_database.pickle"
+if os.path.exists(_spacegroup_filename):
+    with open(_spacegroup_filename, 'rb') as file:
+        database = pickle.load(file)
+else:
+    database = SpacegroupDatabase()
+    with open(_spacegroup_filename, 'wb') as file:
+        pickle.dump(database, file)
 
 if __name__ == "__main__":
     # print(database.spacegroup_by_name("b2/m"))
