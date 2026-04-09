@@ -32,6 +32,7 @@ pub struct SpinwaveResult {
 /// Fields:
 /// - `C`: The q-independent component of the Hamiltonian matrix.
 /// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
+/// - `sab_blocks`: The q-independent parts of Y, Z, V, W, blocks from computing Sab
 /// - `spin_coefficients`: The spin coefficients matrix.
 /// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
 struct QIndependentComponents {
@@ -53,6 +54,15 @@ struct RotatingFrameComponents {
     nx: Mat<C64>,
     R1: Mat<C64>,
     R2: Mat<C64>,
+}
+
+/// Return values for hermitian/non-hermitian branches - eigenvalues and transformation matrix T
+/// Fields:
+/// - `E`: The eigenvalues of the Hamiltonian
+/// - `T`: The transformation matrix to compute the spin correlations (derived from eigenvectors)
+struct HamiltonianResults {
+    eigvals: Col<C64>,
+    T: Mat<C64>,
 }
 
 /// Calculate the q-independent components of the calculation.
@@ -158,31 +168,28 @@ fn calc_q_independent(
     }
 }
 
-/// Calculate the square root of the Hamiltonian.
+/// Calculate the spin Hamiltonian matrix at a particular q-vector
 ///
 /// # Parameters
 /// - `q`: The q-vector for which to calculate the Hamiltonian.
-/// - `C`: The q-independent component of the Hamiltonian matrix.
+/// - `q_independent_components`: The q-independent component of the Hamiltonian.
 /// - `n_sites`: The number of sites in the system.
-/// - `z`: The z-components (R_x + i R_y) of the rotation matrices.
-/// - `spin_coefficients`: The spin coefficients matrix.
 /// - `couplings`: Slice of couplings between sites.
-/// - `Az`: Optional Zeeman term for the `A` matrix if a magnetic field is provided.
 ///
 /// # Returns
-/// The "square root" of the Hamiltonian matrix (K such that K K* = h(q)).
+/// The spin Hamiltonian matrix h(q)
 #[inline(always)]
-fn calc_sqrt_hamiltonian(
+fn calc_spin_hamiltonian(
     q: Col<f64>,
-    q_indepepdent_components: &QIndependentComponents,
+    q_independent_components: &QIndependentComponents,
     n_sites: usize,
     couplings: &[&Coupling],
 ) -> Mat<C64> {
     // unpack q-independent components
-    let C = &q_indepepdent_components.C;
-    let z = &q_indepepdent_components.z;
-    let spin_coefficients = &q_indepepdent_components.spin_coefficients;
-    let Az = &q_indepepdent_components.Az;
+    let C = &q_independent_components.C;
+    let z = &q_independent_components.z;
+    let spin_coefficients = &q_independent_components.spin_coefficients;
+    let Az = &q_independent_components.Az;
 
     // create A and B matrices for the Hamiltonian
 
@@ -213,32 +220,7 @@ fn calc_sqrt_hamiltonian(
     let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
     let B_adj = B.adjoint().to_owned();
 
-    let hamiltonian: Mat<C64> = block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C);
-
-    // take square root of Hamiltonian using Cholesky if possible; if this fails,
-    // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
-    if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
-        chol.L().to_owned()
-    } else if let Ok(ldl) = hamiltonian.ldlt(Side::Lower) {
-        let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
-        zip!(&mut sqrt_d, ldl.D().column_vector()).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
-        ldl.L() * sqrt_d.as_diagonal()
-    } else {
-        let ldl = hamiltonian.lblt(Side::Lower);
-        let l = ldl.L();
-        let d = ldl.B_diag().column_vector(); // we're ignoring off-diagonals... this may be
-                                              // dangerous
-        let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
-        zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
-        // need to apply permutations: in Python scipy does this for you
-        let mut shm = Mat::<C64>::zeros(l.nrows(), l.ncols());
-        perm::permute_cols(
-            shm.as_mat_mut(),
-            (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(),
-            ldl.P().inverse(),
-        );
-        shm
-    }
+    block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C)
 }
 
 /// Calculate energies and correlation S'^{alpha, beta} for a set of q-vectors.
@@ -249,7 +231,10 @@ fn calc_sqrt_hamiltonian(
 /// - `q_vectors`: A vector of q-vectors for which to calculate energies and intensities.
 /// - `couplings`: Slice of couplings between sites.
 /// - `positions`: The relative positions of each site within the unit cell.
+/// - `rlu_to_cart`: Optional matrix to transform q to Cartesian for intensity calculation.
 /// - `field`: Optional external magnetic field.
+/// - `rotating_frame`: Optional pair of vectors (kvec, nperp) defining a rotating frame
+/// - `save_Sab`: Boolean indicating if full Sab matrices are returned (default: False)
 ///
 ///# Returns
 /// A tuple containing:
@@ -367,67 +352,67 @@ pub fn calc_spinwave(
     }
 }
 
-/// Calculate energies and intensities for a single q-vector.
+/// Tries to calculate the sqrt_hamiltonian using cholesky-type decompositions
 ///
 /// # Parameters
-/// - `q`: The q-vector for which to calculate energies and intensities.
-/// - `q_independent_components`: The q-independent components for the calculation.
-/// - `n_sites`: The number of sites in the system.
-/// - `couplings`: Slice of couplings between sites.
-/// - `positions`: The relative positions of each site within the unit cell.
-/// - `rotating_components`: Option with fields needed for rotating frame calculation.
-/// - `save_sab`: Whether to save the 3x3 Sab tensors or not.
-/// - `tri_id`: For optional rotating frame calculation, whether this is -k, 0 or +k
+/// - `hamiltonian`: The Hamiltonian matrix
 ///
-///# Returns
-/// A tuple containing:
-/// - A vector containing the energies for the given q-vector.
-/// - A vector of S'^{alpha, beta} matrices for each eigenvalue at the given q-vector.
-fn spinwave_single_q(
-    mut q: Col<f64>,
-    q_independent_components: &QIndependentComponents,
-    n_sites: usize,
-    couplings: &[&Coupling],
-    positions: &[ColRef<f64>],
-    rlu_to_cart: Option<MatRef<f64>>,
-    rotating_components: &Option<RotatingFrameComponents>,
-    save_Sab: bool,
-    tri_id: f64,
-) -> SpinwaveResult {
-    let sab_blocks = &q_independent_components.sab_blocks;
-    let spin_coefficients = &q_independent_components.spin_coefficients;
-
-    if let Some(rotcomp) = rotating_components {
-        q += tri_id * rotcomp.km.as_ref();
+/// Routine will return error if hamiltonian is not positive semi-definite
+fn calc_sqrt_hamiltonian(hamiltonian: MatRef<C64>) -> Result<Mat<C64>, String> {
+    // take square root of Hamiltonian using Cholesky if possible; if this fails,
+    // use the LDL (Bunch-Kaufmann) decomposition instead and take sqrt(H) = L * sqrt(D)
+    if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
+        Ok(chol.L().to_owned())
+    } else if let Ok(ldl) = hamiltonian.ldlt(Side::Lower) {
+        let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
+        zip!(&mut sqrt_d, ldl.D().column_vector()).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
+        Ok(ldl.L() * sqrt_d.as_diagonal())
+    } else {
+        let ldl = hamiltonian.lblt(Side::Lower);
+        let l = ldl.L();
+        let d = ldl.B_diag().column_vector();
+        let s = ldl.B_subdiag().column_vector();
+        // The Bunch-Kaufmann algorithm works for indefinite matrices.
+        // But if the hamiltonian constructed above is not positive-semi-definite
+        // then g*ham will have imaginary eigenvalues and we need to use a different
+        // algorithm. We can check for semi-positive-definiteness here by checking if
+        // any off-diagonal element of the block-diagonal matrix are not zero
+        // or if any diagonal element is negative. I've not found any proof that the
+        // diagonal blocks are equivalent to eigenvalues but this post:
+        // https://mathoverflow.net/questions/84420 suggest it could be.
+        if s.iter().any(|v| v.re.abs() > SINGULAR_FTOL)
+            || d.iter().any(|v| v.re.abs() < -SINGULAR_FTOL)
+        {
+            return Err(String::from("Hamiltonian not positive-semi-definite"));
+        }
+        let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
+        zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
+        // need to apply permutations: in Python scipy does this for you
+        let mut shm = Mat::<C64>::zeros(l.nrows(), l.ncols());
+        perm::permute_cols(
+            shm.as_mat_mut(),
+            (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(),
+            ldl.P().inverse(),
+        );
+        Ok(shm)
     }
+}
 
-    let mut sqrt_hamiltonian =
-        calc_sqrt_hamiltonian(q.clone(), q_independent_components, n_sites, couplings);
+/// Calculate the transition eigenvalues and matrix T using the hermitian algorithm
+///
+/// # Parameters
+/// - `hamiltonian`: The Hamiltonian matrix
+/// - `n_sites`: The number of sites in the system.
+fn solve_ham_hermitian(mut sqrt_hamiltonian: Mat<C64>, n_sites: usize) -> HamiltonianResults {
     let mut shc: Mat<C64> = sqrt_hamiltonian.clone();
     let mut negative_half = shc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
     negative_half *= -1.;
-
-    // calculate block matrices [ Y Z ; V W ] for S'^alpha, beta
-    //
-    // The calculation includes the phase factors exp(i q (r_i - r_j)) for each
-    // pair of sites i, j; to calculate these efficiently we calculate
-    // exp(i q r_i) for each site i and then the outer product of this with its conjugate
-    // gives us the full matrix of phase factors.
-    let phase_factors = Col::<C64>::from_iter(
-        positions
-            .iter()
-            .map(|r_i| (J2PI * (q.transpose() * r_i)).exp()),
-    );
-    let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
-
-    let coeffblk = component_mul(&(2. * spin_coefficients), &phase_factors_matrix);
-    let coefficients = block_matrix(&coeffblk, &coeffblk, &coeffblk, &coeffblk);
 
     let eigendecomp = (sqrt_hamiltonian.adjoint() * shc)
         .self_adjoint_eigen(Side::Lower)
         .expect("Could not calculate eigendecomposition of the Hamiltonian.");
 
-    let eigvals: ColRef<C64> = eigendecomp.S().column_vector();
+    let eigvals: Col<C64> = eigendecomp.S().column_vector().to_owned();
 
     // we reverse the columns of U to match the nonincreasing order of eigenvalues in sqrt_E
     let eigvecs: MatRef<C64> = eigendecomp.U().reverse_cols();
@@ -438,7 +423,7 @@ fn spinwave_single_q(
     // for the eigenvalues of the Hamiltonian
     // these should be in nonincreasing order but it doesn't matter as the array comes out
     // the same once we apply the commutation sign flips
-    let mut sqrt_E = eigvals.to_owned();
+    let mut sqrt_E = eigvals.clone();
     sqrt_E.iter_mut().for_each(|x| {
         *x = match *x {
             x if x.re < -ZERO_ENERGY_TOL => (-x).sqrt(),
@@ -468,6 +453,97 @@ fn spinwave_single_q(
     // (the input T is initially the righthand side of the equation U sqrt(E))
     let mut T = eigvecs * sqrt_E.as_diagonal();
     solve_upper_triangular_in_place(sqrt_hamiltonian.adjoint().as_ref(), T.as_mut(), Par::Seq);
+    HamiltonianResults { eigvals, T }
+}
+
+/// Calculate the eigenvalues and transition matrix T using the non-hermitian algorithm
+///
+/// # Parameters
+/// - `hamiltonian`: The Hamiltonian matrix
+/// - `n_sites`: The number of sites in the system.
+fn solve_ham_nonherm(hamiltonian: Mat<C64>, n_sites: usize) -> HamiltonianResults {
+    let mut hc: Mat<C64> = hamiltonian.clone();
+    let mut negative_half = hc.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
+    negative_half *= -1.;
+    let eigendecomp = hc
+        .eigen()
+        .expect("Could not calculate eigendecomposition of the Hamiltonian.");
+    let eigvals: Col<C64> = eigendecomp.S().column_vector().to_owned();
+    let eigvecs: MatRef<C64> = eigendecomp.U();
+    let mut T = eigvecs.cloned();
+    let mut neg_ev = T.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
+    neg_ev *= -1.;
+    let mut M = (T.cloned().adjoint() * T)
+        .diagonal()
+        .column_vector()
+        .to_owned();
+    M.iter_mut()
+        .for_each(|m| *m = (C64::ONE / (*m + SINGULAR_CTOL)).sqrt());
+    T = eigvecs * M.as_diagonal();
+    HamiltonianResults { eigvals, T }
+}
+
+/// Calculate energies and intensities for a single q-vector.
+///
+/// # Parameters
+/// - `q`: The q-vector for which to calculate energies and intensities.
+/// - `q_independent_components`: The q-independent components for the calculation.
+/// - `n_sites`: The number of sites in the system.
+/// - `couplings`: Slice of couplings between sites.
+/// - `positions`: The relative positions of each site within the unit cell.
+/// - `rlu_to_cart`: Optional matrix to transform q to Cartesian for intensity calculation.
+/// - `rotating_components`: Option with fields needed for rotating frame calculation.
+/// - `save_sab`: Whether to save the 3x3 Sab tensors or not (default: False).
+/// - `tri_id`: For optional rotating frame calculation, whether this is -k, 0 or +k
+///
+///# Returns
+/// A tuple containing:
+/// - A vector containing the energies for the given q-vector.
+/// - A vector of S'^{alpha, beta} matrices for each eigenvalue at the given q-vector.
+fn spinwave_single_q(
+    mut q: Col<f64>,
+    q_independent_components: &QIndependentComponents,
+    n_sites: usize,
+    couplings: &[&Coupling],
+    positions: &[ColRef<f64>],
+    rlu_to_cart: Option<MatRef<f64>>,
+    rotating_components: &Option<RotatingFrameComponents>,
+    save_Sab: bool,
+    tri_id: f64,
+) -> SpinwaveResult {
+    let sab_blocks = &q_independent_components.sab_blocks;
+    let spin_coefficients = &q_independent_components.spin_coefficients;
+
+    if let Some(rotcomp) = rotating_components {
+        q += tri_id * rotcomp.km.as_ref();
+    }
+
+    let hamiltonian =
+        calc_spin_hamiltonian(q.clone(), q_independent_components, n_sites, couplings);
+    let ham_results = if let Ok(sqrt_hamiltonian) = calc_sqrt_hamiltonian(hamiltonian.as_ref()) {
+        solve_ham_hermitian(sqrt_hamiltonian, n_sites)
+    } else {
+        // If the hamiltonian is not positive semi-definite we use the non-hermitian algorithm
+        solve_ham_nonherm(hamiltonian, n_sites)
+    };
+    let eigvals = &ham_results.eigvals;
+    let T = &ham_results.T;
+
+    // calculate block matrices [ Y Z ; V W ] for S'^alpha, beta
+    //
+    // The calculation includes the phase factors exp(i q (r_i - r_j)) for each
+    // pair of sites i, j; to calculate these efficiently we calculate
+    // exp(i q r_i) for each site i and then the outer product of this with its conjugate
+    // gives us the full matrix of phase factors.
+    let phase_factors = Col::<C64>::from_iter(
+        positions
+            .iter()
+            .map(|r_i| (J2PI * (q.transpose() * r_i)).exp()),
+    );
+    let phase_factors_matrix = phase_factors.clone() * phase_factors.adjoint();
+
+    let coeffblk = component_mul(&(2. * spin_coefficients), &phase_factors_matrix);
+    let coefficients = block_matrix(&coeffblk, &coeffblk, &coeffblk, &coeffblk);
 
     // Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
     // and then we just take the diagonal elements as that's all we need for
