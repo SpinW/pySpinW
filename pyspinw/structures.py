@@ -190,7 +190,7 @@ class Structure(SPWSerialisable):
         new_sites: list[LatticeSite] = []
         excluded_uids: set[int] = set()
         for site in self._input_sites:
-            if np.isclose(site.spin_data, 0.0):
+            if np.allclose(site.spin_data, 0.0):
                 excluded_uids.add(site.unique_id)
             else:
                 new_sites.append(site)

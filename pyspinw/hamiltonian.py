@@ -326,7 +326,7 @@ class Hamiltonian(SPWSerialisable):
 
     def without_nonmagnetic(self):
         """ Get a copy of this Hamiltonian with the nonmagnetic sites removed """
-        new_structure, removed_uids = self.structure.without_nonmagnetic()
+        new_structure, removed_uids = self.structure._without_nonmagnetic_with_removed_uids()
 
         new_exchanges = [exchange for exchange in self.exchanges
                          if exchange.site_1.unique_id not in removed_uids and
