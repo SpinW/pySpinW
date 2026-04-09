@@ -19,7 +19,7 @@ class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
     :param: i,j,k - *required* Fractional coordinates within unit cell
-    :param: sx, sy, sz - Spin
+    :param: sx, sy, sz - Spin components in the Cartesian directions defined by x||a, z perpendicular to a-b
     :param: supercell_spins - Spin for each propagation vector
     :param: g - g-tensor (3x3)
     :param: name
