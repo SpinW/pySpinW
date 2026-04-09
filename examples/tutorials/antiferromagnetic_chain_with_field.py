@@ -10,7 +10,7 @@ sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], moments=[[
 
 exchanges = generate_exchanges(sites=sites,
                                bond=1,
-                               coupling_type=HeisenbergCoupling,
+                               exchange_type=HeisenbergExchange,
                                j=1,
                                direction_filter=filter([1,0,0], symmetric=True))
 

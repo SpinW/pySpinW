@@ -7,8 +7,8 @@ from typing import Callable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import (TrivialSupercell, RotationSupercell, SummationSupercell,
-    CommensuratePropagationVector)
+from pyspinw.symmetry.supercell import (TiledSupercell, RotationSupercell, SummationSupercell,
+                                        CommensuratePropagationVector)
 
 
 class GenMagStrMode(Enum):
@@ -59,25 +59,25 @@ def genmagstr(
         if magnitude is None:
             magnitude = [np.linalg.norm(S[i,:]) for i in S.shape[0]]
         if unit == UnitSystem.LU:
-            S = unit_cell.fractional_to_cartesian(S)
+            S = unit_cell.lattice_units_to_cartesian(S)
     elif magnitude is None:
-        magnitude = [np.linalg.norm(site._base_moment) for site in sites]
+        magnitude = [np.linalg.norm(site._base_spin) for site in sites]
 
     def _convert_moments():
         norm_transform = unit_cell._xyz / np.sqrt(np.sum(unit_cell._xyz**2, axis=1)).reshape(-1, 1)
         for i, site in enumerate(sites):
             if S is not None:
-                site._base_moment = S[i,:] * magnitude[i] / np.linalg.norm(S[i,:])
+                site._base_spin = S[i, :] * magnitude[i] / np.linalg.norm(S[i, :])
             elif unit == UnitSystem.LU:
-                Stmp = site._base_moment @ norm_transform
-                site._base_moment = Stmp * magnitude[i] / np.linalg.norm(Stmp)
-            site._moment_data = np.array([site._base_moment])
+                Stmp = site._base_spin @ norm_transform
+                site._base_spin = Stmp * magnitude[i] / np.linalg.norm(Stmp)
+            site._spin_data = np.array([site._base_spin])
 
     match mode:
         case GenMagStrMode.TILE | GenMagStrMode.EXTEND:
             if S is not None or unit == UnitSystem.LU:
                 _convert_moments()
-            return Structure(sites, unit_cell, supercell=TrivialSupercell(scaling=nExt))
+            return Structure(sites, unit_cell, supercell=TiledSupercell(scaling=nExt))
 
         case GenMagStrMode.RANDOM:
             pass

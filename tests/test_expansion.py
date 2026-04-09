@@ -2,12 +2,12 @@
 import numpy as np
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.symmetry.group import database
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 
@@ -18,10 +18,10 @@ def test_expansion_chain_no_rot():
 
     unexpanded_unit_cell = UnitCell(1,1,1)
     unexpanded_sites = [site]
-    unexpanded_couplings = [
-        HeisenbergCoupling(site, site, cell_offset=(1,0,0), j=-1, name="X"),
-        HeisenbergCoupling(site, site, cell_offset=(0,1,0), j=-1, name="Y"),
-        HeisenbergCoupling(site, site, cell_offset=(0,0,1), j=-1, name="Z")]
+    unexpanded_exchanges = [
+        HeisenbergExchange(site, site, cell_offset=(1, 0, 0), j=-1, name="X"),
+        HeisenbergExchange(site, site, cell_offset=(0, 1, 0), j=-1, name="Y"),
+        HeisenbergExchange(site, site, cell_offset=(0, 0, 1), j=-1, name="Z")]
 
     unexpanded_anisotropies = [AxisMagnitudeAnisotropy(site, a=3)]
 
@@ -29,11 +29,11 @@ def test_expansion_chain_no_rot():
                             sites=unexpanded_sites,
                             unit_cell=unexpanded_unit_cell,
                             spacegroup=database.spacegroup_by_name("P1"),
-                            supercell=TrivialSupercell((1,2,3)))
+                            supercell=TiledSupercell((1, 2, 3)))
 
     unexpanded_hamiltonian = Hamiltonian(
         structure=unexpanded_structure,
-        couplings=unexpanded_couplings,
+        exchanges=unexpanded_exchanges,
         anisotropies=unexpanded_anisotropies)
 
     expanded_hamiltonian = unexpanded_hamiltonian.expanded()
@@ -50,8 +50,8 @@ def test_expansion_chain_no_rot():
 
     ## That they have the right positions
     for site in expanded_hamiltonian.structure.sites:
-        ### Moment
-        assert np.all(site.moment_data == np.array([0,0,1], dtype=float))
+        ### Spin
+        assert np.all(site.spin_data == np.array([0, 0, 1], dtype=float))
 
         ### Position, can't assume they're ordered, but they should be in one of a few positions
         assert site.i % 1 == 0        # Integer
@@ -73,12 +73,12 @@ def test_expansion_chain_no_rot():
         for anisotropy_2 in expanded_hamiltonian.anisotropies[:i]:
             assert anisotropy_1.site._unique_id != anisotropy_2.site._unique_id
 
-    # Check number of couplings
-    assert len(expanded_hamiltonian.couplings) == len(unexpanded_hamiltonian.couplings) * 1 * 2 * 3
+    # Check number of exchanges
+    assert len(expanded_hamiltonian.exchanges) == len(unexpanded_hamiltonian.exchanges) * 1 * 2 * 3
 
-    # Check the couplings have the right intersite vector
-    for coupling in expanded_hamiltonian.couplings:
-        match coupling.name:
+    # Check the exchanges have the right intersite vector
+    for exchange in expanded_hamiltonian.exchanges:
+        match exchange.name:
             case "X":
                 expected_offset = np.array([1, 0, 0], dtype=float)
             case "Y":
@@ -88,10 +88,10 @@ def test_expansion_chain_no_rot():
             case _:
                 raise ValueError("Expected names 'X', 'Y' or 'Z'")
 
-        position_1 = expanded_hamiltonian.structure.unit_cell.fractional_to_cartesian(coupling.site_1.ijk)
-        position_2 = expanded_hamiltonian.structure.unit_cell.fractional_to_cartesian(coupling.site_2.ijk)
+        position_1 = expanded_hamiltonian.structure.unit_cell.lattice_units_to_cartesian(exchange.site_1.ijk)
+        position_2 = expanded_hamiltonian.structure.unit_cell.lattice_units_to_cartesian(exchange.site_2.ijk)
 
-        offset = expanded_hamiltonian.structure.unit_cell.fractional_to_cartesian(coupling.cell_offset.vector)
+        offset = expanded_hamiltonian.structure.unit_cell.lattice_units_to_cartesian(exchange.cell_offset.vector)
 
         assert np.all(position_2 + offset - position_1 == expected_offset)
 

@@ -289,22 +289,22 @@ class MagneticOperation:
                                  time_reversal=time_reversal,
                                  name=name)
 
-    def __call__(self, points_and_momenta: ArrayLike) -> np.ndarray:
+    def __call__(self, points_and_moments: ArrayLike) -> np.ndarray:
         """ Apply operation to points and momenta """
-        points = points_and_momenta[:, :3]
-        momenta = points_and_momenta[:, 3:]
+        points = points_and_moments[:, :3]
+        moments = points_and_moments[:, 3:]
 
         point_operation = np.array(self.point_operation, dtype=float)
         translation = np.array([float(f) for f in self.translation]).reshape(-1, 1)
 
         points = np.array(points)
-        momenta = np.array(momenta)
+        moments = np.array(moments)
 
         new_points = (point_operation @ points.T + translation).T % 1
 
         # TODO: Work out which one of these is right
         # new_momenta = momenta * self.time_reversal
-        new_momenta = ((point_operation @ momenta.T) * self.time_reversal).T
+        new_momenta = ((point_operation @ moments.T) * self.time_reversal).T
 
         return np.concatenate((new_points, new_momenta), axis=1)
 

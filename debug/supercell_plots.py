@@ -18,15 +18,15 @@ def draw_supercell(figure: Figure, supercell: Supercell, sites: list[LatticeSite
     for cell in supercell.cells():
         for site in sites:
 
-            this_moment = supercell.moment(site, cell)
+            this_spin = supercell.spin(site, cell)
 
             xs.append(site.i + cell.i)
             ys.append(site.j + cell.j)
             zs.append(site.k + cell.k)
 
-            mxs.append(this_moment[0])
-            mys.append(this_moment[1])
-            mzs.append(this_moment[2])
+            mxs.append(this_spin[0])
+            mys.append(this_spin[1])
+            mzs.append(this_spin[2])
 
     ax.quiver(xs,ys,zs, mxs, mys, mzs, normalize=False, length=vector_length)
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         CommensuratePropagationVector(1/2, 1/2, 0)])
 
     sites = [
-        LatticeSite(0.5, 0.5, 0.5, supercell_moments=[[1.0,0,0], [0.0, 1.0, 0]])
+        LatticeSite(0.5, 0.5, 0.5, supercell_spins=[[1.0, 0, 0], [0.0, 1.0, 0]])
     ]
 
 

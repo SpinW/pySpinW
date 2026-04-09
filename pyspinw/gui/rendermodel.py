@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.gui.edge_cases import add_extra_edge_lines, add_extra_edge_points
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
@@ -33,10 +33,10 @@ class RenderSite(Selectable):
     """ Render information for each site """
 
     @staticmethod
-    def site_model_matrix(position, moment, unit_cell):
+    def site_model_matrix(position, spin, unit_cell):
         """ Model matrix for a site """
-        rotation = rotation_from_z(moment)
-        translation = unit_cell.fractional_to_cartesian(position)
+        rotation = rotation_from_z(spin)
+        translation = unit_cell.lattice_units_to_cartesian(position)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
         model_matrix[3,3] = 1.0
@@ -48,17 +48,17 @@ class RenderSite(Selectable):
     def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
         # Build model matrix
 
-        position, moment = site.ijk, site.base_moment
-        model_matrix = self.site_model_matrix(position, moment, unit_cell)
+        position, spin = site.ijk, site.base_spin
+        model_matrix = self.site_model_matrix(position, spin, unit_cell)
 
         super().__init__(render_id, model_matrix)
         self.site = site
         self.offset = offset
 
-        self.pretty_render_model_matrices = [self.site_model_matrix(new_position, moment, unit_cell)
+        self.pretty_render_model_matrices = [self.site_model_matrix(new_position, spin, unit_cell)
                                              for new_position in add_extra_edge_points(position)]
 
-        self.is_magnetic = np.sum(moment**2) > 1e-12
+        self.is_magnetic = np.sum(spin**2) > 1e-12
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
@@ -69,16 +69,16 @@ class RenderSite(Selectable):
             return [self.model_matrix]
 
 
-class RenderCoupling(Selectable):
-    """ Render information for each coupling """
+class RenderExchange(Selectable):
+    """ Render information for each exchange """
 
     @staticmethod
     def segment_model_matrix(a, b, unit_cell):
         """ Model matrix for a line segment """
         # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
 
-        translation = unit_cell.fractional_to_cartesian(a)
-        delta = unit_cell.fractional_to_cartesian(b) - translation
+        translation = unit_cell.lattice_units_to_cartesian(a)
+        delta = unit_cell.lattice_units_to_cartesian(b) - translation
 
         length = np.sqrt(np.sum(delta**2))
 
@@ -91,12 +91,12 @@ class RenderCoupling(Selectable):
 
         return model_matrix
 
-    def __init__(self, render_id: int, coupling: Coupling, unit_cell: UnitCell):
+    def __init__(self, render_id: int, exchange: Exchange, unit_cell: UnitCell):
 
-        self.coupling = coupling
+        self.exchange = exchange
 
-        p1 = coupling.site_1.ijk
-        p2 = coupling.site_2.ijk + coupling.cell_offset.vector
+        p1 = exchange.site_1.ijk
+        p2 = exchange.site_2.ijk + exchange.cell_offset.vector
 
         model_matrix = self.segment_model_matrix(p1, p2, unit_cell)
 
@@ -132,7 +132,7 @@ class RenderModel:
 
         self.hamiltonian = hamiltonian
 
-        self.expanded, site_mapping, self.coupling_mapping, self.anisotropy_mapping = \
+        self.expanded, site_mapping, self.exchange_mapping, self.anisotropy_mapping = \
             self.hamiltonian._expand_with_mapping()
 
         self.site_expanded_uid_to_original_uid: dict[int, int] = {}
@@ -186,14 +186,14 @@ class RenderModel:
             self.original_index_to_expanded[original].append(expanded)
 
         #
-        # Create render data for couplings
+        # Create render data for exchanges
         #
 
-        self.couplings = []
-        for coupling in self.expanded.couplings:
-            render_coupling = RenderCoupling(render_id, coupling, self.expanded.structure.unit_cell)
-            self.couplings.append(render_coupling)
-            self.render_map[render_id] = render_coupling
+        self.exchanges = []
+        for exchange in self.expanded.exchanges:
+            render_exchange = RenderExchange(render_id, exchange, self.expanded.structure.unit_cell)
+            self.exchanges.append(render_exchange)
+            self.render_map[render_id] = render_exchange
             render_id += 1
 
         self.anisotropies = []
@@ -211,7 +211,7 @@ class RenderModel:
 
         # get orthogonal axes transforms
 
-        unit_cell_orthobasis = hamiltonian.structure.unit_cell._xyz_moments
+        unit_cell_orthobasis = hamiltonian.structure.unit_cell._xyz_spins
 
         self.unit_cell_orthobasis_transforms = []
         for direction in unit_cell_orthobasis:

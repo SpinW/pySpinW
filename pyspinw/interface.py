@@ -5,10 +5,10 @@ import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
-from pyspinw.batch_couplings import default_naming_pattern
+from pyspinw.batch_exchanges import default_naming_pattern
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling, HeisenbergCoupling
-from pyspinw.couplinggroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, CouplingGroup, \
+from pyspinw.exchange import Exchange, HeisenbergExchange
+from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, ExchangeGroup, \
     BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
@@ -26,9 +26,9 @@ except ModuleNotFoundError:
         """ Show a Hamiltonian in the viewer"""
         raise RuntimeError('PySide or OpenGL not installed')
 
-def _check_positions_moments_shape(positions: ArrayLike,
-                                   moments: ArrayLike | None = None) -> tuple[ArrayLike, ArrayLike]:
-    """ Checks position and moment arrays and put them into canonical shape """
+def _check_positions_spins_shape(positions: ArrayLike,
+                                   spins: ArrayLike | None = None) -> tuple[ArrayLike, ArrayLike]:
+    """ Checks position and spin arrays and put them into canonical shape """
     # check the positions are n-by-3, or 1d
     positions = np.array(positions, dtype=float)
     match len(positions.shape):
@@ -46,52 +46,52 @@ def _check_positions_moments_shape(positions: ArrayLike,
         case _:
             raise ValueError("Expected positions to be n-by-3, or a single vector of length 3")
 
-    # check moment definitions
-    if moments is None:
-        moments = np.zeros((n_sites, 3, 1))
+    # check spin definitions
+    if spins is None:
+        spins = np.zeros((n_sites, 3, 1))
     else:
-        moments = np.array(moments, dtype=float)
-    match len(moments.shape):
+        spins = np.array(spins, dtype=float)
+    match len(spins.shape):
         case 1:
             if n_sites != 1:
-                raise ValueError("Expected same number of moments as positions")
+                raise ValueError("Expected same number of spins as positions")
 
-            if moments.shape[0] != 3:
-                raise ValueError("Expected moment to have three components")
+            if spins.shape[0] != 3:
+                raise ValueError("Expected spin to have three components")
 
-            moments = moments.reshape(1,3,1)
+            spins = spins.reshape(1,3,1)
 
         case 2:
-            if n_sites != moments.shape[0]:
-                raise ValueError("Expected same number of moments as positions")
+            if n_sites != spins.shape[0]:
+                raise ValueError("Expected same number of spins as positions")
 
-            if moments.shape[1] != 3:
-                raise ValueError("Expected moments to have three components")
+            if spins.shape[1] != 3:
+                raise ValueError("Expected spins to have three components")
 
-            moments = moments.reshape(-1, 1, 3)
+            spins = spins.reshape(-1, 1, 3)
 
         case 3:
-            if n_sites != moments.shape[0]:
-                raise ValueError("Expected same number of moments as postions")
+            if n_sites != spins.shape[0]:
+                raise ValueError("Expected same number of spins as postions")
 
-            if moments.shape[2] != 3:
-                raise ValueError("Expected moments to have three components")
+            if spins.shape[2] != 3:
+                raise ValueError("Expected spins to have three components")
 
         case _:
-            raise ValueError("Expected moments to be n-by-3-m, n-by-3, or vector of length 3")
+            raise ValueError("Expected spins to be n-by-3-m, n-by-3, or vector of length 3")
 
-    return positions, moments
+    return positions, spins
 
 def generate_sites(positions: ArrayLike,
-                   moments: ArrayLike | None = None,
+                   spins: ArrayLike | None = None,
                    names: list[str] | None=None) -> list[LatticeSite]:
     """ Create a list of lattice sites
 
     :param positions: positions of the sites
-    :param moments: moments of the sites, if not specified, they will be set to zero
+    :param spins: spins of the sites, if not specified, they will be set to zero
     :param names: (optional) a list of names for sites
     """
-    positions, moments = _check_positions_moments_shape(positions, moments)
+    positions, spins = _check_positions_spins_shape(positions, spins)
 
     n_sites = positions.shape[0]
     if names is None:
@@ -105,7 +105,7 @@ def generate_sites(positions: ArrayLike,
             i = position[0],
             j = position[1],
             k = position[2],
-            supercell_moments=np.squeeze(moments[i, :, :]),
+            supercell_spins=np.squeeze(spins[i, :, :]),
             name = names[i]
         ))
 
@@ -113,60 +113,60 @@ def generate_sites(positions: ArrayLike,
 
 def _transform_site(unit_cell: UnitCell,
                     positions: ArrayLike,
-                    moments: ArrayLike,
+                    spins: ArrayLike,
                     names: list[str] | None,
                     magnitudes: ArrayLike | None,
                     positions_unit: CoordsUnits | str,
-                    moments_unit: CoordsUnits | str) -> tuple:
+                    spins_unit: CoordsUnits | str) -> tuple:
     """ Converts site data into default units """
-    positions, moments = _check_positions_moments_shape(positions, moments)
+    positions, spins = _check_positions_spins_shape(positions, spins)
     # check units
     positions_unit = CoordsUnits(positions_unit)
-    moments_unit = CoordsUnits(moments_unit)
+    spins_unit = CoordsUnits(spins_unit)
     # Convert cell positions
     if positions_unit == CoordsUnits.XYZ:
-        positions = unit_cell.cartesian_to_fractional(np.array(positions))
-    # convert moments
-    if moments_unit == CoordsUnits.LU:
-        moments = np.array(moments, dtype=float)
-        for i in range(moments.shape[0]):
-            magnitude = np.linalg.norm(moments[i,:,:]) if magnitudes is None else magnitudes[i]
-            moment = unit_cell.fractional_to_cartesian(moments[i,:,:])
-            moments[i,:,:] = moment * (magnitude / np.linalg.norm(moment))
+        positions = unit_cell.cartesian_to_lattice_units(np.array(positions))
+    # convert spins
+    if spins_unit == CoordsUnits.LU:
+        spins = np.array(spins, dtype=float)
+        for i in range(spins.shape[0]):
+            magnitude = np.linalg.norm(spins[i,:,:]) if magnitudes is None else magnitudes[i]
+            spin = unit_cell.lattice_units_to_cartesian(spins[i, :, :])
+            spins[i,:,:] = spin * (magnitude / np.linalg.norm(spin))
     elif magnitudes is not None:
-        for i in range(moments.shape[0]):
-            moments[i,:,:] *= (magnitudes[i] / np.linalg.norm(moments[i,:,:]))
-    return positions, moments, names
+        for i in range(spins.shape[0]):
+            spins[i,:,:] *= (magnitudes[i] / np.linalg.norm(spins[i,:,:]))
+    return positions, spins, names
 
 def generate_structure(unit_cell: UnitCell,
                        positions: ArrayLike,
-                       moments: ArrayLike,
+                       spins: ArrayLike,
                        propagation_vectors: ArrayLike | None = None,
                        names: list[str] | None = None,
                        magnitudes: ArrayLike | None = None,
                        positions_unit: CoordsUnits | str = 'lu',
-                       moments_unit: CoordsUnits | str = 'xyz') -> Structure:
-    """ Creates a magnetic structure from a list of positions and moments
+                       spins_unit: CoordsUnits | str = 'xyz') -> Structure:
+    """ Creates a magnetic structure from a list of positions and spins
 
     :param unit_cell: a UnitCell object
     :param positions: positions of the sites
-    :param moments: moments of the sites
+    :param spins: spins of the sites
     :param perpendicular: vector perpendicular to helix plane of rotation
     :param propagation_vectors: the propagation vector(s)
     :param names: (optional) a list of names for sites
-    :param magnitudes: (optional) a list of moment magnitudes (spin length S)
-                       If not specified, the norm of the moments vectors will be used as the spin length
+    :param magnitudes: (optional) a list of spin magnitudes (spin length S)
+                       If not specified, the norm of the spins vectors will be used as the spin length
     :param positions_units: the units for atomic positions; either 'lu' or 'xyz'
                             (default: 'lu', lattice units)
-    :param moments_units: the units for the magnetic moment directions; either 'lu' or 'xyz'
+    :param spins_units: the units for the magnetic spin directions; either 'lu' or 'xyz'
                           (default: 'xyz', Cartesian axis with x||a)
     :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
-                                 moments_units is not 'xyz' and allows conversion from those units
+                                 spins_units is not 'xyz' and allows conversion from those units
                                  to the default used in LatticeSite.
-                                 (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
-                                 `pyspinw.UnitCell.moment_cartesian_to_fractional`)
+                                 (see `pyspinw.UnitCell.spin_fractional_to_cartesian and
+                                 `pyspinw.UnitCell.spin_cartesian_to_fractional`)
     """
-    s = generate_sites(*_transform_site(unit_cell, positions, moments, names, magnitudes, positions_unit, moments_unit))
+    s = generate_sites(*_transform_site(unit_cell, positions, spins, names, magnitudes, positions_unit, spins_unit))
     if propagation_vectors is not None:
         pvs = np.array(propagation_vectors, ndmin=2)
         if pvs.shape[0] != 3 and pvs.shape[1] == 3:
@@ -177,34 +177,34 @@ def generate_structure(unit_cell: UnitCell,
 
 def generate_helical_structure(unit_cell: UnitCell,
                                positions: ArrayLike,
-                               moments: ArrayLike,
+                               spins: ArrayLike,
                                perpendicular: ArrayLike,
                                propagation_vector: ArrayLike,
                                names: list[str] | None=None,
                                magnitudes: ArrayLike | None = None,
                                positions_unit: CoordsUnits | str = 'lu',
-                               moments_unit: CoordsUnits | str = 'xyz') -> Structure:
+                               spins_unit: CoordsUnits | str = 'xyz') -> Structure:
     """ Creates a helical structure with a propagation vector and plane normal
 
     :param unit_cell: a UnitCell object
     :param positions: positions of the sites
-    :param moments: moments of the sites
+    :param spins: spins of the sites
     :param perpendicular: vector perpendicular to helix plane of rotation
     :param propagation_vector: the propagation vector
     :param names: (optional) a list of names for sites
-    :param magnitudes: (optional) a list of moment magnitudes (spin length S)
-                       If not specified, the norm of the moments vectors will be used as the spin length
+    :param magnitudes: (optional) a list of spin magnitudes (spin length S)
+                       If not specified, the norm of the spins vectors will be used as the spin length
     :param positions_units: the units for atomic positions; either 'lu' or 'xyz'
                             (default: 'lu', lattice units)
-    :param moments_units: the units for the magnetic moment directions; either 'lu' or 'xyz'
+    :param spins_units: the units for the magnetic spin directions; either 'lu' or 'xyz'
                           (default: 'xyz', Cartesian axis with x||a)
     :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
-                                 moments_units is not 'xyz' and allows conversion from those units
+                                 spins_units is not 'xyz' and allows conversion from those units
                                  to the default used in LatticeSite.
-                                 (see `pyspinw.UnitCell.moment_fractional_to_cartesian and
-                                 `pyspinw.UnitCell.moment_cartesian_to_fractional`)
+                                 (see `pyspinw.UnitCell.spin_fractional_to_cartesian and
+                                 `pyspinw.UnitCell.spin_cartesian_to_fractional`)
     """
-    s = generate_sites(*_transform_site(unit_cell, positions, moments, names, magnitudes, positions_unit, moments_unit))
+    s = generate_sites(*_transform_site(unit_cell, positions, spins, names, magnitudes, positions_unit, spins_unit))
     return Structure(s, unit_cell, supercell=RotationSupercell(perpendicular, propagation_vector))
 
 #
@@ -262,7 +262,7 @@ def rotation_supercell(
     :param directions: propagation vector directions
     :param axes: rotation axes for each propagation vector,
                  or if only a single axis is specified, apply it to all of them
-    :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
+    :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
     # Check that the axes match up
@@ -282,12 +282,12 @@ def summation_supercell(
         directions: np.ndarray,
         phases: np.ndarray | None = None,
         scaling: tuple[int, int, int]=(1,1,1)):
-    """ Create a supercell based on the propagation vectors and partial moments
+    """ Create a supercell based on the propagation vectors and partial spins
 
     i.e. $m = \\sum_j mu_j exp(2 \\pi i d_j.r + \\phi_j)$
 
     :param directions: propagation vector directions
-    :param phases: Phases of the propagation vectors, 0.0 means starting with the moment as specified on the site
+    :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
@@ -362,15 +362,15 @@ def filter(direction: ArrayLike,
            perpendicular: bool=False,
            symmetric: bool=False,
            max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
-    """ Create a filter for directions (helper method for couplings)
+    """ Create a filter for directions (helper method for exchanges)
 
-    :param direction: If not perpendicular, allowed direction of coupling
-                      If perpendicular, normal to plane containing coupling
+    :param direction: If not perpendicular, allowed direction of exchange
+                      If perpendicular, normal to plane containing exchange
     :param perpendicular: Constrain to a line (perpendicular=False) or a plane (perpendicular=True)
-    :param symmetric: In the not perpendicular case, symmetric True generates couplings in both directions
+    :param symmetric: In the not perpendicular case, symmetric True generates exchanges in both directions
     :param max_dev_angle_deg: Angular tolerance for the direction/normal in degrees
 
-    :returns: A DirectionalityFilter object that can be used to select couplings in particular directions
+    :returns: A DirectionalityFilter object that can be used to select exchanges in particular directions
     """
     if perpendicular:
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
@@ -383,7 +383,7 @@ def filter(direction: ArrayLike,
 
 def generate_exchanges(sites: list[LatticeSite] | Structure,
                        unit_cell: UnitCell | None = None,
-                       coupling_type: type[Coupling] = HeisenbergCoupling,
+                       exchange_type: type[Exchange] = HeisenbergExchange,
                        bond: int = 0,
                        max_distance: float = 0.0,
                        min_distance: float = 0.0,
@@ -397,31 +397,31 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
                        d_x: float | None = None,
                        d_y: float | None = None,
                        d_z: float | None = None,
-                       coupling_parameters: dict | None = None,
+                       exchange_parameters: dict | None = None,
                        naming_pattern: str | None = None, ):
-    """ Automatically creates a list of couplings
+    """ Automatically creates a list of exchanges
 
-    :param sites: *required* List of sites to make couplings between or a Structure object
+    :param sites: *required* List of sites to make exchanges between or a Structure object
     :param unit_cell: Unit cell (needed if first argument is a list of sites)
-    :param coupling_type: Type of coupling (defaults to HeisenbergCoupling)
+    :param exchange_type: Type of exchange (defaults to HeisenbergExchange)
     :param bond: The bond index (If this is given the _distance parameters are ignored)
-    :param max_distance: Maximum Cartesian distance (in Angstrom) at which couplings are made
-    :param min_distance: Minimum Cartesian distance (in Angstrom) at which couplings are made
+    :param max_distance: Maximum Cartesian distance (in Angstrom) at which exchanges are made
+    :param min_distance: Minimum Cartesian distance (in Angstrom) at which exchanges are made
     :param direction_filter: Supply a DirectionalityFilter object (e.g. using `filter`)
-                             to only create couplings in certain directions
-    :param max_order: Maximum "order" of couplings
-    :param j" Constant for scalar valued Heisenberg couplings (only needed for Heisenberg)
-    :param j_x" Constant for x component of Heisenberg-like couplings (only needed for Diagonal)
-    :param j_y" Constant for y component of Heisenberg-like couplings (only needed for Diagonal)
-    :param j_z" Constant for z component of Heisenberg-like couplings (only needed for Diagonal, Ising and XY)
-    :param j_xy" Constant for x and y components of Heisenberg-like couplings (only needed for XY and XXZ)
-    :param d_x" Constant for x component of Dzyaloshinskii-Moriya coupling (DM)
-    :param d_y" Constant for y component of Dzyaloshinskii-Moriya coupling (DM)
-    :param d_z" Constant for z component of Dzyaloshinskii-Moriya coupling (DM)
-    :param coupling_parameters: Parameters can be supplied in a dictionary instead
-    :param naming_pattern: String used to assign names to couplings, see `apply_naming_convention`
+                             to only create exchanges in certain directions
+    :param max_order: Maximum "order" of exchanges
+    :param j" Constant for scalar valued Heisenberg exchanges (only needed for Heisenberg)
+    :param j_x" Constant for x component of Heisenberg-like exchanges (only needed for Diagonal)
+    :param j_y" Constant for y component of Heisenberg-like exchanges (only needed for Diagonal)
+    :param j_z" Constant for z component of Heisenberg-like exchanges (only needed for Diagonal, Ising and XY)
+    :param j_xy" Constant for x and y components of Heisenberg-like exchanges (only needed for XY and XXZ)
+    :param d_x" Constant for x component of Dzyaloshinskii-Moriya exchange (DM)
+    :param d_y" Constant for y component of Dzyaloshinskii-Moriya exchange (DM)
+    :param d_z" Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
+    :param exchange_parameters: Parameters can be supplied in a dictionary instead
+    :param naming_pattern: String used to assign names to exchanges, see `apply_naming_convention`
 
-    :returns: list of couplings
+    :returns: list of exchanges
     """
     if isinstance(sites, Structure):
         unit_cell = sites.unit_cell
@@ -432,53 +432,53 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
     if bond == 0 and max_distance == 0.0 and min_distance == 0.0:
         raise RuntimeError('You must specify either a bond index or maximum/minimum distance pairs')
 
-    if coupling_parameters is None:
-        coupling_parameters = {}
+    if exchange_parameters is None:
+        exchange_parameters = {}
 
     if j is not None:
-        coupling_parameters["j"] = j
+        exchange_parameters["j"] = j
 
     if j_x is not None:
-        coupling_parameters["j_x"] = j_x
+        exchange_parameters["j_x"] = j_x
 
     if j_y is not None:
-        coupling_parameters["j_y"] = j_y
+        exchange_parameters["j_y"] = j_y
 
     if j_z is not None:
-        coupling_parameters["j_z"] = j_z
+        exchange_parameters["j_z"] = j_z
 
     if j_xy is not None:
-        coupling_parameters["j_xy"] = j_xy
+        exchange_parameters["j_xy"] = j_xy
 
     if d_x is not None:
-        coupling_parameters["d_x"] = d_x
+        exchange_parameters["d_x"] = d_x
 
     if d_y is not None:
-        coupling_parameters["d_y"] = d_y
+        exchange_parameters["d_y"] = d_y
 
     if d_z is not None:
-        coupling_parameters["d_z"] = d_z
+        exchange_parameters["d_z"] = d_z
 
     # Only want parameters that apply to the specific type
     used_parameters = {}
-    for parameter, default in zip(coupling_type.parameters, coupling_type.parameter_defaults):
-        if parameter in coupling_parameters:
-            used_parameters[parameter] = coupling_parameters[parameter]
+    for parameter, default in zip(exchange_type.parameters, exchange_type.parameter_defaults):
+        if parameter in exchange_parameters:
+            used_parameters[parameter] = exchange_parameters[parameter]
         else:
             used_parameters[parameter] = default
 
-    group = CouplingGroup(
+    group = ExchangeGroup(
         name = "<unnamed group>",
         bond = bond,
         min_distance = min_distance,
         max_distance = max_distance,
         max_order = max_order,
         naming_pattern = default_naming_pattern if naming_pattern is None else naming_pattern,
-        coupling_type = coupling_type,
-        coupling_parameters = used_parameters,
+        exchange_type= exchange_type,
+        exchange_parameters= used_parameters,
         direction_filter = direction_filter)
 
-    return group.couplings(sites, unit_cell)
+    return group.exchanges(sites, unit_cell)
 
 
 @check_sizes(axis=(3, ), force_numpy=True)

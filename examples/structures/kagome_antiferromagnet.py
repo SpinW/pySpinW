@@ -2,7 +2,7 @@
 
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, generate_structure
 from pyspinw.path import Path
@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(6, 6, 10, gamma=120)
 
-    s = generate_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,0.5,0]], moments=[[1,2,0], [-2,-1,0], [1,-1,0]],
-                           names=['X','Y','Z'], magnitudes=[1,1,1], moments_unit='lu')
+    s = generate_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,0.5,0]], spins=[[1, 2, 0], [-2, -1, 0], [1, -1, 0]],
+                           names=['X','Y','Z'], magnitudes=[1,1,1], spins_unit='lu')
 
     j1 = generate_exchanges(sites=s, bond=1, j=1)
     j2 = generate_exchanges(sites=s, bond=2, j=0.11)

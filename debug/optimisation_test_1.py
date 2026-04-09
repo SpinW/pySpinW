@@ -4,11 +4,11 @@ import numpy as np
 
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed
 from pyspinw.interface import generate_exchanges
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 
 if __name__ == "__main__":
@@ -21,12 +21,12 @@ if __name__ == "__main__":
 
     sites = [x1, x2]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell())
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
     exchanges = generate_exchanges(sites=sites,
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=1)
 
     hamiltonian = Hamiltonian(s, exchanges)
@@ -35,22 +35,22 @@ if __name__ == "__main__":
 
     minimiser = ClassicalEnergyMinimisation(hamiltonian, constraints=[Fixed, Free], field=np.array([0.0,0.0,0.0]))
 
-    moment_history = [minimiser.moment_data.copy()]
+    spin_history = [minimiser.spin_data.copy()]
 
     for i in range(100):
-        # print(minimiser.moments)
+        # print(minimiser.spins)
         minimiser.iterate(0.1)
         print(minimiser.energy())
 
-        moment_history.append(minimiser.moment_data.copy())
+        spin_history.append(minimiser.spin_data.copy())
 
-    print(minimiser.moment_data)
+    print(minimiser.spin_data)
 
     import matplotlib.pyplot as plt
     ax = plt.figure().add_subplot(projection='3d')
 
     for i in range(len(sites)):
-        xyz = np.array([moments[i,:] for moments in moment_history])
+        xyz = np.array([spins[i,:] for spins in spin_history])
         ax.plot(xyz[:, 0], xyz[:, 1], xyz[:, 2], "--x")
 
     plt.show()

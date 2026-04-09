@@ -176,11 +176,11 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # Do actual the rendering
 
-        moment_scale = 2 * self.display_options.atom_moment_scaling
-        moment_scale_matrix = np.diag([moment_scale, moment_scale, moment_scale, 1])
+        spin_scale = 2 * self.display_options.atom_spin_scaling
+        spin_scale_matrix = np.diag([spin_scale, spin_scale, spin_scale, 1])
 
-        coupling_scale = 0.1 * self.display_options.coupling_scaling
-        coupling_scaling = np.diag([coupling_scale, coupling_scale, 1, 1])
+        exchange_scale = 0.1 * self.display_options.exchange_scaling
+        exchange_scaling = np.diag([exchange_scale, exchange_scale, 1, 1])
 
         if self.object_shader is not None and self.selection_shader is not None:
 
@@ -212,7 +212,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                         render_object = self.arrow if site.is_magnetic else self.small_sphere
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
-                            site_model_matrix = model_matrix @ moment_scale_matrix
+                            site_model_matrix = model_matrix @ spin_scale_matrix
 
                             if mode != SelectionMode.NOT_SELECTED:
 
@@ -225,36 +225,36 @@ class CrystalViewerWidget(QOpenGLWidget):
                             self.object_shader.use()
                             render_object.render_triangles()
 
-            # Couplings
-            if self.display_options.show_couplings:
+            # Exchanges
+            if self.display_options.show_exchanges:
 
                 self.object_shader.object_color = 0.2, 0.4, 0.8
 
-                for coupling in self.render_model.couplings:
+                for exchange in self.render_model.exchanges:
 
 
-                    if coupling.render_id in self.hover_ids:
-                        if coupling.render_id in self.current_selection:
+                    if exchange.render_id in self.hover_ids:
+                        if exchange.render_id in self.current_selection:
                             mode = SelectionMode.SELECTED_HOVER
                         else:
                             mode = SelectionMode.HOVER
 
                     else:
-                        if coupling.render_id in self.current_selection:
+                        if exchange.render_id in self.current_selection:
                             mode = SelectionMode.SELECTED
                         else:
                             mode = SelectionMode.NOT_SELECTED
 
-                    for model_matrix in coupling.model_matrices(self.display_options.prettify):
-                        coupling_model_matrix = model_matrix @ coupling_scaling
+                    for model_matrix in exchange.model_matrices(self.display_options.prettify):
+                        exchange_model_matrix = model_matrix @ exchange_scaling
 
                         if mode != SelectionMode.NOT_SELECTED:
-                            self.selection_shader.model_matrix = coupling_model_matrix
+                            self.selection_shader.model_matrix = exchange_model_matrix
                             self.selection_shader.mode = mode
                             self.selection_shader.use()
                             self.tube.render_back_wireframe()
 
-                        self.object_shader.model_matrix = coupling_model_matrix
+                        self.object_shader.model_matrix = exchange_model_matrix
                         self.object_shader.use()
                         self.tube.render_triangles()
 
@@ -401,20 +401,20 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
 
-                            site_model_matrix = model_matrix @ moment_scale_matrix
+                            site_model_matrix = model_matrix @ spin_scale_matrix
 
                             self.id_shader.model_matrix = site_model_matrix
                             self.id_shader.id_value = site.render_id
                             self.id_shader.use()
                             render_object.render_triangles()
 
-            # Couplings
-            if self.display_options.show_couplings:
+            # Exchanges
+            if self.display_options.show_exchanges:
 
-                for coupling in self.render_model.couplings:
-                    for model_matrix in coupling.model_matrices(self.display_options.prettify):
-                        self.id_shader.id_value = coupling.render_id
-                        self.id_shader.model_matrix = model_matrix @ coupling_scaling
+                for exchange in self.render_model.exchanges:
+                    for model_matrix in exchange.model_matrices(self.display_options.prettify):
+                        self.id_shader.id_value = exchange.render_id
+                        self.id_shader.model_matrix = model_matrix @ exchange_scaling
                         self.id_shader.use()
                         self.tube.render_triangles()
 

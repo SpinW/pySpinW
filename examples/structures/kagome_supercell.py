@@ -1,6 +1,6 @@
 """ Kagome 3x3 Antiferromagnet example """
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, generate_helical_structure
 from pyspinw.path import Path
@@ -34,12 +34,12 @@ if __name__ == "__main__":
     unit_cell = UnitCell(6, 6, 40, gamma=120)
 
     s = generate_helical_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,0.5,0]],
-                                   moments=[[0,1,0], [0,1,0], [-1,-1,0]], magnitudes=[1,1,1], names=['X', 'Y', 'Z'],
-                                   moments_unit='lu', perpendicular=[0,0,1], propagation_vector=[-1./3., -1./3., 0])
+                                   spins=[[0, 1, 0], [0, 1, 0], [-1, -1, 0]], magnitudes=[1, 1, 1], names=['X', 'Y', 'Z'],
+                                   spins_unit='lu', perpendicular=[0,0,1], propagation_vector=[-1./3., -1./3., 0])
 
     exchanges = generate_exchanges(sites=s,
                                    bond=1,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=1)
 
     hamiltonian = Hamiltonian(s, exchanges)

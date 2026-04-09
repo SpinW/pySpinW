@@ -12,16 +12,13 @@ s = Structure([only_site], unit_cell=unit_cell)
 exchanges = generate_exchanges(sites=[only_site],
                                unit_cell=unit_cell,
                                max_distance=1.1,
-                               coupling_type=HeisenbergCoupling,
+                               exchange_type=HeisenbergExchange,
                                j=-1,
                                direction_filter=filter([1,0,0]))
 
 hamiltonian = Hamiltonian(s, exchanges)
 
 path = Path([[0,0,0], [1,0,0]])
-
-
-hamiltonian.energy_plot(path)
 
 sample = Powder(hamiltonian)
 
