@@ -541,7 +541,7 @@ class IsingExchange(Exchange):
 
         self._j_z = j_z
 
-        self._exchange_matrix = np.diag([j_z])
+        self._exchange_matrix = np.diag([0.0, 0.0, j_z])
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
