@@ -121,7 +121,7 @@ def _calc_q_independent(
     return C, z, spin_coefficients, Az, sab_blocks
 
 
-def _calc_sqrt_hamiltonian(
+def _calc_spin_hamiltonian(
         q: np.ndarray,
         C: np.ndarray,
         n_sites: int,
@@ -150,8 +150,10 @@ def _calc_sqrt_hamiltonian(
     if Az is not None:
         A += Az
 
-    hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+    return np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
 
+
+def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
     # We need to enforce the bosonic commutation properties, we do this
     # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
     # and then negating the second half.
@@ -166,17 +168,52 @@ def _calc_sqrt_hamiltonian(
     #
     # We can also do this via an LDL decomposition, but the method is very slightly different
 
-    # assert np.sum(np.imag(np.linalg.eig(hamiltonian_matrix)[0])) < 1e-6, 'Non hermitian Hamiltonian!'
-
     try:
         sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
     except np.linalg.LinAlgError:  # Catch postive definiteness errors
         # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
-        # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
         l, d, p = ldl(hamiltonian_matrix)  # To LDL^\dagger (i.e. adjoint on right)
+        # if there are off-diagonal elements of d (in 2x2 blocks) or if any diagonal elements are negative
+        # then the hamiltonian matrix is not positive semi-definite and we must use another algorithm
+        # see discussion in https://mathoverflow.net/questions/84420 and paper by Roy Mathias
+        assert all(np.abs(np.diag(d, k=1)) < SINGULAR_TOL) and all(np.diag(d) > -SINGULAR_TOL), 'Singular matrix'
         sqrt_hamiltonian = l[p,:] @ np.sqrt(d)
 
-    return sqrt_hamiltonian
+    sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
+    sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
+
+    to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
+
+    eigvals, eigvecs = np.linalg.eigh(to_diagonalise)
+
+    ## calculate transformation matrix for spin-spin correlation function
+    # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
+    # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
+    # for the eigenvalues of the Hamiltonian
+    sqrt_E = np.sqrt(np.abs(eigvals.copy()))
+    sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
+
+    # sqrt_hamiltonian is triangular so is singular if any diagonal element is zero
+    if any(np.diag(sqrt_hamiltonian) < SINGULAR_TOL):
+        # if K is singular, then add a small amount to the diagonal.
+        for jj in range(sqrt_hamiltonian.shape[0]):
+            sqrt_hamiltonian[jj, jj] += 1e-7
+
+    # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
+    T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
+
+    return eigvals, T
+
+
+def _solve_ham_nonherm(hamiltonian_matrix: np.ndarray, n_sites:int):
+    hamiltonian_matrix[n_sites:, :] *= -1  # gComm * ham
+    eigvals, eigvecs = np.linalg.eig(hamiltonian_matrix)
+    gV = eigvecs.copy()
+    gV[n_sites:, :] *= -1
+    M = np.diag(gV.conj().T @ gV)
+    T = eigvecs @ np.diag(np.sqrt(1 / (M + SINGULAR_TOL)))
+
+    return eigvals, T
 
 
 def _get_q_chunks(q_vectors: np.ndarray, n_proc: int):
@@ -270,14 +307,13 @@ def _calc_chunk_spinwave(
     sabs = np.empty((3, 3, 2*n_sites, q_vectors.shape[0]), dtype=complex)
 
     for ii, q in enumerate(q_vectors):
-        sqrt_hamiltonian = _calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
+        hamiltonian = _calc_spin_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
 
-        sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
-        sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
+        try:
+            eigvals, T = _solve_ham_hermitian(hamiltonian, n_sites)
+        except AssertionError:
+            eigvals, T = _solve_ham_nonherm(hamiltonian, n_sites)
 
-        to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
-
-        eigvals, eigvecs = np.linalg.eigh(to_diagonalise)
         energies.append(eigvals)
 
         ## calculate block matrices [ Y Z ; V W ] for S'^alpha,beta
@@ -288,22 +324,6 @@ def _calc_chunk_spinwave(
 
         coefficients = 2 * spin_coefficients * phase_factors_matrix
         coefficients = np.block([[coefficients, coefficients], [coefficients, coefficients]])
-
-        ## calculate transformation matrix for spin-spin correlation function
-        # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
-        # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
-        # for the eigenvalues of the Hamiltonian
-        sqrt_E = np.sqrt(np.abs(eigvals.copy()))
-        sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
-
-        # sqrt_hamiltonian is triangular so is singular if any diagonal element is zero
-        if any(np.diag(sqrt_hamiltonian) < SINGULAR_TOL):
-            # if K is singular, then add a small amount to the diagonal.
-            for jj in range(sqrt_hamiltonian.shape[0]):
-                sqrt_hamiltonian[jj, jj] += 1e-7
-
-        # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
-        T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
