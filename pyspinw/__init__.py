@@ -16,7 +16,7 @@ from pyspinw.exchangegroup import InPlaneFilter, InDirectionFilter, BiDirectionF
 
 from pyspinw.interface import (
     generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
-    filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure)
+    filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure, generate_structure)
 
 from pyspinw.symmetry.supercell import (
     SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell,
@@ -79,6 +79,7 @@ __all__ = [
     "matrix_anisotropies",
     "generate_sites",
     "generate_exchanges",
+    "generate_structure",
     "generate_helical_structure",
 
     # supercells
