@@ -210,6 +210,13 @@ def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
 def _solve_ham_nonherm(hamiltonian_matrix: np.ndarray, n_sites:int):
     hamiltonian_matrix[n_sites:, :] *= -1  # gComm * ham
     eigvals, eigvecs = np.linalg.eig(hamiltonian_matrix)
+    # We need to orthogonalise eigenvectors of degenerate (real part of) eigenvalues
+    isr = np.argsort(eigvals)
+    eigvals, eigvecs, real_en = (eigvals[isr], eigvecs[:,isr], np.real(eigvals[isr]))
+    for en in real_en[np.append([1.], np.diff(real_en)) > DEGEN_TOL]:
+        idx = np.where(np.abs(real_en - en) < DEGEN_TOL)[0]
+        U, _, _ = np.linalg.svd(eigvecs[:,idx], full_matrices=False)
+        eigvecs[:,idx] = U
     gV = eigvecs.copy()
     gV[:n_sites, n_sites:] *= -1
     gV[n_sites:, :n_sites] *= -1
