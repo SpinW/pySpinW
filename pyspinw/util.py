@@ -50,7 +50,7 @@ def problematic_sites(sites: list[LatticeSite],
                 # Same position
 
                 if np.all(np.abs(site.m + implied_site.m) < tolerances.SAME_SITE_ABS_TOL):
-                    # Opposite moments
+                    # Opposite spins
 
                     bad_sites.append(i)
                     break

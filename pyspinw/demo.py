@@ -7,7 +7,7 @@ def run_demos():
 
 def demo_chains():
     """ Antiferromagnetic chain example """
-    from pyspinw import (UnitCell, LatticeSite, HeisenbergCoupling, Structure,
+    from pyspinw import (UnitCell, LatticeSite, HeisenbergExchange, Structure,
                          Hamiltonian, Path)
 
     unit_cell = UnitCell(3, 8, 8)
@@ -15,8 +15,8 @@ def demo_chains():
     x = LatticeSite(0, 0, 0, 0, 1, 0, name="X")
     y = LatticeSite(0.5, 0, 0, 0, 1, 0, name="Y")
 
-    j1 = HeisenbergCoupling(x, y, j=1, cell_offset=(0, 0, 0), name="J1")
-    j2 = HeisenbergCoupling(y, x, j=1, cell_offset=(0, 1, 0), name="J2")
+    j1 = HeisenbergExchange(x, y, j=1, cell_offset=(0, 0, 0), name="J1")
+    j2 = HeisenbergExchange(y, x, j=1, cell_offset=(0, 1, 0), name="J2")
 
     sites = [x, y]
     exchanges = [j1, j2]
@@ -63,8 +63,8 @@ def demo_chains():
 def demo_viewer():
     """ Show the viewer with an example """
     from pyspinw import (
-        UnitCell, LatticeSite, Structure, TrivialSupercell,
-        generate_exchanges, HeisenbergCoupling, Hamiltonian, view)
+        UnitCell, LatticeSite, Structure, TiledSupercell,
+        generate_exchanges, HeisenbergExchange, Hamiltonian, view)
 
     unit_cell = UnitCell(1,1,1, gamma=60)
 
@@ -75,12 +75,12 @@ def demo_viewer():
 
     sites = [x, y, z, w]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TrivialSupercell(scaling=(3,3,1)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(3, 3, 1)))
 
     exchanges = generate_exchanges(sites=[x, y, z],
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=-1)
 
     hamiltonian = Hamiltonian(s, exchanges)

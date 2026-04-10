@@ -1,6 +1,6 @@
 """ Ferromagnetic chain example """
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, filter
 from pyspinw.path import Path, Path1D
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     exchanges = generate_exchanges(sites=[only_site],
                                    unit_cell=unit_cell,
                                    max_distance=1.1,
-                                   coupling_type=HeisenbergCoupling,
+                                   exchange_type=HeisenbergExchange,
                                    j=-1,
                                    direction_filter=filter([1,0,0]))
 

@@ -20,13 +20,13 @@ from pyspinw.calculations.spinwave import (
 from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
-from pyspinw.coupling import Coupling
+from pyspinw.exchange import Exchange
 from pyspinw.path import Path
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
-from pyspinw.symmetry.supercell import TrivialSupercell, RotationSupercell
+from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
 
 # pylint: disable=R0903
@@ -83,9 +83,9 @@ def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float |
 
 ParametrizationType = Union[str,
                        list[str],
-                       list[tuple[Union[Coupling, Anisotropy, str], str]],
-                       tuple[Sequence[Union[Coupling, Anisotropy, str]], str],
-                       tuple[Coupling | Anisotropy | str, str]]
+                       list[tuple[Union[Exchange, Anisotropy, str], str]],
+                       tuple[Sequence[Union[Exchange, Anisotropy, str]], str],
+                       tuple[Exchange | Anisotropy | str, str]]
 
 def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: ParametrizationType):
     """ Convert many options for defining parameters into a more regular form
@@ -107,11 +107,11 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
         if isinstance(parameter_data[0], Sequence):
             parameter_data = [(datum, parameter_data[1]) for datum in parameter_data[0]]
 
-        elif isinstance(parameter_data[0], (Coupling, Anisotropy, str)):
+        elif isinstance(parameter_data[0], (Exchange, Anisotropy, str)):
             parameter_data = [parameter_data]
 
         else:
-            raise TypeError(f"Expected parameters to be defined by Coupling, Anisotropy or str,"
+            raise TypeError(f"Expected parameters to be defined by Exchange, Anisotropy or str,"
                             f" got {type(parameter_data[0])}: {parameter_data[0]}")
 
     elif isinstance(parameter_data, list):
@@ -131,7 +131,7 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
             parts = datum.split(".")
 
             if len(parts) != 2:
-                raise ValueError(f"Expected strings to be of the form coupling_name.parameter_name, got '{datum}'")
+                raise ValueError(f"Expected strings to be of the form exchange_name.parameter_name, got '{datum}'")
 
             new_parameter_data.append((parts[0], parts[1]))
 
@@ -162,16 +162,16 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
     for target, parameter in parameter_data:
         if isinstance(target, str):
 
-            couplings = hamiltonian.couplings_by_name(target)
+            exchanges = hamiltonian.exchanges_by_name(target)
 
-            if len(couplings) == 0:
-                raise ValueError(f"Could not find couplings that match {target}")
+            if len(exchanges) == 0:
+                raise ValueError(f"Could not find exchanges that match {target}")
 
-            if len(couplings) > 1:
-                logger.warning(f"Found multiple matches for '{target}', attempting to use them all: {couplings}")
+            if len(exchanges) > 1:
+                logger.warning(f"Found multiple matches for '{target}', attempting to use them all: {exchanges}")
 
-            for coupling in couplings:
-                new_parameter_data.append((coupling, parameter))
+            for exchange in exchanges:
+                new_parameter_data.append((exchange, parameter))
 
         else:
             new_parameter_data.append((target, parameter))
@@ -179,18 +179,18 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
     parameter_data = new_parameter_data
 
     #
-    # Step 5: Split into couplings and anisotopies
+    # Step 5: Split into exchanges and anisotopies
     #
 
-    couplings = []
+    exchanges = []
     anisotropies = []
     for target, parameter in parameter_data:
-        if isinstance(target, Coupling):
-            couplings.append((target, parameter))
+        if isinstance(target, Exchange):
+            exchanges.append((target, parameter))
         elif isinstance(target, Anisotropy):
             anisotropies.append((target, parameter))
 
-    return couplings, anisotropies
+    return exchanges, anisotropies
 
 
 class Hamiltonian(SPWSerialisable):
@@ -200,11 +200,11 @@ class Hamiltonian(SPWSerialisable):
 
     def __init__(self,
                  structure: Structure,
-                 couplings: list[Coupling],
+                 exchanges: list[Exchange],
                  anisotropies: list[Anisotropy] | None = None):
 
         self._structure = structure
-        self._couplings = couplings
+        self._exchanges = exchanges
         self._anisotropies = [] if anisotropies is None else anisotropies
 
     @property
@@ -213,13 +213,13 @@ class Hamiltonian(SPWSerialisable):
         return self._structure
 
     @property
-    def couplings(self):
-        """ Get the couplings """
-        return self._couplings
+    def exchanges(self):
+        """ Get the exchanges """
+        return self._exchanges
 
-    def couplings_by_name(self, regex):
-        """ Get list of couplings whose names match the regex """
-        return [coupling for coupling in self.couplings if re.match(regex, coupling.name) is not None]
+    def exchanges_by_name(self, regex):
+        """ Get list of exchanges whose names match the regex """
+        return [exchange for exchange in self.exchanges if re.match(regex, exchange.name) is not None]
 
 
     @property
@@ -234,8 +234,8 @@ class Hamiltonian(SPWSerialisable):
         for site in self.structure.sites:
             lines.append(f"  {site}")
 
-        lines.append("Couplings:")
-        for exchange in self.couplings:
+        lines.append("Exchanges:")
+        for exchange in self.exchanges:
             lines.append(f"  {exchange}") # vector =", exchange.vector(unit_cell=unit_cell))
 
         if self.anisotropies:
@@ -254,29 +254,29 @@ class Hamiltonian(SPWSerialisable):
         This should only be used internally, and its not very user friendly
 
         The site mapping is a dict from (original site UID, offset) -> LatticeSite
-        The coupling mapping is a len(new couplings) list of indices for the original couplings
+        The exchange mapping is a len(new exchanges) list of indices for the original exchanges
         The anisotropy mapping is a len(new anisotropies) list of indices for the original anisotropies
         """
         bigger_cell, site_mapping = self.structure._expansion_site_mapping()
 
-        new_couplings = []
+        new_exchanges = []
         new_anisotropies = []
 
         si, sj, sk = self.structure.supercell.cell_size()
 
-        coupling_mapping = []
+        exchange_mapping = []
         anisotropy_mapping = []
 
         for first_site_offset in self.structure.supercell.cells():
-            for original_index, coupling in enumerate(self.couplings):
-                # Convert the offset in the coupling, into
+            for original_index, exchange in enumerate(self.exchanges):
+                # Convert the offset in the exchange, into
                 #  1) an offset in the supercell, and
                 #  2) an offset between supercells
                 # basically just a divmod
 
                 # Convert offsets into "absolute offsets"
 
-                second_site_offset = coupling.cell_offset.vector + first_site_offset.vector
+                second_site_offset = exchange.cell_offset.vector + first_site_offset.vector
 
                 oi, oj, ok = second_site_offset
 
@@ -287,18 +287,18 @@ class Hamiltonian(SPWSerialisable):
                 new_cell_offset = CellOffset(ni, nj, nk)
                 second_site_lookup_value = (ri, rj, rk)
 
-                target_site_1 = site_mapping[(coupling.site_1.unique_id, first_site_offset.as_tuple)]
-                target_site_2 = site_mapping[(coupling.site_2.unique_id, second_site_lookup_value)]
+                target_site_1 = site_mapping[(exchange.site_1.unique_id, first_site_offset.as_tuple)]
+                target_site_2 = site_mapping[(exchange.site_2.unique_id, second_site_lookup_value)]
 
-                # Create the new coupling using their update method, which copies everything not specified
-                new_couplings.append(
-                    coupling.updated(
+                # Create the new exchange using their update method, which copies everything not specified
+                new_exchanges.append(
+                    exchange.updated(
                         site_1=target_site_1,
                         site_2=target_site_2,
                         cell_offset=new_cell_offset))
 
                 # Add entry to mapping
-                coupling_mapping.append(original_index)
+                exchange_mapping.append(original_index)
 
             for original_index, anisotropy in enumerate(self.anisotropies):
                 target_site = site_mapping[(anisotropy.site.unique_id, first_site_offset.as_tuple)]
@@ -313,11 +313,11 @@ class Hamiltonian(SPWSerialisable):
             sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
             spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
-            supercell=TrivialSupercell(scaling=(1,1,1))
+            supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
-        return (Hamiltonian(structure=structure, couplings=new_couplings, anisotropies=new_anisotropies),
-                site_mapping, coupling_mapping, anisotropy_mapping)
+        return (Hamiltonian(structure=structure, exchanges=new_exchanges, anisotropies=new_anisotropies),
+                site_mapping, exchange_mapping, anisotropy_mapping)
 
     def expanded(self):
         """ Expand the supercell structure into a single cell structure """
@@ -397,20 +397,20 @@ class Hamiltonian(SPWSerialisable):
             else:
                 newstruc = Structure(**{k:getattr(self.structure, k) for k in ['sites', 'unit_cell', 'spacegroup']},
                                supercell=self.structure.supercell.approximant())
-                expanded = Hamiltonian(newstruc, self.couplings, self.anisotropies).expanded()
+                expanded = Hamiltonian(newstruc, self.exchanges, self.anisotropies).expanded()
                 scaling, rotating_frame = (newstruc.supercell.scaling, None)
         else:
             if use_rotating:
                 logger.warning("Cannot do rotating frame calculation propagation vector or plane normal not specified")
             expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.scaling, None)
 
-        # Get the positions, rotations, moments for the sites
-        moments = []
+        # Get the positions, rotations, spins for the sites
+        spins = []
         positions = []
         unique_id_to_index: dict[int, int] = {}
         for index, site in enumerate(expanded.structure.sites):
-            # TODO: Sort out moments for supercells
-            moments.append(site.base_moment)
+            # TODO: Sort out spins for supercells
+            spins.append(site.base_spin)
 
             positions.append(site.ijk)
 
@@ -428,21 +428,21 @@ class Hamiltonian(SPWSerialisable):
                                 vector=2.0 * np.array(field, **rust_kw),
                                 g_tensors=np.array(g_tensors, **rust_kw))
 
-        moments = np.array(moments, dtype=float)
-        rotations = site_rotations(moments)
-        magnitudes = np.sqrt(np.sum(moments**2, axis=1))
+        spins = np.array(spins, dtype=float)
+        rotations = site_rotations(spins)
+        magnitudes = np.sqrt(np.sum(spins**2, axis=1))
         rotations = np.array([rotations[i, :, :] for i in range(rotations.shape[0])], **rust_kw)
 
         # Convert the couplings
-        couplings: list[Coupling] = []
-        for input_coupling in expanded.couplings:
+        couplings: list[Exchange] = []
+        for input_exchange in expanded.exchanges:
             # Normal coupling
 
             coupling = coupling_class(
-                unique_id_to_index[input_coupling.site_1._unique_id],
-                unique_id_to_index[input_coupling.site_2._unique_id],
-                np.array(input_coupling.coupling_matrix, **rust_kw),
-                input_coupling.cell_offset.vector.astype('double')
+                unique_id_to_index[input_exchange.site_1._unique_id],
+                unique_id_to_index[input_exchange.site_2._unique_id],
+                np.array(input_exchange.exchange_matrix, **rust_kw),
+                input_exchange.cell_offset.vector.astype('double')
             )
 
             couplings.append(coupling)
@@ -450,10 +450,10 @@ class Hamiltonian(SPWSerialisable):
             # Reversed coupling
 
             coupling = coupling_class(
-                unique_id_to_index[input_coupling.site_2._unique_id],
-                unique_id_to_index[input_coupling.site_1._unique_id],
-                np.array(input_coupling.coupling_matrix.T, **rust_kw),
-                -input_coupling.cell_offset.vector.astype('double')
+                unique_id_to_index[input_exchange.site_2._unique_id],
+                unique_id_to_index[input_exchange.site_1._unique_id],
+                np.array(input_exchange.exchange_matrix.T, **rust_kw),
+                -input_exchange.cell_offset.vector.astype('double')
             )
 
             couplings.append(coupling)
@@ -718,11 +718,11 @@ class Hamiltonian(SPWSerialisable):
         old_uid_to_new_site = {}
         new_sites = []
         for site_index, site in enumerate(minimiser.sites):
-            spin_data = minimiser.moment_data[site_index, :, :]
+            spin_data = minimiser.spin_data[site_index, :, :]
 
             old_uid = site.unique_id
             new_site = LatticeSite(site.i, site.j, site.k,
-                                   supercell_moments=spin_data,
+                                   supercell_spins=spin_data,
                                    g=site.g, name=site.name)
 
             new_sites.append(new_site)
@@ -733,37 +733,37 @@ class Hamiltonian(SPWSerialisable):
                               minimiser.hamiltonian.structure.spacegroup,
                               minimiser.hamiltonian.structure.supercell)
 
-        couplings = [coupling.updated(
-            site_1=old_uid_to_new_site[coupling.site_1.unique_id],
-            site_2=old_uid_to_new_site[coupling.site_2.unique_id])
-            for coupling in minimiser.hamiltonian.couplings]
+        exchanges = [exchange.updated(
+            site_1=old_uid_to_new_site[exchange.site_1.unique_id],
+            site_2=old_uid_to_new_site[exchange.site_2.unique_id])
+            for exchange in minimiser.hamiltonian.exchanges]
 
         anisotropies = [anisotropy.updated(
             site=old_uid_to_new_site[anisotropy.site.unique_id])
             for anisotropy in minimiser.hamiltonian.anisotropies]
 
-        return Hamiltonian(structure, couplings, anisotropies)
+        return Hamiltonian(structure, exchanges, anisotropies)
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),
-                "couplings": [coupling._serialise(context) for coupling in self.couplings],
+                "exchanges": [exchange._serialise(context) for exchange in self.exchanges],
                 "anisotropies": [anisotropy._serialise(context) for anisotropy in self.anisotopies]}
 
     @staticmethod
-    @expects_keys("magnetic_structure, couplings, anisotropies")
+    @expects_keys("magnetic_structure, exchanges, anisotropies")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         structure = Structure._deserialise(json["magnetic_structure"], context)
-        couplings = [Coupling._deserialise(coupling, context) for coupling in json["couplings"]]
+        exchanges = [Exchange._deserialise(exchange, context) for exchange in json["exchanges"]]
         anisotropies = [Anisotropy._deserialise(anisotropy, context) for anisotropy in json["anisotropies"]]
 
-        return Hamiltonian(structure, couplings, anisotropies)
+        return Hamiltonian(structure, exchanges, anisotropies)
 
 
 class HamiltonianParameterization:
     """ Parameterisation of a Hamiltonian
 
-    This is a callable class that returns a Hamiltonian with couplings set by specified parameters
+    This is a callable class that returns a Hamiltonian with exchanges set by specified parameters
     """
 
     def __init__(self,
@@ -776,28 +776,28 @@ class HamiltonianParameterization:
         self._ground_state_parameters = {} if find_ground_state_with is None else find_ground_state_with
 
         # Create a list of parameters that will be updated
-        base_coupling_parameters: list[list[tuple[Coupling, str]]] = []
+        base_exchange_parameters: list[list[tuple[Exchange, str]]] = []
         base_anisotropy_parameters: list[list[tuple[Anisotropy, str]]] = []
 
         for param in parameters:
-            couplings, anisotropies = _regularise_parameters(hamiltonian, param)
+            exchanges, anisotropies = _regularise_parameters(hamiltonian, param)
 
-            base_coupling_parameters.append(couplings)
+            base_exchange_parameters.append(exchanges)
             base_anisotropy_parameters.append(anisotropies)
 
         # Check that there is no conflicts, this means that each parameter is only set by only one entry
         # Basically, we can just check for duplicates
 
-        multicounts = [item for item, count in Counter(sum(base_coupling_parameters, [])).items() if count > 1]
+        multicounts = [item for item, count in Counter(sum(base_exchange_parameters, [])).items() if count > 1]
         if len(multicounts) > 0:
-            raise ValueError(f"Multiple parameters assigned to the same coupling parameter {multicounts}")
+            raise ValueError(f"Multiple parameters assigned to the same exchange parameter {multicounts}")
 
         multicounts = [item for item, count in Counter(sum(base_anisotropy_parameters, [])).items() if count > 1]
         if len(multicounts) > 0:
             raise ValueError(f"Multiple parameters assigned to the same anisotropy parameter {multicounts}")
 
-        # Check that the couplings have the required parameters
-        for parameter_definition in base_coupling_parameters:
+        # Check that the exchanges have the required parameters
+        for parameter_definition in base_exchange_parameters:
             for target, attribute in parameter_definition:
                 if attribute not in target.parameters:
                     valid_parameters = ", ".join(target.parameters)
@@ -811,17 +811,17 @@ class HamiltonianParameterization:
                     valid_parameters = ", ".join(target.scalar_parameters)
                     raise TypeError(f"{target} does not have parameter '{attribute}', it has: {valid_parameters}")
 
-        # Convert the coupling to index in the list of couplings
-        coupling_unique_id_to_index = {coupling.unique_id: index
-                                       for index, coupling in enumerate(hamiltonian.couplings)}
-        self._coupling_parameter_definitions: list[list[tuple[int, str]]] = []
+        # Convert the exchange to index in the list of exchanges
+        exchange_unique_id_to_index = {exchange.unique_id: index
+                                       for index, exchange in enumerate(hamiltonian.exchanges)}
+        self._exchange_parameter_definitions: list[list[tuple[int, str]]] = []
 
-        for parameter_definition in base_coupling_parameters:
+        for parameter_definition in base_exchange_parameters:
             indexed_parameter_definition: list[tuple[int, str]] = []
             for target, attribute in parameter_definition:
-                index = coupling_unique_id_to_index[target.unique_id]
+                index = exchange_unique_id_to_index[target.unique_id]
                 indexed_parameter_definition.append((index, attribute))
-            self._coupling_parameter_definitions.append(indexed_parameter_definition)
+            self._exchange_parameter_definitions.append(indexed_parameter_definition)
 
         # Convert the anisotropy to index for the list of anisotropies
         anisotropy_unique_id_to_index = {anisotropy.unique_id: index
@@ -836,17 +836,17 @@ class HamiltonianParameterization:
             self._anisotropy_parameter_definitions.append(indexed_parameter_definition)
 
         # Number is useful
-        self._n_parameters = len(self._coupling_parameter_definitions)
+        self._n_parameters = len(self._exchange_parameter_definitions)
 
-        assert len(self._anisotropy_parameter_definitions) == len(self._coupling_parameter_definitions), \
+        assert len(self._anisotropy_parameter_definitions) == len(self._exchange_parameter_definitions), \
             "Should both be length n_parameters"
 
     @staticmethod
-    def _legend_entry(coupling_name, parameter_name):
-        if coupling_name is None or coupling_name == "":
+    def _legend_entry(exchange_name, parameter_name):
+        if exchange_name is None or exchange_name == "":
             return parameter_name
         else:
-            return coupling_name + "." + parameter_name
+            return exchange_name + "." + parameter_name
 
     def energy_plot(self,
                     parameter_values: ArrayLike,
@@ -914,11 +914,11 @@ class HamiltonianParameterization:
         if len(parameters) != self._n_parameters:
             raise ValueError(f"Expected {self._n_parameters} parameters, got {len(parameters)}")
 
-        # Updated couplings
-        new_couplings = [coupling for coupling in self._hamiltonian.couplings]
-        for parameter_definition, value in zip(self._coupling_parameter_definitions, parameters):
-            for (coupling_index, attribute) in parameter_definition:
-                new_couplings[coupling_index] = new_couplings[coupling_index].updated(**{attribute: value})
+        # Updated exchanges
+        new_exchanges = [exchange for exchange in self._hamiltonian.exchanges]
+        for parameter_definition, value in zip(self._exchange_parameter_definitions, parameters):
+            for (exchange_index, attribute) in parameter_definition:
+                new_exchanges[exchange_index] = new_exchanges[exchange_index].updated(**{attribute: value})
 
         # Updated anisotropies
         new_anisotropies = [anisotropy for anisotropy in self._hamiltonian.anisotropies]
@@ -927,7 +927,7 @@ class HamiltonianParameterization:
                 new_anisotropies[anisotropy_index] = new_anisotropies[anisotropy_index].updated(**{attribute: value})
 
         # Return new hamiltonian, optimise ground state if needed
-        new_hamiltonian = Hamiltonian(self._hamiltonian.structure, new_couplings, self._hamiltonian.anisotropies)
+        new_hamiltonian = Hamiltonian(self._hamiltonian.structure, new_exchanges, self._hamiltonian.anisotropies)
         if self._find_ground_state:
             return new_hamiltonian.ground_state(**self._ground_state_parameters)
         else:
@@ -935,16 +935,16 @@ class HamiltonianParameterization:
 
     def __repr__(self):
         parts = []
-        for index, (couplings, anisotropies) in enumerate(zip(self._coupling_parameter_definitions,
+        for index, (exchanges, anisotropies) in enumerate(zip(self._exchange_parameter_definitions,
                                                               self._anisotropy_parameter_definitions)):
 
-            coupling_parts = [f"{self._hamiltonian.couplings[index].name}.{parameter}"
-                                for index, parameter in couplings]
+            exchange_parts = [f"{self._hamiltonian.exchanges[index].name}.{parameter}"
+                                for index, parameter in exchanges]
 
             anisotropy_parts = [f"{self._hamiltonian.anisotropies[index]}.{parameter}"
                                 for index, parameter in anisotropies]
 
-            data = ", ".join(coupling_parts + anisotropy_parts)
+            data = ", ".join(exchange_parts + anisotropy_parts)
 
             parts.append(f"argument_{index} -> {data}")
         s = "; ".join(parts)

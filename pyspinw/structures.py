@@ -6,7 +6,7 @@ import numpy as np
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
-from pyspinw.symmetry.supercell import Supercell, TrivialSupercell
+from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import connected_components, arraylike_equality
@@ -25,7 +25,7 @@ class Structure(SPWSerialisable):
         self._unit_cell = unit_cell
 
         self._spacegroup = database.spacegroups[1] if spacegroup is None else spacegroup
-        self._supercell = TrivialSupercell() if supercell is None else supercell
+        self._supercell = TiledSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
 
@@ -36,7 +36,7 @@ class Structure(SPWSerialisable):
                 bad_sites.append(site)
 
         if bad_sites:
-            raise ValueError("Expected the shape of site moment data to match what the supercell requires "
+            raise ValueError("Expected the shape of site spin data to match what the supercell requires "
                              f"({supercell.n_components()}-by-3), "
                              "bad sites are: " + ", ".join([site.name for site in bad_sites]))
 
@@ -53,7 +53,7 @@ class Structure(SPWSerialisable):
                 i=site.i + cell.i,
                 j=site.j + cell.j,
                 k=site.k + cell.k,
-                supercell_moments=site.moment_data,
+                supercell_spins=site.spin_data,
                 name=site.name
             ) for site in cell_sites]
 
@@ -61,7 +61,7 @@ class Structure(SPWSerialisable):
 
     def matplotlib_site_data(self):
         """ Data for making matplotlib scatter plots of sites """
-        array_data = np.array([self.unit_cell.fractional_to_cartesian(site._ijk)
+        array_data = np.array([self.unit_cell.lattice_units_to_cartesian(site._ijk)
                          for site in self.full_structure_site_list()])
 
         return array_data[:,0], array_data[:, 1], array_data[:, 2]
@@ -76,8 +76,8 @@ class Structure(SPWSerialisable):
         # collides with an implied site, choose the input site
         # if there is a collision between two implied sites,
         # create a new one with:
-        #  1: the same momement if the moments agree
-        #  2: zero moment (of same shape) if they do not agree
+        #  1: the same momement if the spins agree
+        #  2: zero spin (of same shape) if they do not agree
 
         n_sites_raw = len(site_list)
         collisions = np.zeros((n_sites_raw, n_sites_raw), dtype=bool)
@@ -113,23 +113,23 @@ class Structure(SPWSerialisable):
 
             # At this point, there are no non-implied sites
 
-            # Do they all have the same moment
-            same_moment = True
+            # Do they all have the same spin
+            same_spin = True
             site_1 = sites[0]
             for site_2 in sites[1:]:
                 if not arraylike_equality(
-                          site_1._moment_data,
-                          site_2._moment_data,
+                          site_1._spin_data,
+                          site_2._spin_data,
                           tolerances.SAME_SITE_ABS_TOL):
 
-                    same_moment = False
+                    same_spin = False
 
-            if same_moment:
+            if same_spin:
                 unique_sites.append(LatticeSite(
                     site_1.i,
                     site_1.j,
                     site_1.k,
-                    supercell_moments=site_1.moment_data,
+                    supercell_spins=site_1.spin_data,
                     name = site_1.name # TODO: Check if this is sensible
                 ))
 
@@ -138,7 +138,7 @@ class Structure(SPWSerialisable):
                     site_1.i,
                     site_1.j,
                     site_1.k,
-                    supercell_moments=np.zeros_like(site_1.moment_data),
+                    supercell_spins=np.zeros_like(site_1.spin_data),
                     name=site_1.name  # TODO: Check if this is sensible
                 ))
 
@@ -159,13 +159,13 @@ class Structure(SPWSerialisable):
         for index, offset in enumerate(self.supercell.cells()):
             for site in self.sites:
                 position = self.supercell.fractional_in_supercell(site.ijk, offset)
-                moment = self.supercell.moment(site, cell_offset=offset)
+                spin = self.supercell.spin(site, cell_offset=offset)
 
                 new_site = LatticeSite(
                     i=position[0],
                     j=position[1],
                     k=position[2],
-                    supercell_moments=moment,
+                    supercell_spins=spin,
                     g=site.g,
                     name=f"{site.name}[{index}]")
 
@@ -182,7 +182,7 @@ class Structure(SPWSerialisable):
             sites=[site for site in mapping.values()],
             unit_cell=cell,
             spacegroup=self.spacegroup.for_supercell(self.supercell),
-            supercell=TrivialSupercell(scaling=(1,1,1))
+            supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
 

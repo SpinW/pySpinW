@@ -1,4 +1,4 @@
-""" Groups of couplings, a neater way of representing multiple, similar couplings
+""" Groups of exchanges, a neater way of representing multiple, similar exchanges
 
 TODO: Currently broken - WIP
 
@@ -7,23 +7,23 @@ TODO: Currently broken - WIP
 import numpy as np
 from numpy._typing import ArrayLike
 
-from pyspinw.coupling import Coupling
-from pyspinw.batch_couplings import batch_couplings, default_naming_pattern
+from pyspinw.exchange import Exchange
+from pyspinw.batch_exchanges import batch_exchanges, default_naming_pattern
 from pyspinw.symmetry.symmetry_settings import SymmetrySettings
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 
 
-class AbstractCouplingGroup:
-    """ Base class for coupling groups"""
+class AbstractExchangeGroup:
+    """ Base class for exchange groups"""
 
-    def couplings(self, sites: list[LatticeSite], symmetry: SymmetrySettings):
-        """ Get the couplings defined by this groups given the sites and symmetry provided """
-        raise NotImplementedError("couplings not available in base class")
+    def exchanges(self, sites: list[LatticeSite], symmetry: SymmetrySettings):
+        """ Get the exchanges defined by this groups given the sites and symmetry provided """
+        raise NotImplementedError("exchanges not available in base class")
 
 class DirectionalityFilter:
-    """ Base class for filtering couplings by direction"""
+    """ Base class for filtering exchanges by direction"""
 
     def accept(self, vector: np.ndarray) -> bool:
         """ return True if in an allowed direction"""
@@ -80,8 +80,8 @@ class InPlaneFilter(DirectionalityFilter):
             return np.abs(np.dot(self.direction, vector) / np.sqrt(sq_mag)) < self.in_plane_dev_num
 
 
-class CouplingGroup:
-    """ Class representing the batch creation of couplings"""
+class ExchangeGroup:
+    """ Class representing the batch creation of exchanges"""
 
     def __init__(self,
                  name: str,
@@ -90,8 +90,8 @@ class CouplingGroup:
                  max_distance: float,
                  max_order: int | None,
                  naming_pattern: str | None,
-                 coupling_type: type[Coupling],
-                 coupling_parameters: dict,
+                 exchange_type: type[Exchange],
+                 exchange_parameters: dict,
                  direction_filter: DirectionalityFilter | None):
 
         self.name = name
@@ -100,51 +100,51 @@ class CouplingGroup:
         self.max_distance = max_distance
         self.max_order = max_order
         self.naming_pattern = naming_pattern
-        self.coupling_type = coupling_type
-        self.coupling_parameters = coupling_parameters
+        self.exchange_type = exchange_type
+        self.exchange_parameters = exchange_parameters
         self.direction_filter = direction_filter
 
 
-    def couplings(self, sites: list[LatticeSite], unit_cell: UnitCell):
-        """ Get the couplings defined by this groups given the sites and symmetry provided """
+    def exchanges(self, sites: list[LatticeSite], unit_cell: UnitCell):
+        """ Get the exchanges defined by this groups given the sites and symmetry provided """
         if self.bond > 0:
             # Try to improve this heuristic for the maximum distance
             distances = (0.0, np.sqrt(self.bond) * 2 * unit_cell.main_diagonal_length)
         else:
             distances = (self.min_distance, self.max_distance)
 
-        abstract_couplings = batch_couplings(
+        abstract_exchanges = batch_exchanges(
             sites=sites,
             unit_cell=unit_cell,
             max_distance=distances[1],
             naming_pattern=default_naming_pattern if self.naming_pattern is None else self.naming_pattern,
-            type_symbol=self.coupling_type.short_string)
+            type_symbol=self.exchange_type.short_string)
 
         if self.bond > 0:
             dp = int(np.ceil(np.log10(1 / tolerances.BOND_TOL)))
-            bond_distances = np.sort(np.unique(np.round([c.distance for c in abstract_couplings], decimals=dp)))
-            abstract_couplings = [c for c in abstract_couplings
+            bond_distances = np.sort(np.unique(np.round([c.distance for c in abstract_exchanges], decimals=dp)))
+            abstract_exchanges = [c for c in abstract_exchanges
                                   if np.abs(c.distance - bond_distances[self.bond-1]) < tolerances.BOND_TOL]
 
-        kept_couplings = []
-        for coupling in abstract_couplings:
-            if self.max_order is not None and coupling.order > self.max_order:
+        kept_exchanges = []
+        for exchange in abstract_exchanges:
+            if self.max_order is not None and exchange.order > self.max_order:
                 continue
 
-            if distances[0] <= coupling.distance <= distances[1]:
-                kept_couplings.append(self.coupling_type(
-                    name=coupling.name,
-                    site_1=coupling.site_1,
-                    site_2=coupling.site_2,
-                    cell_offset=coupling.cell_offset,
-                    **self.coupling_parameters))
+            if distances[0] <= exchange.distance <= distances[1]:
+                kept_exchanges.append(self.exchange_type(
+                    name=exchange.name,
+                    site_1=exchange.site_1,
+                    site_2=exchange.site_2,
+                    cell_offset=exchange.cell_offset,
+                    **self.exchange_parameters))
 
         # Apply the filtering
         if self.direction_filter is not None:
-            kept_couplings = [coupling
-                              for coupling in kept_couplings
-                              if self.direction_filter.accept(coupling.vector(unit_cell))]
+            kept_exchanges = [exchange
+                              for exchange in kept_exchanges
+                              if self.direction_filter.accept(exchange.vector(unit_cell))]
 
-        return kept_couplings
+        return kept_exchanges
 
 

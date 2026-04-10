@@ -9,17 +9,17 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
-from pyspinw.coupling import HeisenbergCoupling, DiagonalCoupling, XYCoupling, IsingCoupling, DMCoupling
+from pyspinw.exchange import HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange
 from pyspinw.hamiltonian import Hamiltonian
 
-from pyspinw.couplinggroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
+from pyspinw.exchangegroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
 
 from pyspinw.interface import (
     generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
-    filter, generate_exchanges, axis_anisotropies, matrix_anisotropies)
+    filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure)
 
 from pyspinw.symmetry.supercell import (
-    SummationSupercell, RotationSupercell, TransformationSupercell, TrivialSupercell,
+    SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell,
     PropagationVector, CommensuratePropagationVector)
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
@@ -29,6 +29,8 @@ from pyspinw.windows_parallelisation import set_up_windows_python_parallelisatio
 
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType
 from pyspinw.gui.viewer import show_hamiltonian as view
+
+from pyspinw.units import CoordsUnits, IntensityUnits
 
 from pyspinw.demo import demo_viewer, demo_chains
 from pyspinw.demo import run_demos as demos
@@ -43,14 +45,14 @@ __all__ = [
     "Anisotropy",
     "AxisMagnitudeAnisotropy",
 
-    # coupling
-    "HeisenbergCoupling",
-    "DiagonalCoupling",
-    "XYCoupling",
-    "IsingCoupling",
-    "DMCoupling",
+    # exchanges
+    "HeisenbergExchange",
+    "DiagonalExchange",
+    "XYExchange",
+    "IsingExchange",
+    "DMExchange",
 
-    # coupling groups
+    # filters
     "InPlaneFilter",
     "InDirectionFilter",
     "BiDirectionFilter",
@@ -62,23 +64,28 @@ __all__ = [
     # symmetry
     "UnitCell",
 
+    # units
+    "CoordsUnits",
+    "IntensityUnits",
+
     # interface functions
-    "generate_sites",
     "propagation_vectors",
     "rotation_supercell",
     "helical_supercell",
     "summation_supercell",
     "spacegroup",
     "filter",
-    "generate_exchanges",
     "axis_anisotropies",
     "matrix_anisotropies",
+    "generate_sites",
+    "generate_exchanges",
+    "generate_helical_structure",
 
     # supercells
     "SummationSupercell",
     "RotationSupercell",
     "TransformationSupercell",
-    "TrivialSupercell",
+    "TiledSupercell",
     "PropagationVector",
     "CommensuratePropagationVector",
 

@@ -4,11 +4,11 @@ import pytest
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.interface import generate_exchanges
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
-from pyspinw.symmetry.supercell import TrivialSupercell, SummationSupercell, CommensuratePropagationVector, \
+from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector, \
     TransformationSupercell, RotationTransform
 
 from pyspinw.symmetry.unitcell import UnitCell
@@ -23,13 +23,13 @@ def test_energy_invariance_trivial_supercell():
     sites = [x1, x2]
 
     exchanges = generate_exchanges(sites=sites,
-                                  unit_cell=unit_cell,
-                                  max_distance=0.6,
-                                  coupling_type=HeisenbergCoupling,
-                                  j=-1)
+                                   unit_cell=unit_cell,
+                                   max_distance=0.6,
+                                   exchange_type=HeisenbergExchange,
+                                   j=-1)
 
     energies = []
-    for supercell in [TrivialSupercell(), TrivialSupercell((2,2,2)), TrivialSupercell((1,2,3))]:
+    for supercell in [TiledSupercell(), TiledSupercell((2, 2, 2)), TiledSupercell((1, 2, 3))]:
 
         s = Structure(sites, unit_cell=unit_cell, supercell=supercell)
         hamiltonian = Hamiltonian(s, exchanges)
@@ -55,12 +55,12 @@ def test_energy_behaviour_summation_supercell():
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, supercell_moments=[[0, 0, 1],[0,0,0]], name="X1")
-    x2 = LatticeSite(0, 0, 0, supercell_moments=[[0, 0, 0], [0, 0, 1]], name="X2")
+    x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
+    x2 = LatticeSite(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
 
     sites = [x1, x2]
 
-    exchanges = [HeisenbergCoupling(x1, x2, j=-1)]
+    exchanges = [HeisenbergExchange(x1, x2, j=-1)]
 
     energies = []
     energy_factors = []
@@ -110,12 +110,12 @@ def test_energy_behaviour_summation_supercell():
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, supercell_moments=[[0, 0, 1],[0,0,0]], name="X1")
-    x2 = LatticeSite(0, 0, 0, supercell_moments=[[0, 0, 0], [0, 0, 1]], name="X2")
+    x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
+    x2 = LatticeSite(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
 
     sites = [x1, x2]
 
-    exchanges = [HeisenbergCoupling(x1, x2, j=-1)]
+    exchanges = [HeisenbergExchange(x1, x2, j=-1)]
 
     energies = []
     energy_factors = []
@@ -167,7 +167,7 @@ def test_energy_behaviour_rotation_supercell():
 
     x = LatticeSite(0, 0, 0.5, 0,0,1, name="X")
 
-    exchanges = [HeisenbergCoupling(x, x, cell_offset=CellOffset(0,0,1), j=-1)]
+    exchanges = [HeisenbergExchange(x, x, cell_offset=CellOffset(0, 0, 1), j=-1)]
 
     energies = []
     energy_factors = []
@@ -207,7 +207,7 @@ def test_rotation_supercell_error():
     #     pass
 
 def test_optimise_transformation_supercell():
-    """ Test optimisation of a supercell where moments need to be as unaligned as possible """
+    """ Test optimisation of a supercell where spins need to be as unaligned as possible """
 
     a = LatticeSite(0.25,0,0, 1, 0, 0, name="A")
     x = LatticeSite(0.5, 0, 0, 1, 1, 1, name="X")
@@ -218,25 +218,25 @@ def test_optimise_transformation_supercell():
     structure = Structure(sites, UnitCell(1,1,1),
                           supercell=TransformationSupercell([(pv, RotationTransform([1,0,0]))]))
 
-    couplings = [HeisenbergCoupling(a, x, 1)]
+    exchanges = [HeisenbergExchange(a, x, 1)]
 
-    hamiltonian = Hamiltonian(structure, couplings)
+    hamiltonian = Hamiltonian(structure, exchanges)
 
     optimised = hamiltonian.ground_state(fixed=[a])
 
     x_new = optimised.sites_by_name("X")[0]
 
 
-    base_moment_direction = x_new.base_moment / np.sqrt(np.sum(x_new.base_moment**2))
+    base_spin_direction = x_new.base_spin / np.sqrt(np.sum(x_new.base_spin ** 2))
 
-    assert np.isclose(np.dot(base_moment_direction, [1,0,0]), -1)
+    assert np.isclose(np.dot(base_spin_direction, [1,0,0]), -1)
 
 def test_optimise_summation_supercell():
     """ A system where we optimise one of the in the supercell but not the other, just check it doesn't crash """
-    x = LatticeSite(0.25,0,0, supercell_moments=[[0,0,1], [0,0,0]], name="X")
-    y = LatticeSite(0.75,0,0, supercell_moments=[[0,0,0], [1,1,1]], name="Y")
+    x = LatticeSite(0.25, 0, 0, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X")
+    y = LatticeSite(0.75, 0, 0, supercell_spins=[[0, 0, 0], [1, 1, 1]], name="Y")
 
-    couplings = [HeisenbergCoupling(x, y, j=1)]
+    exchanges = [HeisenbergExchange(x, y, j=1)]
 
     pv1 = CommensuratePropagationVector(1,1, 1/2)
     pv2 = CommensuratePropagationVector(1,1, 1/3, phase=np.pi/2)
@@ -245,7 +245,7 @@ def test_optimise_summation_supercell():
 
     structure = Structure([x, y], unit_cell=UnitCell(1,1,1), supercell=supercell)
 
-    hamiltonian = Hamiltonian(structure, couplings)
+    hamiltonian = Hamiltonian(structure, exchanges)
 
     optimised = hamiltonian.ground_state(fixed=[x])
 

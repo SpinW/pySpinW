@@ -2,7 +2,7 @@
 
 from multiprocessing.spawn import freeze_support
 
-from pyspinw.coupling import HeisenbergCoupling
+from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges
 from pyspinw.path import Path
@@ -19,8 +19,8 @@ unit_cell = UnitCell(3, 8, 8)
 x = LatticeSite(0, 0, 0, 0, 1, 0, name="X")
 y = LatticeSite(0.5, 0, 0, 0, 1, 0, name="Y")
 
-j1 = HeisenbergCoupling(x, y, j=1, cell_offset=(0,0,0), name="J1")
-j2 = HeisenbergCoupling(y, x, j=1, cell_offset=(0,1,0), name="J2")
+j1 = HeisenbergExchange(x, y, j=1, cell_offset=(0, 0, 0), name="J1")
+j2 = HeisenbergExchange(y, x, j=1, cell_offset=(0, 1, 0), name="J2")
 
 sites = [x, y]
 exchanges = [j1, j2]

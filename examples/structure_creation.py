@@ -1,6 +1,6 @@
 from pyspinw.interface import spacegroup
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.supercell import TrivialSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structures import Structure
 
@@ -16,7 +16,7 @@ s = Structure([
     LatticeSite(0.2, 0.0, 0.2)],
     unit_cell=unit_cell,
     spacegroup=group,
-    supercell=TrivialSupercell())
+    supercell=TiledSupercell())
 
 for site in s.sites:
     print(site)
@@ -33,7 +33,7 @@ s = Structure([
     LatticeSite(0.2, 0.0, 0.2)],
     unit_cell=unit_cell,
     spacegroup=group,
-    supercell=TrivialSupercell(scaling=(3,3,3)))
+    supercell=TiledSupercell(scaling=(3, 3, 3)))
 
 for site in s.full_structure_site_list():
     print(site)
