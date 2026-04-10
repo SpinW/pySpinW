@@ -78,3 +78,12 @@ def test_tri_antiferro():
     energy, intensity = hamiltonian.energies_and_intensities(QVECS, use_rust=False, use_rotating=True)
     # Ignore last Q point as it is not positive definite and numerically different in Matlab and Python
     _test_ref_data('tri_antiferro', *omegasum(energy, intensity, is_series=False), ignoreQ=[5])
+
+def test_square_antiferro():
+    unit_cell = UnitCell(3, 3, 9)
+    sites = generate_structure(unit_cell, positions=[[0,0,0]], moments=[[1,0,0]], names=['X'],
+                               propagation_vectors=[[0.5, 0.5, 0]])
+    # Note this model has spins in a-b plane but z-axis anisotropy so will give imaginary modes (needs non-herm solver)
+    hamiltonian = Hamiltonian(sites, generate_exchanges(sites, bond=1, j=0.5), axis_anisotropies(sites, -0.1))
+    energy, intensity = hamiltonian.energies_and_intensities(QVECS, use_rust=False, use_rotating=False)
+    _test_ref_data('square_antiferro', *omegasum(energy, intensity, is_series=False))
