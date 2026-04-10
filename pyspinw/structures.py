@@ -209,14 +209,8 @@ class Structure(SPWSerialisable):
 
     @property
     def sites(self) -> list[LatticeSite]:
-        """ Get the sites used to define the structure (but implied by symmetry) """
-        return self._input_sites.copy()
-
-    @sites.setter
-    def sites(self, sites):
-        """ Set the input sites """
-        self._input_sites = sites
-        self._sites = self._build_sites()
+        """ Get the sites used to define the structure and implied by symmetry """
+        return self._sites.copy()
 
     def sites_by_name(self, regex) -> list[LatticeSite]:
         """ Get sites where name matches regex"""

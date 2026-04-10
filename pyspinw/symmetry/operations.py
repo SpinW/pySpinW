@@ -38,7 +38,8 @@ class SpaceOperation:
 
         for i in range(3):
             if translation[i] < 0 or translation[i] >= 1:
-                raise ValueError("Translation entries must take values in the half open interval [0, 1)")
+                raise ValueError("Translation entries must take values in the half open interval [0, 1),"
+                                 f" got translation of {translation}")
 
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
@@ -94,6 +95,9 @@ class SpaceOperation:
 
         return ", ".join(strings)
 
+    def __repr__(self):
+        return self.text_form
+
 
     def and_then(self, other: "SpaceOperation"):
         """ Composition of operations """
@@ -133,6 +137,16 @@ class SpaceOperation:
         return SpaceOperation(point_operation=point_operation,
                                  translation=translation,
                                  name=name)
+
+    @staticmethod
+    def from_transformation_matrix(matrix: np.ndarray, name: str | None = None):
+        point_operation = tuple(tuple(int(matrix[j, i]) for i in range(3)) for j in range(3))
+        translation = tuple(Fraction(matrix[i, 3]).limit_denominator(100) % 1 for i in range(3))
+
+        return SpaceOperation(
+            point_operation=point_operation,
+            translation=translation,
+            name=name)
 
     def __call__(self, points: ArrayLike) -> np.ndarray:
         """ Apply this operation to a list of points """

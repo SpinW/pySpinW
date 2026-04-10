@@ -3,9 +3,14 @@
 from pyspinw import *
 
 unit_cell = UnitCell(8.539,8.539, 5.2414, 90, 90, 120)
-sites = [LatticeSite(0.24964,0, 1/2, 0, 0, 5/2)]
+sites = [LatticeSite(0, 0.24964, 1/2, 0, 0, 5/2, name="Fe3")]
+sg = spacegroup("P 3 2 1")
 
-structure = Structure(sites, unit_cell, spacegroup("P321"))
+for operation in sg.operations:
+    print(operation)
+
+structure = Structure(sites, unit_cell, sg, supercell=TiledSupercell(scaling=(2,2,1)))
+# structure = Structure(sites, unit_cell, sg)
 
 
 
