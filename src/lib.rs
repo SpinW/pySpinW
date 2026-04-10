@@ -20,7 +20,7 @@ mod utils;
 type C64 = Complex<f64>;
 
 // nicer names for PyO3 output types
-type Energies<'py> = Vec<Bound<'py, PyArray1<f64>>>;
+type Energies<'py> = Vec<Bound<'py, PyArray1<C64>>>;
 type SabTensor<'py> = Vec<Vec<Bound<'py, PyArray2<C64>>>>;
 type SQw<'py> = Vec<Bound<'py, PyArray1<f64>>>;
 

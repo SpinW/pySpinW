@@ -23,7 +23,7 @@ const J2PI: C64 = C64::new(0., 2. * PI);
 /// - `sab`: Optional spin-spin correlation tensors S'^{alpha, beta} for each mode.
 /// - `intensities`: The neutron scattering intensities (S_perp) for each mode.
 pub struct SpinwaveResult {
-    pub energies: Vec<f64>,
+    pub energies: Vec<C64>,
     pub sab: Option<Vec<Mat<C64>>>,
     pub intensities: Vec<f64>,
 }
@@ -58,7 +58,7 @@ struct RotatingFrameComponents {
 
 /// Return values for hermitian/non-hermitian branches - eigenvalues and transformation matrix T
 /// Fields:
-/// - `E`: The eigenvalues of the Hamiltonian
+/// - `eigvals`: The eigenvalues of the Hamiltonian
 /// - `T`: The transformation matrix to compute the spin correlations (derived from eigenvectors)
 struct HamiltonianResults {
     eigvals: Col<C64>,
@@ -364,8 +364,12 @@ fn calc_sqrt_hamiltonian(hamiltonian: MatRef<C64>) -> Result<Mat<C64>, String> {
     if let Ok(chol) = hamiltonian.clone().llt(Side::Lower) {
         Ok(chol.L().to_owned())
     } else if let Ok(ldl) = hamiltonian.ldlt(Side::Lower) {
+        let D = ldl.D().column_vector();
+        if D.iter().any(|v| v.re < -SINGULAR_FTOL) {
+            return Err(String::from("LDLT: Hamiltonian not positive-semi-definite"));
+        }
         let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
-        zip!(&mut sqrt_d, ldl.D().column_vector()).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
+        zip!(&mut sqrt_d, D).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
         Ok(ldl.L() * sqrt_d.as_diagonal())
     } else {
         let ldl = hamiltonian.lblt(Side::Lower);
@@ -380,10 +384,8 @@ fn calc_sqrt_hamiltonian(hamiltonian: MatRef<C64>) -> Result<Mat<C64>, String> {
         // or if any diagonal element is negative. I've not found any proof that the
         // diagonal blocks are equivalent to eigenvalues but this post:
         // https://mathoverflow.net/questions/84420 suggest it could be.
-        if s.iter().any(|v| v.re.abs() > SINGULAR_FTOL)
-            || d.iter().any(|v| v.re.abs() < -SINGULAR_FTOL)
-        {
-            return Err(String::from("Hamiltonian not positive-semi-definite"));
+        if s.iter().any(|v| v.re.abs() > SINGULAR_FTOL) || d.iter().any(|v| v.re < -SINGULAR_FTOL) {
+            return Err(String::from("LBLT: Hamiltonian not positive-semi-definite"));
         }
         let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
         zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
@@ -471,9 +473,12 @@ fn solve_ham_nonherm(hamiltonian: Mat<C64>, n_sites: usize) -> HamiltonianResult
     let eigvals: Col<C64> = eigendecomp.S().column_vector().to_owned();
     let eigvecs: MatRef<C64> = eigendecomp.U();
     let mut T = eigvecs.cloned();
-    let mut neg_ev = T.submatrix_mut(n_sites, 0, n_sites, 2 * n_sites);
-    neg_ev *= -1.;
-    let mut M = (T.cloned().adjoint() * T)
+    // Computes gComm * V * gComm
+    let mut botleft = T.submatrix_mut(n_sites, 0, n_sites, n_sites);
+    botleft *= -1.;
+    let mut topright = T.submatrix_mut(0, n_sites, n_sites, n_sites);
+    topright *= -1.;
+    let mut M = (T.adjoint() * eigvecs)
         .diagonal()
         .column_vector()
         .to_owned();
@@ -612,12 +617,12 @@ fn spinwave_single_q(
 
     match save_Sab {
         true => SpinwaveResult {
-            energies: eigvals.iter().map(|x| x.re).collect(),
+            energies: eigvals.iter().copied().collect(),
             sab: Some(Sab),
             intensities,
         },
         false => SpinwaveResult {
-            energies: eigvals.iter().map(|x| x.re).collect(),
+            energies: eigvals.iter().copied().collect(),
             sab: None,
             intensities,
         },

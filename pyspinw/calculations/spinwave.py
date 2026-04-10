@@ -16,6 +16,8 @@ from pyspinw.windows_parallelisation import windows_python_parallelisation_enabl
 ZERO_ENERGY_TOL = 1e-12
 # tolerance of diagonal matrix elements to be considered singular
 SINGULAR_TOL = 1e-7
+# tolerance to determine of energy levels are degenerate
+DEGEN_TOL = 1e-5
 
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
@@ -209,8 +211,9 @@ def _solve_ham_nonherm(hamiltonian_matrix: np.ndarray, n_sites:int):
     hamiltonian_matrix[n_sites:, :] *= -1  # gComm * ham
     eigvals, eigvecs = np.linalg.eig(hamiltonian_matrix)
     gV = eigvecs.copy()
-    gV[n_sites:, :] *= -1
-    M = np.diag(gV.conj().T @ gV)
+    gV[:n_sites, n_sites:] *= -1
+    gV[n_sites:, :n_sites] *= -1
+    M = np.diag(gV.conj().T @ eigvecs)
     T = eigvecs @ np.diag(np.sqrt(1 / (M + SINGULAR_TOL)))
 
     return eigvals, T
