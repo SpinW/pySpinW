@@ -178,7 +178,7 @@ def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
         # if there are off-diagonal elements of d (in 2x2 blocks) or if any diagonal elements are negative
         # then the hamiltonian matrix is not positive semi-definite and we must use another algorithm
         # see discussion in https://mathoverflow.net/questions/84420 and paper by Roy Mathias
-        assert all(np.abs(np.diag(d, k=1)) < SINGULAR_TOL) and all(np.diag(d) > -SINGULAR_TOL), 'Singular matrix'
+        assert all(np.abs(np.diag(d, k=1)) <= SINGULAR_TOL) and all(np.diag(d) >= -SINGULAR_TOL), 'Singular matrix'
         sqrt_hamiltonian = l[p,:] @ np.sqrt(d)
 
     sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
