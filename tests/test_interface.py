@@ -26,8 +26,8 @@ sys.modules['pyspinw.calculations.spinwave'].get_Executor = get_Executor
 def _test_ref_data(test_name, energy, intensity, ignoreQ=None):
     eref, intref = omegasum(REFDAT[test_name][0][0].T, REFDAT[test_name][0][1].T, is_series=False)
     # Remove very large intensities as this diverges near zone centre
-    intensity[np.where(intensity > INTHIGH)] = np.nan 
-    intref[np.where(intref > INTHIGH)] = np.nan 
+    intensity[np.where(intensity > INTHIGH)] = 0
+    intref[np.where(intref > INTHIGH)] = 0
     if ignoreQ is not None:
         idx = [i for i in range(energy.shape[0]) if i not in ignoreQ]
         energy, intensity, eref, intref = (energy[idx,:], intensity[idx,:], eref[idx,:], intref[idx,:])
