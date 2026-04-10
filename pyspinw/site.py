@@ -174,11 +174,19 @@ class LatticeSite(SPWSerialisable):
 
     def __repr__(self):
         m = self.base_spin
-        if np.sum(m**2) < 1e-9:
-            return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
 
+        if self.name is None or self.name == "":
+            if np.sum(m**2) < 1e-9:
+                return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
+
+            else:
+                return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, spin={self.base_spin})"
         else:
-            return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, spin={self.base_spin})"
+            if np.sum(m ** 2) < 1e-9:
+                return f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
+
+            else:
+                return f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g}, spin={self.base_spin})"
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         if not context.sites.has(self._unique_id):
