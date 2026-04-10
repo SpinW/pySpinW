@@ -19,7 +19,7 @@ class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
     :param: i,j,k - *required* Fractional coordinates within unit cell
-    :param: mi,mj,mk - Spin
+    :param: sx, sy, sz - Spin components in the Cartesian directions defined by x||a, z perpendicular to a-b
     :param: supercell_spins - Spin for each propagation vector
     :param: g - g-tensor (3x3)
     :param: name
@@ -29,9 +29,9 @@ class LatticeSite(SPWSerialisable):
 
     def __init__(self,
                  i: float, j: float, k: float,
-                 si: float | None = None,
-                 sj: float | None = None,
-                 sk: float | None = None,
+                 sx: float | None = None,
+                 sy: float | None = None,
+                 sz: float | None = None,
                  supercell_spins: ArrayLike | None = None,
                  g: ArrayLike | None = None,
                  name: str = ""):
@@ -46,14 +46,14 @@ class LatticeSite(SPWSerialisable):
 
         if supercell_spins is None:
             self._spin_data = np.array([[
-                0.0 if si is None else si,
-                0.0 if sj is None else sj,
-                0.0 if sk is None else sk]],
+                0.0 if sx is None else sx,
+                0.0 if sy is None else sy,
+                0.0 if sz is None else sz]],
                     dtype=float)
 
         else:
-            if si is not None or sj is not None or sk is not None:
-                raise ValueError("You need to specify either 'mi', 'mj' and 'mk', or 'supercell_spins'")
+            if sx is not None or sy is not None or sz is not None:
+                raise ValueError("You need to specify either 'sx', 'sy' and 'sz', or 'supercell_spins'")
 
             good_shape = True
 
@@ -164,9 +164,9 @@ class LatticeSite(SPWSerialisable):
             i=float(coordinates[0]),
             j=float(coordinates[1]),
             k=float(coordinates[2]),
-            si=float(coordinates[3]),
-            sj=float(coordinates[4]),
-            sk=float(coordinates[5]),
+            sx=float(coordinates[3]),
+            sy=float(coordinates[4]),
+            sz=float(coordinates[5]),
             name=name)
 
     def __hash__(self):
@@ -235,16 +235,16 @@ class ImpliedLatticeSite(LatticeSite):
     def __init__(self,
                  parent_site: LatticeSite,
                  i: float, j: float, k: float,
-                 si: float | None = None,
-                 sj: float | None = None,
-                 sk: float | None = None,
+                 sx: float | None = None,
+                 sy: float | None = None,
+                 sz: float | None = None,
                  supercell_spins: np.ndarray | None = None,
                  name: str | None = None):
 
         self._parent_site = parent_site
 
         super().__init__(i=i, j=j, k=k,
-                         si=si, sj=sj, sk=sk,
+                         sx=sx, sy=sy, sz=sz,
                          supercell_spins=supercell_spins,
                          name=name)
 
@@ -279,8 +279,8 @@ class ImpliedLatticeSite(LatticeSite):
             i=float(coordinates[0]),
             j=float(coordinates[1]),
             k=float(coordinates[2]),
-            si=float(coordinates[3]),
-            sj=float(coordinates[4]),
-            sk=float(coordinates[5]),
+            sx=float(coordinates[3]),
+            sy=float(coordinates[4]),
+            sz=float(coordinates[5]),
             name=name)
 
