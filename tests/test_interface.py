@@ -16,6 +16,13 @@ QVECS = np.array([[0.1, 0, 0], [0.2, 0, 0], [0.1, 0.1, 0], [0.1, 0.1, 0.1], [0, 
 REFDAT = scipy.io.loadmat(os.path.join(os.path.dirname(__file__), 'matlab_test_data.mat'))
 INTHIGH = 100
 
+# Monkey patch the parallelisation routines so calculations show up in coverage
+from concurrent.futures import ThreadPoolExecutor
+import sys
+def get_Executor():
+    return ThreadPoolExecutor
+sys.modules['pyspinw.calculations.spinwave'].get_Executor = get_Executor
+
 def _test_ref_data(test_name, energy, intensity, ignoreQ=None):
     eref, intref = omegasum(REFDAT[test_name][0][0].T, REFDAT[test_name][0][1].T, is_series=False)
     # Remove very large intensities as this diverges near zone centre
