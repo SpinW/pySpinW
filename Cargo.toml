@@ -1,5 +1,5 @@
 [package]
-name = "pySpinW"
+name = "spinw-python"
 version = "1.0.0-alpha.1"
 edition = "2021"
 license = "GPL-3.0-or-later"

@@ -1,5 +1,5 @@
 [project]
-name = "pySpinW"
+name = "spinw-python"
 requires-python = ">=3.10"
 dynamic = ["version"]
 readme = "README.md"
