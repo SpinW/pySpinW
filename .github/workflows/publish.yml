@@ -52,7 +52,7 @@ jobs:
       - name: Publish
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ contains('test', github.ref) && secrets.TEST_PYPI_TOKEN || secrets.PYPI_TOKEN }}
+          TWINE_PASSWORD: ${{ contains(github.ref, 'test') && secrets.TEST_PYPI_TOKEN || secrets.PYPI_TOKEN }}
         run: |
           mkdir -p wheelhouse-flattened
           find wheelhouse -name "*.whl" -exec mv {} wheelhouse-flattened/ \;
