@@ -142,6 +142,19 @@ class LatticeSite(SPWSerialisable):
         """ Get all the spin data"""
         return self._spin_data
 
+    @spin_data.setter
+    def spin_data(self, spin_data):
+        spin_data = np.array(spin_data)
+
+        try:
+            spin_data = spin_data.reshape(3, -1)
+
+        except ValueError as e:
+            raise ValueError("Expected spin data to be length 3, or convertable to a 3-by-n array")
+
+        self._spin_data = spin_data
+
+
     @property
     def g(self) -> np.ndarray:
         """ Magnetic g-factor, a 3x3 matrix/tensor """
