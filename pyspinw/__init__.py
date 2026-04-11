@@ -75,6 +75,7 @@ __all__ = [
     "summation_supercell",
     "spacegroup",
     "filter",
+    "generate_exchanges",
     "axis_anisotropies",
     "matrix_anisotropies",
     "generate_sites",

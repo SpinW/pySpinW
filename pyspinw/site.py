@@ -142,6 +142,19 @@ class LatticeSite(SPWSerialisable):
         """ Get all the spin data"""
         return self._spin_data
 
+    @spin_data.setter
+    def spin_data(self, spin_data):
+        spin_data = np.array(spin_data)
+
+        try:
+            spin_data = spin_data.reshape(3, -1)
+
+        except ValueError as e:
+            raise ValueError("Expected spin data to be length 3, or convertable to a 3-by-n array")
+
+        self._spin_data = spin_data % 1
+
+
     @property
     def g(self) -> np.ndarray:
         """ Magnetic g-factor, a 3x3 matrix/tensor """
@@ -174,11 +187,19 @@ class LatticeSite(SPWSerialisable):
 
     def __repr__(self):
         m = self.base_spin
-        if np.sum(m**2) < 1e-9:
-            return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
 
+        if self.name is None or self.name == "":
+            if np.sum(m**2) < 1e-9:
+                return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
+
+            else:
+                return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, spin={self.base_spin})"
         else:
-            return f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, spin={self.base_spin})"
+            if np.sum(m ** 2) < 1e-9:
+                return f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g})"
+
+            else:
+                return f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g}, spin={self.base_spin})"
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         if not context.sites.has(self._unique_id):

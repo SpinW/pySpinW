@@ -391,7 +391,7 @@ class XYExchange(Exchange):
                  name: str=""):
 
         self._j = j
-        self._exchange_matrix = np.diag([0.0, j, j], dtype=float)
+        self._exchange_matrix = np.diag([j, j, 0.0], dtype=float)
 
         super().__init__(site_1=site_1,
                          site_2=site_2,

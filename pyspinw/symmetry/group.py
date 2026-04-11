@@ -1,5 +1,6 @@
 """ Space groups and magnetic space groups"""
-
+import os.path
+import pickle
 from collections import defaultdict
 from enum import Enum
 from typing import Callable
@@ -53,7 +54,7 @@ class MagneticSpaceGroup(SymmetryGroup):
         """ Find "duplicate" sites of a given site """
         # TODO: Transform moments in the correct coordinate system
 
-        coordinates = site.values.reshape(1, -1)
+        coordinates = site.values.reshape(1, -1) % 1
 
         new_coordinates = []
         for operation in self.operations:
@@ -94,6 +95,7 @@ class SpaceGroup(SymmetryGroup):
     serialisation_name = "SpaceGroup"
 
     def __init__(self,
+                 hall_number,
                  number,
                  international_symbol,
                  short_symbol,
@@ -103,6 +105,7 @@ class SpaceGroup(SymmetryGroup):
                  lattice_system: LatticeSystem,
                  choice: str | None):
 
+        self.hall_number = hall_number
         self.number = number
         self.symbol = international_symbol
         self.short_symbol = short_symbol
@@ -119,9 +122,9 @@ class SpaceGroup(SymmetryGroup):
     def __repr__(self):
         """repr"""
         if self.choice is None:
-            return f"SpaceGroup({self.number}, {self.symbol})"
+            return f"SpaceGroup({self.number}, {self.symbol}, hall={self.hall_number})"
         else:
-            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}])"
+            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}], hall={self.hall_number})"
 
     def _serialisation_string(self):
         """ Name to use to refer to this group in serialisation"""
@@ -136,19 +139,21 @@ class SpaceGroup(SymmetryGroup):
 
     def for_supercell(self, supercell: Supercell):
         """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
-        return database.spacegroup_by_name("p1")
+        return database.spacegroup_by_name("p1") # TODO: Implement properly
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
-        coordinates = site.ijk.reshape(1, -1)
+        coordinates = site.ijk.reshape(1, -1) % 1
 
         new_coordinates = []
         for operation in self.operations:
-
             candidate = operation(coordinates)
+
+            # print(operation,"::", coordinates, "->", candidate, end=":")
 
             # If it's not the input, continue
             if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
+                # print("same as input")
                 continue
 
             # Is it one we've already found
@@ -159,11 +164,22 @@ class SpaceGroup(SymmetryGroup):
                     break
 
             if new:
+                # print("is new")
                 new_coordinates.append(candidate)
-
+            # else:
+            #     print("is not new")
 
         new_sites = []
         for i, coordinates in enumerate(new_coordinates):
+            #
+            # new_site = ImpliedLatticeSite(
+            #     parent_site=site,
+            #     i=coordinates[0][1],
+            #     j=coordinates[0][0],
+            #     k=coordinates[0][2],
+            #     supercell_spins=site._spin_data,
+            #     name=site.name + f" [{i+1}]"
+            #     )
 
             new_site = ImpliedLatticeSite(
                 parent_site=site,
@@ -230,15 +246,15 @@ class SpacegroupDatabase:
         # We need to know which magnetic group is associated with each spacegroup before
         #  constructing the spacegroup instances
         spacegroup_to_magnetic_group = defaultdict(list[int])
-        for i in range(1,1652):
-            metadata = spglib.get_magnetic_spacegroup_type(i)
-            spacegroup_to_magnetic_group[metadata.number].append(i)
+        for hall_number in range(1,1652):
+            metadata = spglib.get_magnetic_spacegroup_type(hall_number)
+            spacegroup_to_magnetic_group[metadata.number].append(hall_number)
 
         # Create magnetic groups
         self.magnetic_groups = []
-        for i in range(1,1652):
+        for hall_number in range(1,1652):
 
-            op_data = spglib.get_magnetic_symmetry_from_database(i)
+            op_data = spglib.get_magnetic_symmetry_from_database(hall_number)
             # metadata = spglib.get_magnetic_spacegroup_type(i)
             # print(metadata)
 
@@ -246,14 +262,14 @@ class SpacegroupDatabase:
             translations = op_data["translations"]
             time_reversals = 1 - 2*op_data["time_reversals"]
 
-            symbol = msg_symbols[i].uni
+            symbol = msg_symbols[hall_number].uni
 
             operations = []
             for rotation, translation, time_reversal in zip(rotations, translations, time_reversals):
                 op = MagneticOperation.from_numpy(rotation, translation, time_reversal)
                 operations.append(op)
 
-            group = MagneticSpaceGroup(i, symbol, operations)
+            group = MagneticSpaceGroup(hall_number, symbol, operations)
             self.magnetic_groups.append(group)
 
 
@@ -262,13 +278,14 @@ class SpacegroupDatabase:
         self.spacegroups: list[SpaceGroup] = []
         self._operation_lookup = []
 
-        for i in range(1, 531):
+        for hall_number in range(1, 531):
 
             # Get the relevant data
 
-            sg_data = spglib.get_spacegroup_type(i)
-            op_data = spglib.get_symmetry_from_database(i)
-            corresponding_magnetic_groups = [self.magnetic_groups[idx-1] for idx in spacegroup_to_magnetic_group[i]]
+            sg_data = spglib.get_spacegroup_type(hall_number)
+            op_data = spglib.get_symmetry_from_database(hall_number)
+            corresponding_magnetic_groups = [self.magnetic_groups[idx-1]
+                                             for idx in spacegroup_to_magnetic_group[hall_number]]
 
             # Classify
             name = sg_data.international_full
@@ -285,8 +302,14 @@ class SpacegroupDatabase:
 
             operations = []
             for translation, rotation, in zip(translations, rotations):
-                op = SpaceOperation.from_numpy(rotation, translation)
+                op = SpaceOperation.from_numpy(rotation.T, translation)
                 operations.append(op)
+
+            # operations = []
+            # pyxtal_group = pyxtal.Group(hall_number, use_hall=True)
+            # for op in pyxtal_group[0].ops:
+            #     matrix = op.affine_matrix
+            #     operations.append(SpaceOperation.from_transformation_matrix(matrix))
 
             self._operation_lookup.append(
                 {canonise_string(operation.text_form) for operation in operations})
@@ -300,10 +323,11 @@ class SpacegroupDatabase:
                 lattice_system = lattice_system_letter_lookup[first_letter]
 
             group = SpaceGroup(
+                hall_number=hall_number,
                 number=sg_data.number,
                 international_symbol=name,
                 short_symbol=short_name,
-                preferred_symbol=preferred_names[i],
+                preferred_symbol=preferred_names[hall_number],
                 operations=operations,
                 choice=choice,
                 magnetic_variants=corresponding_magnetic_groups,
@@ -311,6 +335,7 @@ class SpacegroupDatabase:
 
             self.spacegroups.append(group)
             self._lattice_symbol_to_spacegroups[bravais_lattice].append(group)
+
 
         # Lookup for spacegroups by long/short international symbol
         self._spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in self.spacegroups}
@@ -406,8 +431,15 @@ class SpacegroupDatabase:
         #
         # raise NoSuchGroup(message_string)
 
-
-database = SpacegroupDatabase()
+# Create/load the database
+_spacegroup_filename = "spacegroup_database.pickle"
+if os.path.exists(_spacegroup_filename):
+    with open(_spacegroup_filename, 'rb') as file:
+        database = pickle.load(file)
+else:
+    database = SpacegroupDatabase()
+    with open(_spacegroup_filename, 'wb') as file:
+        pickle.dump(database, file)
 
 if __name__ == "__main__":
     # print(database.spacegroup_by_name("b2/m"))
