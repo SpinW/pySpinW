@@ -140,6 +140,7 @@ class SpaceOperation:
 
     @staticmethod
     def from_transformation_matrix(matrix: np.ndarray, name: str | None = None):
+        """ Get operation from a 4x4 transformation matrix (currently unused, but useful for debugging)"""
         point_operation = tuple(tuple(int(matrix[j, i]) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(matrix[i, 3]).limit_denominator(100) % 1 for i in range(3))
 
