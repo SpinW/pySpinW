@@ -152,7 +152,7 @@ class LatticeSite(SPWSerialisable):
         except ValueError as e:
             raise ValueError("Expected spin data to be length 3, or convertable to a 3-by-n array")
 
-        self._spin_data = spin_data
+        self._spin_data = spin_data % 1
 
 
     @property

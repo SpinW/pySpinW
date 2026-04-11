@@ -54,7 +54,7 @@ class MagneticSpaceGroup(SymmetryGroup):
         """ Find "duplicate" sites of a given site """
         # TODO: Transform moments in the correct coordinate system
 
-        coordinates = site.values.reshape(1, -1)
+        coordinates = site.values.reshape(1, -1) % 1
 
         new_coordinates = []
         for operation in self.operations:
@@ -143,14 +143,17 @@ class SpaceGroup(SymmetryGroup):
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
-        coordinates = site.ijk.reshape(1, -1)
+        coordinates = site.ijk.reshape(1, -1) % 1
 
         new_coordinates = []
         for operation in self.operations:
-
             candidate = operation(coordinates)
+
+            # print(operation,"::", coordinates, "->", candidate, end=":")
+
             # If it's not the input, continue
             if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
+                # print("same as input")
                 continue
 
             # Is it one we've already found
@@ -161,8 +164,10 @@ class SpaceGroup(SymmetryGroup):
                     break
 
             if new:
+                # print("is new")
                 new_coordinates.append(candidate)
-
+            # else:
+            #     print("is not new")
 
         new_sites = []
         for i, coordinates in enumerate(new_coordinates):

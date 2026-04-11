@@ -24,7 +24,7 @@ class Structure(SPWSerialisable):
         self._input_sites = sites
         self._unit_cell = unit_cell
 
-        self._spacegroup = database.spacegroups[1] if spacegroup is None else spacegroup
+        self._spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
@@ -71,6 +71,7 @@ class Structure(SPWSerialisable):
         site_list = self._input_sites.copy()
         for site in self._input_sites:
             site_list += self._spacegroup.implied_sites_for(site)
+
 
         # Check for collisions, if there is an input site that
         # collides with an implied site, choose the input site
@@ -211,6 +212,7 @@ class Structure(SPWSerialisable):
     def sites(self) -> list[LatticeSite]:
         """ Get the sites used to define the structure and implied by symmetry """
         return self._sites.copy()
+        # return self._input_sites.copy()
 
     def sites_by_name(self, regex) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
