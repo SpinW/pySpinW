@@ -62,5 +62,5 @@ jobs:
             twine upload --verbose --repository testpypi wheelhouse-flattened/*.whl
           else
             echo "Uploading to PyPI"
-            twine upload wheelhouse-flattened/*.whl
+            twine upload --verbose wheelhouse-flattened/*.whl
           fi
