@@ -19,4 +19,4 @@ hamiltonian = Hamiltonian(s, exchanges)
 
 path = Path([[0,0,0], [1,0,0]])
 
-hamiltonian.spaghetti_plot(path)
+hamiltonian.spaghetti_plot(path, dE=0.4)

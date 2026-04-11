@@ -14,6 +14,8 @@ from pyspinw.windows_parallelisation import windows_python_parallelisation_enabl
 
 # smallest energy not considered negligible (in meV)
 ZERO_ENERGY_TOL = 1e-12
+# tolerance of diagonal matrix elements to be considered singular
+SINGULAR_TOL = 1e-7
 
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
@@ -86,10 +88,40 @@ def _calc_q_independent(
     else:
         Az = None
 
-    return C, z, spin_coefficients, Az
+    # we store sab_blocks as a 3x3 array of arrays indexed over alpha, beta
+    sab_blocks = np.zeros((3, 3), dtype=object)
+
+    # note one can show:
+    # Y*[alpha, beta] = Y[beta, alpha]
+    # Z*[alpha, beta] = V[beta, alpha]
+    # V*[alpha, beta] = Z[beta, alpha]
+    # W*[alpha, beta] = W[beta, alpha]
+    # thus we only need to calculate one triangle and can fill in the rest by conjugation
+    for alpha in range(3):
+        z_alphas = z[:, alpha]
+        for beta in range(alpha + 1):
+            z_betas = z[:, beta]
+
+            # note V is conj(Z) and W is conj(Y) before we multiply by phase factors
+            y_ab = np.outer(z_alphas, np.conj(z_betas))
+            z_ab = np.outer(z_alphas, z_betas)
+            v_ab = np.conj(z_ab)
+            w_ab = np.conj(y_ab)
+
+            sab_blocks[alpha, beta] = np.block([[y_ab, z_ab], [v_ab, w_ab]])
+
+            if beta < alpha:
+                y_ba = np.conj(y_ab.T)
+                z_ba = np.conj(v_ab.T)
+                v_ba = np.conj(z_ab.T)
+                w_ba = np.conj(w_ab.T)
+
+                sab_blocks[beta, alpha] = np.block([[y_ba, z_ba], [v_ba, w_ba]])
+
+    return C, z, spin_coefficients, Az, sab_blocks
 
 
-def _calc_sqrt_hamiltonian(
+def _calc_spin_hamiltonian(
         q: np.ndarray,
         C: np.ndarray,
         n_sites: int,
@@ -118,8 +150,10 @@ def _calc_sqrt_hamiltonian(
     if Az is not None:
         A += Az
 
-    hamiltonian_matrix = np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+    return np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
 
+
+def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
     # We need to enforce the bosonic commutation properties, we do this
     # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
     # and then negating the second half.
@@ -134,76 +168,58 @@ def _calc_sqrt_hamiltonian(
     #
     # We can also do this via an LDL decomposition, but the method is very slightly different
 
-    # assert np.sum(np.imag(np.linalg.eig(hamiltonian_matrix)[0])) < 1e-6, 'Non hermitian Hamiltonian!'
-
     try:
         sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
     except np.linalg.LinAlgError:  # Catch postive definiteness errors
         # l, d, perm = ldl(hamiltonian_matrix) # To LDL^\dagger (i.e. adjoint on right)
-        # TODO: Check for actual diagonal (could potentially contain non-diagonal 2x2 blocks)
         l, d, p = ldl(hamiltonian_matrix)  # To LDL^\dagger (i.e. adjoint on right)
+        # if there are off-diagonal elements of d (in 2x2 blocks) or if any diagonal elements are negative
+        # then the hamiltonian matrix is not positive semi-definite and we must use another algorithm
+        # see discussion in https://mathoverflow.net/questions/84420 and paper by Roy Mathias
+        assert all(np.abs(np.diag(d, k=1)) <= SINGULAR_TOL) and all(np.diag(d) >= -SINGULAR_TOL), 'Singular matrix'
         sqrt_hamiltonian = l[p,:] @ np.sqrt(d)
 
-    return sqrt_hamiltonian
+    sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
+    sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
+
+    to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
+
+    eigvals, eigvecs = np.linalg.eigh(to_diagonalise)
+
+    ## calculate transformation matrix for spin-spin correlation function
+    # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
+    # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
+    # for the eigenvalues of the Hamiltonian
+    sqrt_E = np.sqrt(np.abs(eigvals.copy()))
+    sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
+
+    # sqrt_hamiltonian is triangular so is singular if any diagonal element is zero
+    if any(np.diag(sqrt_hamiltonian) < SINGULAR_TOL):
+        # if K is singular, then add a small amount to the diagonal.
+        for jj in range(sqrt_hamiltonian.shape[0]):
+            sqrt_hamiltonian[jj, jj] += 1e-7
+
+    # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
+    T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
+
+    return eigvals, T
+
+
+def _solve_ham_nonherm(hamiltonian_matrix: np.ndarray, n_sites:int):
+    hamiltonian_matrix[n_sites:, :] *= -1  # gComm * ham
+    eigvals, eigvecs = np.linalg.eig(hamiltonian_matrix)
+    gV = eigvecs.copy()
+    gV[:n_sites, n_sites:] *= -1
+    gV[n_sites:, :n_sites] *= -1
+    M = np.diag(gV.conj().T @ eigvecs)
+    T = eigvecs @ np.diag(np.sqrt(1 / (M + SINGULAR_TOL)))
+
+    return eigvals, T
 
 
 def _get_q_chunks(q_vectors: np.ndarray, n_proc: int):
     nq = int(np.floor(q_vectors.shape[0] / n_proc))
     return [q_vectors[i * nq : (i + 1) * nq] for i in range(n_proc - 1)] + [q_vectors[(n_proc - 1) * nq :]]
-
-
-def energies(
-        rotations: list[np.ndarray],
-        magnitudes: np.ndarray,
-        q_vectors: np.ndarray,
-        couplings: list[Coupling],
-        field: MagneticField | None = None) \
-            -> np.ndarray:
-    """Calculate the spinwave energies for a set of q-vectors.
-
-    Unlike the main interface it takes indexed arrays, the meaning of the arrays is set elsewhere
-    """
-    C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
-    n_sites = len(rotations)
-
-    # Linear algebra routines in numpy are already parallelised and usually use 4 cores
-    # for a single process, so we want to reduce contention by using fewer processes.
-    n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
-    Executor = get_Executor()
-
-    with Executor() as executor:
-        q_calculations = [
-            executor.submit(_calc_chunk_energies, q, C, n_sites, z, spin_coefficients, couplings, Az)
-            for q in _get_q_chunks(q_vectors, n_proc)
-        ]
-    wait(q_calculations)
-    energies = np.concat(tuple(future.result() for future in q_calculations))
-
-    # return SpinwaveResult( q_vectors=q_vectors, raw_energies=energies, method=[])
-    return energies
-
-
-def _calc_chunk_energies(
-        q_vectors: np.ndarray,
-        C: np.ndarray,
-        n_sites: int,
-        z: np.ndarray,
-        spin_coefficients: np.ndarray,
-        couplings: list[Coupling],
-        Az: np.ndarray | None = None):
-    """Calculate the energies for a set of q-values."""
-    energies = []
-    for q in q_vectors:
-        sqrt_hamiltonian = _calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
-
-        sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
-        sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
-
-        to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
-
-        energies.append(np.linalg.eigvals(to_diagonalise))
-
-    return energies
 
 
 def spinwave_calculation(
@@ -230,7 +246,7 @@ def spinwave_calculation(
             Rq = (np.eye(3) * np.cos(qdotr)) + (nmat * np.sin(qdotr)) + (R2 * (1 - np.cos(qdotr))) # R(Q.r_n) eq (39)
             coupling.matrix = (coupling.matrix @ Rq + Rq @ coupling.matrix) / 2.
 
-    C, z, spin_coefficients, Az = _calc_q_independent(rotations, magnitudes, couplings, field)
+    C, z, spin_coefficients, Az, sab_blocks = _calc_q_independent(rotations, magnitudes, couplings, field)
     n_sites = len(rotations)
 
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
@@ -242,7 +258,7 @@ def spinwave_calculation(
         q_calculations = [
             executor.submit(
                 _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
-                rlu_to_cart, rotating_frame, Az, save_sab
+                sab_blocks, rlu_to_cart, rotating_frame, Az, save_sab
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -275,6 +291,7 @@ def _calc_chunk_spinwave(
         spin_coefficients: np.ndarray,
         couplings: list[Coupling],
         positions: list[np.ndarray],
+        sab_blocks: np.ndarray,
         rlu_to_cart: np.ndarray,
         rotating_frame: list[np.ndarray] | None = None,
         Az: np.ndarray | None = None,
@@ -291,79 +308,30 @@ def _calc_chunk_spinwave(
     sabs = np.empty((3, 3, 2*n_sites, q_vectors.shape[0]), dtype=complex)
 
     for ii, q in enumerate(q_vectors):
-        sqrt_hamiltonian = _calc_sqrt_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
+        hamiltonian = _calc_spin_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
 
-        sqrt_hamiltonian_with_commutation = sqrt_hamiltonian.copy()
-        sqrt_hamiltonian_with_commutation[n_sites:, :] *= -1  # This is C*K
+        try:
+            eigvals, T = _solve_ham_hermitian(hamiltonian, n_sites)
+        except AssertionError:
+            eigvals, T = _solve_ham_nonherm(hamiltonian, n_sites)
 
-        to_diagonalise = np.conj(sqrt_hamiltonian).T @ sqrt_hamiltonian_with_commutation
-
-        eigvals, eigvecs = np.linalg.eigh(to_diagonalise)
         energies.append(eigvals)
 
         ## calculate block matrices [ Y Z ; V W ] for S'^alpha,beta
-        # first we get phase factor matrix where `phase_factors_matrix[i,j] = exp(i q (r_i - r_j))`
+        # here we calc only phase factor matrix where `phase_factors_matrix[i,j] = exp(i q (r_i - r_j))`
+        # the other parts are q-indenpedent and pre-calculated as sab_blocks
         phase_factors = np.array([np.exp(2j * np.pi * (q @ pos)) for pos in positions])
         phase_factors_matrix = np.outer(phase_factors, np.conj(phase_factors))
 
         coefficients = 2 * spin_coefficients * phase_factors_matrix
-
-        # we store sab_blocks as a 3x3 array of arrays indexed over alpha, beta
-        sab_blocks = np.zeros((3, 3), dtype=object)
-
-        # note one can show:
-        # Y*[alpha, beta] = Y[beta, alpha]
-        # Z*[alpha, beta] = V[beta, alpha]
-        # V*[alpha, beta] = Z[beta, alpha]
-        # W*[alpha, beta] = W[beta, alpha]
-        # thus we only need to calculate one triangle and can fill in the rest by conjugation
-        for alpha in range(3):
-            z_alphas = z[:, alpha]
-            for beta in range(alpha + 1):
-                z_betas = z[:, beta]
-
-                # note V is conj(Z) and W is conj(Y) before we multiply by phase factors
-                y_ab = np.outer(z_alphas, np.conj(z_betas))
-                z_ab = np.outer(z_alphas, z_betas)
-                v_ab = np.conj(z_ab) * coefficients
-                w_ab = np.conj(y_ab) * coefficients
-
-                y_ab *= coefficients
-                z_ab *= coefficients
-
-                sab_blocks[alpha, beta] = np.block([[y_ab, z_ab], [v_ab, w_ab]])
-
-                if beta < alpha:
-                    y_ba = np.conj(y_ab.T)
-                    z_ba = np.conj(v_ab.T)
-                    v_ba = np.conj(z_ab.T)
-                    w_ba = np.conj(w_ab.T)
-
-                    sab_blocks[beta, alpha] = np.block([[y_ba, z_ba], [v_ba, w_ba]])
-
-        ## calculate transformation matrix for spin-spin correlation function
-        # this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
-        # where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
-        # for the eigenvalues of the Hamiltonian
-        sqrt_E = np.sqrt(np.abs(eigvals.copy()))
-        sqrt_E[np.where(sqrt_E < ZERO_ENERGY_TOL)] = 0
-
-        try:
-            # rather than inverting K explicitly, calculate T by solving KT = U sqrt(E)
-            T = solve(sqrt_hamiltonian.conj().T, eigvecs @ np.diag(sqrt_E))
-            assert not np.isnan(T).any(), "singular matrix"
-        except (AssertionError, np.linalg.LinAlgError):
-            # if K is singular, then add a small amount to the diagonal.
-            kk = sqrt_hamiltonian.conj().T
-            for jj in range(kk.shape[0]):
-                kk[jj, jj] += 1e-7
-            T = solve(kk, eigvecs @ np.diag(sqrt_E))
+        coefficients = np.block([[coefficients, coefficients], [coefficients, coefficients]])
 
         # Apply transformation matrix to S'^alpha,beta block matrices T*[VW;YZ]T
         # and then we just take the diagonal elements as that's all we need for
         # S'^alpha,beta(k, omega) at each eigenvalue
         # this is a 3x3x2N array indexed by [alpha, beta, omega]
-        sab = np.array([[np.diag(T.conj().T @ sab_blocks[alpha, beta] @ T) for alpha in range(3)] for beta in range(3)])
+        sab = np.array([[np.diag(T.conj().T @ (sab_blocks[alpha, beta] * coefficients) @ T)
+            for alpha in range(3)] for beta in range(3)])
         sab /= 2 * n_sites
         sabs[:,:,:,ii] = sab
 

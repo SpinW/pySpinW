@@ -35,9 +35,10 @@ logger = logging.Logger("pyspinw.hamiltonian")
 
 def uniquetol(values: ArrayLike, tol: float=1e-5):
     """ Returns floating point unique values within a given tolerance """
-    v = np.sort(values)
-    idif = np.append(True, np.diff(v))
-    return v[idif > tol]
+    vabs = np.real(values) + np.imag(values)
+    isrt = np.argsort(vabs)
+    idif = np.append(True, np.diff(vabs[isrt]))
+    return values[isrt[idif > tol]]
 
 def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0, is_series: bool=True):
     """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
@@ -61,8 +62,10 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
             idnxt = 1 if col < en_out.shape[0]-1 else -1
             idnan = np.where(~np.isnan(en_out[col + idnxt,:]))[0]
             idx = np.array([np.nanargmin(np.abs(en_out[col + idnxt,i] - en_out[col])) for i in idnan])
-            en_out[col,idnan] = np.take(en_out[col, :], idx)
-            int_out[col,idnan] = np.take(int_out[col, np.where(~np.isnan(int_out[col,:]))] / np.bincount(idx), idx)
+            int_idx, bc = (int_out[col, np.where(~np.isnan(int_out[col,:]))], np.bincount(idx))
+            if int_idx.shape[1] == len(bc) and all(bc > 0):
+                en_out[col,idnan] = np.take(en_out[col, :], idx)
+                int_out[col,idnan] = np.take(int_idx / bc, idx)
     # Removes columns which are all NaNs
     en_out = np.delete(en_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
     int_out = np.delete(int_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
@@ -70,7 +73,7 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
 
 def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float | Callable):
     """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
-    energy, intensity = (np.array(energy), np.array(intensity))
+    energy, intensity = (np.real(np.array(energy)), np.array(intensity))
     esigma = dE(evect) if isinstance(dE, Callable) else np.ones(evect.shape) * dE
     esigma /= 2 * np.sqrt(2* np.log(2))  # Convert from FWHM
     spec = np.zeros((energy.shape[0], len(evect)))
@@ -555,8 +558,10 @@ class Hamiltonian(SPWSerialisable):
                                                                     use_rust, use_rotating, intensity_unit))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
-            axs[0].plot(x_values, series[0], 'k')
-            axs[1].plot(x_values, series[1], 'k')
+            axs[0].plot(x_values, np.real(series[0]), 'k')
+            axs[1].plot(x_values, np.real(series[1]), 'k')
+            if (np.imag(series[0]) > 0.01).any():
+                axs[0].plot(x_values, np.imag(series[0]), 'or')
         if 'log' in scale:
             axs[1].set_yscale('log')
         axs[0].set_ylabel('Magnon Energy (meV)')
@@ -594,7 +599,7 @@ class Hamiltonian(SPWSerialisable):
         energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field,
                                                                     use_rust, use_rotating, intensity_unit))
         if evect is None:
-            emax = np.nanmax(energy)
+            emax = np.nanmax(np.real(energy))
             denom = 10**np.floor(np.log10(emax))
             evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
         if dE is None:
@@ -603,7 +608,9 @@ class Hamiltonian(SPWSerialisable):
         if vmax is None:
             vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
         mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax)
-        ax.plot(x_values, energy, 'k')
+        ax.plot(x_values, np.real(energy), 'k')
+        if (np.imag(energy) > 0.01).any():
+            ax.plot(x_values, np.imag(energy), 'or')
         ax.set_ylim(0, np.max(evect))
         fig.colorbar(mesh, ax=ax)
         path.format_plot(ax)

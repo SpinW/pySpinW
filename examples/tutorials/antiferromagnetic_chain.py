@@ -17,7 +17,7 @@ exchanges = generate_exchanges(sites=sites,
                                j=1)
 
 
-hamiltonian = Hamiltonian(s, exchanges)
+hamiltonian = Hamiltonian(sites, exchanges)
 hamiltonian.print_summary()
 
 path = Path([[0,0,0], [1,0,0]])

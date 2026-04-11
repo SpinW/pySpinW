@@ -16,11 +16,18 @@ QVECS = np.array([[0.1, 0, 0], [0.2, 0, 0], [0.1, 0.1, 0], [0.1, 0.1, 0.1], [0, 
 REFDAT = scipy.io.loadmat(os.path.join(os.path.dirname(__file__), 'matlab_test_data.mat'))
 INTHIGH = 100
 
+# Monkey patch the parallelisation routines so calculations show up in coverage
+from concurrent.futures import ThreadPoolExecutor
+import sys
+def get_Executor():
+    return ThreadPoolExecutor
+sys.modules['pyspinw.calculations.spinwave'].get_Executor = get_Executor
+
 def _test_ref_data(test_name, energy, intensity, ignoreQ=None):
     eref, intref = omegasum(REFDAT[test_name][0][0].T, REFDAT[test_name][0][1].T, is_series=False)
     # Remove very large intensities as this diverges near zone centre
-    intensity[np.where(intensity > INTHIGH)] = np.nan 
-    intref[np.where(intref > INTHIGH)] = np.nan 
+    intensity[np.where(intensity > INTHIGH)] = 0
+    intref[np.where(intref > INTHIGH)] = 0
     if ignoreQ is not None:
         idx = [i for i in range(energy.shape[0]) if i not in ignoreQ]
         energy, intensity, eref, intref = (energy[idx,:], intensity[idx,:], eref[idx,:], intref[idx,:])
@@ -78,3 +85,12 @@ def test_tri_antiferro():
     energy, intensity = hamiltonian.energies_and_intensities(QVECS, use_rust=False, use_rotating=True)
     # Ignore last Q point as it is not positive definite and numerically different in Matlab and Python
     _test_ref_data('tri_antiferro', *omegasum(energy, intensity, is_series=False), ignoreQ=[5])
+
+def test_square_antiferro():
+    unit_cell = UnitCell(3, 3, 9)
+    sites = generate_structure(unit_cell, positions=[[0,0,0]], spins=[[1,0,0]], names=['X'],
+                               propagation_vectors=[[0.5, 0.5, 0]])
+    # Note this model has spins in a-b plane but z-axis anisotropy so will give imaginary modes (needs non-herm solver)
+    hamiltonian = Hamiltonian(sites, generate_exchanges(sites, bond=1, j=0.5), axis_anisotropies(sites, -0.1))
+    energy, intensity = hamiltonian.energies_and_intensities(QVECS, use_rust=False, use_rotating=False)
+    _test_ref_data('square_antiferro', *omegasum(energy, intensity, is_series=False))
