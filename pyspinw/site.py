@@ -2,7 +2,6 @@
 
 import numpy as np
 from numpy._typing import ArrayLike
-from scipy.stats import goodness_of_fit
 
 from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
