@@ -28,7 +28,7 @@ single_crystal.spaghetti_plot(path, dE=0.4)
 
 single_crystal.spaghetti_plot(y_path, dE=0.4, evect=np.linspace(0,4,100))
 
-twin = Twin(hamiltonian, np.array([[0,1,0],[-1,0,0],[0,0,1]], dtype=float), 0.2)
+twin = Twin(hamiltonian, np.array([[0,1,0],[-1,0,0],[0,0,1]], dtype=float), 0.4)
 
 twin.spaghetti_plot(path, dE=0.4)
 
