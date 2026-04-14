@@ -4,15 +4,17 @@ from numpy._typing import ArrayLike
 from enum import Enum
 import re
 
+# ruff: noqa: E702
 class PolarisationType(Enum):
     """Types of Polarisation components"""
-    PXX = 'Pxx'; PXY = 'Pxy'; PXZ = 'Pxz';  # Full polarisation
-    PYX = 'Pyx'; PYY = 'Pyy'; PYZ = 'Pyz';
-    PZX = 'Pzx'; PZY = 'Pzy'; PZZ = 'Pzz';
-    PX  = 'Px';  PY  = 'Py';  PZ  = 'Pz';   # Half polarisation (incident only)
-    MXX = 'Mxx'; MXY = 'Mxy'; MXZ = 'Mxz';  # Projection of Sab in the Blume-Maleev
-    MYX = 'Myx'; MYY = 'Myy'; MYZ = 'Myz';  #   cartesian coordinate system
-    MZX = 'Mzx'; MZY = 'Mzy'; MZZ = 'Mzz';
+
+    PXX = 'Pxx'; PXY = 'Pxy'; PXZ = 'Pxz'  # Full polarisation
+    PYX = 'Pyx'; PYY = 'Pyy'; PYZ = 'Pyz'
+    PZX = 'Pzx'; PZY = 'Pzy'; PZZ = 'Pzz'
+    PX  = 'Px';  PY  = 'Py';  PZ  = 'Pz'   # Half polarisation (incident only)
+    MXX = 'Mxx'; MXY = 'Mxy'; MXZ = 'Mxz'  # Projection of Sab in the Blume-Maleev
+    MYX = 'Myx'; MYY = 'Myy'; MYZ = 'Myz'  #   cartesian coordinate system
+    MZX = 'Mzx'; MZY = 'Mzy'; MZZ = 'Mzz'
 
 _STRFLOATDIC = {'':1., '+':1., '-':-1.}
 _ABTOIND = {'x':0, 'y':1, 'z':2}
@@ -108,12 +110,12 @@ def calculate_polarised_intensity(Sab: ArrayLike,
     Sab, Sperp, q_vectors = (np.array(Sab), np.array(Sperp), np.array(q_vectors))
     components, zdir, return_all = parse_components(components, rlu_to_cart)
     # divide Sab into symmetric and anti-symmetric components
-    SabA = (Sab - np.transpose(Sab,(1, 0, 2, 3))) / 2;
-    SabS = (Sab + np.transpose(Sab,(1, 0, 2, 3))) / 2;
+    SabA = (Sab - np.transpose(Sab,(1, 0, 2, 3))) / 2
+    SabS = (Sab + np.transpose(Sab,(1, 0, 2, 3))) / 2
     nMode = Sab.shape[2]
     intensity = np.empty((nMode, q_vectors.shape[0]), dtype=complex)
     Mabs, intPs, Pabs = ([], [], [])
-    for ii, q in enumerate(q_vectors):    
+    for ii, q in enumerate(q_vectors):
         xdir = q @ rlu_to_cart
         xdir = xdir / np.sqrt(np.sum(xdir ** 2))
         ydir = -np.cross(xdir, zdir)
