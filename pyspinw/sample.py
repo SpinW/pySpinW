@@ -2,14 +2,17 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Sequence
+from typing import Sequence, Callable
 
 import numpy as np
 from numpy._typing import ArrayLike
 
+import matplotlib.pyplot as plt
+
+from pyspinw.units import IntensityUnits
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType, point_generator
 from pyspinw.checks import check_sizes
-from pyspinw.hamiltonian import Hamiltonian, ParametrizationType
+from pyspinw.hamiltonian import Hamiltonian, ParametrizationType, omegasum, egrid
 from pyspinw.path import Path, Path1D, Path1DBase, EmpiricalPath1D
 from pyspinw.tolerances import tolerances
 
@@ -29,6 +32,14 @@ class Sample(ABC):
 
         return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
 
+    @abstractmethod
+    def _energies_and_intensities(self,
+                                 points: np.ndarray,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool = True,
+                                 use_rotating: bool=True,
+                                 intensity_unit: IntensityUnits | str='cell',):
+        """ Abstract method to get the energies and intensities """
 
 class Sample3D(Sample):
     """ Sample where the direction of q matters"""
@@ -40,6 +51,68 @@ class Sample3D(Sample):
                  use_rust: bool = True) -> list[np.ndarray]:
         """ Get the energies along a specified path """
         return self._energies(path, field, use_rust)
+
+
+    def energies_and_intensities(self,
+                                 path: Path,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool = True,
+                                 use_rotating: bool = True,
+                                 intensity_unit: IntensityUnits | str = 'cell'):
+        """ Get energy and intensity data"""
+        return self._energies_and_intensities(
+            path.q_points(),
+            field=field,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit)
+
+    def spaghetti_plot(self,
+                       path: Path,
+                       evect: ArrayLike | None = None,
+                       dE: float | Callable | None = None,
+                       vmin: float=0,
+                       vmax: float | None = None,
+                       field: ArrayLike | None = None,
+                       show: bool=True,
+                       new_figure: bool=True,
+                       use_rust: bool=True,
+                       use_rotating: bool=True,
+                       intensity_unit: IntensityUnits | str = 'cell',
+                       scale: str='linear'):
+        """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
+        if new_figure:
+            fig, ax = plt.subplots()
+        else:
+            fig = plt.gcf()
+            ax = fig.get_axes()[0]
+
+        x_values = path.x_values()
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field,
+                                                                    use_rust, use_rotating, intensity_unit))
+        if evect is None:
+            emax = np.nanmax(np.real(energy))
+            denom = 10**np.floor(np.log10(emax))
+            evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
+        if dE is None:
+            dE = np.mean(np.diff(evect)) * 2.35
+        spec = egrid(energy, intensity, evect, dE)
+        if vmax is None:
+            vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
+        mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax)
+        ax.plot(x_values, np.real(energy), 'k')
+        if (np.imag(energy) > 0.01).any():
+            ax.plot(x_values, np.imag(energy), 'or')
+        ax.set_ylim(0, np.max(evect))
+        fig.colorbar(mesh, ax=ax)
+        path.format_plot(ax)
+        ax.set_ylabel('Magnon Energy (meV)')
+
+        if show:
+            plt.show()
+        else:
+            return fig
+
 
 class Sample1D(Sample):
     """ Sample where the direction of q does not matter
@@ -85,6 +158,16 @@ class SingleCrystal(Sample3D):
 
         super().__init__(hamiltonian=hamiltonian)
 
+    def _energies_and_intensities(self,
+                                 q_points: np.ndarray,
+                                 field: ArrayLike | None = None,
+                                 use_rust: bool = True,
+                                 use_rotating: bool = True,
+                                 intensity_unit: IntensityUnits | str = 'cell'):
+        """ Get energy and intensity data"""
+        # Note: we don't use the _ method because we want to ignore non-magnetic sites
+        return self.hamiltonian.energies_and_intensities(
+            q_points, field=field, use_rust=use_rust, use_rotating=use_rotating, intensity_unit=intensity_unit)
 
 
 class Multidomain(Sample3D):
@@ -124,6 +207,38 @@ class Multidomain(Sample3D):
                         use_rust=use_rust)
 
         return output
+
+    def _energies_and_intensities(self,
+                                  q_vectors: np.ndarray,
+                                  field: ArrayLike | None = None,
+                                  use_rust: bool = True,
+                                  use_rotating: bool = True,
+                                  intensity_unit: IntensityUnits | str = 'cell'):
+
+        n_q = q_vectors.shape[0]
+
+        if field is not None:
+            field = np.array(field).reshape(3)
+
+        output_energies = []
+        output_intensities = [[] for _ in range(n_q)]
+        for transformation, weight in zip(self._transformations, self.weights):
+
+            transformed_q = q_vectors @ transformation.T
+            transformed_field = None if field is None else field @ transformation.T
+
+            energy, intensities = self.hamiltonian.energies_and_intensities(
+                        transformed_q,
+                        field=transformed_field,
+                        use_rust=use_rust)
+
+            output_energies.append(energy)
+            for i in range(n_q):
+                output_intensities[i] += [weight * intensity for intensity in intensities[i]]
+
+        output_energies = np.concatenate(output_energies, axis=1)
+
+        return output_energies, output_intensities
 
 
 
