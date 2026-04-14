@@ -69,13 +69,13 @@ def parse_components(components: str, rlu_to_cart: ArrayLike):
     return rv, normal, False
 
 def _sum_components(mat: ArrayLike, components: list[tuple[float, PolarisationType]], nMode: int):
-    intensity = np.zeros(nMode)
+    intensity = np.zeros(nMode, dtype=complex)
     if len(components[0][1].value) == 2:
         for comp in components:
-            intensity += comp[0] * mat[_ABTOIND[comp[1].value[1]], :].real
+            intensity += comp[0] * mat[_ABTOIND[comp[1].value[1]], :].conj()
     else:
         for comp in components:
-            intensity += comp[0] * mat[_ABTOIND[comp[1].value[1]], _ABTOIND[comp[1].value[2]], :].real
+            intensity += comp[0] * mat[_ABTOIND[comp[1].value[1]], _ABTOIND[comp[1].value[2]], :].conj()
     return intensity
 
 def calculate_polarised_intensity(Sab: ArrayLike,
@@ -114,15 +114,15 @@ def calculate_polarised_intensity(Sab: ArrayLike,
     intensity = np.empty((nMode, q_vectors.shape[0]), dtype=complex)
     Mabs, intPs, Pabs = ([], [], [])
     for ii, q in enumerate(q_vectors):    
-        xdir = rlu_to_cart @ q
+        xdir = q @ rlu_to_cart
         xdir = xdir / np.sqrt(np.sum(xdir ** 2))
-        ydir = np.cross(xdir, zdir)
+        ydir = -np.cross(xdir, zdir)
         ydir = ydir / np.sqrt(np.sum(ydir ** 2))
         Pi = np.array([xdir, ydir, zdir]).T
+        invP = np.linalg.inv(Pi)
         if return_all or components[0][1].value.startswith('M'):
-            invP = np.linalg.inv(Pi)
             # Just a projection of Sab in the Blume-Maleev xyz coordinate system
-            Mab = np.einsum("ij,jkl,kn->inl", invP, Sab[:,:,:,ii], invP) # invP @ Sab @ invP
+            Mab = np.einsum("ij,jkl,nk->inl", invP, Sab[:,:,:,ii], invP) # invP @ Sab @ invP'
             if not return_all:
                 intensity[:,ii] = _sum_components(Mab, components, nMode)
                 continue
@@ -153,7 +153,7 @@ def calculate_polarised_intensity(Sab: ArrayLike,
                  * np.tile(np.expand_dims(xdir, (1,2)), (3,nMode))
         Pab3 = np.einsum('ij,k', Pi, Sperp[ii,:])
         Pab4 = np.tile(np.expand_dims(mat3, 1), (1,3,1))
-        Pab = 2*(Pab1 + Pab2) - Pab3 - 1j*Pab4
+        Pab = np.einsum('ij,jkm', invP, 2*(Pab1 + Pab2) - Pab3 - 1j*Pab4)
         if not return_all:
             intensity[:,ii] = _sum_components(Pab, components, nMode)
         else:
