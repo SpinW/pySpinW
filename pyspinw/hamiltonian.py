@@ -399,30 +399,41 @@ class Hamiltonian(SPWSerialisable):
         #
         # Set up choice of calculation
         #
+        save_sab = components != 'Sperp'
 
         # Rotating frame calculations should only be run on RotationSupercells
         use_rotating = use_rotating and isinstance(self.structure.supercell, RotationSupercell)
 
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
-        spinwave_calculation = py_spinwave
+        if save_sab:
+            def _swcalc(*a, **k):
+                return py_spinwave(*a, **k, save_sab=True)
+            spinwave_calculation = _swcalc
+        else:
+            spinwave_calculation = py_spinwave
         magnetic_field_class = PyMagneticField
 
         if use_rust:
             try:
                 from pyspinw.rust import (
                     spinwave_calculation as rs_spinwave,
+                    spinwave_calculation_Sab as rs_spinwave_sab,
                     Coupling as RsCoupling,
                     MagneticField as RsMagneticField)
 
                 coupling_class = RsCoupling
-                spinwave_calculation = rs_spinwave
+                if save_sab:
+                    spinwave_calculation = rs_spinwave_sab
+                else:
+                    spinwave_calculation = rs_spinwave
                 magnetic_field_class = RsMagneticField
 
 
             except ModuleNotFoundError:
                 # Silently don't use rust, maybe should give a warning though
                 logger.warning("Failed to load rust core, falling back to python")
+                use_rust = False
 
         else:
             logger.info("Using Python core code")
@@ -519,7 +530,6 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(anisotropy)
 
-        save_sab = components != 'Sperp'
         rlu_to_cart = np.linalg.inv(expanded.structure.unit_cell._xyz).T * 2 * np.pi
         result = spinwave_calculation(
                         rotations=rotations,
@@ -529,12 +539,12 @@ class Hamiltonian(SPWSerialisable):
                         positions=positions,
                         rlu_to_cart=rlu_to_cart,
                         field=magnetic_field,
-                        rotating_frame=rotating_frame,
-                        save_sab=save_sab)
+                        rotating_frame=rotating_frame)
 
         if save_sab:
-            intensity = calculate_polarised_intensity(result[2], result[1], q_vectors * scaling,
-                                                      components, rlu_to_cart)
+            sab = np.transpose(result[2], (3,2,1,0)) if use_rust else result[2]
+            intensity = calculate_polarised_intensity(sab, result[1], q_vectors * scaling,
+                                                      components, rlu_to_cart).real
             if components == 'all':
                 return intensity
         else:
@@ -613,6 +623,8 @@ class Hamiltonian(SPWSerialisable):
         x_values = path.x_values()
         energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
                                                                     intensity_unit, components))
+        intensity[np.where(np.isnan(intensity))] = 0
+        energy[np.where(np.isnan(energy))] = 0
         if evect is None:
             emax = max(0.0001, np.nanmax(np.real(energy)))
             denom = 10**np.floor(np.log10(emax))
