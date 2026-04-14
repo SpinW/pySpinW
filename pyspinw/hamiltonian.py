@@ -626,7 +626,7 @@ class Hamiltonian(SPWSerialisable):
             except ValueError:
                 vmax = 10 # ??????
 
-        mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="Oranges")
+        mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
         ax.plot(x_values, np.real(energy), 'k')
         if (np.imag(energy) > 0.01).any():
             ax.plot(x_values, np.imag(energy), 'or')
