@@ -59,9 +59,7 @@ class Sample3D(Sample):
                                  use_rust: bool = True,
                                  use_rotating: bool = True,
                                  intensity_unit: IntensityUnits | str = 'cell'):
-
         """ Get energy and intensity data"""
-
         return self._energies_and_intensities(
             path.q_points(),
             field=field,
@@ -166,9 +164,7 @@ class SingleCrystal(Sample3D):
                                  use_rust: bool = True,
                                  use_rotating: bool = True,
                                  intensity_unit: IntensityUnits | str = 'cell'):
-
         """ Get energy and intensity data"""
-
         # Note: we don't use the _ method because we want to ignore non-magnetic sites
         return self.hamiltonian.energies_and_intensities(
             q_points, field=field, use_rust=use_rust, use_rotating=use_rotating, intensity_unit=intensity_unit)
