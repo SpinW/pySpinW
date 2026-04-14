@@ -1,5 +1,6 @@
 """ Ferromagnetic chain example """
 import numpy as np
+import matplotlib.pyplot as plt
 
 from pyspinw import *
 
