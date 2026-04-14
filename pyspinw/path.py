@@ -124,6 +124,7 @@ class Path:
 
 class Path1DBase(ABC):
     """ Base class for 1D paths """
+
     def __init__(self):
         self.n_points = None
 
