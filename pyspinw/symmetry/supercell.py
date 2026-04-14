@@ -460,7 +460,7 @@ class TransformationSupercell(CommensurateSupercell):
 class SummationSupercell(CommensurateSupercell):
     """ Supercell with spins defined by
 
-    m = sum(m_j exp(2 pi i r.k_j)).real
+    s = sum(m_j exp(-2 pi i r.k_j + phi)).real
     """
 
     supercell_name = "summation"

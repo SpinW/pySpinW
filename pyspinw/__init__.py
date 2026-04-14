@@ -20,7 +20,7 @@ from pyspinw.interface import (
 
 from pyspinw.symmetry.supercell import (
     SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell,
-    PropagationVector, CommensuratePropagationVector)
+    PropagationVector, CommensuratePropagationVector, RotationTransform)
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
 from pyspinw.path import Path, Path1D
@@ -87,6 +87,7 @@ __all__ = [
     "SummationSupercell",
     "RotationSupercell",
     "TransformationSupercell",
+    "RotationTransform",
     "TiledSupercell",
     "PropagationVector",
     "CommensuratePropagationVector",
