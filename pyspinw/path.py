@@ -117,9 +117,15 @@ class Path:
         else:
             plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
 
+    def __repr__(self):
+        path_string = ", ".join([repr(pt) for pt in self._points])
+        return f"Path({path_string})"
+
 
 class Path1DBase(ABC):
     """ Base class for 1D paths """
+    def __init__(self):
+        self.n_points = None
 
     @abstractmethod
     def q_values(self):
@@ -133,6 +139,8 @@ class Path1D(Path1DBase):
                  q_max: float = 1.0,
                  avoid_endpoints=True,
                  n_points: int = 101):
+
+        super().__init__()
 
         self.q_min = q_min
         self.q_max = q_max
@@ -154,6 +162,9 @@ class EmpiricalPath1D(Path1DBase):
     """ Path based on data specifying each q value, rather min, max, n"""
 
     def __init__(self, q_values: ArrayLike):
+
+        super().__init__()
+
         self._q_values = np.array(q_values)
 
         if len(self._q_values.shape) != 1:
