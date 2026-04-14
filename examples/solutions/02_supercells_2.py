@@ -1,6 +1,3 @@
-""" Square-lattice Antiferromagnet example
-
-Reproduces Tutorial 11: https://spinw.org/tutorials/11tutorial"""
 
 from pyspinw import *
 
