@@ -407,7 +407,9 @@ class Hamiltonian(SPWSerialisable):
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
         if save_sab:
-            spinwave_calculation = lambda *a, **k: py_spinwave(*a, **k, save_sab=True)
+            def _swcalc(*a, **k):
+                return py_spinwave(*a, **k, save_sab=True)
+            spinwave_calculation = _swcalc
         else:
             spinwave_calculation = py_spinwave
         magnetic_field_class = PyMagneticField
