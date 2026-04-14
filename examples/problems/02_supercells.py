@@ -1,4 +1,4 @@
-""" Problem set 2 """
+""" Problem set 2 - Supercells """
 
 # Part 1: Make a single lattice unit antiferromagnetic chain with a single unit cell
 #         You can use the TransformationSupercell, SummationSupercell, RotationSupercell to do this

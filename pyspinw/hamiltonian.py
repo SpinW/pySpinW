@@ -638,7 +638,7 @@ class Hamiltonian(SPWSerialisable):
             except ValueError:
                 vmax = 1 # ??????
 
-        if dE == 0:
+        if dE != 0:
             mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
             fig.colorbar(mesh, ax=ax)
 
