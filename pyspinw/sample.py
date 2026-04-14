@@ -82,27 +82,23 @@ class Sample3D(Sample):
                        scale: str='linear'):
         """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
         if new_figure:
-            fig = plt.figure()
+            fig, ax = plt.subplots()
         else:
             fig = plt.gcf()
-
-        ax = fig.gca()
+            ax = fig.get_axes()[0]
 
         x_values = path.x_values()
         energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field,
                                                                     use_rust, use_rotating, intensity_unit))
         if evect is None:
-            emax = np.max([0.0001, np.nanmax(np.real(energy))])
+            emax = np.nanmax(np.real(energy))
             denom = 10**np.floor(np.log10(emax))
             evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
         if dE is None:
             dE = np.mean(np.diff(evect)) * 2.35
         spec = egrid(energy, intensity, evect, dE)
         if vmax is None:
-            try:
-                vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
-            except ValueError:
-                vmax = 1 # ???
+            vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
         mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax)
         ax.plot(x_values, np.real(energy), 'k')
         if (np.imag(energy) > 0.01).any():

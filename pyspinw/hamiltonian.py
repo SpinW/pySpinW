@@ -22,6 +22,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange
 from pyspinw.path import Path
+from pyspinw.polarisation import calculate_polarised_intensity
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
@@ -355,6 +356,7 @@ class Hamiltonian(SPWSerialisable):
                                  use_rust: bool=True,
                                  use_rotating: bool=True,
                                  intensity_unit: IntensityUnits | str='cell',
+                                 components: str='Sperp',
                                  ):
         """Calculate the energy levels of the system for the given q-vectors.
 
@@ -369,7 +371,8 @@ class Hamiltonian(SPWSerialisable):
             field=field,
             use_rust=use_rust,
             use_rotating=use_rotating,
-            intensity_unit=intensity_unit)
+            intensity_unit=intensity_unit,
+            components=components)
 
     def _energies_and_intensities(self,
                                  q_vectors: np.ndarray,
@@ -377,6 +380,7 @@ class Hamiltonian(SPWSerialisable):
                                  use_rust: bool=True,
                                  use_rotating: bool=True,
                                  intensity_unit: IntensityUnits | str='cell',
+                                 components: str='Sperp',
                                  ):
         """Calculate the energy levels of the system for the given q-vectors.
 
@@ -515,23 +519,32 @@ class Hamiltonian(SPWSerialisable):
 
             couplings.append(anisotropy)
 
+        save_sab = components != 'Sperp'
+        rlu_to_cart = np.linalg.inv(expanded.structure.unit_cell._xyz).T * 2 * np.pi
         result = spinwave_calculation(
                         rotations=rotations,
                         magnitudes=magnitudes,
                         q_vectors=q_vectors * scaling,
                         couplings=couplings,
                         positions=positions,
-                        rlu_to_cart=np.linalg.inv(expanded.structure.unit_cell._xyz).T * 2 * np.pi,
+                        rlu_to_cart=rlu_to_cart,
                         field=magnetic_field,
-                        rotating_frame=rotating_frame)
+                        rotating_frame=rotating_frame,
+                        save_sab=save_sab)
+
+        if save_sab:
+            intensity = calculate_polarised_intensity(result[2], result[1], q_vectors * scaling,
+                                                      components, rlu_to_cart)
+            if components == 'all':
+                return intensity
+        else:
+            intensity = result[1]
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
         if intensity_unit == IntensityUnits.PERCELL:
             scale_factor = rotations.shape[0] / np.prod(scaling)
-            intensity = [res * scale_factor for res in result[1]]
-        else:
-            intensity = result[1]
+            intensity = [res * scale_factor for res in intensity]
 
         return result[0], intensity
 
@@ -543,7 +556,8 @@ class Hamiltonian(SPWSerialisable):
                             use_rust: bool=True,
                             use_rotating: bool=True,
                             intensity_unit: IntensityUnits | str = 'cell',
-                            scale: str='linear'):
+                            scale: str='linear',
+                            components: str='Sperp'):
         """ Create a spaghetti diagram with energy top and intensity bottom """
         if new_figure:
             fig, axs = plt.subplots(2, 1)
@@ -554,8 +568,8 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field,
-                                                                    use_rust, use_rotating, intensity_unit))
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                    intensity_unit, components))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, np.real(series[0]), 'k')
@@ -587,7 +601,8 @@ class Hamiltonian(SPWSerialisable):
                        use_rust: bool=True,
                        use_rotating: bool=True,
                        intensity_unit: IntensityUnits | str = 'cell',
-                       scale: str='linear'):
+                       scale: str='linear',
+                       components: str='Sperp'):
         """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
         if new_figure:
             fig, ax = plt.subplots()
@@ -596,8 +611,8 @@ class Hamiltonian(SPWSerialisable):
             ax = fig.get_axes()[0]
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field,
-                                                                    use_rust, use_rotating, intensity_unit))
+        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                    intensity_unit, components))
         if evect is None:
             emax = max(0.0001, np.nanmax(np.real(energy)))
             denom = 10**np.floor(np.log10(emax))

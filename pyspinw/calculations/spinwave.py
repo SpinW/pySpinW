@@ -276,9 +276,8 @@ def spinwave_calculation(
     intensities = np.concat([result[1] for result in results])
 
     if save_sab:
-        sab = [result[2] for result in results]
         # return SpinwaveResult(q_vectors, energies, intensities, sab)
-        return energies, intensities, sab
+        return energies, intensities, np.concat([result[2] for result in results], axis=3)
 
     # return SpinwaveResult(q_vectors, energies, intensities)
     return energies, intensities
