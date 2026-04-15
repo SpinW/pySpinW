@@ -1,9 +1,27 @@
 """ Viewer window """
 import ctypes
 import sys
+import os
+
+# Force desktop OpenGL before any Qt import (critical on macOS)
+os.environ.setdefault("QT_OPENGL", "desktop")
+os.environ.setdefault("QT_MAC_WANTS_LAYER", "1")
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
+
+# Request OpenGL 4.1 core profile — must be called before QApplication is created.
+# Equivalent to GLFW's glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR/MINOR, 4/1)
+# and glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE).
+_fmt = QSurfaceFormat()
+_fmt.setVersion(4, 1)
+_fmt.setProfile(QSurfaceFormat.CoreProfile)
+_fmt.setRenderableType(QSurfaceFormat.OpenGL)
+_fmt.setSamples(4)
+_fmt.setDepthBufferSize(24)
+_fmt.setStencilBufferSize(8)
+QSurfaceFormat.setDefaultFormat(_fmt)
 
 from pyspinw import Structure
 from pyspinw.gui.crystalview import CrystalViewerWidget
