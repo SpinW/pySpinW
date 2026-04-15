@@ -372,6 +372,7 @@ fn calc_sqrt_hamiltonian(hamiltonian: MatRef<C64>) -> Result<Mat<C64>, String> {
         zip!(&mut sqrt_d, D).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
         Ok(ldl.L() * sqrt_d.as_diagonal())
     } else {
+        /* TODO - work out difference between Python and Rust w.r.t. twin_example.py
         let ldl = hamiltonian.lblt(Side::Lower);
         let l = ldl.L();
         let d = ldl.B_diag().column_vector();
@@ -384,9 +385,9 @@ fn calc_sqrt_hamiltonian(hamiltonian: MatRef<C64>) -> Result<Mat<C64>, String> {
         // or if any diagonal element is negative. I've not found any proof that the
         // diagonal blocks are equivalent to eigenvalues but this post:
         // https://mathoverflow.net/questions/84420 suggest it could be.
-        if s.iter().any(|v| v.re.abs() > SINGULAR_FTOL) || d.iter().any(|v| v.re < -SINGULAR_FTOL) {
+        if s.iter().any(|v| v.re.abs() > SINGULAR_FTOL) || d.iter().any(|v| v.re < -SINGULAR_FTOL) { */
             return Err(String::from("LBLT: Hamiltonian not positive-semi-definite"));
-        }
+       /* } 
         let mut sqrt_d = Col::<C64>::zeros(hamiltonian.nrows());
         zip!(&mut sqrt_d, d).for_each(|unzip!(sqd, v)| *sqd = v.sqrt());
         // need to apply permutations: in Python scipy does this for you
@@ -396,7 +397,7 @@ fn calc_sqrt_hamiltonian(hamiltonian: MatRef<C64>) -> Result<Mat<C64>, String> {
             (ldl.P().inverse() * l * sqrt_d.as_diagonal()).as_mat_ref(),
             ldl.P().inverse(),
         );
-        Ok(shm)
+        Ok(shm) */
     }
 }
 
