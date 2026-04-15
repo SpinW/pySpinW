@@ -32,6 +32,9 @@ class Sample(ABC):
 
         return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
 
+class Sample3D(Sample):
+    """ Sample where the direction of q matters"""
+
     @abstractmethod
     def _energies_and_intensities(self,
                                  points: np.ndarray,
@@ -40,9 +43,6 @@ class Sample(ABC):
                                  use_rotating: bool=True,
                                  intensity_unit: IntensityUnits | str='cell',):
         """ Abstract method to get the energies and intensities """
-
-class Sample3D(Sample):
-    """ Sample where the direction of q matters"""
 
     @check_sizes(field=(3,), allow_nones=True)
     def energies(self,
@@ -104,12 +104,14 @@ class Sample3D(Sample):
             except ValueError:
                 vmax = 1.0
 
-        mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
+        if dE != 0:
+            mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
+            fig.colorbar(mesh, ax=ax)
+
         ax.plot(x_values, np.real(energy), 'k')
         if (np.imag(energy) > 0.01).any():
             ax.plot(x_values, np.imag(energy), 'or')
         ax.set_ylim(0, np.max(evect))
-        fig.colorbar(mesh, ax=ax)
         path.format_plot(ax)
         ax.set_ylabel('Magnon Energy (meV)')
 
@@ -471,6 +473,8 @@ class Powder(Sample1D):
         ax = plt.gca()
 
         plt.imshow(data.T[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
+        plt.xlabel(r"$|q| (\AA^{-1})$")
+        plt.ylabel("Energy (meV)")
         ax.set_aspect(0.2)
 
         if show_plot:
