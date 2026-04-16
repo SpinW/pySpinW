@@ -138,7 +138,9 @@ class CrystalViewerWidget(QOpenGLWidget):
                 return
 
         glBindFramebuffer(GL_FRAMEBUFFER, self.defaultFramebufferObject())
-        glViewport(0, 0, self.width(), self.height())
+        dpr = self.devicePixelRatio()
+        pw, ph = int(self.width() * dpr), int(self.height() * dpr)
+        glViewport(0, 0, pw, ph)
 
         #
         # Normal painting, let Qt do its thing
@@ -309,12 +311,12 @@ class CrystalViewerWidget(QOpenGLWidget):
             saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
             glDisable(GL_DEPTH_TEST)
 
-            # Axes viewport
+            # Axes viewport (scale to physical pixels for HiDPI)
             glViewport(
-                self.axes_padding,
-                self.axes_padding,
-                self.axes_size,
-                self.axes_size
+                int(self.axes_padding * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr),
             )
 
             self.axes_shader.camera = self.camera
@@ -339,7 +341,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
             # Restore state
-            glViewport(0, 0, self.width(), self.height())
+            glViewport(0, 0, pw, ph)
             if saved_depth_test:
                 glEnable(GL_DEPTH_TEST)
 
@@ -353,12 +355,12 @@ class CrystalViewerWidget(QOpenGLWidget):
             saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
             glDisable(GL_DEPTH_TEST)
 
-            # Lattice axes viewport
+            # Lattice axes viewport (scale to physical pixels for HiDPI)
             glViewport(
-                self.width() - self.axes_size - self.axes_padding,
-                self.axes_padding,
-                self.axes_size,
-                self.axes_size
+                int((self.width() - self.axes_size - self.axes_padding) * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr),
             )
 
             self.axes_shader.camera = self.camera
@@ -387,7 +389,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.arrow.render_triangles()
 
             # Restore state
-            glViewport(0, 0, self.width(), self.height())
+            glViewport(0, 0, pw, ph)
             if saved_depth_test:
                 glEnable(GL_DEPTH_TEST)
 
@@ -395,7 +397,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         # ID framebuffer
         #
 
-        self.id_framebuffer.use(self.width(), self.height())
+        self.id_framebuffer.use(pw, ph)
 
         if self.id_shader is not None:
 
@@ -439,7 +441,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             id = np.zeros((1,), dtype=np.uint32) # Buffer to set data in
 
-            x, y = self.mouse_position.x(), self.height() - self.mouse_position.y()
+            x = int(self.mouse_position.x() * dpr)
+            y = int((self.height() - self.mouse_position.y()) * dpr)
 
             glReadPixels(
                 x, y,
@@ -467,7 +470,8 @@ class CrystalViewerWidget(QOpenGLWidget):
         """ Qt override, called when window is resized """
         self.camera.horizontal_pixels = w
         self.camera.vertical_pixels = h
-        glViewport(0, 0, w, h)
+        dpr = self.devicePixelRatio()
+        glViewport(0, 0, int(w * dpr), int(h * dpr))
 
 
     def reset_view(self):
