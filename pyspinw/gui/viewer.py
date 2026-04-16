@@ -3,13 +3,23 @@ import ctypes
 import sys
 import os
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QSurfaceFormat
+from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
+
+from pyspinw import Structure
+from pyspinw.gui.crystalview import CrystalViewerWidget
+from pyspinw.gui.icons.iconload import png_icon
+from pyspinw.gui.rendermodel import RenderModel
+from pyspinw.gui.renderoptions import DisplayOptions, DisplayOptionsToolbar
+from pyspinw.gui.textdisplay import TextDisplay
+from pyspinw.hamiltonian import Hamiltonian
+
+
 # Force desktop OpenGL before any Qt import (critical on macOS)
 os.environ.setdefault("QT_OPENGL", "desktop")
 os.environ.setdefault("QT_MAC_WANTS_LAYER", "1")
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QSurfaceFormat
-from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
 
 # Request OpenGL 4.1 core profile — must be called before QApplication is created.
 # Equivalent to GLFW's glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR/MINOR, 4/1)
@@ -22,14 +32,6 @@ _fmt.setSamples(4)
 _fmt.setDepthBufferSize(24)
 _fmt.setStencilBufferSize(8)
 QSurfaceFormat.setDefaultFormat(_fmt)
-
-from pyspinw import Structure
-from pyspinw.gui.crystalview import CrystalViewerWidget
-from pyspinw.gui.icons.iconload import png_icon
-from pyspinw.gui.rendermodel import RenderModel
-from pyspinw.gui.renderoptions import DisplayOptions, DisplayOptionsToolbar
-from pyspinw.gui.textdisplay import TextDisplay
-from pyspinw.hamiltonian import Hamiltonian
 
 
 class Viewer(QWidget):
