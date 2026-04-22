@@ -37,10 +37,6 @@ hamiltonian.spaghetti_plot(path, dE=0.4)
 
 ```
 
-This should produce a plot like this:
-
-![](./docs/heisenberg_ferromagnet.png)
-
 
 
 ## New features in the python version
