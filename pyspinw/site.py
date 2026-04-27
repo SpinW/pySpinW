@@ -142,7 +142,7 @@ class LatticeSite(SPWSerialisable):
         return self._spin_data
 
     @spin_data.setter
-    def spin_data(self, spin_data):
+    def spin_data(self, spin_data: ArrayLike):
         spin_data = np.array(spin_data)
 
         try:
@@ -151,7 +151,7 @@ class LatticeSite(SPWSerialisable):
         except ValueError as e:
             raise ValueError("Expected spin data to be length 3, or convertable to a 3-by-n array")
 
-        self._spin_data = spin_data % 1
+        self._spin_data = spin_data
 
 
     @property
