@@ -217,7 +217,6 @@ class Structure(SPWSerialisable):
 
     def sites_by_name(self, name) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-
         # Escape square brackets in the regex
         regex = name.replace("[", r"\[").replace("]", r"\]")
 

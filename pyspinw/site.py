@@ -162,7 +162,6 @@ class LatticeSite(SPWSerialisable):
     @spin.setter
     def spin(self, spin_values: ArrayLike):
         """ Set the base spin"""
-
         spin_data = np.array(spin_values, dtype=float)
 
         if self.spin_data.shape[0] != 1:
