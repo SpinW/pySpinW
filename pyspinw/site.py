@@ -165,7 +165,7 @@ class LatticeSite(SPWSerialisable):
 
         spin_data = np.array(spin_values, dtype=float)
 
-        if self.spin_data.shape[1] != 1:
+        if self.spin_data.shape[0] != 1:
             raise ValueError("Cannot set simple spin for the summation supercell case, use 'Site.spin_data='")
 
         if spin_data.reshape(-1).shape[0] != 3:
