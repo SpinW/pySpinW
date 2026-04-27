@@ -2,7 +2,7 @@
 
 import numpy as np
 from PySide6.QtCore import QTimer, QPoint, Signal
-from PySide6.QtGui import Qt, QKeyEvent
+from PySide6.QtGui import Qt, QKeyEvent, QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from PySide6.QtWidgets import QApplication
@@ -61,10 +61,12 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.object_shader: ObjectShader | None = None
         self.selection_shader: SelectionShader | None = None
 
-        # Set up antialiasing
-        format = self.format()
-        format.setSamples(4)
-        self.setFormat(format)
+        # Set up antialiasing and request OpenGL 4.1 core profile
+        fmt = QSurfaceFormat()
+        fmt.setVersion(4, 1)
+        fmt.setProfile(QSurfaceFormat.CoreProfile)
+        fmt.setSamples(4)
+        self.setFormat(fmt)
 
         # View details
         self.view_origin = render_model.expanded.structure.unit_cell.centre
@@ -91,9 +93,9 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def initializeGL(self):
         """ Qt override, set up the GL rendering """
-        glEnable(GL_DEPTH_TEST)
-
         try:
+            glEnable(GL_DEPTH_TEST)
+
             # Normal objects
             self.sphere= Sphere(3)
             self.small_sphere = Sphere(3, 0.1)
@@ -125,10 +127,21 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
         except Exception as e:
-            logger.exception(e)
+            logger.debug(f"initializeGL deferred: {e}")
 
     def paintGL(self):
         """ Qt override, paints the GL canvas"""
+        # Fallback initialization for macOS Metal timing issues
+        if not hasattr(self, 'axes_shader'):
+            self.initializeGL()
+            if not hasattr(self, 'axes_shader'):
+                return
+
+        glBindFramebuffer(GL_FRAMEBUFFER, self.defaultFramebufferObject())
+        dpr = self.devicePixelRatio()
+        pw, ph = int(self.width() * dpr), int(self.height() * dpr)
+        glViewport(0, 0, pw, ph)
+
         #
         # Normal painting, let Qt do its thing
         #
@@ -294,16 +307,16 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         if self.display_options.show_cartesian_axes:
 
-            # Save state
-            glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+            # Save state manually (glPushAttrib/glPopAttrib not in core profile)
+            saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
             glDisable(GL_DEPTH_TEST)
 
-            # Axes viewport
+            # Axes viewport (scale to physical pixels for HiDPI)
             glViewport(
-                self.axes_padding,
-                self.axes_padding,
-                self.axes_size,
-                self.axes_size
+                int(self.axes_padding * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr),
             )
 
             self.axes_shader.camera = self.camera
@@ -328,9 +341,9 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
             # Restore state
-
-            glEnable(GL_DEPTH_TEST)
-            glPopAttrib()
+            glViewport(0, 0, pw, ph)
+            if saved_depth_test:
+                glEnable(GL_DEPTH_TEST)
 
         #
         # Other corner viewport for lattice axes
@@ -338,16 +351,16 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         if self.display_options.show_lattice_axes:
 
-            # Save state
-            glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+            # Save state manually (glPushAttrib/glPopAttrib not in core profile)
+            saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
             glDisable(GL_DEPTH_TEST)
 
-            # Lattice axes viewport
+            # Lattice axes viewport (scale to physical pixels for HiDPI)
             glViewport(
-                self.width() - self.axes_size - self.axes_padding,
-                self.axes_padding,
-                self.axes_size,
-                self.axes_size
+                int((self.width() - self.axes_size - self.axes_padding) * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr),
             )
 
             self.axes_shader.camera = self.camera
@@ -376,15 +389,15 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.arrow.render_triangles()
 
             # Restore state
-
-            glEnable(GL_DEPTH_TEST)
-            glPopAttrib()
+            glViewport(0, 0, pw, ph)
+            if saved_depth_test:
+                glEnable(GL_DEPTH_TEST)
 
         #
         # ID framebuffer
         #
 
-        self.id_framebuffer.use(self.width(), self.height())
+        self.id_framebuffer.use(pw, ph)
 
         if self.id_shader is not None:
 
@@ -428,7 +441,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             id = np.zeros((1,), dtype=np.uint32) # Buffer to set data in
 
-            x, y = self.mouse_position.x(), self.height() - self.mouse_position.y()
+            x = int(self.mouse_position.x() * dpr)
+            y = int((self.height() - self.mouse_position.y()) * dpr)
 
             glReadPixels(
                 x, y,
@@ -449,14 +463,15 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.last_hover_id = id
 
-
-
+        # Restore default framebuffer for Qt
+        glBindFramebuffer(GL_FRAMEBUFFER, self.defaultFramebufferObject())
 
     def resizeGL(self, w, h):
         """ Qt override, called when window is resized """
         self.camera.horizontal_pixels = w
         self.camera.vertical_pixels = h
-        glViewport(0, 0, w, h)
+        dpr = self.devicePixelRatio()
+        glViewport(0, 0, int(w * dpr), int(h * dpr))
 
 
     def reset_view(self):
