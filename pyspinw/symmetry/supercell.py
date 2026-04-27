@@ -319,6 +319,7 @@ class Supercell(ABC, SPWSerialisable):
         raise NotImplementedError(f"n_components not implemented in {self.__class__.__name__}")
 
     def text_data(self) -> list[str]:
+        """ Lines of text describing this supercell """
         return [self.supercell_name.capitalize(), f"size = {self.cell_size()}"]
 
 
@@ -464,6 +465,7 @@ class TransformationSupercell(CommensurateSupercell):
         return 1
 
     def text_data(self) -> list[str]:
+        """ Lines of text describing this supercell """
         output = super().text_data()
         for pv, transform in zip(self._propagation_vectors, self._transforms):
             output.append(f"{pv}, {transform}")
@@ -522,6 +524,7 @@ class SummationSupercell(CommensurateSupercell):
 
 
     def text_data(self) -> list[str]:
+        """ Lines of text describing this supercell """
         output = super().text_data()
         for pv in self._propagation_vectors:
             output.append(f"{pv}")
@@ -581,8 +584,8 @@ class RotationSupercell(Supercell):
         propagation_vector = PropagationVector._deserialise(json["vector"], context)
         return RotationSupercell(perpendicular, propagation_vector)
 
-
     def text_data(self) -> list[str]:
+        """ Lines of text describing this supercell """
         output = super().text_data()
         output.append(f"{self.propagation_vector}")
         output.append(f"Perpendicular={self.perpendicular}")
