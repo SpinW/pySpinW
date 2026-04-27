@@ -143,16 +143,36 @@ class LatticeSite(SPWSerialisable):
 
     @spin_data.setter
     def spin_data(self, spin_data: ArrayLike):
-        spin_data = np.array(spin_data)
+        spin_data = np.array(spin_data, dtype=float)
 
         try:
-            spin_data = spin_data.reshape(3, -1)
+            spin_data = spin_data.reshape(-1, 3)
 
         except ValueError as e:
             raise ValueError("Expected spin data to be length 3, or convertable to a 3-by-n array")
 
         self._spin_data = spin_data
+        self._base_spin = np.sum(self._spin_data, axis=0)
 
+    @property
+    def spin(self) -> np.ndarray:
+        """ Get the base spin """
+        return self._base_spin
+
+    @spin.setter
+    def spin(self, spin_values: ArrayLike):
+        """ Set the base spin"""
+
+        spin_data = np.array(spin_values, dtype=float)
+
+        if self.spin_data.shape[1] != 1:
+            raise ValueError("Cannot set simple spin for the summation supercell case, use 'Site.spin_data='")
+
+        if spin_data.reshape(-1).shape[0] != 3:
+            raise ValueError("Spin must be set with a length 3 vector, to set values for the "
+                             "summation supercell, use `Site.spin_data=` instead")
+
+        self.spin_data = spin_data
 
     @property
     def g(self) -> np.ndarray:

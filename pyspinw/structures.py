@@ -215,9 +215,23 @@ class Structure(SPWSerialisable):
         return self._sites.copy()
         # return self._input_sites.copy()
 
-    def sites_by_name(self, regex) -> list[LatticeSite]:
+    def sites_by_name(self, name) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        return [site for site in self.sites if re.match(regex, site.name) is not None]
+
+        # Escape square brackets in the regex
+        regex = name.replace("[", r"\[").replace("]", r"\]")
+
+        return [site for site in self._sites if re.match(regex, site.name) is not None]
+
+    def site_by_name(self, name):
+        """ Get a single site by its name"""
+        found = self.sites_by_name(name)
+        if len(found) == 0:
+            raise ValueError(f"No site matching '{name}' found")
+        elif len(found) > 1:
+            raise ValueError(f"Multiple sites matching '{name}' found")
+        else:
+            return found[0]
 
     @property
     def text_summary(self) -> str:
@@ -246,11 +260,11 @@ class Structure(SPWSerialisable):
         """ Get the spacegroup"""
         return self._spacegroup
 
-    @spacegroup.setter
-    def spacegroup(self, spacegroup: SpaceGroup | MagneticSpaceGroup):
-        """ Set the spacegroup"""
-        self._spacegroup = spacegroup
-        self._build_sites()
+    # @spacegroup.setter
+    # def spacegroup(self, spacegroup: SpaceGroup | MagneticSpaceGroup):
+    #     """ Set the spacegroup"""
+    #     self._spacegroup = spacegroup
+    #     self._build_sites()
 
     @property
     def unit_cell(self) -> UnitCell:
