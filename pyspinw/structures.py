@@ -22,6 +22,7 @@ class Structure(SPWSerialisable):
                  supercell: Supercell | None = None):
 
         self._input_sites = sites
+        self._input_uid_to_site = {site.unique_id: site for site in sites}
         self._unit_cell = unit_cell
 
         self._spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
@@ -218,6 +219,27 @@ class Structure(SPWSerialisable):
         """ Get sites where name matches regex"""
         return [site for site in self.sites if re.match(regex, site.name) is not None]
 
+    @property
+    def text_summary(self) -> str:
+        """ Textual details of this structure """
+        lines = []
+        lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
+        lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
+        supercell_text_data = self.supercell.text_data()
+        lines.append(f"Supercell: {supercell_text_data[0]}")
+        lines += ["  " + s for s in supercell_text_data[1:]]
+        lines.append("Sites:")
+        for site in self._sites:
+
+            is_not_input_chr = "" if site.unique_id in self._input_uid_to_site else "* "
+
+            lines.append(f"  {is_not_input_chr}{site}")
+
+        return "\n".join(lines)
+
+    def print_summary(self):
+        """ Print out details of this structure """
+        print(self.text_summary)
 
     @property
     def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:

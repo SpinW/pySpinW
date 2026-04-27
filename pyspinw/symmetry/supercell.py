@@ -318,6 +318,11 @@ class Supercell(ABC, SPWSerialisable):
         """ Number of entries expected in the spin definition """
         raise NotImplementedError(f"n_components not implemented in {self.__class__.__name__}")
 
+    def text_data(self) -> list[str]:
+        return [self.supercell_name.capitalize(), f"size = {self.cell_size()}"]
+
+
+
 
 class CommensurateSupercell(Supercell):
     """ Base class for a commensurate supercell"""
@@ -362,7 +367,7 @@ class TiledSupercell(CommensurateSupercell):
     def __init__(self, scaling=(1,1,1)):
         super().__init__([], scaling)
 
-    supercell_name = "trivial"
+    supercell_name = "tiled"
 
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
@@ -391,6 +396,8 @@ class TiledSupercell(CommensurateSupercell):
     def n_components(self) -> int:
         """ Number of spin components/propagation vectors"""
         return 1
+
+
 
 class TransformationSupercell(CommensurateSupercell):
     """ Supercell with spins defined by the following equation:
@@ -456,6 +463,12 @@ class TransformationSupercell(CommensurateSupercell):
         """ Number of spin components/propagation vectors"""
         return 1
 
+    def text_data(self) -> list[str]:
+        output = super().text_data()
+        for pv, transform in zip(self._propagation_vectors, self._transforms):
+            output.append(f"{pv}, {transform}")
+        return output
+
 
 class SummationSupercell(CommensurateSupercell):
     """ Supercell with spins defined by
@@ -507,6 +520,12 @@ class SummationSupercell(CommensurateSupercell):
         vectors = [PropagationVector._deserialise(data, context) for data in json["vectors"]]
         return SummationSupercell(vectors, scale)
 
+
+    def text_data(self) -> list[str]:
+        output = super().text_data()
+        for pv in self._propagation_vectors:
+            output.append(f"{pv}")
+        return output
 
 class RotationSupercell(Supercell):
     """ A supercell defined by spins which rotates in a plane and a single propagation vector """
@@ -562,6 +581,12 @@ class RotationSupercell(Supercell):
         propagation_vector = PropagationVector._deserialise(json["vector"], context)
         return RotationSupercell(perpendicular, propagation_vector)
 
+
+    def text_data(self) -> list[str]:
+        output = super().text_data()
+        output.append(f"{self.propagation_vector}")
+        output.append(f"Perpendicular={self.perpendicular}")
+        return output
 
 supercell_types = {cls.supercell_name: cls
                    for cls in [TiledSupercell, TransformationSupercell, SummationSupercell, RotationSupercell]}
