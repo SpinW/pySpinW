@@ -122,6 +122,96 @@ class Path:
         return f"Path({path_string})"
 
 
+class ReciprocalSlice:
+    """Initialize a 2D slice in reciprocal space.
+
+    Parameters
+    ----------
+    origin :
+        Corner point of the rectangle (3D q-vector)
+    a_vec :
+        First edge vector (defines the horizontal axis for plotting)
+    b_vec :
+        Second edge vector (defines the vertical axis for plotting)
+    n_a :
+        Number of points along a_vec direction
+    n_b :
+        Number of points along b_vec direction
+    labels :
+        Optional [a_label, b_label] for plot axes
+    """
+
+    def __init__(
+        self,
+        origin: ArrayLike,
+        a_vec: ArrayLike,
+        b_vec: ArrayLike,
+        n_a: int = 101,
+        n_b: int = 101,
+        labels: list[str] | None = None,
+    ):
+
+        self.origin = np.array(origin)
+        self.a_vec = np.array(a_vec)
+        self.b_vec = np.array(b_vec)
+        self.n_a = np.array(n_a)
+        self.n_b = np.array(n_b)
+
+        # Validate shapes
+        if self.origin.shape != (3,) or self.a_vec.shape != (3,) or self.b_vec.shape != (3,):
+            raise ValueError("origin, a_vec and b_vec must be 3-element vector")
+
+        if labels is None:
+            self.labels = ["a (rlu)", "b (rlu)"]
+        else:
+            if len(labels) != 2:
+                raise ValueError("labels must be a list of two strings")
+            self.labels = labels
+
+    def q_points(self) -> np.ndarray:
+        """Get all q-points in the slice as an (N, 3) array.
+
+        Returns an array of shape (n_a * n_b, 3) with q-points ordered
+        """
+        # Create parameters s and t from 0 to 1
+        s = np.linspace(0, 1, self.n_a)  # shape = (n_a,)
+        t = np.linspace(0, 1, self.n_b)  # shape = (n_b,)
+
+        # Create 2D grid of parameters
+        s_grid, t_grid = np.meshgrid(s, t, indexing="xy")  # both shape = (n_b, n_a)
+
+        # Flatten to 1D for vectorized calculation
+        s_flat = s_grid.flatten()  # shape = (n_a * n_b,)
+        t_flat = t_grid.flatten()  # shape = (n_a * n_b,)
+
+        # Calculate q = origin + s*a_vec + t*b_vec (broadcasting)
+        q_points = self.origin + s_flat[:, np.newaxis] * self.a_vec + t_flat[:, np.newaxis] * self.b_vec
+
+        return q_points
+
+    def format_plot(self, plt_or_fig=None):
+        """Apply x and y labels to a matplotlib plot/figure/axis
+
+        If None, it will import matplotlib.pyplot and work on that
+        """
+        if plt_or_fig is None:
+            import matplotlib.pyplot as plt_or_fig
+
+        if hasattr(plt_or_fig, "xlabel"):
+            plt_or_fig.xlabel(self.labels[0])
+            plt_or_fig.ylabel(self.labels[1])
+        else:
+            plt_or_fig.set_xlabel(self.labels[0])
+            plt_or_fig.set_ylabel(self.labels[1])
+
+    def __repr__(self):
+        return (
+            f"ReciprocalSlice(origin={self.origin}, "
+            f"a_vec={self.a_vec}, b_vec={self.b_vec}, "
+            f"n_a={self.n_a}, n_b={self.n_b})"
+        )
+
+
 class Path1DBase(ABC):
     """ Base class for 1D paths """
 

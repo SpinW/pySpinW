@@ -175,3 +175,9 @@ Cargo.lock
 
 # Config files
 render_settings.conf
+
+# uv toolchain
+uv.lock
+
+# VS Code Configuration
+.vscode
