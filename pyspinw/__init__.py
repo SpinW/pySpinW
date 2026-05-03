@@ -23,7 +23,7 @@ from pyspinw.symmetry.supercell import (
     PropagationVector, CommensuratePropagationVector, RotationTransform)
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
-from pyspinw.path import Path, Path1D
+from pyspinw.path import Path, Path1D, ReciprocalSlice
 
 from pyspinw.windows_parallelisation import set_up_windows_python_parallelisation
 
@@ -106,6 +106,7 @@ __all__ = [
     # path
     "Path",
     "Path1D",
+    "ReciprocalSlice",
 
     # windows parallelisation
     "set_up_windows_python_parallelisation",

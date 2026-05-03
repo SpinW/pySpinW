@@ -181,3 +181,6 @@ uv.lock
 
 # VS Code Configuration
 .vscode
+
+# MacOS files
+.DS_Store

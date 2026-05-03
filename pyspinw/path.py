@@ -188,6 +188,32 @@ class ReciprocalSlice:
         q_points = self.origin + s_flat[:, np.newaxis] * self.a_vec + t_flat[:, np.newaxis] * self.b_vec
 
         return q_points
+    
+    def grid_shape(self):
+          """Shape of the 2D grid for reshaping results: (n_b, n_a).
+
+          This follows matplotlib imshow convention: (rows, columns),
+          where n_b is the vertical axis and n_a is the horizontal axis.
+          """
+          return (self.n_b, self.n_a)
+    
+    def extent(self) -> list[float]:
+          """Extent showing actual projected rlu values along slice axes.
+
+          Returns [a_min, a_max, b_min, b_max] for matplotlib imshow.
+          Works correctly for axis-aligned slices like (h,k,0).
+          """
+          # Find which Cartesian component is dominant in each direction
+          a_comp = np.argmax(np.abs(self.a_vec))
+          b_comp = np.argmax(np.abs(self.b_vec))
+
+          # Calculate actual min/max values along those projections
+          a_min = self.origin[a_comp]
+          a_max = self.origin[a_comp] + self.a_vec[a_comp]
+          b_min = self.origin[b_comp]
+          b_max = self.origin[b_comp] + self.b_vec[b_comp]
+
+          return [a_min, a_max, b_min, b_max]
 
     def format_plot(self, plt_or_fig=None):
         """Apply x and y labels to a matplotlib plot/figure/axis

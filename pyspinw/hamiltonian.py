@@ -653,6 +653,115 @@ class Hamiltonian(SPWSerialisable):
             plt.show()
         else:
             return fig
+    
+    def reciprocal_space_map(self,
+                            q_slice,  # ReciprocalSlice
+                            e_min: float | None = None,
+                            e_max: float | None = None,
+                            vmin: float = 0,
+                            vmax: float | None = None,
+                            field: ArrayLike | None = None,
+                            show: bool = True,
+                            new_figure: bool = True,
+                            use_rust: bool = True,
+                            use_rotating: bool = True,
+                            intensity_unit: IntensityUnits | str = 'cell',
+                            cmap: str = "magma_r",
+                            origin: str = "lower"):
+        """
+        Plot a reciprocal space map with intensity integrated over energy.
+
+        Parameters
+        ----------
+        q_slice : ReciprocalSlice
+            2D slice object defining the grid of q-points
+        e_min, e_max :
+            Optional energy window [meV] to integrate. If not specified,
+            integrates over all positive energy modes.
+        vmin, vmax :
+            Color scale limits
+        field:
+            external field
+        show :
+            Whether to display the plot
+        new_figure :
+            Whether to create a new figure
+        use_rust, use_rotating, intensity_unit :
+            Same as energies_and_intensities
+        cmap :
+            Matplotlib colormap name
+        origin :
+            'lower' or 'upper' for matplotlib imshow origin
+        """
+        if new_figure:
+            fig, ax = plt.subplots()
+        else:
+            fig = plt.gcf()
+            ax = fig.get_axes()[0]
+
+        # Step 1: Calculate all energies and intensities at each q-point
+        energies, intensities = self._energies_and_intensities(
+            q_slice.q_points(),
+            field=field,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit
+        )
+
+        # Step 2: Convert to numpy arrays and nan is counted as 0
+        energies = np.array(energies)     
+        intensities = np.array(intensities)  
+
+        energies = np.nan_to_num(energies, nan=0.0)
+        intensities = np.nan_to_num(intensities, nan=0.0)
+
+
+        # Step 3: Energy integration - mask and sum
+        mask = energies > 0  # Only positive energy modes
+        if e_min is not None:
+            mask &= energies >= e_min
+        if e_max is not None:
+            mask &= energies <= e_max
+
+        # Sum over all modes within the energy window
+        integrated = np.sum(intensities * mask, axis=1)  # shape = (n_q,)
+
+        # Step 4: Reshape back to 2D grid
+        grid_data = integrated.reshape(q_slice.grid_shape())  # shape = (n_b, n_a)
+
+        # Step 5: Auto-scale color limits if not provided
+        if vmax is None:
+            vmax = np.nanmax(grid_data)
+
+        # Step 6: Plot heatmap
+        im = ax.imshow(
+            grid_data,
+            extent=q_slice.extent(),
+            origin=origin,
+            vmin=vmin,
+            vmax=vmax,
+            cmap=cmap,
+            aspect="auto"
+        )
+
+        # Step 7: Add colorbar and labels
+        fig.colorbar(im, ax=ax, label="Intensity")
+        q_slice.format_plot(ax)
+
+        # Add title showing energy window
+        if e_min is not None and e_max is not None:
+            ax.set_title(f"Reciprocal Space Map (E = {e_min:.0f}-{e_max:.0f} meV)")
+        elif e_min is not None:
+            ax.set_title(f"Reciprocal Space Map (E > {e_min:.0f} meV)")
+        elif e_max is not None:
+            ax.set_title(f"Reciprocal Space Map (E < {e_max:.0f} meV)")
+        else:
+            ax.set_title("Reciprocal Space Map (all energies)")
+
+        if show:
+            plt.show()
+        else:
+            return fig
 
     def parameterize(self,
                      *parameters: ParametrizationType,
