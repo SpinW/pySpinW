@@ -21,7 +21,7 @@ from pyspinw.anisotropy import Anisotropy
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange
-from pyspinw.path import Path
+from pyspinw.path import Path, Slice
 from pyspinw.polarisation import calculate_polarised_intensity
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
@@ -654,8 +654,8 @@ class Hamiltonian(SPWSerialisable):
         else:
             return fig
 
-    def reciprocal_space_map(self,
-                            q_slice,  # Slice
+    def intensity_map(self,
+                            q_slice: Slice,  
                             e_min: float | None = None,
                             e_max: float | None = None,
                             vmin: float = 0,
