@@ -653,7 +653,7 @@ class Hamiltonian(SPWSerialisable):
             plt.show()
         else:
             return fig
-    
+
     def reciprocal_space_map(self,
                             q_slice,  # ReciprocalSlice
                             e_min: float | None = None,
@@ -668,8 +668,7 @@ class Hamiltonian(SPWSerialisable):
                             intensity_unit: IntensityUnits | str = 'cell',
                             cmap: str = "magma_r",
                             origin: str = "lower"):
-        """
-        Plot a reciprocal space map with intensity integrated over energy.
+        """Plot a reciprocal space map with intensity integrated over energy.
 
         Parameters
         ----------
@@ -709,8 +708,8 @@ class Hamiltonian(SPWSerialisable):
         )
 
         # Step 2: Convert to numpy arrays and nan is counted as 0
-        energies = np.array(energies)     
-        intensities = np.array(intensities)  
+        energies = np.array(energies)
+        intensities = np.array(intensities)
 
         energies = np.nan_to_num(energies, nan=0.0)
         intensities = np.nan_to_num(intensities, nan=0.0)

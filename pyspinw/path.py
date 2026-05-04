@@ -188,7 +188,7 @@ class ReciprocalSlice:
         q_points = self.origin + s_flat[:, np.newaxis] * self.a_vec + t_flat[:, np.newaxis] * self.b_vec
 
         return q_points
-    
+
     def grid_shape(self):
           """Shape of the 2D grid for reshaping results: (n_b, n_a).
 
@@ -196,7 +196,7 @@ class ReciprocalSlice:
           where n_b is the vertical axis and n_a is the horizontal axis.
           """
           return (self.n_b, self.n_a)
-    
+
     def extent(self) -> list[float]:
           """Extent showing actual projected rlu values along slice axes.
 
