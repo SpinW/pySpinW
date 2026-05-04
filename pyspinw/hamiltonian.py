@@ -655,7 +655,7 @@ class Hamiltonian(SPWSerialisable):
             return fig
 
     def intensity_map(self,
-                            q_slice: Slice,  
+                            q_slice: Slice,
                             e_min: float | None = None,
                             e_max: float | None = None,
                             vmin: float = 0,
