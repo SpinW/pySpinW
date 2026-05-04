@@ -699,7 +699,7 @@ class Hamiltonian(SPWSerialisable):
             ax = fig.get_axes()[0]
 
         # Step 1: Calculate all energies and intensities at each q-point
-        energies, intensities = self._energies_and_intensities(
+        energies, intensities = self.energies_and_intensities(
             q_slice.q_points(),
             field=field,
             use_rust=use_rust,
