@@ -204,12 +204,11 @@ class Slice:
         return q_points
 
     def grid_shape(self):
-          """Shape of the 2D grid for reshaping results: (n_b, n_a).
+          """Shape of the 2D grid for reshaping results: (n_a, n_b).
 
-          This follows matplotlib imshow convention: (rows, columns),
-          where n_b is the vertical axis and n_a is the horizontal axis.
+          First dimension corresponds to axis_1 (horizontal), second to axis_2 (vertical).
           """
-          return (self.n_b, self.n_a)
+          return (self.n_a, self.n_b)
 
     def extent(self) -> list[float]:
           """Extent showing actual projected rlu values along slice axes.

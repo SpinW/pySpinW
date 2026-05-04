@@ -726,7 +726,9 @@ class Hamiltonian(SPWSerialisable):
         integrated = np.sum(intensities * mask, axis=1)  # shape = (n_q,)
 
         # Step 4: Reshape back to 2D grid
-        grid_data = integrated.reshape(q_slice.grid_shape())  # shape = (n_b, n_a)
+        # meshgrid(indexing="xy") lays out data as (n_b, n_a) in memory
+        # imshow expects shape (rows, cols) = (n_b, n_a) where rows = vertical/axis_2
+        grid_data = integrated.reshape(q_slice.n_b, q_slice.n_a)
 
         # Step 5: Auto-scale color limits if not provided
         if vmax is None:
