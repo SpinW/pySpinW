@@ -129,14 +129,14 @@ class Slice:
     ----------
     origin :
         Corner point of the rectangle (3D q-vector)
-    a_vec :
+    axis_1 :
         First edge vector (defines the horizontal axis for plotting)
-    b_vec :
+    axis_2 :
         Second edge vector (defines the vertical axis for plotting)
     n_a :
-        Number of points along a_vec direction
+        Number of points along axis_1 direction
     n_b :
-        Number of points along b_vec direction
+        Number of points along axis_2 direction
     labels :
         Optional [a_label, b_label] for plot axes
     """
@@ -144,32 +144,32 @@ class Slice:
     def __init__(
         self,
         origin: ArrayLike | None = None,
-        a_vec: ArrayLike | None = None,
-        b_vec: ArrayLike | None = None,
+        axis_1: ArrayLike | None = None,
+        axis_2: ArrayLike | None = None,
         n_a: int = 101,
         n_b: int = 101,
         labels: list[str] | None = None,
     ):
 
         self.origin = np.array(origin)
-        self.a_vec = np.array(a_vec)
-        self.b_vec = np.array(b_vec)
+        self.axis_1 = np.array(axis_1)
+        self.axis_2 = np.array(axis_2)
         self.n_a = int(n_a)
         self.n_b = int(n_b)
 
         # Validate shapes
-        if self.origin.shape != (3,) or self.a_vec.shape != (3,) or self.b_vec.shape != (3,):
-            raise ValueError("origin, a_vec and b_vec must be 3-element vector")
+        if self.origin.shape != (3,) or self.axis_1.shape != (3,) or self.axis_2.shape != (3,):
+            raise ValueError("origin, axis_1 and axis_2 must be 3-element vector")
 
-        # Set default for origin, a_vec and b_vec.
+        # Set default for origin, axis_1 and axis_2.
         if origin is None:
             origin = [0, 0, 0]
 
-        if a_vec is None:
-            a_vec = [1, 0, 0]
+        if axis_1 is None:
+            axis_1 = [1, 0, 0]
 
-        if b_vec is None:
-            b_vec = [0, 1, 0]
+        if axis_2 is None:
+            axis_2 = [0, 1, 0]
 
         if labels is None:
             self.labels = ["a (rlu)", "b (rlu)"]
@@ -194,8 +194,8 @@ class Slice:
         s_flat = s_grid.flatten()  # shape = (n_a * n_b,)
         t_flat = t_grid.flatten()  # shape = (n_a * n_b,)
 
-        # Calculate q = origin + s*a_vec + t*b_vec (broadcasting)
-        q_points = self.origin + s_flat[:, np.newaxis] * self.a_vec + t_flat[:, np.newaxis] * self.b_vec
+        # Calculate q = origin + s*axis_1 + t*axis_2 (broadcasting)
+        q_points = self.origin + s_flat[:, np.newaxis] * self.axis_1 + t_flat[:, np.newaxis] * self.axis_2
 
         return q_points
 
@@ -214,14 +214,14 @@ class Slice:
           Works correctly for axis-aligned slices like (h,k,0).
           """
           # Find which Cartesian component is dominant in each direction
-          a_comp = np.argmax(np.abs(self.a_vec))
-          b_comp = np.argmax(np.abs(self.b_vec))
+          a_comp = np.argmax(np.abs(self.axis_1))
+          b_comp = np.argmax(np.abs(self.axis_2))
 
           # Calculate actual min/max values along those projections
           a_min = self.origin[a_comp]
-          a_max = self.origin[a_comp] + self.a_vec[a_comp]
+          a_max = self.origin[a_comp] + self.axis_1[a_comp]
           b_min = self.origin[b_comp]
-          b_max = self.origin[b_comp] + self.b_vec[b_comp]
+          b_max = self.origin[b_comp] + self.axis_2[b_comp]
 
           return [a_min, a_max, b_min, b_max]
 
@@ -243,7 +243,7 @@ class Slice:
     def __repr__(self):
         return (
             f"ReciprocalSlice(origin={self.origin}, "
-            f"a_vec={self.a_vec}, b_vec={self.b_vec}, "
+            f"axis_1={self.axis_1}, axis_2={self.axis_2}, "
             f"n_a={self.n_a}, n_b={self.n_b})"
         )
 
