@@ -154,8 +154,8 @@ class ReciprocalSlice:
         self.origin = np.array(origin)
         self.a_vec = np.array(a_vec)
         self.b_vec = np.array(b_vec)
-        self.n_a = np.array(n_a)
-        self.n_b = np.array(n_b)
+        self.n_a = int(n_a)
+        self.n_b = int(n_b)
 
         # Validate shapes
         if self.origin.shape != (3,) or self.a_vec.shape != (3,) or self.b_vec.shape != (3,):
