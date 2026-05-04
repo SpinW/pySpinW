@@ -143,9 +143,9 @@ class Slice:
 
     def __init__(
         self,
-        origin: ArrayLike,
-        a_vec: ArrayLike,
-        b_vec: ArrayLike,
+        origin: ArrayLike | None = None,
+        a_vec: ArrayLike | None = None,
+        b_vec: ArrayLike | None = None,
         n_a: int = 101,
         n_b: int = 101,
         labels: list[str] | None = None,
@@ -160,6 +160,16 @@ class Slice:
         # Validate shapes
         if self.origin.shape != (3,) or self.a_vec.shape != (3,) or self.b_vec.shape != (3,):
             raise ValueError("origin, a_vec and b_vec must be 3-element vector")
+
+        # Set default for origin, a_vec and b_vec.
+        if origin is None:
+            origin = [0, 0, 0]
+
+        if a_vec is None:
+            a_vec = [1, 0, 0]
+
+        if b_vec is None:
+            b_vec = [0, 1, 0]
 
         if labels is None:
             self.labels = ["a (rlu)", "b (rlu)"]
