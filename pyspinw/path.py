@@ -122,7 +122,7 @@ class Path:
         return f"Path({path_string})"
 
 
-class ReciprocalSlice:
+class Slice:
     """Initialize a 2D slice in reciprocal space.
 
     Parameters

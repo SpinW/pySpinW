@@ -655,7 +655,7 @@ class Hamiltonian(SPWSerialisable):
             return fig
 
     def reciprocal_space_map(self,
-                            q_slice,  # ReciprocalSlice
+                            q_slice,  # Slice
                             e_min: float | None = None,
                             e_max: float | None = None,
                             vmin: float = 0,
@@ -672,7 +672,7 @@ class Hamiltonian(SPWSerialisable):
 
         Parameters
         ----------
-        q_slice : ReciprocalSlice
+        q_slice : Slice
             2D slice object defining the grid of q-points
         e_min, e_max :
             Optional energy window [meV] to integrate. If not specified,
