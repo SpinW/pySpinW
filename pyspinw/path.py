@@ -139,6 +139,9 @@ class Slice:
         Number of points along axis_2 direction
     labels :
         Optional [a_label, b_label] for plot axes
+    padding :
+        Extra padding beyond the slice boundaries, as a fraction of the slice size.
+        For example, padding=0.1 extends the slice by 10% on both sides.
     """
 
     def __init__(
@@ -149,18 +152,8 @@ class Slice:
         n_a: int = 101,
         n_b: int = 101,
         labels: list[str] | None = None,
+        padding: float = 0.0,
     ):
-
-        self.origin = np.array(origin)
-        self.axis_1 = np.array(axis_1)
-        self.axis_2 = np.array(axis_2)
-        self.n_a = int(n_a)
-        self.n_b = int(n_b)
-
-        # Validate shapes
-        if self.origin.shape != (3,) or self.axis_1.shape != (3,) or self.axis_2.shape != (3,):
-            raise ValueError("origin, axis_1 and axis_2 must be 3-element vector")
-
         # Set default for origin, axis_1 and axis_2.
         if origin is None:
             origin = [0, 0, 0]
@@ -170,6 +163,17 @@ class Slice:
 
         if axis_2 is None:
             axis_2 = [0, 1, 0]
+
+        self.origin = np.array(origin)
+        self.axis_1 = np.array(axis_1)
+        self.axis_2 = np.array(axis_2)
+        self.n_a = int(n_a)
+        self.n_b = int(n_b)
+        self.padding = float(padding)
+
+        # Validate shapes
+        if self.origin.shape != (3,) or self.axis_1.shape != (3,) or self.axis_2.shape != (3,):
+            raise ValueError("origin, axis_1 and axis_2 must be 3-element vector")
 
         if labels is None:
             self.labels = ["a (rlu)", "b (rlu)"]
@@ -183,9 +187,9 @@ class Slice:
 
         Returns an array of shape (n_a * n_b, 3) with q-points ordered
         """
-        # Create parameters s and t from 0 to 1
-        s = np.linspace(0, 1, self.n_a)  # shape = (n_a,)
-        t = np.linspace(0, 1, self.n_b)  # shape = (n_b,)
+        # Create parameters s and t from -padding to 1+padding
+        s = np.linspace(-self.padding, 1 + self.padding, self.n_a)  # shape = (n_a,)
+        t = np.linspace(-self.padding, 1 + self.padding, self.n_b)  # shape = (n_b,)
 
         # Create 2D grid of parameters
         s_grid, t_grid = np.meshgrid(s, t, indexing="xy")  # both shape = (n_b, n_a)
@@ -217,11 +221,11 @@ class Slice:
           a_comp = np.argmax(np.abs(self.axis_1))
           b_comp = np.argmax(np.abs(self.axis_2))
 
-          # Calculate actual min/max values along those projections
-          a_min = self.origin[a_comp]
-          a_max = self.origin[a_comp] + self.axis_1[a_comp]
-          b_min = self.origin[b_comp]
-          b_max = self.origin[b_comp] + self.axis_2[b_comp]
+          # Calculate actual min/max values along those projections with padding
+          a_min = self.origin[a_comp] - self.padding * self.axis_1[a_comp]
+          a_max = self.origin[a_comp] + (1 + self.padding) * self.axis_1[a_comp]
+          b_min = self.origin[b_comp] - self.padding * self.axis_2[b_comp]
+          b_max = self.origin[b_comp] + (1 + self.padding) * self.axis_2[b_comp]
 
           return [a_min, a_max, b_min, b_max]
 
