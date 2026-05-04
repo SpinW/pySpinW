@@ -246,7 +246,7 @@ class Slice:
 
     def __repr__(self):
         return (
-            f"ReciprocalSlice(origin={self.origin}, "
+            f"Slice(origin={self.origin}, "
             f"axis_1={self.axis_1}, axis_2={self.axis_2}, "
             f"n_a={self.n_a}, n_b={self.n_b})"
         )
