@@ -6,6 +6,7 @@ from numpy._typing import ArrayLike
 from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
     numpy_deserialise, numpy_serialise
+from pyspinw.sitemeta import SiteMetadata
 
 _unique_id_counter = -1
 def _generate_unique_id():
@@ -33,7 +34,8 @@ class LatticeSite(SPWSerialisable):
                  sz: float | None = None,
                  supercell_spins: ArrayLike | None = None,
                  g: ArrayLike | None = None,
-                 name: str = ""):
+                 name: str = "",
+                 metadata: SiteMetadata | None = None):
 
         self._i = float(i)
         self._j = float(j)
@@ -93,6 +95,17 @@ class LatticeSite(SPWSerialisable):
         self._base_spin = np.sum(self._spin_data, axis=0)
         self._name = name
 
+        # Metadata
+        if metadata is None:
+            if name is None:
+                self.metadata = SiteMetadata()
+            else:
+                self.metadata = SiteMetadata.metadata_from_name(name)
+        else:
+            self.metadata = metadata
+
+
+        # Other things
         self._ijk = np.array([i, j, k], dtype=float)
         self._values = np.concatenate((self._ijk, self._base_spin))
         self._unique_id = _generate_unique_id()
