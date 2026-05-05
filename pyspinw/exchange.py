@@ -5,6 +5,7 @@ import numpy as np
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
+from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
@@ -27,6 +28,7 @@ class ExchangeBaseDeserialisation:
     site_1: LatticeSite
     site_2: LatticeSite
     cell_offset: CellOffset
+    metadata: ExchangeMetadata
 
 
 class Exchange(SPWSerialisable):
@@ -40,7 +42,9 @@ class Exchange(SPWSerialisable):
                  site_2: LatticeSite,
                  cell_offset: CellOffsetCoercible,
                  exchange_matrix: np.ndarray,
-                 name: str = ""):
+                 name: str = "",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._name = name
         self._site_1 = site_1
@@ -49,6 +53,10 @@ class Exchange(SPWSerialisable):
         self._exchange_matrix = exchange_matrix
 
         self._unique_id = _generate_unique_exchange_id()
+        self.metadata = ExchangeMetadata() if metadata is None else metadata
+
+        if color is not None:
+            self.metadata.color = color
 
 
     exchange_type = "General"
@@ -132,7 +140,8 @@ class Exchange(SPWSerialisable):
             "name": self.name,
             "site_1": self._site_1._serialise(context),
             "site_2": self._site_2._serialise(context),
-            "cell_offset": self._cell_offset._serialise(context)
+            "cell_offset": self._cell_offset._serialise(context),
+            "metadata": self.metadata._serialise(context)
         }
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
@@ -157,7 +166,9 @@ class Exchange(SPWSerialisable):
             name=json["name"],
             site_1=LatticeSite._deserialise(json["site_1"], context),
             site_2=LatticeSite._deserialise(json["site_2"], context),
-            cell_offset=CellOffset._deserialise(json["cell_offset"], context))
+            cell_offset=CellOffset._deserialise(json["cell_offset"], context),
+            metadata=ExchangeMetadata._deserialise(json["metadata"], context)
+        )
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
@@ -214,7 +225,9 @@ class HeisenbergExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j = j
         self._exchange_matrix = j * np.eye(3)
@@ -223,7 +236,9 @@ class HeisenbergExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     @property
     def j(self):
@@ -288,7 +303,9 @@ class DiagonalExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j_x: float, j_y: float, j_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j_x = j_x
         self._j_y = j_y
@@ -300,7 +317,9 @@ class DiagonalExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     @property
     def j_x(self):
@@ -388,7 +407,9 @@ class XYExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j = j
         self._exchange_matrix = np.diag([j, j, 0.0], dtype=float)
@@ -397,7 +418,9 @@ class XYExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
@@ -453,7 +476,9 @@ class XXZExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j_xy: float, j_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j_xy = j_xy
         self._j_z = j_z
@@ -464,7 +489,9 @@ class XXZExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
 
 
@@ -537,8 +564,9 @@ class IsingExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
-
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
         self._j_z = j_z
 
         self._exchange_matrix = np.diag([0.0, 0.0, j_z])
@@ -547,7 +575,9 @@ class IsingExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     @property
     def j_z(self):
@@ -611,7 +641,9 @@ class DMExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  d_x: float, d_y: float, d_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._d_x = d_x
         self._d_y = d_y
@@ -623,7 +655,9 @@ class DMExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
 
     @property

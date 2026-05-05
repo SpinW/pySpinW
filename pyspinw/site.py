@@ -18,11 +18,15 @@ def _generate_unique_id():
 class LatticeSite(SPWSerialisable):
     """A spin site within a lattice
 
-    :param: i,j,k - *required* Fractional coordinates within unit cell
-    :param: sx, sy, sz - Spin components in the Cartesian directions defined by x||a, z perpendicular to a-b
-    :param: supercell_spins - Spin for each propagation vector
-    :param: g - g-tensor (3x3)
-    :param: name
+    :param i,j,k: *required* Fractional coordinates within unit cell
+    :param sx, sy, sz: Spin components in the Cartesian directions defined by x||a, z perpendicular to a-b
+    :param supercell_spins: - Spin for each propagation vector
+    :param g: - g-tensor (3x3)
+    :param name:
+    :param metadata: Object containing metadata for this site (can be inferred from the name)
+    :param color: Colour to use for rendering (can be inferred from the name, overrides other metadata)
+    :param radius: Atomic radius to use for rendering (can be inferred from the name, overrides other metadata)
+    :param element: String containing the atomic symbol (can be inferred from the name, overrides other metadata)
     """
 
     serialisation_name = "site"
@@ -35,7 +39,10 @@ class LatticeSite(SPWSerialisable):
                  supercell_spins: ArrayLike | None = None,
                  g: ArrayLike | None = None,
                  name: str = "",
-                 metadata: SiteMetadata | None = None):
+                 metadata: SiteMetadata | None = None,
+                 color: tuple[float, float, float] | None = None,
+                 radius: float | None = None,
+                 element: str | None = None):
 
         self._i = float(i)
         self._j = float(j)
@@ -97,12 +104,18 @@ class LatticeSite(SPWSerialisable):
 
         # Metadata
         if metadata is None:
-            if name is None:
-                self.metadata = SiteMetadata()
-            else:
-                self.metadata = SiteMetadata.metadata_from_name(name)
+            self.metadata = SiteMetadata.metadata_from_name(name)
         else:
             self.metadata = metadata
+
+        if color is not None:
+            self.metadata.color = color
+
+        if radius is not None:
+            self.metadata.radius = radius
+
+        if element is not None:
+            self.metadata.element = element
 
 
         # Other things
