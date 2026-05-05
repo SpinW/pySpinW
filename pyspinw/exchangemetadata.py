@@ -21,3 +21,7 @@ class ExchangeMetadata(SPWSerialisable):
         color =  None if json["color"] is None else rgb_deserialise(json["color"])
 
         return ExchangeMetadata(color=color)
+
+    def copy(self):
+        """ Return a copy of this exchange metadata """
+        return ExchangeMetadata(self.color)

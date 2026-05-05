@@ -80,6 +80,10 @@ class InPlaneFilter(DirectionalityFilter):
             return np.abs(np.dot(self.direction, vector) / np.sqrt(sq_mag)) < self.in_plane_dev_num
 
 
+class ColorMethod:
+    def __init__(self):
+        pass
+
 class ExchangeGroup:
     """ Class representing the batch creation of exchanges"""
 

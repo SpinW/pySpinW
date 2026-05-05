@@ -96,6 +96,9 @@ class RenderExchange(Selectable):
     def __init__(self, render_id: int, exchange: Exchange, unit_cell: UnitCell):
 
         self.exchange = exchange
+        self.color = (0.2, 0.4, 0.8) if exchange.metadata.color is None else exchange.metadata.color
+
+        # self.color = (1.0, 0.4, 0.8) if exchange.metadata.color is None else exchange.metadata.color
 
         p1 = exchange.site_1.ijk
         p2 = exchange.site_2.ijk + exchange.cell_offset.vector

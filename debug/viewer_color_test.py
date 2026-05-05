@@ -29,6 +29,10 @@ if __name__ == "__main__":
                                    exchange_type=HeisenbergExchange,
                                    j=-1)
 
+    exchanges[0].metadata.color = (1,0,0)
+
+    print(exchanges[0].metadata.color)
+
     hamiltonian = Hamiltonian(s, exchanges)
 
     hamiltonian.print_summary()

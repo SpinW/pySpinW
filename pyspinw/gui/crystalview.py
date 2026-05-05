@@ -237,10 +237,9 @@ class CrystalViewerWidget(QOpenGLWidget):
             # Exchanges
             if self.display_options.show_exchanges:
 
-                self.object_shader.object_color = 0.2, 0.4, 0.8
-
                 for exchange in self.render_model.exchanges:
 
+                    self.object_shader.object_color = exchange.color
 
                     if exchange.render_id in self.hover_ids:
                         if exchange.render_id in self.current_selection:
