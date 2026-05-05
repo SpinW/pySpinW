@@ -210,10 +210,18 @@ class CrystalViewerWidget(QOpenGLWidget):
                             else:
                                 mode = SelectionMode.NOT_SELECTED
 
-                        render_object = self.arrow if site.is_magnetic else self.small_sphere
+                        show_arrow = site.is_magnetic and self.display_options.show_atoms_not_spins
+                        render_object = self.arrow if show_arrow else self.small_sphere
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
                             site_model_matrix = model_matrix @ spin_scale_matrix
+
+                            # scale spheres by atom size
+                            if not show_arrow:
+
+                                s = site.radius
+                                atomscale = np.diag([s, s, s, 1])
+                                site_model_matrix = site_model_matrix @ atomscale
 
                             if mode != SelectionMode.NOT_SELECTED:
 

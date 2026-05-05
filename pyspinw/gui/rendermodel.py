@@ -55,6 +55,7 @@ class RenderSite(Selectable):
         self.site = site
         self.offset = offset
         self.color = (0.7, 0.8, 0.6) if site.metadata.color is None else site.metadata.color
+        self.radius = 1.0 if site.metadata.radius is None else site.metadata.radius
 
         self.pretty_render_model_matrices = [self.site_model_matrix(new_position, spin, unit_cell)
                                              for new_position in add_extra_edge_points(position)]

@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     x = LatticeSite(0, 0, 0, 0, 0, 1, name="Fe")
     y = LatticeSite(0.5, 0, 0, 0, 0, 1, name="O")
-    z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="U")
+    z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="Cl")
     w = LatticeSite(0.5, 0.5, 0, 0, 0, 0, name="W")
 
     sites = [x, y, z, w]

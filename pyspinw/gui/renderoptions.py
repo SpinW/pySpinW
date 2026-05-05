@@ -287,7 +287,7 @@ class DisplayOptionsToolbar(QWidget):
 
         # TODO: Temporally disabled until implemented
         self.show_anisotropies.setVisible(False)
-        self.atom_or_spins.setVisible(False)
+        # self.atom_or_spins.setVisible(False)
         self.scale_atoms.setVisible(False)
 
     def _on_change(self):
@@ -306,6 +306,7 @@ class DisplayOptionsToolbar(QWidget):
             show_anisotropies = self.show_anisotropies.isChecked(),
             show_unit_cell = self.show_cell.isChecked(),
             show_supercell = self.show_supercell.isChecked(),
+            show_atoms_not_spins = self.atom_or_spins.isChecked(),
             show_nonmagnetic_atoms = self.show_nonmagnetic.isChecked(),
             use_atomic_radii = self.scale_atoms.isChecked(),
             atom_spin_scaling= self.spin_scale_slider.value(),
