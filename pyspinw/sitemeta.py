@@ -1,3 +1,5 @@
+""" Metadata for sites """
+
 import re
 
 from ase.data.colors import jmol_colors
@@ -9,9 +11,8 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 
 def _build_regex():
     """ Makes the regex for matching elements"""
-
     # Sort so 2-letter symbols come before 1-letter ones
-    symbols_sorted = sorted(chemical_symbols, key=lambda x: (-len(x), x))
+    symbols_sorted = sorted(chemical_symbols[1:], key=lambda x: (-len(x), x))
 
     # Build regex
     pattern = r"^(?:{})".format("|".join(symbols_sorted))
@@ -22,13 +23,14 @@ _chemical_pattern = _build_regex()
 
 class SiteMetadata(SPWSerialisable):
     """ Metadata about the element in the site """
+
     def __init__(self,
                  element: str | None = None,
                  radius: float | None = None,
                  color: tuple[float, float, float] | None=None):
 
         # Need to ignore entry 0 as this is "X"
-        if element not in chemical_symbols[1:]:
+        if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"'{element}' is not a valid element")
 
         self.element = element
@@ -38,6 +40,8 @@ class SiteMetadata(SPWSerialisable):
     @staticmethod
     def metadata_from_name(name: str | None):
         """ Extract metadata based on name"""
+        if name is None:
+            return SiteMetadata()
 
         # See if the name starts with a known element, the first in the ASE list is X, ignore that
         match_result = _chemical_pattern.match(name)

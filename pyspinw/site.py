@@ -5,7 +5,7 @@ from numpy._typing import ArrayLike
 
 from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
-    numpy_deserialise, numpy_serialise
+    numpy_deserialise, numpy_serialise, rgb_serialise
 from pyspinw.sitemeta import SiteMetadata
 
 _unique_id_counter = -1
@@ -253,7 +253,8 @@ class LatticeSite(SPWSerialisable):
                 "k": self.k,
                 "supercell_spins": numpy_serialise(self._spin_data),
                 "name": self.name,
-                "g": numpy_serialise(self.g)
+                "g": numpy_serialise(self.g),
+                "metadata": self.metadata._serialise(context)
             }
 
             context.sites.put(self._unique_id, json)
@@ -280,14 +281,16 @@ class LatticeSite(SPWSerialisable):
                     j=json["j"],
                     k=json["k"],
                     supercell_spins=numpy_deserialise(json["supercell_spins"]),
-                    name=json["name"])
+                    name=json["name"],
+                    metadata=SiteMetadata._deserialise(json["metadata"], context))
             else:
                 site = LatticeSite(
                     i=json["i"],
                     j=json["j"],
                     k=json["k"],
                     supercell_spins=numpy_deserialise(json["supercell_spins"]),
-                    name=json["name"])
+                    name=json["name"],
+                    metadata=SiteMetadata._deserialise(json["metadata"], context))
 
             context.sites.put(response.id, site)
 
@@ -304,14 +307,22 @@ class ImpliedLatticeSite(LatticeSite):
                  sy: float | None = None,
                  sz: float | None = None,
                  supercell_spins: np.ndarray | None = None,
-                 name: str | None = None):
+                 name: str | None = None,
+                 metadata: SiteMetadata | None = None,
+                 color: tuple[float, float, float] | None = None,
+                 radius: float | None = None,
+                 element: str | None = None):
 
         self._parent_site = parent_site
 
         super().__init__(i=i, j=j, k=k,
                          sx=sx, sy=sy, sz=sz,
                          supercell_spins=supercell_spins,
-                         name=name)
+                         name=name,
+                         metadata=metadata,
+                         color=color,
+                         radius=radius,
+                         element=element)
 
     @property
     def parent_site(self):
@@ -327,7 +338,8 @@ class ImpliedLatticeSite(LatticeSite):
                 "k": self.k,
                 "supercell_spins": numpy_serialise(self._spin_data),
                 "name": self.name,
-                "parent": parent_ref
+                "parent": parent_ref,
+                "metadata": self.metadata._serialise(context)
             }
 
             context.sites.put(self._unique_id, json)
