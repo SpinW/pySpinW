@@ -189,10 +189,11 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             # Sites
             if self.display_options.show_sites:
-                self.object_shader.object_color = 0.7, 0.8, 0.6
 
 
                 for site in self.render_model.sites:
+
+                    self.object_shader.object_color = site.color
 
                     if site.is_magnetic or self.display_options.show_nonmagnetic_atoms:
 
