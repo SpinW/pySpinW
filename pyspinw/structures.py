@@ -132,7 +132,8 @@ class Structure(SPWSerialisable):
                     site_1.j,
                     site_1.k,
                     supercell_spins=site_1.spin_data,
-                    name = site_1.name # TODO: Check if this is sensible
+                    name = site_1.name,
+                    metadata = site_1.metadata.copy()
                 ))
 
             else:
@@ -141,7 +142,8 @@ class Structure(SPWSerialisable):
                     site_1.j,
                     site_1.k,
                     supercell_spins=np.zeros_like(site_1.spin_data),
-                    name=site_1.name  # TODO: Check if this is sensible
+                    name=site_1.name,
+                    metadata=site_1.metadata.copy()
                 ))
 
         return unique_sites
@@ -169,7 +171,8 @@ class Structure(SPWSerialisable):
                     k=position[2],
                     supercell_spins=spin,
                     g=site.g,
-                    name=f"{site.name}[{index}]")
+                    name=f"{site.name}[{index}]",
+                    metadata=site.metadata.copy())
 
                 mapping[(site._unique_id, offset.as_tuple)] = new_site
 
