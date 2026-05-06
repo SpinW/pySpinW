@@ -168,6 +168,7 @@ def build_spacegroup_lookup(target_directory: str):
 
     for name, number in full_names.items():
         full_lookup[number].append(name)
+        full_lookup[number].append(name.replace("_", ""))
 
     for name, number in bracket_names.items():
         full_lookup[number].append(name)
