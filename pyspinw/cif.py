@@ -61,7 +61,6 @@ def load_cif(filename: str, supercell: Supercell = TiledSupercell(), entry_index
 
     sites = []
 
-
     # Create the lattice sites
     for label, atom, x_string, y_string, z_string in zip(
             data["_atom_site_label"],

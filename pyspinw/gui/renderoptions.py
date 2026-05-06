@@ -125,7 +125,12 @@ class GraphicalSlider(QWidget):
 
     def value(self) -> float:
         """ Get the value in floats """
-        return self.min_value + 0.01 * self.slider.value() * (self.max_value - self.min_value)
+        ranged = 0.02 * self.slider.value() - 1 # in range [-1, 1]
+        ranged *= abs(ranged) # Make it quadratic
+
+        zero_one = 0.5*(ranged+1)
+
+        return self.min_value + zero_one * (self.max_value - self.min_value)
 
 class DisplayOptionsToolbar(QWidget):
     """ Toolbar for setting values """
@@ -236,7 +241,7 @@ class DisplayOptionsToolbar(QWidget):
 
 
         self.spin_scale_slider = self._add_slider(
-            0, 1, settings.atom_spin_scaling,
+            0, 10, settings.atom_spin_scaling,
             left_label=IconWidget("small_moments", "Smaller Sites"),
             right_label=IconWidget("big_moments", "Larger Sites"),
             alt_text="Site scale factor")
