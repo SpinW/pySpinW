@@ -41,6 +41,7 @@ class SiteMetadata(SPWSerialisable):
         return f"SiteMetadata(element={self.element}, radius={self.radius}, color={self.color})"
 
     def copy(self):
+        """ Make a copy of this metadata"""
         return SiteMetadata(self.element, self.radius, self.color)
 
     @staticmethod

@@ -12,7 +12,6 @@ from pyspinw.interface import spacegroup
 
 def parse_float_entry(s: str):
     """ Parse a float entry, they can have brackets for values that go beyond the specified precision"""
-
     s = s.replace("(", "")
     s = s.replace(")", "")
 
@@ -20,7 +19,6 @@ def parse_float_entry(s: str):
 
 def load_cif(filename: str, supercell: Supercell = TiledSupercell(), entry_index: int=0):
     """ Load a CIF file in as a structure """
-
     # Get the right bit of data
 
     cif = ReadCif(filename)
