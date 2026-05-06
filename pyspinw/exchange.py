@@ -152,7 +152,6 @@ class Exchange(SPWSerialisable):
                 name: str | None = None,
                 exchange_matrix: np.ndarray | None = None,
                 metadata: ExchangeMetadata | None = None):
-
         """ Get version of this site with specified parameters updated"""
         return Exchange(
             site_1=self.site_1 if site_1 is None else site_1,
