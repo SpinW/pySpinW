@@ -2,6 +2,7 @@
 import re
 
 import numpy as np
+from ase.data import chemical_symbols
 
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
@@ -224,6 +225,22 @@ class Structure(SPWSerialisable):
         regex = name.replace("[", r"\[").replace("]", r"\]")
 
         return [site for site in self._sites if re.match(regex, site.name) is not None]
+
+    def sites_by_element(self, element: str | None) -> list[LatticeSite]:
+        """ Get list of sites with the specified element in the metadata"""
+        if element is not None and element not in chemical_symbols[1:]:
+            raise ValueError(f"{element} is not a known element")
+        return [site for site in self._sites if site.metadata.element == element]
+
+    def without_elements(self, *elements):
+        """ Get the structure without sites with given elements"""
+        for element in elements:
+            if element is not None and element not in chemical_symbols[1:]:
+                raise ValueError(f"{element} is not a known element")
+
+        new_sites = [site for site in self._sites if site.metadata.element not in elements]
+
+        return Structure(new_sites, unit_cell=self.unit_cell, spacegroup=self.spacegroup, supercell=self.supercell)
 
     def site_by_name(self, name):
         """ Get a single site by its name"""

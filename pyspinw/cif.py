@@ -92,4 +92,4 @@ if __name__ == "__main__":
     print(structure.site_by_name("Si1").metadata)
 
     from pyspinw import view
-    view(structure)
+    view(structure.without_elements("C", "H"))
