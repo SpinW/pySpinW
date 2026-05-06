@@ -142,6 +142,10 @@ class Slice:
     padding :
         Extra padding beyond the slice boundaries, as a fraction of the slice size.
         For example, padding=0.1 extends the slice by 10% on both sides.
+    e_min :
+        Optional minimum energy [meV] for intensity map integration
+    e_max :
+        Optional maximum energy [meV] for intensity map integration
     """
 
     def __init__(
@@ -153,6 +157,8 @@ class Slice:
         n_b: int = 101,
         labels: list[str] | None = None,
         padding: float = 0.0,
+        e_min: float | None = None,
+        e_max: float | None = None,
     ):
         # Set default for origin, axis_1 and axis_2.
         if origin is None:
@@ -170,6 +176,8 @@ class Slice:
         self.n_a = int(n_a)
         self.n_b = int(n_b)
         self.padding = float(padding)
+        self.e_min = e_min
+        self.e_max = e_max
 
         # Validate shapes
         if self.origin.shape != (3,) or self.axis_1.shape != (3,) or self.axis_2.shape != (3,):

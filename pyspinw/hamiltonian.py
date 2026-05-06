@@ -656,8 +656,6 @@ class Hamiltonian(SPWSerialisable):
 
     def intensity_map(self,
                             q_slice: Slice,
-                            e_min: float | None = None,
-                            e_max: float | None = None,
                             vmin: float = 0,
                             vmax: float | None = None,
                             field: ArrayLike | None = None,
@@ -673,10 +671,8 @@ class Hamiltonian(SPWSerialisable):
         Parameters
         ----------
         q_slice : Slice
-            2D slice object defining the grid of q-points
-        e_min, e_max :
-            Optional energy window [meV] to integrate. If not specified,
-            integrates over all positive energy modes.
+            2D slice object defining the grid of q-points. Energy bounds e_min
+            and e_max are taken from this object.
         vmin, vmax :
             Color scale limits
         field:
@@ -697,6 +693,10 @@ class Hamiltonian(SPWSerialisable):
         else:
             fig = plt.gcf()
             ax = fig.get_axes()[0]
+
+        # Get energy bounds from the Slice object
+        e_min = q_slice.e_min
+        e_max = q_slice.e_max
 
         # Step 1: Calculate all energies and intensities at each q-point
         energies, intensities = self.energies_and_intensities(
