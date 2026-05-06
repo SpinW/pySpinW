@@ -236,7 +236,7 @@ class Slice:
         # With padding, the bottom edge is at t=-padding (not t=0)
         # Ticks are at s = -padding, 0.5, 1+padding
         t_bottom = -self.padding  # Bottom edge of plot with padding
-        
+
         s_values = [-self.padding, 0.5, 1 + self.padding]
         labels = []
         for s in s_values:
@@ -260,7 +260,7 @@ class Slice:
         # Ticks are at t = -padding, 0.5, 1+padding
         # Note: The minimum label (corner) is omitted - shown separately at corner
         s_left = -self.padding  # Left edge of plot with padding
-        
+
         t_values = [-self.padding, 0.5, 1 + self.padding]
         labels = []
         for i, t in enumerate(t_values):
