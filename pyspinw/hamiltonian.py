@@ -672,7 +672,7 @@ class Hamiltonian(SPWSerialisable):
         ----------
         q_slice : Slice
             2D slice object defining the grid of q-points. Energy bounds e_min
-            and e_max are taken from this object.
+            and e_max (in meV) are taken from this object.
         vmin, vmax :
             Color scale limits
         field:

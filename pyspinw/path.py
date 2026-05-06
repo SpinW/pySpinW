@@ -143,9 +143,9 @@ class Slice:
         Extra padding beyond the slice boundaries, as a fraction of the slice size.
         For example, padding=0.1 extends the slice by 10% on both sides.
     e_min :
-        Optional minimum energy [meV] for intensity map integration
+        Optional minimum energy in meV for intensity_map() integration window
     e_max :
-        Optional maximum energy [meV] for intensity map integration
+        Optional maximum energy in meV for intensity_map() integration window
     """
 
     def __init__(
