@@ -211,25 +211,65 @@ class Slice:
           return (self.n_a, self.n_b)
 
     def extent(self) -> list[float]:
-          """Extent showing actual projected rlu values along slice axes.
+          """Extent in parameter space [s_min, s_max, t_min, t_max]."""
+          return [-self.padding, 1 + self.padding, -self.padding, 1 + self.padding]
 
-          Returns [a_min, a_max, b_min, b_max] for matplotlib imshow.
-          Works correctly for axis-aligned slices like (h,k,0).
-          """
-          # Find which Cartesian component is dominant in each direction
-          a_comp = np.argmax(np.abs(self.axis_1))
-          b_comp = np.argmax(np.abs(self.axis_2))
+    def x_ticks(self):
+        """X-axis tick positions in data space for axis_1 direction."""
+        extent = self.extent()
+        a_min, a_max = extent[0], extent[1]
+        # Ticks at min, middle, and max of the data range
+        tick_positions = np.array([a_min, (a_min + a_max) / 2, a_max])
+        return tick_positions
 
-          # Calculate actual min/max values along those projections with padding
-          a_min = self.origin[a_comp] - self.padding * self.axis_1[a_comp]
-          a_max = self.origin[a_comp] + (1 + self.padding) * self.axis_1[a_comp]
-          b_min = self.origin[b_comp] - self.padding * self.axis_2[b_comp]
-          b_max = self.origin[b_comp] + (1 + self.padding) * self.axis_2[b_comp]
+    def x_tick_labels(self):
+        """X-axis tick labels showing actual (hkl) q-vectors."""
+        # X-axis labels show coordinates along the bottom edge of the plot
+        # With padding, the bottom edge is at t=-padding (not t=0)
+        # Ticks are at s = -padding, 0.5, 1+padding
+        t_bottom = -self.padding  # Bottom edge of plot with padding
+        
+        s_values = [-self.padding, 0.5, 1 + self.padding]
+        labels = []
+        for s in s_values:
+            q = self.origin + s * self.axis_1 + t_bottom * self.axis_2
+            labels.append(f"({q[0]:.3g}, {q[1]:.3g}, {q[2]:.3g})")
 
-          return [a_min, a_max, b_min, b_max]
+        return labels
+
+    def y_ticks(self):
+        """Y-axis tick positions in data space for axis_2 direction."""
+        extent = self.extent()
+        b_min, b_max = extent[2], extent[3]
+        # Ticks at min, middle, and max of the data range
+        tick_positions = np.array([b_min, (b_min + b_max) / 2, b_max])
+        return tick_positions
+
+    def y_tick_labels(self):
+        """Y-axis tick labels showing actual (hkl) q-vectors."""
+        # Y-axis labels show coordinates along the left edge of the plot
+        # With padding, the left edge is at s=-padding (not s=0)
+        # Ticks are at t = -padding, 0.5, 1+padding
+        # Note: The minimum label (corner) is omitted - shown separately at corner
+        s_left = -self.padding  # Left edge of plot with padding
+        
+        t_values = [-self.padding, 0.5, 1 + self.padding]
+        labels = []
+        for i, t in enumerate(t_values):
+            if i == 0:
+                # Skip the corner label (shown separately at bottom-left)
+                labels.append("")
+            else:
+                q = self.origin + s_left * self.axis_1 + t * self.axis_2
+                labels.append(f"({q[0]:.3g}, {q[1]:.3g}, {q[2]:.3g})")
+
+        return labels
 
     def format_plot(self, plt_or_fig=None):
-        """Apply x and y labels to a matplotlib plot/figure/axis
+        """Apply x and y labels and ticks to a matplotlib plot/figure/axis.
+
+        Sets both axis labels and ticks with corresponding tick labels
+        showing actual reciprocal space coordinates.
 
         If None, it will import matplotlib.pyplot and work on that
         """
@@ -237,11 +277,17 @@ class Slice:
             import matplotlib.pyplot as plt_or_fig
 
         if hasattr(plt_or_fig, "xlabel"):
+            # pyplot API
             plt_or_fig.xlabel(self.labels[0])
             plt_or_fig.ylabel(self.labels[1])
+            plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
+            plt_or_fig.yticks(self.y_ticks(), self.y_tick_labels())
         else:
+            # axis API
             plt_or_fig.set_xlabel(self.labels[0])
             plt_or_fig.set_ylabel(self.labels[1])
+            plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
+            plt_or_fig.set_yticks(self.y_ticks(), self.y_tick_labels())
 
     def __repr__(self):
         return (
