@@ -176,7 +176,7 @@ class Slice:
             raise ValueError("origin, axis_1 and axis_2 must be 3-element vector")
 
         if labels is None:
-            self.labels = ["a (rlu)", "b (rlu)"]
+            self.labels = ["axis_1 (rlu)", "axis_2 (rlu)"]
         else:
             if len(labels) != 2:
                 raise ValueError("labels must be a list of two strings")
