@@ -32,6 +32,8 @@ from pyspinw.gui.viewer import show_hamiltonian as view
 
 from pyspinw.units import CoordsUnits, IntensityUnits
 
+from pyspinw.cif import load_cif
+
 from pyspinw.demo import demo_viewer, demo_chains
 from pyspinw.demo import run_demos as demos
 
@@ -56,6 +58,9 @@ __all__ = [
     "InPlaneFilter",
     "InDirectionFilter",
     "BiDirectionFilter",
+
+    # CIFs
+    'load_cif',
 
     # structures / hamiltonian
     "Structure",
