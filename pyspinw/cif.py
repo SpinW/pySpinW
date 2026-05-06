@@ -1,8 +1,11 @@
 """ CIF File Loading """
-
+import numpy as np
 from CifFile import ReadCif
 
+from pyspinw import LatticeSite, TiledSupercell, Structure
+from pyspinw.sitemeta import SiteMetadata
 from pyspinw.symmetry.group import NoSuchGroup
+from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.interface import spacegroup
 
@@ -15,7 +18,7 @@ def parse_float_entry(s: str):
 
     return float(s)
 
-def load_cif(filename: str, entry_index=0):
+def load_cif(filename: str, supercell: Supercell = TiledSupercell(), entry_index: int=0):
     """ Load a CIF file in as a structure """
 
     # Get the right bit of data
@@ -48,10 +51,48 @@ def load_cif(filename: str, entry_index=0):
 
     cell = UnitCell(a,b,c,alpha=alpha,beta=beta,gamma=gamma)
 
-    print(cell)
-    print(sg)
+    # Atom radii if given
 
+    radius_lookup = None
+
+    if "_atom_type_radius_bond" and "_atom_type_symbol" in data:
+        radius_lookup = {atom: parse_float_entry(radius)
+         for atom, radius in zip(data["_atom_type_symbol"], data["_atom_type_radius_bond"])}
+
+    sites = []
+
+
+    # Create the lattice sites
+    for label, atom, x_string, y_string, z_string in zip(
+            data["_atom_site_label"],
+            data["_atom_site_type_symbol"],
+            data["_atom_site_fract_x"],
+            data["_atom_site_fract_y"],
+            data["_atom_site_fract_z"]):
+
+        metadata = SiteMetadata.metadata_from_name(label)
+        metadata.element = atom
+
+        if radius_lookup is not None:
+            metadata.radius = radius_lookup[atom]
+
+        x = parse_float_entry(x_string)
+        y = parse_float_entry(y_string)
+        z = parse_float_entry(z_string)
+
+        # We need to set sensible defaults according to the supercell
+        supercell_spins = np.zeros((supercell.n_components(), 3), dtype=float)
+
+        site = LatticeSite(x,y,z, supercell_spins=supercell_spins, name=label, metadata=metadata)
+
+        sites.append(site)
+
+    return Structure(sites, unit_cell = cell, spacegroup=sg, supercell=supercell)
 
 if __name__ == "__main__":
-    load_cif("../example_structures/1100231.cif")
+    structure = load_cif("../example_structures/1100231.cif")
 
+    print(structure.site_by_name("Si1").metadata)
+
+    from pyspinw import view
+    view(structure)

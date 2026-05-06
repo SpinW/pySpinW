@@ -228,7 +228,13 @@ class Structure(SPWSerialisable):
         if len(found) == 0:
             raise ValueError(f"No site matching '{name}' found")
         elif len(found) > 1:
-            raise ValueError(f"Multiple sites matching '{name}' found")
+            # Are any an exact match
+            exact_matches = [site for site in found if site.name == name]
+
+            if len(exact_matches) == 1:
+                return exact_matches[0]
+
+            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
         else:
             return found[0]
 

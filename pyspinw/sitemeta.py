@@ -37,6 +37,9 @@ class SiteMetadata(SPWSerialisable):
         self.radius = radius
         self.color = color
 
+    def __repr__(self):
+        return f"SiteMetadata(element={self.element}, radius={self.radius}, color={self.color})"
+
     @staticmethod
     def metadata_from_name(name: str | None):
         """ Extract metadata based on name"""
