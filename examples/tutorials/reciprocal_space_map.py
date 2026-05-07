@@ -35,6 +35,6 @@ q_slice = Slice(
 # Plot directly from Hamiltonian
 hamiltonian.intensity_map(q_slice)
 
-#Alternative: plot from a Sample (SingleCrystal, Multidomain, etc)
+#Alternative: plot from a Sample
 # sample = SingleCrystal(hamiltonian)
 # sample.intensity_map(q_slice)
