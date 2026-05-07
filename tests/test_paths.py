@@ -1,8 +1,9 @@
 """ Tests for the Path class """
 
+import numpy as np
 import pytest
 
-from pyspinw.path import Path
+from pyspinw.path import Path, Slice
 
 point_list = [[0,0,0], [0,0,1], [0,1,0], [1,0,0], [1,1,1]]
 
@@ -30,3 +31,21 @@ def test_sizes_match(n_points, avoid_endpoints):
     assert len(path.x_ticks()) == n_points
 
 
+def test_slice_q_points_shape():
+    """q_points returns correct shape for different n_a, n_b"""
+    s = Slice([0,0,0], [1,0,0], [0,1,0], n_a=3, n_b=5)
+    assert s.q_points().shape == (15, 3)
+
+
+def test_slice_grid_shape():
+    """grid_shape returns (n_a, n_b)"""
+    s = Slice([0,0,0], [1,0,0], [0,1,0], n_a=3, n_b=5)
+    assert s.grid_shape() == (3, 5)
+
+
+def test_slice_padding():
+    """padding extends the q range correctly"""
+    s = Slice([0,0,0], [1,0,0], [0,1,0], n_a=5, padding=0.1)
+    q = s.q_points()
+    assert np.min(q[:,0]) == -0.1
+    assert np.max(q[:,0]) == 1.1

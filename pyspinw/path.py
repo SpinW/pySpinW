@@ -122,6 +122,189 @@ class Path:
         return f"Path({path_string})"
 
 
+class Slice:
+    """Initialize a 2D slice in reciprocal space.
+
+    Parameters
+    ----------
+    origin :
+        Corner point of the rectangle (3D q-vector)
+    axis_1 :
+        First edge vector (defines the horizontal axis for plotting)
+    axis_2 :
+        Second edge vector (defines the vertical axis for plotting)
+    n_a :
+        Number of points along axis_1 direction
+    n_b :
+        Number of points along axis_2 direction
+    labels :
+        Optional [a_label, b_label] for plot axes
+    padding :
+        Extra padding beyond the slice boundaries, as a fraction of the slice size.
+        For example, padding=0.1 extends the slice by 10% on both sides.
+    e_min :
+        Optional minimum energy in meV for intensity_map() integration window
+    e_max :
+        Optional maximum energy in meV for intensity_map() integration window
+    """
+
+    def __init__(
+        self,
+        origin: ArrayLike | None = None,
+        axis_1: ArrayLike | None = None,
+        axis_2: ArrayLike | None = None,
+        n_a: int = 101,
+        n_b: int = 101,
+        labels: list[str] | None = None,
+        padding: float = 0.0,
+        e_min: float | None = None,
+        e_max: float | None = None,
+    ):
+        # Set default for origin, axis_1 and axis_2.
+        if origin is None:
+            origin = [0, 0, 0]
+
+        if axis_1 is None:
+            axis_1 = [1, 0, 0]
+
+        if axis_2 is None:
+            axis_2 = [0, 1, 0]
+
+        self.origin = np.array(origin)
+        self.axis_1 = np.array(axis_1)
+        self.axis_2 = np.array(axis_2)
+        self.n_a = int(n_a)
+        self.n_b = int(n_b)
+        self.padding = float(padding)
+        self.e_min = e_min
+        self.e_max = e_max
+
+        # Validate shapes
+        if self.origin.shape != (3,) or self.axis_1.shape != (3,) or self.axis_2.shape != (3,):
+            raise ValueError("origin, axis_1 and axis_2 must be 3-element vector")
+
+        if labels is None:
+            self.labels = ["axis_1 (rlu)", "axis_2 (rlu)"]
+        else:
+            if len(labels) != 2:
+                raise ValueError("labels must be a list of two strings")
+            self.labels = labels
+
+    def q_points(self) -> np.ndarray:
+        """Get all q-points in the slice as an (N, 3) array.
+
+        Returns an array of shape (n_a * n_b, 3) with q-points ordered
+        """
+        # Create parameters s and t from -padding to 1+padding
+        s = np.linspace(-self.padding, 1 + self.padding, self.n_a)  # shape = (n_a,)
+        t = np.linspace(-self.padding, 1 + self.padding, self.n_b)  # shape = (n_b,)
+
+        # Create 2D grid of parameters
+        s_grid, t_grid = np.meshgrid(s, t, indexing="xy")  # both shape = (n_b, n_a)
+
+        # Flatten to 1D for vectorized calculation
+        s_flat = s_grid.flatten()  # shape = (n_a * n_b,)
+        t_flat = t_grid.flatten()  # shape = (n_a * n_b,)
+
+        # Calculate q = origin + s*axis_1 + t*axis_2 (broadcasting)
+        q_points = self.origin + s_flat[:, np.newaxis] * self.axis_1 + t_flat[:, np.newaxis] * self.axis_2
+
+        return q_points
+
+    def grid_shape(self):
+          """Shape of the 2D grid for reshaping results: (n_a, n_b).
+
+          First dimension corresponds to axis_1 (horizontal), second to axis_2 (vertical).
+          """
+          return (self.n_a, self.n_b)
+
+    def extent(self) -> list[float]:
+          """Extent in parameter space [s_min, s_max, t_min, t_max]."""
+          return [-self.padding, 1 + self.padding, -self.padding, 1 + self.padding]
+
+    def x_ticks(self):
+        """X-axis tick positions in data space for axis_1 direction."""
+        extent = self.extent()
+        a_min, a_max = extent[0], extent[1]
+        # Ticks at min, middle, and max of the data range
+        tick_positions = np.array([a_min, (a_min + a_max) / 2, a_max])
+        return tick_positions
+
+    def x_tick_labels(self):
+        """X-axis tick labels showing actual (hkl) q-vectors."""
+        # X-axis labels show coordinates along the bottom edge of the plot
+        # With padding, the bottom edge is at t=-padding (not t=0)
+        # Ticks are at s = -padding, 0.5, 1+padding
+        t_bottom = -self.padding  # Bottom edge of plot with padding
+
+        s_values = [-self.padding, 0.5, 1 + self.padding]
+        labels = []
+        for s in s_values:
+            q = self.origin + s * self.axis_1 + t_bottom * self.axis_2
+            labels.append(f"({q[0]:.3g}, {q[1]:.3g}, {q[2]:.3g})")
+
+        return labels
+
+    def y_ticks(self):
+        """Y-axis tick positions in data space for axis_2 direction."""
+        extent = self.extent()
+        b_min, b_max = extent[2], extent[3]
+        # Ticks at min, middle, and max of the data range
+        tick_positions = np.array([b_min, (b_min + b_max) / 2, b_max])
+        return tick_positions
+
+    def y_tick_labels(self):
+        """Y-axis tick labels showing actual (hkl) q-vectors."""
+        # Y-axis labels show coordinates along the left edge of the plot
+        # With padding, the left edge is at s=-padding (not s=0)
+        # Ticks are at t = -padding, 0.5, 1+padding
+        # Note: The minimum label (corner) is omitted - shown separately at corner
+        s_left = -self.padding  # Left edge of plot with padding
+
+        t_values = [-self.padding, 0.5, 1 + self.padding]
+        labels = []
+        for i, t in enumerate(t_values):
+            if i == 0:
+                # Skip the corner label (shown separately at bottom-left)
+                labels.append("")
+            else:
+                q = self.origin + s_left * self.axis_1 + t * self.axis_2
+                labels.append(f"({q[0]:.3g}, {q[1]:.3g}, {q[2]:.3g})")
+
+        return labels
+
+    def format_plot(self, plt_or_fig=None):
+        """Apply x and y labels and ticks to a matplotlib plot/figure/axis.
+
+        Sets both axis labels and ticks with corresponding tick labels
+        showing actual reciprocal space coordinates.
+
+        If None, it will import matplotlib.pyplot and work on that
+        """
+        if plt_or_fig is None:
+            import matplotlib.pyplot as plt_or_fig
+
+        if hasattr(plt_or_fig, "xlabel"):
+            # pyplot API
+            plt_or_fig.xlabel(self.labels[0])
+            plt_or_fig.ylabel(self.labels[1])
+            plt_or_fig.xticks(self.x_ticks(), self.x_tick_labels())
+            plt_or_fig.yticks(self.y_ticks(), self.y_tick_labels())
+        else:
+            # axis API
+            plt_or_fig.set_xlabel(self.labels[0])
+            plt_or_fig.set_ylabel(self.labels[1])
+            plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
+            plt_or_fig.set_yticks(self.y_ticks(), self.y_tick_labels())
+
+    def __repr__(self):
+        return (
+            f"Slice(origin={self.origin}, "
+            f"axis_1={self.axis_1}, axis_2={self.axis_2}, "
+            f"n_a={self.n_a}, n_b={self.n_b})"
+        )
+
+
 class Path1DBase(ABC):
     """ Base class for 1D paths """
 
