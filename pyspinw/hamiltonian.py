@@ -759,6 +759,8 @@ class Hamiltonian(SPWSerialisable):
         else:
             ax.set_title("Reciprocal Space Map (all energies)")
 
+        fig.tight_layout()
+
         if show:
             plt.show()
         else:
