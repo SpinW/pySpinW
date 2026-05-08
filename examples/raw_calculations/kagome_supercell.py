@@ -8,7 +8,7 @@ import sys
 import numpy as np
 
 from examples.raw_calculations.utils import run_example, plot, py_classes
-from pyspinw.hamiltonian import omegasum
+from pyspinw.util import remove_degenerate_and_ghost
 
 
 def kagome_supercell(n_q = 100, classes = py_classes):
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     translated_energies = [energy - min_energy for energy in positive_energies]
 
     # Note: we get complex data types with real part zero
-    translated_energies, sqw = omegasum(translated_energies, sqw)
+    translated_energies, sqw = remove_degenerate_and_ghost(translated_energies, sqw)
 
     fg = plot(indices, translated_energies, sqw, show=False)
     # plt.plot(indices, [method.value for method in result.method])

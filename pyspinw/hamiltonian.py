@@ -29,61 +29,11 @@ from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
+from pyspinw.util import remove_degenerate_and_ghost, energy_grid
 
 # pylint: disable=R0903
 
 logger = logging.Logger("pyspinw.hamiltonian")
-
-def uniquetol(values: ArrayLike, tol: float=1e-5):
-    """ Returns floating point unique values within a given tolerance """
-    vabs = np.real(values) + np.imag(values)
-    isrt = np.argsort(vabs)
-    idif = np.append(True, np.diff(vabs[isrt]))
-    return values[isrt[idif > tol]]
-
-def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0, is_series: bool=True):
-    """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
-    energy, intensity = (np.array(energy), np.array(intensity))
-    en_out, int_out = (energy * np.nan, intensity * np.nan)
-    if tol > 0:
-        energy = np.round(energy / tol) * tol
-    if zeroint > 0:
-        energy[np.where(np.abs(np.real(intensity)) < zeroint)] = np.nan
-    for iQ in range(energy.shape[0]):
-        eu = uniquetol(energy[iQ,:])
-        en_out[iQ,:len(eu)] = eu
-        for iE in range(len(eu)):
-            int_out[iQ, iE] = np.sum(intensity[iQ, np.where(np.abs(energy[iQ,:] - en_out[iQ, iE]) < tol)])
-    nans = np.isnan(en_out)
-    nanmodes = np.sum(nans, axis=0)
-    if is_series:
-        # Ensure there are the same number of modes throughout
-        for col in set([int(idx) for accidentals in np.where((nanmodes > 0) * (nanmodes < en_out.shape[0]))[0]
-                        for idx in np.where(nans[:,accidentals])[0]]):
-            idnxt = 1 if col < en_out.shape[0]-1 else -1
-            idnan = np.where(~np.isnan(en_out[col + idnxt,:]))[0]
-            idx = np.array([np.nanargmin(np.abs(en_out[col + idnxt,i] - en_out[col])) for i in idnan])
-            int_idx, bc = (int_out[col, np.where(~np.isnan(int_out[col,:]))], np.bincount(idx))
-            if int_idx.shape[1] == len(bc) and all(bc > 0):
-                en_out[col,idnan] = np.take(en_out[col, :], idx)
-                int_out[col,idnan] = np.take(int_idx / bc, idx)
-    # Removes columns which are all NaNs
-    en_out = np.delete(en_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
-    int_out = np.delete(int_out, np.where(nanmodes == en_out.shape[0])[0], axis=1)
-    return en_out, int_out
-
-def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float | Callable):
-    """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
-    energy, intensity = (np.real(np.array(energy)), np.array(intensity))
-    esigma = dE(evect) if isinstance(dE, Callable) else np.ones(evect.shape) * dE
-    esigma /= 2 * np.sqrt(2* np.log(2))  # Convert from FWHM
-    spec = np.zeros((energy.shape[0], len(evect)))
-    ew_norm = np.diff(evect, append=evect[-1] + (evect[-1] - evect[-2])) / (np.sqrt(2 * np.pi) * esigma)
-    for iE in range(energy.shape[1]):
-        spec += intensity[:,iE,np.newaxis] * ew_norm * \
-            np.exp(-0.5 * ((evect[np.newaxis,:] - energy[:,iE,np.newaxis]) / esigma)**2)
-    spec[np.where(spec < np.finfo(np.float32).eps)] = np.nan
-    return spec
 
 ParametrizationType = Union[str,
                        list[str],
@@ -578,8 +528,8 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                    intensity_unit, components))
+        energy, intensity = remove_degenerate_and_ghost(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                                       intensity_unit, components))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, np.real(series[0]), 'k')
@@ -621,8 +571,8 @@ class Hamiltonian(SPWSerialisable):
             ax = fig.get_axes()[0]
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                    intensity_unit, components))
+        energy, intensity = remove_degenerate_and_ghost(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                                       intensity_unit, components))
         intensity[np.where(np.isnan(intensity))] = 0
         energy[np.where(np.isnan(energy))] = 0
         if evect is None:
@@ -631,7 +581,7 @@ class Hamiltonian(SPWSerialisable):
             evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
         if dE is None:
             dE = np.mean(np.diff(evect)) * 2.35
-        spec = egrid(energy, intensity, evect, dE)
+        spec = energy_grid(energy, intensity, evect, dE)
         if vmax is None:
             try:
                 vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.

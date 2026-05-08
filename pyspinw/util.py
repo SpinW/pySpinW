@@ -1,4 +1,5 @@
 """Generally helpful functions that don't obviously live anywhere else in particular"""
+from typing import Callable
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -114,8 +115,86 @@ def arraylike_equality(array_1: ArrayLike, array_2: ArrayLike, abs_tol=1e-8):
 
     return np.all(np.abs(array_1 - array_2) < abs_tol)
 
-if __name__ == "__main__":
-    demo_triple_product_matrix()
+
+
+def uniquetol(values: ArrayLike, tol: float=1e-5):
+    """ Returns floating point unique values within a given tolerance """
+
+    p1_norm = np.real(values) + np.imag(values) # This is not (supposed to be?) the absolute value
+    order = np.argsort(p1_norm)
+    is_bigger_than_tolerance = np.append(True, np.diff(p1_norm[order]) > tol)
+
+    return values[order[is_bigger_than_tolerance]]
+
+
+def remove_degenerate_and_ghost(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0, is_series: bool=True):
+    """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
+
+    energy, intensity = np.array(energy), np.array(intensity)
+
+    output_energy, output_intensity = energy * np.nan, intensity * np.nan
+
+    # Strategy is to round energies so that they correspond to "bins"
+    if tol > 0:
+        energy = np.round(energy / tol) * tol
+
+    if zeroint > 0:
+        energy[np.where(np.abs(np.real(intensity)) < zeroint)] = np.nan
+
+    # Iterate over q
+    for i in range(energy.shape[0]):
+        eu = uniquetol(energy[i,:])
+        output_energy[i,:len(eu)] = eu
+        # Iterate over energy
+        for j in range(len(eu)):
+            output_intensity[i, j] = np.sum(intensity[i, np.where(np.abs(energy[i,:] - output_energy[i, j]) < tol)])
+
+    nans = np.isnan(output_energy)
+    nanmodes = np.sum(nans, axis=0)
+
+    if is_series:
+        # Ensure there are the same number of modes throughout
+        for col in set([int(idx) for accidentals in np.where((nanmodes > 0) * (nanmodes < output_energy.shape[0]))[0]
+                        for idx in np.where(nans[:,accidentals])[0]]):
+
+            idnxt = 1 if col < output_energy.shape[0]-1 else -1
+            idnan = np.where(~np.isnan(output_energy[col + idnxt,:]))[0]
+            idx = np.array([np.nanargmin(np.abs(output_energy[col + idnxt,i] - output_energy[col])) for i in idnan])
+            int_idx, bc = (output_intensity[col, np.where(~np.isnan(output_intensity[col,:]))], np.bincount(idx))
+            if int_idx.shape[1] == len(bc) and all(bc > 0):
+                output_energy[col,idnan] = np.take(output_energy[col, :], idx)
+                output_intensity[col,idnan] = np.take(int_idx / bc, idx)
+
+    # Removes columns which are all NaNs
+    output_energy = np.delete(output_energy, np.where(nanmodes == output_energy.shape[0])[0], axis=1)
+    output_intensity = np.delete(output_intensity, np.where(nanmodes == output_energy.shape[0])[0], axis=1)
+
+    return output_energy, output_intensity
+
+
+def energy_grid(energy: ArrayLike, intensity: ArrayLike, output_energies: ArrayLike, energy_fwhm: float | Callable[[float], float]):
+    """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
+
+    energy, intensity = np.real(np.array(energy)), np.array(intensity)
+
+    fwhm = energy_fwhm(output_energies) if isinstance(energy_fwhm, Callable) else np.ones(output_energies.shape) * energy_fwhm
+    sigma = fwhm / np.sqrt(8 * np.log(2))  # Convert from FWHM
+
+    output_spectrum = np.zeros((energy.shape[0], len(output_energies)))
+
+    # Get the normalisation prefactor for a Gaussian, based on the numerically obtained output delta E
+
+    output_deltas = output_energies[1:] - output_energies[:-1]
+    output_deltas = np.concatenate((output_deltas, output_deltas[-1:]))
+    
+    gaussian_normalisation_factor = output_deltas / (np.sqrt(2 * np.pi) * sigma)
+
+    # Iterate over "input" energies
+    for i in range(energy.shape[1]):
+        output_spectrum += intensity[:,i,np.newaxis] * gaussian_normalisation_factor * \
+            np.exp(-0.5 * ((output_energies[np.newaxis, :] - energy[:,i,np.newaxis]) / sigma) ** 2)
+
+    return output_spectrum
 
 
 def rotation_from_z(target_vector):
@@ -137,3 +216,7 @@ def rotation_from_z(target_vector):
         [-x*y / (1+z), 1 - y**2 / (1+z), y],
         [-x, -y, z]
     ])
+
+
+if __name__ == "__main__":
+    demo_triple_product_matrix()

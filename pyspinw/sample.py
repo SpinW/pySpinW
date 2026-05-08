@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 from pyspinw.units import IntensityUnits
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType, point_generator
 from pyspinw.checks import check_sizes
-from pyspinw.hamiltonian import Hamiltonian, ParametrizationType, omegasum, egrid
+from pyspinw.hamiltonian import Hamiltonian, ParametrizationType
+from pyspinw.util import remove_degenerate_and_ghost, energy_grid
 from pyspinw.path import Path, Path1D, Path1DBase, EmpiricalPath1D, Slice
 from pyspinw.tolerances import tolerances
 
@@ -88,15 +89,15 @@ class Sample3D(Sample):
             ax = fig.get_axes()[0]
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field,
-                                                                    use_rust, use_rotating, intensity_unit))
+        energy, intensity = remove_degenerate_and_ghost(*self._energies_and_intensities(path.q_points(), field,
+                                                                                        use_rust, use_rotating, intensity_unit))
         if evect is None:
             emax = np.max([0.001, np.nanmax(np.real(energy))])
             denom = 10**np.floor(np.log10(emax))
             evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
         if dE is None:
             dE = np.mean(np.diff(evect)) * 2.35
-        spec = egrid(energy, intensity, evect, dE)
+        spec = energy_grid(energy, intensity, evect, dE)
 
         if vmax is None:
             try:
