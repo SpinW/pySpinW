@@ -234,9 +234,11 @@ class Hamiltonian(SPWSerialisable):
     @property
     def text_summary(self) -> str:
         """ String giving details of the system """
-        lines = ["Sites:"]
-        for site in self.structure.sites:
-            lines.append(f"  {site}")
+        # lines = ["Sites:"]
+        # for site in self.structure.sites:
+        #     lines.append(f"  {site}")
+
+        lines = [self.structure.text_summary]
 
         lines.append("Exchanges:")
         for exchange in self.exchanges:

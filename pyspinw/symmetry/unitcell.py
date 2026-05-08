@@ -184,6 +184,10 @@ class UnitCell(RawUnitCell):
 
         return UnitCell(a, b, c, alpha, beta, gamma, ab_normal, direction)
 
+    @property
+    def text_summary(self):
+        """ Formatted text """
+        return f"({self.a}, {self.b}, {self.c}), alpha={self.alpha}, beta={self.beta}, gamma={self.gamma}"
 
     def __repr__(self):
         """repr implementation"""
