@@ -29,7 +29,7 @@ from pyspinw.structures import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
-from pyspinw.util import remove_degenerate_and_ghost, energy_grid
+from pyspinw.util import remove_degenerate_and_ghost, energy_grid, colormap_alpha_plot
 
 # pylint: disable=R0903
 
@@ -549,6 +549,53 @@ class Hamiltonian(SPWSerialisable):
         else:
             return fig
 
+    def new_spaghetti_plot(
+            self,
+            path: Path,
+            field: ArrayLike | None = None,
+            color: str = 'jet',
+            use_alpha: bool = True,
+            use_rust: bool = True,
+            use_rotating: bool = True,
+            intensity_unit: IntensityUnits | str = 'cell',
+            scale: str = 'linear',
+            components: str = 'Sperp',
+            new_figure: bool | str = False,
+            show: bool = True,
+        ):
+
+        # Get an appropriate figure for returning
+        if new_figure:
+            if isinstance(new_figure, str):
+                fig = plt.figure(new_figure)
+            else:
+                fig = plt.figure()
+        else:
+            fig = plt.gcf()
+
+
+        energies, intensities = self.ener(
+            path, field, use_rust, use_rotating, intensity_unit, components)
+
+        max_intensity = np.max([np.max(intensity) for intensity in intensities])
+
+        x = path.x_values()
+        for energy, intensity in zip(energies, intensities):
+            colormap_alpha_plot(x, energy, intensity, intensity_high=max_intensity)
+
+        # Set up plot
+        plt.set_ylabel('Magnon Energy (meV)')
+
+        if show:
+            plt.show()
+
+        return fig
+
+
+    def density_plot(self,
+                     ):
+        pass
+
     def spaghetti_plot(self,
                        path: Path,
                        evect: ArrayLike | None = None,
@@ -726,9 +773,15 @@ class Hamiltonian(SPWSerialisable):
     def sorted_positive_energies(self,
                                  path: Path,
                                  field: ArrayLike | None = None,
-                                 use_rust: bool = True) -> list[np.ndarray]:
+                                 use_rust: bool = True,
+                                 use_rotating: bool = True,
+                                 intensity_unit: IntensityUnits | str = 'cell',
+                                 components: str = 'Sperp') -> list[np.ndarray]:
+
         """ Return energies as series corresponding to q, sorted by energy """
-        energy, intensities = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+        energy, intensities = self.energies_and_intensities(
+            path.q_points(), field=field, use_rust=use_rust,
+            use_rotating=use_rotating, intensity_unit=intensity_unit, components=components)
 
         energy = np.array(energy)
 

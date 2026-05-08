@@ -2,6 +2,11 @@
 from typing import Callable
 
 import numpy as np
+
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import to_rgb
+from matplotlib.pyplot import colormaps
 from numpy._typing import ArrayLike
 
 from pyspinw.checks import check_sizes
@@ -186,7 +191,7 @@ def energy_grid(energy: ArrayLike, intensity: ArrayLike, output_energies: ArrayL
 
     output_deltas = output_energies[1:] - output_energies[:-1]
     output_deltas = np.concatenate((output_deltas, output_deltas[-1:]))
-    
+
     gaussian_normalisation_factor = output_deltas / (np.sqrt(2 * np.pi) * sigma)
 
     # Iterate over "input" energies
@@ -216,6 +221,53 @@ def rotation_from_z(target_vector):
         [-x*y / (1+z), 1 - y**2 / (1+z), y],
         [-x, -y, z]
     ])
+
+@check_sizes(x_values=("n",), y_values=("n",), intensity=("n",))
+def colormap_alpha_plot(
+        x_values,
+        y_values,
+        intensity,
+        intensity_low: float | None=None,
+        intensity_high: float | None=None,
+        color_or_colormap: str | tuple[float, float, float] = 'k',
+        use_alpha: bool=True):
+
+    low = np.min(intensity) if intensity_low is None else intensity_low
+    high = np.max(intensity) if intensity_high is None else intensity_high
+    normalised_intensity = (intensity - low) / (high - low)
+    normalised_intensity = np.clip(normalised_intensity, 0, 1)
+
+    # Convert the colour information
+    if color_or_colormap in colormaps:
+        cmap = colormaps[color_or_colormap]
+        colors = cmap(normalised_intensity)[:, :3] # Remove alpha
+    else:
+        base_color = to_rgb(color_or_colormap)
+        colors = np.tile(base_color, (len(x_values), 1))
+
+    # Convert the alpha information
+    if use_alpha:
+        alpha = normalised_intensity
+    else:
+        alpha = np.ones((len(x_values), 1))
+
+    return _colored_alpha_plot(x_values,y_values,colors, alpha)
+
+def _colored_alpha_plot(x_values: ArrayLike, y_values: ArrayLike, color: ArrayLike, alpha: ArrayLike):
+    # Make array of line segments
+    points = np.array([x_values, y_values]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+    colors = np.concatenate((color, alpha.reshape(-1, 1)), axis=1)
+
+    lines = LineCollection(
+        segments,
+        colors=colors[:-1,:], # Skip last color
+        linewidth=3
+    )
+
+    ax = plt.gca()
+    ax.add_collection(lines)
 
 
 if __name__ == "__main__":
