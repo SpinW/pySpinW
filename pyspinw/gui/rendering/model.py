@@ -1,5 +1,6 @@
 """ Base class for renderable objects """
 
+import ctypes
 import logging
 
 import numpy as np
@@ -65,7 +66,7 @@ class Model:
         glCullFace(GL_FRONT)
         for vao, length in zip(self._vaos, self._lengths):
             glBindVertexArray(vao)
-            glLineWidth(4)
+            glLineWidth(1.0)  # Core profile only supports width 1.0
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             glDrawArrays(GL_TRIANGLES, 0, length)
         glBindVertexArray(0)
