@@ -317,6 +317,8 @@ class Hamiltonian(SPWSerialisable):
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param components: Components of the scattering to use (e.g. Sperp for neutron scattering)
+
         """
         return self.without_nonmagnetic()._energies_and_intensities(
             q_vectors=q_vectors,

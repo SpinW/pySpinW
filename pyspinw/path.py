@@ -78,6 +78,18 @@ class Path:
 
         return np.concatenate(output, axis=1).T
 
+    def section_slices(self) -> list[slice]:
+
+        if self._avoid_endpoints:
+            # Simple, each section is separate
+            return [slice(i*self._n_points_per_segment, (i+1)*self._n_points_per_segment)
+                    for i in range(self._n_points - 1)]
+        else:
+            # Each section overlaps by one, so its like there are n-1 points in each segment,
+            # but we go an extra point along on the right side
+            return [slice(i * (self._n_points_per_segment-1), (i + 1) * (self._n_points_per_segment-1) + 1)
+                    for i in range(self._n_points - 1)]
+
     def x_values(self):
         """ x values for plotting """
         output = []

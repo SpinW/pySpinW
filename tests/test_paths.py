@@ -31,6 +31,24 @@ def test_sizes_match(n_points, avoid_endpoints):
     assert len(path.x_ticks()) == n_points
 
 
+@pytest.mark.parametrize("avoid_endpoints", [False, True])
+def test_path_slices(avoid_endpoints):
+    critical_points = [[0,0,0], [0,0,1], [0,1,1], [0,1,0]]
+    path = Path(critical_points, avoid_endpoints=avoid_endpoints)
+
+    points = path.q_points()
+
+    assert len(critical_points) == len(path.section_slices()) + 1, "There should be n_points-1 slices"
+
+    for s in path.section_slices():
+        test_points = points[s, :]
+
+        deltas = test_points[1:, :] - test_points[:-1, :]
+
+        for i in range(1, deltas.shape[0]):
+            assert np.allclose(deltas[i-1, :], deltas[i, :]), "Direction should be continuous along sections"
+
+
 def test_slice_q_points_shape():
     """q_points returns correct shape for different n_a, n_b"""
     s = Slice([0,0,0], [1,0,0], [0,1,0], n_a=3, n_b=5)
