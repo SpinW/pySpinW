@@ -280,6 +280,44 @@ class Structure(SPWSerialisable):
         """ Print out details of this structure """
         print(self.text_summary)
 
+    def site_by_name(self, name):
+        """ Get a single site by its name"""
+        found = self.sites_by_name(name)
+        if len(found) == 0:
+            raise ValueError(f"No site matching '{name}' found")
+        elif len(found) > 1:
+            # Are any an exact match
+            exact_matches = [site for site in found if site.name == name]
+
+            if len(exact_matches) == 1:
+                return exact_matches[0]
+
+            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
+        else:
+            return found[0]
+
+    @property
+    def text_summary(self) -> str:
+        """ Textual details of this structure """
+        lines = []
+        lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
+        lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
+        supercell_text_data = self.supercell.text_data()
+        lines.append(f"Supercell: {supercell_text_data[0]}")
+        lines += ["  " + s for s in supercell_text_data[1:]]
+        lines.append("Sites:")
+        for site in self._sites:
+
+            is_not_input_chr = "" if site.unique_id in self._input_uid_to_site else "* "
+
+            lines.append(f"  {is_not_input_chr}{site}")
+
+        return "\n".join(lines)
+
+    def print_summary(self):
+        """ Print out details of this structure """
+        print(self.text_summary)
+
     @property
     def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:
         """ Get the spacegroup"""
