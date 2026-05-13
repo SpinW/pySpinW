@@ -164,14 +164,63 @@ def build_spacegroup_lookup(target_directory: str):
     # that the first entry is the one we want to use to identify the group
     full_lookup = defaultdict(list)
     for group_number in default_setting_index:
-        full_lookup[default_setting_index[group_number]].append(default_names[group_number])
+        name = default_names[group_number]
+        full_lookup[default_setting_index[group_number]].append(name)
+
+        # Add name without underscore
+        if "_" in name:
+            full_lookup[default_setting_index[group_number]].append(name.replace("_", ""))
+
+
 
     for name, number in full_names.items():
         full_lookup[number].append(name)
+
+        # Add ones without underscore
         full_lookup[number].append(name.replace("_", ""))
 
+
+
+
+    # Add bracketed names
     for name, number in bracket_names.items():
         full_lookup[number].append(name)
+
+
+    # Add macron omitted names
+    stupidifiable_groups = [
+        "P m -3",
+        "P n -3",
+        "F m -3",
+        "F d -3",
+        "I m -3",
+        "P a -3",
+        "I a -3",
+        "P m -3 m",
+        "P n -3 n",
+        "P m -3 n",
+        "P n -3 m",
+        "F m -3 m",
+        "F m -3 c",
+        "F d -3 m",
+        "F d -3 c",
+        "I m -3 m",
+        "I a -3 d",
+    ]
+
+    stupid_names = defaultdict(list)
+    for number, names in full_lookup.items():
+        for sensible_name in stupidifiable_groups:
+            no_spaces = sensible_name.replace(" ", "")
+            if sensible_name in names or no_spaces in names:
+                stupid_names[number].append(sensible_name.replace("-3", "3"))
+                stupid_names[number].append(no_spaces.replace("-3", "3"))
+
+    for number, stupid in stupid_names.items():
+        full_lookup[number] += stupid
+
+
+
 
     for i in range(1, 531):
         if i not in full_lookup:

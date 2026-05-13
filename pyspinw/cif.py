@@ -1,6 +1,9 @@
 """ CIF File Loading """
 import numpy as np
 from CifFile import ReadCif
+import pathlib
+
+from CifFile.CifFile_module import ReadCifWithErrors
 
 from pyspinw import LatticeSite, TiledSupercell, Structure
 from pyspinw.sitemeta import SiteMetadata
@@ -10,6 +13,8 @@ from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.interface import spacegroup
 
 
+
+
 def parse_float_entry(s: str):
     """ Parse a float entry, they can have brackets for values that go beyond the specified precision"""
     s = s.replace("(", "")
@@ -17,77 +22,94 @@ def parse_float_entry(s: str):
 
     return float(s)
 
-def load_cif(filename: str, supercell: Supercell = TiledSupercell(), entry_index: int=0):
+def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell(), entry_index: int=0, verbose=False):
     """ Load a CIF file in as a structure """
     # Get the right bit of data
 
-    cif = ReadCif(filename)
+    cif = ReadCif(str(filename), grammar=None, permissive=True)
 
     names = cif.keys()
 
-    try:
-        name = names[entry_index]
-    except IndexError:
-        raise ValueError(f"Entry index out of range (file has {len(names)} entries)")
+    for i in range(entry_index, len(names)):
 
-    data = cif[name]
+        try:
+            name = names[entry_index]
+        except IndexError:
+            raise ValueError(f"Entry index out of range (file has {len(names)} entries)")
 
-    # Get the spacegroup and lattice parameters
+        if verbose:
+            print(f"Trying entry {name}")
 
-    spacegroup_name = data["_symmetry_space_group_name_H-M"]
+        data = cif[name]
 
-    sg = spacegroup(spacegroup_name)
+        # Get the spacegroup and lattice parameters
+        for spacegroup_key in ['_space_group_name_h-m_alt',
+                                '_symmetry_space_group_name_h-m',
+                                '_space_group.Patterson_name_h-m',
+                                '_space_group.patterson_name_h-m']:
 
+            try:
+                spacegroup_name = data[spacegroup_key]
+                break
+            except KeyError:
+                if verbose:
+                    print(f"No entry: {spacegroup_key}")
+        else:
+            if verbose:
+                print(f"Failed to find space group entry in '{name}'")
+            break
 
-    a = parse_float_entry(data["_cell_length_a"])
-    b = parse_float_entry(data["_cell_length_b"])
-    c = parse_float_entry(data["_cell_length_c"])
+        sg = spacegroup(spacegroup_name)
 
-    alpha = parse_float_entry(data["_cell_angle_alpha"])
-    beta = parse_float_entry(data["_cell_angle_beta"])
-    gamma = parse_float_entry(data["_cell_angle_gamma"])
+        a = parse_float_entry(data["_cell_length_a"])
+        b = parse_float_entry(data["_cell_length_b"])
+        c = parse_float_entry(data["_cell_length_c"])
 
-    cell = UnitCell(a,b,c,alpha=alpha,beta=beta,gamma=gamma)
+        alpha = parse_float_entry(data["_cell_angle_alpha"])
+        beta = parse_float_entry(data["_cell_angle_beta"])
+        gamma = parse_float_entry(data["_cell_angle_gamma"])
 
-    # Atom radii if given
+        cell = UnitCell(a,b,c,alpha=alpha,beta=beta,gamma=gamma)
 
-    radius_lookup = None
+        # Atom radii if given
 
-    if "_atom_type_radius_bond" and "_atom_type_symbol" in data:
-        radius_lookup = {atom: parse_float_entry(radius)
-         for atom, radius in zip(data["_atom_type_symbol"], data["_atom_type_radius_bond"])}
+        radius_lookup = None
 
-    sites = []
+        if "_atom_type_radius_bond" in data and "_atom_type_symbol" in data:
+            radius_lookup = {atom: parse_float_entry(radius)
+             for atom, radius in zip(data["_atom_type_symbol"], data["_atom_type_radius_bond"])}
 
-    # Create the lattice sites
-    for label, atom, x_string, y_string, z_string in zip(
-            data["_atom_site_label"],
-            data["_atom_site_type_symbol"],
-            data["_atom_site_fract_x"],
-            data["_atom_site_fract_y"],
-            data["_atom_site_fract_z"]):
+        sites = []
 
-        metadata = SiteMetadata.metadata_from_name(label)
-        metadata.element = atom
+        # Create the lattice sites
+        for label, atom, x_string, y_string, z_string in zip(
+                data["_atom_site_label"],
+                data["_atom_site_type_symbol"],
+                data["_atom_site_fract_x"],
+                data["_atom_site_fract_y"],
+                data["_atom_site_fract_z"]):
 
-        if radius_lookup is not None:
-            metadata.radius = radius_lookup[atom]
+            metadata = SiteMetadata.metadata_from_name(label)
+            metadata.element = atom
 
-        x = parse_float_entry(x_string)
-        y = parse_float_entry(y_string)
-        z = parse_float_entry(z_string)
+            if radius_lookup is not None:
+                metadata.radius = radius_lookup[atom]
 
-        # We need to set sensible defaults according to the supercell
-        supercell_spins = np.zeros((supercell.n_components(), 3), dtype=float)
+            x = parse_float_entry(x_string)
+            y = parse_float_entry(y_string)
+            z = parse_float_entry(z_string)
 
-        site = LatticeSite(x,y,z, supercell_spins=supercell_spins, name=label, metadata=metadata)
+            # We need to set sensible defaults according to the supercell
+            supercell_spins = np.zeros((supercell.n_components(), 3), dtype=float)
 
-        sites.append(site)
+            site = LatticeSite(x,y,z, supercell_spins=supercell_spins, name=label, metadata=metadata)
 
-    return Structure(sites, unit_cell = cell, spacegroup=sg, supercell=supercell)
+            sites.append(site)
+
+        return Structure(sites, unit_cell = cell, spacegroup=sg, supercell=supercell)
 
 if __name__ == "__main__":
-    structure = load_cif("../example_structures/1100231.cif")
+    structure = load_cif("../tests/cif_files/1100231.cif")
 
     print(structure.site_by_name("Si1").metadata)
 

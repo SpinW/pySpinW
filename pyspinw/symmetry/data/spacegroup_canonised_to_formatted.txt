@@ -11,6 +11,7 @@ p211; P 2 1 1
 p2(a); P2 (a)
 p2[a]; P2 [a]
 p2_1; P2_1
+p21; P21
 p12_11; P 1 2_1 1
 p1211; P 1 21 1
 p2_1(b); P2_1 (b)
@@ -183,6 +184,7 @@ p2/m11; P 2/m 1 1
 p2/m(a); P2/m (a)
 p2/m[a]; P2/m [a]
 p2_1/m; P2_1/m
+p21/m; P21/m
 p12_1/m1; P 1 2_1/m 1
 p121/m1; P 1 21/m 1
 p2_1/m(b); P2_1/m (b)
@@ -252,6 +254,7 @@ p2/c11; P 2/c 1 1
 p2/c(a3); P2/c (a3)
 p2/c[a3]; P2/c [a3]
 p2_1/c; P2_1/c
+p21/c; P21/c
 p12_1/c1; P 1 2_1/c 1
 p121/c1; P 1 21/c 1
 p2_1/c(b1); P2_1/c (b1)
@@ -1253,12 +1256,15 @@ p4/ncc:2; P4/ncc : 2
 p4/ncc(2); P4/ncc (2)
 p4/ncc[2]; P4/ncc [2]
 p4_2/mmc; P4_2/mmc
+p42/mmc; P42/mmc
 p4_2/m2/m2/c; P 4_2/m 2/m 2/c
 p42/m2/m2/c; P 42/m 2/m 2/c
 p4_2/mcm; P4_2/mcm
+p42/mcm; P42/mcm
 p4_2/m2/c2/m; P 4_2/m 2/c 2/m
 p42/m2/c2/m; P 42/m 2/c 2/m
 p4_2/nbc; P4_2/nbc
+p42/nbc; P42/nbc
 p4_2/n2/b2/c; P 4_2/n 2/b 2/c
 p42/n2/b2/c; P 42/n 2/b 2/c
 p4_2/n2/b2/c:1; P 4_2/n 2/b 2/c : 1
@@ -1274,6 +1280,7 @@ p42/nbc:2; P42/nbc : 2
 p4_2/nbc(2); P4_2/nbc (2)
 p4_2/nbc[2]; P4_2/nbc [2]
 p4_2/nnm; P4_2/nnm
+p42/nnm; P42/nnm
 p4_2/n2/n2/m; P 4_2/n 2/n 2/m
 p42/n2/n2/m; P 42/n 2/n 2/m
 p4_2/n2/n2/m:1; P 4_2/n 2/n 2/m : 1
@@ -1289,12 +1296,15 @@ p42/nnm:2; P42/nnm : 2
 p4_2/nnm(2); P4_2/nnm (2)
 p4_2/nnm[2]; P4_2/nnm [2]
 p4_2/mbc; P4_2/mbc
+p42/mbc; P42/mbc
 p4_2/m2_1/b2/c; P 4_2/m 2_1/b 2/c
 p42/m21/b2/c; P 42/m 21/b 2/c
 p4_2/mnm; P4_2/mnm
+p42/mnm; P42/mnm
 p4_2/m2_1/n2/m; P 4_2/m 2_1/n 2/m
 p42/m21/n2/m; P 42/m 21/n 2/m
 p4_2/nmc; P4_2/nmc
+p42/nmc; P42/nmc
 p4_2/n2_1/m2/c; P 4_2/n 2_1/m 2/c
 p42/n21/m2/c; P 42/n 21/m 2/c
 p4_2/n2_1/m2/c:1; P 4_2/n 2_1/m 2/c : 1
@@ -1310,6 +1320,7 @@ p42/nmc:2; P42/nmc : 2
 p4_2/nmc(2); P4_2/nmc (2)
 p4_2/nmc[2]; P4_2/nmc [2]
 p4_2/ncm; P4_2/ncm
+p42/ncm; P42/ncm
 p4_2/n2_1/c2/m; P 4_2/n 2_1/c 2/m
 p42/n21/c2/m; P 42/n 21/c 2/m
 p4_2/n2_1/c2/m:1; P 4_2/n 2_1/c 2/m : 1
@@ -1329,6 +1340,7 @@ i4/m2/m2/m; I 4/m 2/m 2/m
 i4/mcm; I4/mcm
 i4/m2/c2/m; I 4/m 2/c 2/m
 i4_1/amd; I4_1/amd
+i41/amd; I41/amd
 i4_1/a2/m2/d; I 4_1/a 2/m 2/d
 i41/a2/m2/d; I 41/a 2/m 2/d
 i4_1/a2/m2/d:1; I 4_1/a 2/m 2/d : 1
@@ -1344,6 +1356,7 @@ i41/amd:2; I41/amd : 2
 i4_1/amd(2); I4_1/amd (2)
 i4_1/amd[2]; I4_1/amd [2]
 i4_1/acd; I4_1/acd
+i41/acd; I41/acd
 i4_1/a2/c2/d; I 4_1/a 2/c 2/d
 i41/a2/c2/d; I 41/a 2/c 2/d
 i4_1/a2/c2/d:1; I 4_1/a 2/c 2/d : 1
@@ -1482,9 +1495,11 @@ p6/m2/m2/m; P 6/m 2/m 2/m
 p6/mcc; P6/mcc
 p6/m2/c2/c; P 6/m 2/c 2/c
 p6_3/mcm; P6_3/mcm
+p63/mcm; P63/mcm
 p6_3/m2/c2/m; P 6_3/m 2/c 2/m
 p63/m2/c2/m; P 63/m 2/c 2/m
 p6_3/mmc; P6_3/mmc
+p63/mmc; P63/mmc
 p6_3/m2/m2/c; P 6_3/m 2/m 2/c
 p63/m2/m2/c; P 63/m 2/m 2/c
 p23; P 2 3
@@ -1496,36 +1511,43 @@ i2_13; I 2_1 3
 i213; I 21 3
 pm-3; Pm-3
 p2/m-3; P 2/m -3
+pm3; P m 3
 pn-3; Pn-3
 p2/n-3; P 2/n -3
 p2/n-3:1; P 2/n -3 : 1
 pn-3:1; Pn-3 : 1
 pn-3(1); Pn-3 (1)
 pn-3[1]; Pn-3 [1]
+pn3; P n 3
 p2/n-3:2; P 2/n -3 : 2
 pn-3:2; Pn-3 : 2
 pn-3(2); Pn-3 (2)
 pn-3[2]; Pn-3 [2]
 fm-3; Fm-3
 f2/m-3; F 2/m -3
+fm3; F m 3
 fd-3; Fd-3
 f2/d-3; F 2/d -3
 f2/d-3:1; F 2/d -3 : 1
 fd-3:1; Fd-3 : 1
 fd-3(1); Fd-3 (1)
 fd-3[1]; Fd-3 [1]
+fd3; F d 3
 f2/d-3:2; F 2/d -3 : 2
 fd-3:2; Fd-3 : 2
 fd-3(2); Fd-3 (2)
 fd-3[2]; Fd-3 [2]
 im-3; Im-3
 i2/m-3; I 2/m -3
+im3; I m 3
 pa-3; Pa-3
 p2_1/a-3; P 2_1/a -3
 p21/a-3; P 21/a -3
+pa3; P a 3
 ia-3; Ia-3
 i2_1/a-3; I 2_1/a -3
 i21/a-3; I 21/a -3
+ia3; I a 3
 p432; P 4 3 2
 p4_232; P 4_2 3 2
 p4232; P 42 3 2
@@ -1547,12 +1569,14 @@ f-43c; F -4 3 c
 i-43d; I -4 3 d
 pm-3m; Pm-3m
 p4/m-32/m; P 4/m -3 2/m
+pm3m; P m 3 m
 pn-3n; Pn-3n
 p4/n-32/n; P 4/n -3 2/n
 p4/n-32/n:1; P 4/n -3 2/n : 1
 pn-3n:1; Pn-3n : 1
 pn-3n(1); Pn-3n (1)
 pn-3n[1]; Pn-3n [1]
+pn3n; P n 3 n
 p4/n-32/n:2; P 4/n -3 2/n : 2
 pn-3n:2; Pn-3n : 2
 pn-3n(2); Pn-3n (2)
@@ -1560,6 +1584,7 @@ pn-3n[2]; Pn-3n [2]
 pm-3n; Pm-3n
 p4_2/m-32/n; P 4_2/m -3 2/n
 p42/m-32/n; P 42/m -3 2/n
+pm3n; P m 3 n
 pn-3m; Pn-3m
 p4_2/n-32/m; P 4_2/n -3 2/m
 p42/n-32/m; P 42/n -3 2/m
@@ -1568,6 +1593,7 @@ p42/n-32/m:1; P 42/n -3 2/m : 1
 pn-3m:1; Pn-3m : 1
 pn-3m(1); Pn-3m (1)
 pn-3m[1]; Pn-3m [1]
+pn3m; P n 3 m
 p4_2/n-32/m:2; P 4_2/n -3 2/m : 2
 p42/n-32/m:2; P 42/n -3 2/m : 2
 pn-3m:2; Pn-3m : 2
@@ -1575,8 +1601,10 @@ pn-3m(2); Pn-3m (2)
 pn-3m[2]; Pn-3m [2]
 fm-3m; Fm-3m
 f4/m-32/m; F 4/m -3 2/m
+fm3m; F m 3 m
 fm-3c; Fm-3c
 f4/m-32/c; F 4/m -3 2/c
+fm3c; F m 3 c
 fd-3m; Fd-3m
 f4_1/d-32/m; F 4_1/d -3 2/m
 f41/d-32/m; F 41/d -3 2/m
@@ -1585,6 +1613,7 @@ f41/d-32/m:1; F 41/d -3 2/m : 1
 fd-3m:1; Fd-3m : 1
 fd-3m(1); Fd-3m (1)
 fd-3m[1]; Fd-3m [1]
+fd3m; F d 3 m
 f4_1/d-32/m:2; F 4_1/d -3 2/m : 2
 f41/d-32/m:2; F 41/d -3 2/m : 2
 fd-3m:2; Fd-3m : 2
@@ -1598,6 +1627,7 @@ f41/d-32/c:1; F 41/d -3 2/c : 1
 fd-3c:1; Fd-3c : 1
 fd-3c(1); Fd-3c (1)
 fd-3c[1]; Fd-3c [1]
+fd3c; F d 3 c
 f4_1/d-32/c:2; F 4_1/d -3 2/c : 2
 f41/d-32/c:2; F 41/d -3 2/c : 2
 fd-3c:2; Fd-3c : 2
@@ -1605,6 +1635,8 @@ fd-3c(2); Fd-3c (2)
 fd-3c[2]; Fd-3c [2]
 im-3m; Im-3m
 i4/m-32/m; I 4/m -3 2/m
+im3m; I m 3 m
 ia-3d; Ia-3d
 i4_1/a-32/d; I 4_1/a -3 2/d
 i41/a-32/d; I 41/a -3 2/d
+ia3d; I a 3 d
