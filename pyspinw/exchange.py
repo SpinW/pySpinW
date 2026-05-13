@@ -5,6 +5,7 @@ import numpy as np
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
+from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
@@ -27,6 +28,7 @@ class ExchangeBaseDeserialisation:
     site_1: LatticeSite
     site_2: LatticeSite
     cell_offset: CellOffset
+    metadata: ExchangeMetadata
 
 
 class Exchange(SPWSerialisable):
@@ -40,7 +42,9 @@ class Exchange(SPWSerialisable):
                  site_2: LatticeSite,
                  cell_offset: CellOffsetCoercible,
                  exchange_matrix: np.ndarray,
-                 name: str = ""):
+                 name: str = "",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._name = name
         self._site_1 = site_1
@@ -49,6 +53,10 @@ class Exchange(SPWSerialisable):
         self._exchange_matrix = exchange_matrix
 
         self._unique_id = _generate_unique_exchange_id()
+        self.metadata = ExchangeMetadata() if metadata is None else metadata
+
+        if color is not None:
+            self.metadata.color = color
 
 
     exchange_type = "General"
@@ -132,7 +140,8 @@ class Exchange(SPWSerialisable):
             "name": self.name,
             "site_1": self._site_1._serialise(context),
             "site_2": self._site_2._serialise(context),
-            "cell_offset": self._cell_offset._serialise(context)
+            "cell_offset": self._cell_offset._serialise(context),
+            "metadata": self.metadata._serialise(context)
         }
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
@@ -141,14 +150,16 @@ class Exchange(SPWSerialisable):
                 site_2: LatticeSite | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
-                exchange_matrix: np.ndarray | None = None):
+                exchange_matrix: np.ndarray | None = None,
+                metadata: ExchangeMetadata | None = None):
         """ Get version of this site with specified parameters updated"""
         return Exchange(
             site_1=self.site_1 if site_1 is None else site_1,
             site_2=self.site_2 if site_2 is None else site_2,
             cell_offset=self.cell_offset if cell_offset is None else cell_offset,
             name=self.name if name is None else name,
-            exchange_matrix=self.exchange_matrix if exchange_matrix is None else exchange_matrix)
+            exchange_matrix=self.exchange_matrix if exchange_matrix is None else exchange_matrix,
+            metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
     @staticmethod
     @expects_keys("name, site_1, site_2, cell_offset")
@@ -157,7 +168,9 @@ class Exchange(SPWSerialisable):
             name=json["name"],
             site_1=LatticeSite._deserialise(json["site_1"], context),
             site_2=LatticeSite._deserialise(json["site_2"], context),
-            cell_offset=CellOffset._deserialise(json["cell_offset"], context))
+            cell_offset=CellOffset._deserialise(json["cell_offset"], context),
+            metadata=ExchangeMetadata._deserialise(json["metadata"], context)
+        )
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
@@ -214,7 +227,9 @@ class HeisenbergExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j = j
         self._exchange_matrix = j * np.eye(3)
@@ -223,7 +238,9 @@ class HeisenbergExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     @property
     def j(self):
@@ -256,14 +273,18 @@ class HeisenbergExchange(Exchange):
                 site_2: LatticeSite | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
-                j: float | None = None):
+                j: float | None = None,
+                metadata: ExchangeMetadata | None = None
+                ):
         """ Get version of this exchange with specified parameters updated"""
         return HeisenbergExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
                 cell_offset = self.cell_offset if cell_offset is None else cell_offset,
                 name = self.name if name is None else name,
-                j = self.j if j is None else j)
+                j = self.j if j is None else j,
+                metadata=self.metadata.copy() if metadata is None else metadata.copy()
+                )
 
 
 
@@ -276,7 +297,7 @@ class DiagonalExchange(Exchange):
 
     :param site_1: Identifier for S_i
     :param site_2: Identifier for S_j
-    :param j: Vector containing the exchange coefficients for x, y, and z.
+    :param j_x, j_y, j_z: Vector containing the exchange coefficients for x, y, and z.
 
     """
 
@@ -288,7 +309,9 @@ class DiagonalExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j_x: float, j_y: float, j_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j_x = j_x
         self._j_y = j_y
@@ -300,7 +323,9 @@ class DiagonalExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     @property
     def j_x(self):
@@ -352,6 +377,7 @@ class DiagonalExchange(Exchange):
                 j_x: float | None = None,
                 j_y: float | None = None,
                 j_z: float | None = None,
+                metadata: ExchangeMetadata | None = None,
                 ):
         """ Get version of this exchange with specified parameters updated"""
         return DiagonalExchange(
@@ -361,7 +387,8 @@ class DiagonalExchange(Exchange):
                 name = self.name if name is None else name,
                 j_x = self.j_x if j_x is None else j_x,
                 j_y = self.j_y if j_y is None else j_y,
-                j_z = self.j_z if j_z is None else j_z)
+                j_z = self.j_z if j_z is None else j_z,
+                metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 class XYExchange(Exchange):
     """ "XY"  exchange, which takes the form
@@ -388,7 +415,9 @@ class XYExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j = j
         self._exchange_matrix = np.diag([j, j, 0.0], dtype=float)
@@ -397,7 +426,9 @@ class XYExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
         json = self._base_serialisation(context)
@@ -424,14 +455,16 @@ class XYExchange(Exchange):
                 site_2: LatticeSite | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
-                j: float | None = None):
+                j: float | None = None,
+                metadata: ExchangeMetadata | None = None):
         """ Get version of this exchange with specified parameters updated"""
         return XYExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
                 name=self.name if name is None else name,
-                j=self.j if j is None else j)
+                j=self.j if j is None else j,
+                metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 class XXZExchange(Exchange):
     """ "XXZ" exchange, which takes the form
@@ -453,7 +486,9 @@ class XXZExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j_xy: float, j_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._j_xy = j_xy
         self._j_z = j_z
@@ -464,7 +499,9 @@ class XXZExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
 
 
@@ -505,6 +542,7 @@ class XXZExchange(Exchange):
                 name: str | None = None,
                 j_xy: float | None = None,
                 j_z: float | None = None,
+                metadata: ExchangeMetadata | None = None
                 ):
         """ Get version of this exchange with specified parameters updated"""
         return XXZExchange(
@@ -513,7 +551,8 @@ class XXZExchange(Exchange):
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
                 name=self.name if name is None else name,
                 j_xy=self.j_xy if j_xy is None else j_xy,
-                j_z=self.j_z if j_z is None else j_z)
+                j_z=self.j_z if j_z is None else j_z,
+                metadata=self.metadata.copy() if metadata is None else metadata.copy())
     def is_symmetric(self):
         """ Is this a symmetric exchange """
         return True
@@ -537,8 +576,9 @@ class IsingExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  j_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
-
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
         self._j_z = j_z
 
         self._exchange_matrix = np.diag([0.0, 0.0, j_z])
@@ -547,7 +587,9 @@ class IsingExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
     @property
     def j_z(self):
@@ -576,14 +618,16 @@ class IsingExchange(Exchange):
                 site_2: LatticeSite | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
-                j_z: float | None = None):
+                j_z: float | None = None,
+                metadata: ExchangeMetadata | None = None):
         """ Get version of this exchange with specified parameters updated"""
         return IsingExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
                 cell_offset=self.cell_offset if cell_offset is None else cell_offset,
                 name=self.name if name is None else name,
-                j_z=self.j_z if j_z is None else j_z)
+                j_z=self.j_z if j_z is None else j_z,
+                metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
     def is_symmetric(self):
         """ Is this a symmetric exchange """
@@ -611,7 +655,9 @@ class DMExchange(Exchange):
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
                  d_x: float, d_y: float, d_z: float,
                  cell_offset: CellOffsetCoercible = None,
-                 name: str=""):
+                 name: str="",
+                 color: tuple[float, float, float] | None = None,
+                 metadata: ExchangeMetadata | None = None):
 
         self._d_x = d_x
         self._d_y = d_y
@@ -623,7 +669,9 @@ class DMExchange(Exchange):
                          site_2=site_2,
                          cell_offset=cell_offset,
                          exchange_matrix=self._exchange_matrix,
-                         name=name)
+                         name=name,
+                         color=color,
+                         metadata=metadata)
 
 
     @property
@@ -669,7 +717,8 @@ class DMExchange(Exchange):
                 name: str | None = None,
                 d_x: float | None = None,
                 d_y: float | None = None,
-                d_z: float | None = None):
+                d_z: float | None = None,
+                metadata: ExchangeMetadata | None = None):
         """ Get version of this exchange with specified parameters updated"""
         return DMExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -678,7 +727,8 @@ class DMExchange(Exchange):
                 name=self.name if name is not None else name,
                 d_x=self.d_x if d_x is None else d_x,
                 d_y=self.d_y if d_y is None else d_y,
-                d_z=self.d_z if d_z is None else d_z)
+                d_z=self.d_z if d_z is None else d_z,
+                metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 
     def is_symmetric(self):

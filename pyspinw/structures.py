@@ -2,6 +2,7 @@
 import re
 
 import numpy as np
+from ase.data import chemical_symbols
 
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
@@ -132,7 +133,8 @@ class Structure(SPWSerialisable):
                     site_1.j,
                     site_1.k,
                     supercell_spins=site_1.spin_data,
-                    name = site_1.name # TODO: Check if this is sensible
+                    name = site_1.name,
+                    metadata = site_1.metadata.copy()
                 ))
 
             else:
@@ -141,7 +143,8 @@ class Structure(SPWSerialisable):
                     site_1.j,
                     site_1.k,
                     supercell_spins=np.zeros_like(site_1.spin_data),
-                    name=site_1.name  # TODO: Check if this is sensible
+                    name=site_1.name,
+                    metadata=site_1.metadata.copy()
                 ))
 
         return unique_sites
@@ -169,7 +172,8 @@ class Structure(SPWSerialisable):
                     k=position[2],
                     supercell_spins=spin,
                     g=site.g,
-                    name=f"{site.name}[{index}]")
+                    name=f"{site.name}[{index}]",
+                    metadata=site.metadata.copy())
 
                 mapping[(site._unique_id, offset.as_tuple)] = new_site
 
@@ -222,13 +226,73 @@ class Structure(SPWSerialisable):
 
         return [site for site in self._sites if re.match(regex, site.name) is not None]
 
+    def sites_by_element(self, element: str | None) -> list[LatticeSite]:
+        """ Get list of sites with the specified element in the metadata"""
+        if element is not None and element not in chemical_symbols[1:]:
+            raise ValueError(f"{element} is not a known element")
+        return [site for site in self._sites if site.metadata.element == element]
+
+    def without_elements(self, *elements):
+        """ Get the structure without sites with given elements"""
+        for element in elements:
+            if element is not None and element not in chemical_symbols[1:]:
+                raise ValueError(f"{element} is not a known element")
+
+        new_sites = [site for site in self._sites if site.metadata.element not in elements]
+
+        return Structure(new_sites, unit_cell=self.unit_cell, spacegroup=self.spacegroup, supercell=self.supercell)
+
     def site_by_name(self, name):
         """ Get a single site by its name"""
         found = self.sites_by_name(name)
         if len(found) == 0:
             raise ValueError(f"No site matching '{name}' found")
         elif len(found) > 1:
-            raise ValueError(f"Multiple sites matching '{name}' found")
+            # Are any an exact match
+            exact_matches = [site for site in found if site.name == name]
+
+            if len(exact_matches) == 1:
+                return exact_matches[0]
+
+            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
+        else:
+            return found[0]
+
+    @property
+    def text_summary(self) -> str:
+        """ Textual details of this structure """
+        lines = []
+        lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
+        lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
+        supercell_text_data = self.supercell.text_data()
+        lines.append(f"Supercell: {supercell_text_data[0]}")
+        lines += ["  " + s for s in supercell_text_data[1:]]
+        lines.append("Sites:")
+        for site in self._sites:
+
+            is_not_input_chr = "" if site.unique_id in self._input_uid_to_site else "* "
+
+            lines.append(f"  {is_not_input_chr}{site}")
+
+        return "\n".join(lines)
+
+    def print_summary(self):
+        """ Print out details of this structure """
+        print(self.text_summary)
+
+    def site_by_name(self, name):
+        """ Get a single site by its name"""
+        found = self.sites_by_name(name)
+        if len(found) == 0:
+            raise ValueError(f"No site matching '{name}' found")
+        elif len(found) > 1:
+            # Are any an exact match
+            exact_matches = [site for site in found if site.name == name]
+
+            if len(exact_matches) == 1:
+                return exact_matches[0]
+
+            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
         else:
             return found[0]
 

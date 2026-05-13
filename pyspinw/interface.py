@@ -398,7 +398,8 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
                        d_y: float | None = None,
                        d_z: float | None = None,
                        exchange_parameters: dict | None = None,
-                       naming_pattern: str | None = None, ):
+                       naming_pattern: str | None = None,
+                       color: tuple[float, float, float] | None = None):
     """ Automatically creates a list of exchanges
 
     :param sites: *required* List of sites to make exchanges between or a Structure object
@@ -420,6 +421,7 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
     :param d_z" Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
     :param exchange_parameters: Parameters can be supplied in a dictionary instead
     :param naming_pattern: String used to assign names to exchanges, see `apply_naming_convention`
+    :param color: Colour to draw the exchange with
 
     :returns: list of exchanges
     """
