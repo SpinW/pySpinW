@@ -259,7 +259,7 @@ def spinwave_calculation(
         q_calculations = [
             executor.submit(
                 _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
-                sab_blocks, rlu_to_cart, rotating_frame, Az, save_sab
+                sab_blocks, rlu_to_cart, rotating_frame, Az, save_sab, save_wavefunctions
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -282,7 +282,7 @@ def spinwave_calculation(
         sab = np.concat([result[2] for result in results], axis=3)
 
     if save_wavefunctions:
-        wavefunctions = np.concat([result[3] for result in results], axis=3)
+        wavefunctions = np.concat([result[3] for result in results], axis=2).transpose(2, 1, 0)
 
     return energies, intensities, sab, wavefunctions
 

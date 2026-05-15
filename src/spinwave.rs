@@ -504,6 +504,7 @@ fn solve_ham_nonherm(hamiltonian: Mat<C64>, n_sites: usize) -> HamiltonianResult
 /// - `rlu_to_cart`: Optional matrix to transform q to Cartesian for intensity calculation.
 /// - `rotating_components`: Option with fields needed for rotating frame calculation.
 /// - `save_sab`: Whether to save the 3x3 Sab tensors or not (default: False).
+/// - `save_wavefunctions`: Whether to save the transformations from individual spins to magnon modes
 /// - `tri_id`: For optional rotating frame calculation, whether this is -k, 0 or +k
 ///
 ///# Returns

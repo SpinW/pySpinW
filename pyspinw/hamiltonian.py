@@ -376,14 +376,53 @@ class Hamiltonian(SPWSerialisable):
             intensity_unit=intensity_unit,
             components=components)
 
+
     def _energies_and_intensities(self,
-                                 q_vectors: np.ndarray,
-                                 field: ArrayLike | None = None,
-                                 use_rust: bool=True,
-                                 use_rotating: bool=True,
-                                 intensity_unit: IntensityUnits | str='cell',
-                                 components: str='Sperp',
-                                 ):
+                              q_vectors: np.ndarray,
+                              field: ArrayLike | None = None,
+                              use_rust: bool=True,
+                              use_rotating: bool=True,
+                              intensity_unit: IntensityUnits | str='cell',
+                              components: str='Sperp'
+                              ):
+        """Calculate the energy levels of the system for the given q-vectors.
+
+        ** Does not remove nonmagnetic sites **
+
+        :param q_vectors: *required* An array of q-vectors
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        """
+
+        #
+        # Set up choice of calculation
+        #
+        save_sab = components != 'Sperp'
+
+        energies, intensities, sab, _ = self._spinwave_calculation(
+            q_vectors=q_vectors,
+            field=field,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit,
+            save_sab=save_sab,
+        )
+
+        # TODO: restore polarisation calculations
+
+        return energies, intensities
+
+    def _spinwave_calculation(self,
+                              q_vectors: np.ndarray,
+                              field: ArrayLike | None = None,
+                              use_rust: bool=True,
+                              use_rotating: bool=True,
+                              intensity_unit: IntensityUnits | str='cell',
+                              save_sab: bool=False,
+                              save_wavefunctions: bool=False
+                              ):
         """Calculate the energy levels of the system for the given q-vectors.
 
         ** Does not remove nonmagnetic sites **
@@ -398,37 +437,26 @@ class Hamiltonian(SPWSerialisable):
         if intensity_unit == IntensityUnits.BARNPERATOM or intensity_unit == IntensityUnits.BARNPERCELL:
             raise NotImplementedError('Intensity scale in barn/sr/meV/atom not yet implemented.')
 
-        #
-        # Set up choice of calculation
-        #
-        save_sab = components != 'Sperp'
+
 
         # Rotating frame calculations should only be run on RotationSupercells
         use_rotating = use_rotating and isinstance(self.structure.supercell, RotationSupercell)
 
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
-        if save_sab:
-            def _swcalc(*a, **k):
-                return py_spinwave(*a, **k, save_sab=True)
-            spinwave_calculation = _swcalc
-        else:
-            spinwave_calculation = py_spinwave
+
+        spinwave_calculation = py_spinwave
         magnetic_field_class = PyMagneticField
 
         if use_rust:
             try:
                 from pyspinw.rust import (
                     spinwave_calculation as rs_spinwave,
-                    spinwave_calculation_Sab as rs_spinwave_sab,
                     Coupling as RsCoupling,
                     MagneticField as RsMagneticField)
 
                 coupling_class = RsCoupling
-                if save_sab:
-                    spinwave_calculation = rs_spinwave_sab
-                else:
-                    spinwave_calculation = rs_spinwave
+                spinwave_calculation = rs_spinwave
                 magnetic_field_class = RsMagneticField
 
 
@@ -541,24 +569,33 @@ class Hamiltonian(SPWSerialisable):
                         positions=positions,
                         rlu_to_cart=rlu_to_cart,
                         field=magnetic_field,
-                        rotating_frame=rotating_frame)
+                        rotating_frame=rotating_frame,
+                        save_sab=save_sab,
+                        save_wavefunctions=save_wavefunctions)
 
-        if save_sab:
-            sab = np.transpose(result[2], (3,2,1,0)) if use_rust else result[2]
-            intensity = calculate_polarised_intensity(sab, result[1], q_vectors * scaling,
-                                                      components, rlu_to_cart).real
-            if components == 'all':
-                return intensity
-        else:
-            intensity = result[1]
+        energies, intensities, sab, wavefunctions = result
+
+        if sab is not None:
+            sab = np.transpose(sab, (3, 2, 1, 0)) if use_rust else sab
+
+
+        # if save_sab:
+        #     sab = np.transpose(result[2], (3,2,1,0)) if use_rust else result[2]
+        #     intensity = calculate_polarised_intensity(sab, result[1], q_vectors * scaling,
+        #                                               components, rlu_to_cart).real
+        #     if components == 'all':
+        #         return intensity
+        # else:
+        #     intensity = result[1]
+        #     sab = None
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
         if intensity_unit == IntensityUnits.PERCELL:
             scale_factor = rotations.shape[0] / np.prod(scaling)
-            intensity = [res * scale_factor for res in intensity]
+            intensities = [res * scale_factor for res in intensities]
 
-        return result[0], intensity
+        return energies, intensities, sab, wavefunctions
 
     def spaghetti_plot_dual(self,
                             path: Path,
