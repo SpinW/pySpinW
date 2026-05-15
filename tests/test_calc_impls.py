@@ -19,7 +19,7 @@ except ImportError:
     # that the Rust tests run and pass if we're expecting Rust to be installed
     pytestmark = pytest.mark.xfail(raises=NameError, reason="Rust module not installed.")
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave_internal
+from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave
 
 from examples.raw_calculations.ferromagnetic_chain import heisenberg_ferromagnet
 from examples.raw_calculations.ferromagnet_gtensor import ferromagnet_gtensor
@@ -31,10 +31,6 @@ from examples.raw_calculations.kagome_supercell import kagome_supercell
 from examples.raw_calculations.triangular_antiferro import triangular_antiferro
 from examples.raw_calculations.square_antiferro_nonherm import square_antiferro_nonherm
 
-def py_spinwave(*args, **kwargs):
-    """ Just extract the first two items (until the rust matches and has 4)"""
-    energy, intensity, _, _ = py_spinwave_internal(*args, **kwargs)
-    return energy, intensity
 
 @pytest.mark.rust
 @pytest.mark.parametrize("example",
@@ -50,8 +46,8 @@ def py_spinwave(*args, **kwargs):
                           ])
 def test_calc_impls(example):
     """Compare Rust and Python spinwave calculation implementations."""
-    rs_energies, rs_sqw = rs_spinwave(*example(classes=rs_classes))
-    py_energies, py_sqw = py_spinwave(*example(classes=py_classes))
+    rs_energies, rs_sqw, _, _ = rs_spinwave(*example(classes=rs_classes))
+    py_energies, py_sqw, _, _ = py_spinwave(*example(classes=py_classes))
 
     # we test to an absolute tolerance of 1e-6 in line with the MATLAB
     # np.sort only sorts by real part, so can have swapped values if have purely imaginary energies
