@@ -26,6 +26,7 @@ pub struct SpinwaveResult {
     pub energies: Vec<C64>,
     pub sab: Option<Vec<Mat<C64>>>,
     pub intensities: Vec<f64>,
+    pub wavefunctions: Option<Mat<C64>>
 }
 
 /// The q-independent components of the calculation.
@@ -252,6 +253,7 @@ pub fn calc_spinwave(
     field: Option<MagneticField>,
     rotating_frame: Option<Vec<ColRef<f64>>>,
     save_Sab: bool,
+    save_wavefunctions: bool,
 ) -> Vec<SpinwaveResult> {
     let n_sites = rotations.len();
     let n_q = q_vectors.len() as u64;
@@ -311,6 +313,7 @@ pub fn calc_spinwave(
                             rlu_to_cart,
                             &rotating_components,
                             save_Sab,
+                            save_wavefunctions,
                             tri_id as f64,
                         )
                     })
@@ -345,6 +348,7 @@ pub fn calc_spinwave(
                     rlu_to_cart,
                     &rotating_components,
                     save_Sab,
+                    save_wavefunctions,
                     0.,
                 )
             })
@@ -515,6 +519,7 @@ fn spinwave_single_q(
     rlu_to_cart: Option<MatRef<f64>>,
     rotating_components: &Option<RotatingFrameComponents>,
     save_Sab: bool,
+    save_wavefunctions: bool,
     tri_id: f64,
 ) -> SpinwaveResult {
     let sab_blocks = &q_independent_components.sab_blocks;
@@ -616,16 +621,20 @@ fn spinwave_single_q(
             .collect()
     };
 
-    match save_Sab {
-        true => SpinwaveResult {
+    let sab_out = match save_Sab {
+            true => Some(Sab),
+            false => None
+    };
+
+    let wavefunctions_out = match save_wavefunctions {
+        true => Some(T.clone()),
+        false => None
+    };
+
+    SpinwaveResult {
             energies: eigvals.iter().copied().collect(),
-            sab: Some(Sab),
-            intensities,
-        },
-        false => SpinwaveResult {
-            energies: eigvals.iter().copied().collect(),
-            sab: None,
-            intensities,
-        },
+            sab: sab_out,
+            intensities: intensities,
+            wavefunctions: wavefunctions_out
     }
 }

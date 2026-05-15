@@ -19,7 +19,7 @@ except ImportError:
     # that the Rust tests run and pass if we're expecting Rust to be installed
     pytestmark = pytest.mark.xfail(raises=NameError, reason="Rust module not installed.")
 
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave
+from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave_internal
 
 from examples.raw_calculations.ferromagnetic_chain import heisenberg_ferromagnet
 from examples.raw_calculations.ferromagnet_gtensor import ferromagnet_gtensor
@@ -30,6 +30,11 @@ from examples.raw_calculations.kagome_antiferro import kagome_antiferromagnet
 from examples.raw_calculations.kagome_supercell import kagome_supercell
 from examples.raw_calculations.triangular_antiferro import triangular_antiferro
 from examples.raw_calculations.square_antiferro_nonherm import square_antiferro_nonherm
+
+def py_spinwave(*args, **kwargs):
+    """ Just extract the first two items (until the rust matches and has 4)"""
+    energy, intensity, _, _ = py_spinwave_internal(*args, **kwargs)
+    return energy, intensity
 
 @pytest.mark.rust
 @pytest.mark.parametrize("example",

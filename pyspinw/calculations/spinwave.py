@@ -231,7 +231,8 @@ def spinwave_calculation(
         rlu_to_cart: np.ndarray = np.eye(3),
         field: MagneticField | None = None,
         rotating_frame: list[np.ndarray] | None = None,
-        save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+        save_sab: bool = False,
+        save_wavefunctions: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     if rotating_frame is not None:
         km, nvec = tuple(rotating_frame)
@@ -274,13 +275,16 @@ def spinwave_calculation(
 
     energies = np.concat(tuple(result[0] for result in results))
     intensities = np.concat([result[1] for result in results])
+    sab = None
+    wavefunctions = None
 
     if save_sab:
-        # return SpinwaveResult(q_vectors, energies, intensities, sab)
-        return energies, intensities, np.concat([result[2] for result in results], axis=3)
+        sab = np.concat([result[2] for result in results], axis=3)
 
-    # return SpinwaveResult(q_vectors, energies, intensities)
-    return energies, intensities
+    if save_wavefunctions:
+        wavefunctions = np.concat([result[3] for result in results], axis=3)
+
+    return energies, intensities, sab, wavefunctions
 
 def _calc_chunk_spinwave(
         q_vectors: np.ndarray,
@@ -294,7 +298,8 @@ def _calc_chunk_spinwave(
         rlu_to_cart: np.ndarray,
         rotating_frame: list[np.ndarray] | None = None,
         Az: np.ndarray | None = None,
-        save_sab: bool = False) \
+        save_sab: bool = False,
+        save_wavefunctions: bool=False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
@@ -305,6 +310,10 @@ def _calc_chunk_spinwave(
         q_vectors = np.vstack([q_vectors-km, q_vectors, q_vectors+km])
 
     sabs = np.empty((3, 3, 2*n_sites, q_vectors.shape[0]), dtype=complex)
+    if save_wavefunctions:
+        wavefunctions = np.empty((2*n_sites, 2*n_sites, q_vectors.shape[0]), dtype=complex)
+    else:
+        wavefunctions = None
 
     for ii, q in enumerate(q_vectors):
         hamiltonian = _calc_spin_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
@@ -313,6 +322,9 @@ def _calc_chunk_spinwave(
             eigvals, T = _solve_ham_hermitian(hamiltonian, n_sites)
         except AssertionError:
             eigvals, T = _solve_ham_nonherm(hamiltonian, n_sites)
+
+        if save_wavefunctions:
+            wavefunctions[:, :, ii] = T
 
         energies.append(eigvals)
 
@@ -360,7 +372,9 @@ def _calc_chunk_spinwave(
         s_perp = np.einsum("ijk,ij->k", sabs[:,:,:,ii], perp_factor)
         intensities.append(s_perp.real)
 
-    if save_sab:
-        return energies, intensities, sabs
+    sabs_out = None
 
-    return energies, intensities
+    if save_sab:
+        sabs_out = sabs
+
+    return energies, intensities, sabs_out, wavefunctions

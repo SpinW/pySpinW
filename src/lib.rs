@@ -24,6 +24,8 @@ type Energies<'py> = Vec<Bound<'py, PyArray1<C64>>>;
 type SabTensor<'py> = Vec<Vec<Bound<'py, PyArray2<C64>>>>;
 type SQw<'py> = Vec<Bound<'py, PyArray1<f64>>>;
 
+type Wavefunction<'py> = Vec<Bound<'py, PyArray2<C64>>>;
+
 /// Temporary description of the coupling between atoms.
 #[pyclass(frozen)]
 pub struct Coupling {
@@ -102,7 +104,60 @@ impl MagneticField {
 /// - A list of 1D numpy arrays, each containing the energies for the corresponding q-vector.
 /// - A list of 1D numpy arrays, each containing the neutron scattering cross-section
 ///   for the corresponding q-vector (indexed over omega).
-#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, rlu_to_cart=None, field=None, rotating_frame=None))]
+// #[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, rlu_to_cart=None, field=None, rotating_frame=None))]
+// pub fn spinwave_calculation<'py>(
+//     py: Python<'py>,
+//     rotations: Vec<PyReadonlyArray2<C64>>,
+//     magnitudes: Vec<f64>,
+//     q_vectors: Vec<Vec<f64>>,
+//     couplings: Vec<Py<Coupling>>,
+//     positions: Vec<PyReadonlyArray1<f64>>,
+//     rlu_to_cart: Option<PyReadonlyArray2<f64>>,
+//     field: Option<MagneticField>,
+//     rotating_frame: Option<Vec<PyReadonlyArray1<f64>>>,
+// ) -> PyResult<(Energies<'py>, SQw<'py>)> {
+//     // convert PyO3-friendly array types to faer matrices
+//     let r: Vec<MatRef<C64>> = rotations
+//         .into_iter()
+//         .map(faer_ext::IntoFaer::into_faer)
+//         .collect();
+//
+//     let c = couplings.par_iter().map(pyo3::Py::get).collect();
+//
+//     let p: Vec<ColRef<f64>> = positions
+//         .into_iter()
+//         .map(faer_ext::IntoFaer::into_faer)
+//         .collect();
+//
+//     let to_cart: Option<MatRef<f64>> = rlu_to_cart.map(|f| f.into_faer());
+//     let rotating: Option<Vec<ColRef<f64>>> =
+//         rotating_frame.map(|f| f.into_iter().map(faer_ext::IntoFaer::into_faer).collect());
+//
+//     let results = calc_spinwave(
+//         r,
+//         magnitudes,
+//         q_vectors.clone(),
+//         c,
+//         p,
+//         to_cart,
+//         field,
+//         rotating,
+//         false,
+//     );
+//     Ok((
+//         results
+//             .iter()
+//             .map(|result| result.energies.to_pyarray(py))
+//             .collect(),
+//         results
+//             .iter()
+//             .map(|result| result.intensities.to_pyarray(py))
+//             .collect(),
+//     ))
+// }
+
+/// Same as spinwave_calculation but also returns Sab tensors.
+#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, rlu_to_cart=None, field=None, rotating_frame=None, save_sab=false, save_wavefunctions=false))]
 pub fn spinwave_calculation<'py>(
     py: Python<'py>,
     rotations: Vec<PyReadonlyArray2<C64>>,
@@ -113,7 +168,9 @@ pub fn spinwave_calculation<'py>(
     rlu_to_cart: Option<PyReadonlyArray2<f64>>,
     field: Option<MagneticField>,
     rotating_frame: Option<Vec<PyReadonlyArray1<f64>>>,
-) -> PyResult<(Energies<'py>, SQw<'py>)> {
+    save_sab: bool,
+    save_wavefunctions: bool,
+) -> PyResult<(Energies<'py>, SQw<'py>, Option<SabTensor<'py>>, Option<Wavefunction<'py>>)> {
     // convert PyO3-friendly array types to faer matrices
     let r: Vec<MatRef<C64>> = rotations
         .into_iter()
@@ -140,79 +197,55 @@ pub fn spinwave_calculation<'py>(
         to_cart,
         field,
         rotating,
-        false,
+        save_sab,
+        save_wavefunctions,
     );
     Ok((
+        // Energies, vector of arrays
         results
             .iter()
             .map(|result| result.energies.to_pyarray(py))
             .collect(),
+
+        // Intensity, vector of arrays
         results
             .iter()
             .map(|result| result.intensities.to_pyarray(py))
             .collect(),
-    ))
-}
 
-/// Same as spinwave_calculation but also returns Sab tensors.
-#[pyfunction(signature = (rotations, magnitudes, q_vectors, couplings, positions, rlu_to_cart=None, field=None, rotating_frame=None))]
-pub fn spinwave_calculation_Sab<'py>(
-    py: Python<'py>,
-    rotations: Vec<PyReadonlyArray2<C64>>,
-    magnitudes: Vec<f64>,
-    q_vectors: Vec<Vec<f64>>,
-    couplings: Vec<Py<Coupling>>,
-    positions: Vec<PyReadonlyArray1<f64>>,
-    rlu_to_cart: Option<PyReadonlyArray2<f64>>,
-    field: Option<MagneticField>,
-    rotating_frame: Option<Vec<PyReadonlyArray1<f64>>>,
-) -> PyResult<(Energies<'py>, SQw<'py>, SabTensor<'py>)> {
-    // convert PyO3-friendly array types to faer matrices
-    let r: Vec<MatRef<C64>> = rotations
-        .into_iter()
-        .map(faer_ext::IntoFaer::into_faer)
-        .collect();
-
-    let c = couplings.par_iter().map(pyo3::Py::get).collect();
-
-    let p: Vec<ColRef<f64>> = positions
-        .into_iter()
-        .map(faer_ext::IntoFaer::into_faer)
-        .collect();
-
-    let to_cart: Option<MatRef<f64>> = rlu_to_cart.map(|f| f.into_faer());
-    let rotating: Option<Vec<ColRef<f64>>> =
-        rotating_frame.map(|f| f.into_iter().map(faer_ext::IntoFaer::into_faer).collect());
-
-    let results = calc_spinwave(
-        r,
-        magnitudes,
-        q_vectors.clone(),
-        c,
-        p,
-        to_cart,
-        field,
-        rotating,
-        true,
-    );
-    Ok((
-        results
-            .iter()
-            .map(|result| result.energies.to_pyarray(py))
-            .collect(),
-        results
-            .iter()
-            .map(|result| result.intensities.to_pyarray(py))
-            .collect(),
-        results
-            .iter()
-            .map(|result| {
-                let sab = result.sab.clone().unwrap();
-                sab.iter()
-                    .map(|sab_qw| PyArray2::from_array(py, &sab_qw.as_ref().into_ndarray()))
+        // Sab, optional vector of vector of complex matrices
+        match save_sab {
+            false => None,
+            true => Some(
+                results
+                    .iter()         // iterating of vector spinwave results
+                    .map(|result| {      // result should be of type SpinwaveResult
+                        result.sab.as_ref().map(|sab| {     // map over the optional sab entries, vectors of matrices
+                            sab.iter()             // Convert to pythong objects
+                                .map(|sab_qw| PyArray2::from_array(py, &sab_qw.as_ref().into_ndarray()))
+                                .collect()
+                        })
+                    })
+                    .flatten() // Remove Options
                     .collect()
-            })
-            .collect(),
+                )
+            },
+
+        // Wavefunction, optional list of matrices
+        match save_wavefunctions {
+            false => None,
+            true => Some(
+                results
+                    .iter()
+                    .map(|result| {
+                        result.wavefunctions.as_ref().map(|wavefunctions| {
+                            PyArray2::from_array(py, &wavefunctions.as_ref().into_ndarray())
+                        })
+                    })
+                    .flatten()
+                    .collect(),
+            )
+        }
     ))
 }
 
@@ -220,7 +253,7 @@ pub fn spinwave_calculation_Sab<'py>(
 #[pymodule]
 fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(spinwave_calculation, m)?)?;
-    m.add_function(wrap_pyfunction!(spinwave_calculation_Sab, m)?)?;
+    //m.add_function(wrap_pyfunction!(spinwave_calculation_Sab, m)?)?;
     m.add_class::<Coupling>()?;
     m.add_class::<MagneticField>()?;
     Ok(())
