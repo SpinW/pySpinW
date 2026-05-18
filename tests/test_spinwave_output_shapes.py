@@ -31,7 +31,7 @@ def test_shape_sizes_non_rotating(use_rust: bool):
     n_sites = len(hamiltonian.expanded().structure.sites)
 
 
-    energies, intensities, sab, wavefunctions = hamiltonian._spinwave_calculation(q, field=None, use_rotating=False,
+    energies, intensities, sab, wavefunctions, _, _ = hamiltonian._spinwave_calculation(q, field=None, use_rotating=False,
                                       use_rust=use_rust,
                                       save_sab=True, save_wavefunctions=True)
 

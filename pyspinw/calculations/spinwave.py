@@ -282,7 +282,7 @@ def spinwave_calculation(
         sab = np.concat([result[2] for result in results], axis=3)
 
     if save_wavefunctions:
-        wavefunctions = np.concat([result[3] for result in results], axis=2).transpose(2, 1, 0)
+        wavefunctions = np.concat([result[3] for result in results], axis=2).transpose(2, 0, 1)
 
     return energies, intensities, sab, wavefunctions
 
