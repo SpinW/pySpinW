@@ -206,6 +206,21 @@ class SPWSerialisable:
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         raise NotImplementedError("Deserialisation not implemented")
 
+def rgb_serialise(rgb: tuple[float, float, float]):
+    """ Serialise an RGB color"""
+    return {
+        "r": rgb[0],
+        "g": rgb[1],
+        "b": rgb[2]
+    }
+
+@expects_keys("r,g,b")
+def rgb_deserialise(json):
+    """ Deserialise an RGB color """
+    return (float(json["r"]),
+            float(json["g"]),
+            float(json["b"]))
+
 def vec3_serialise(x,y,z):
     """ Serialise a 3D vector"""
     return {

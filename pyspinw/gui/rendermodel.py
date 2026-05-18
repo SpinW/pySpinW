@@ -54,6 +54,8 @@ class RenderSite(Selectable):
         super().__init__(render_id, model_matrix)
         self.site = site
         self.offset = offset
+        self.color = (0.7, 0.8, 0.6) if site.metadata.color is None else site.metadata.color
+        self.radius = 1.0 if site.metadata.radius is None else site.metadata.radius
 
         self.pretty_render_model_matrices = [self.site_model_matrix(new_position, spin, unit_cell)
                                              for new_position in add_extra_edge_points(position)]
@@ -94,6 +96,9 @@ class RenderExchange(Selectable):
     def __init__(self, render_id: int, exchange: Exchange, unit_cell: UnitCell):
 
         self.exchange = exchange
+        self.color = (0.2, 0.4, 0.8) if exchange.metadata.color is None else exchange.metadata.color
+
+        # self.color = (1.0, 0.4, 0.8) if exchange.metadata.color is None else exchange.metadata.color
 
         p1 = exchange.site_1.ijk
         p2 = exchange.site_2.ijk + exchange.cell_offset.vector

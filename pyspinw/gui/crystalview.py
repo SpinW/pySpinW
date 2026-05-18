@@ -189,10 +189,11 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             # Sites
             if self.display_options.show_sites:
-                self.object_shader.object_color = 0.7, 0.8, 0.6
 
 
                 for site in self.render_model.sites:
+
+                    self.object_shader.object_color = site.color
 
                     if site.is_magnetic or self.display_options.show_nonmagnetic_atoms:
 
@@ -209,10 +210,18 @@ class CrystalViewerWidget(QOpenGLWidget):
                             else:
                                 mode = SelectionMode.NOT_SELECTED
 
-                        render_object = self.arrow if site.is_magnetic else self.small_sphere
+                        show_arrow = site.is_magnetic and self.display_options.show_atoms_not_spins
+                        render_object = self.arrow if show_arrow else self.small_sphere
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
                             site_model_matrix = model_matrix @ spin_scale_matrix
+
+                            # scale spheres by atom size
+                            if not show_arrow:
+
+                                s = site.radius
+                                atomscale = np.diag([s, s, s, 1])
+                                site_model_matrix = site_model_matrix @ atomscale
 
                             if mode != SelectionMode.NOT_SELECTED:
 
@@ -228,10 +237,9 @@ class CrystalViewerWidget(QOpenGLWidget):
             # Exchanges
             if self.display_options.show_exchanges:
 
-                self.object_shader.object_color = 0.2, 0.4, 0.8
-
                 for exchange in self.render_model.exchanges:
 
+                    self.object_shader.object_color = exchange.color
 
                     if exchange.render_id in self.hover_ids:
                         if exchange.render_id in self.current_selection:
