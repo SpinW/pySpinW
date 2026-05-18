@@ -21,7 +21,10 @@ hamiltonian.print_summary()
 
 path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
 
-energy, intensity, _, wavefunctions = hamiltonian._spinwave_calculation()
+energy, intensity, _, wavefunctions = hamiltonian.spinwave_calculation(path, save_wavefunctions=True)
+
+print(wavefunctions)
+
 
 import matplotlib.pyplot as plt
 fig = hamiltonian.spaghetti_plot(path, show=False, use_rotating=False)

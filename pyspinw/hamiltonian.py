@@ -401,7 +401,7 @@ class Hamiltonian(SPWSerialisable):
         #
         save_sab = components != 'Sperp'
 
-        energies, intensities, sab, _ = self._spinwave_calculation(
+        energies, intensities, sab, _, scaling, rlu_to_cart = self._spinwave_calculation(
             q_vectors=q_vectors,
             field=field,
             use_rust=use_rust,
@@ -410,9 +410,33 @@ class Hamiltonian(SPWSerialisable):
             save_sab=save_sab,
         )
 
-        # TODO: restore polarisation calculations
+        if save_sab:
+            intensities = calculate_polarised_intensity(sab, intensities, q_vectors * scaling,
+                                                      components, rlu_to_cart).real
 
         return energies, intensities
+
+    def spinwave_calculation(self,
+                          path: Path,
+                          field: ArrayLike | None = None,
+                          use_rust: bool = True,
+                          use_rotating: bool = True,
+                          intensity_unit: IntensityUnits | str = 'cell',
+                          save_sab: bool = False,
+                          save_wavefunctions: bool = False
+                          ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+
+        energies, intensities, sab, wavefunctions, scaling, rlu_to_cart = \
+            self.without_nonmagnetic()._spinwave_calculation(
+                q_vectors=path.q_points(),
+                field=field,
+                use_rust=use_rust,
+                use_rotating=use_rotating,
+                intensity_unit=intensity_unit,
+                save_sab=save_sab,
+                save_wavefunctions=save_wavefunctions)
+
+        return energies, intensities, sab, wavefunctions
 
     def _spinwave_calculation(self,
                               q_vectors: np.ndarray,
@@ -493,11 +517,9 @@ class Hamiltonian(SPWSerialisable):
         positions = []
         unique_id_to_index: dict[int, int] = {}
         for index, site in enumerate(expanded.structure.sites):
-            # TODO: Sort out spins for supercells
+
             spins.append(site.base_spin)
-
             positions.append(site.ijk)
-
             unique_id_to_index[site._unique_id] = index
 
         # Get the field object
@@ -579,23 +601,13 @@ class Hamiltonian(SPWSerialisable):
             sab = np.transpose(sab, (3, 2, 1, 0)) if use_rust else sab
 
 
-        # if save_sab:
-        #     sab = np.transpose(result[2], (3,2,1,0)) if use_rust else result[2]
-        #     intensity = calculate_polarised_intensity(sab, result[1], q_vectors * scaling,
-        #                                               components, rlu_to_cart).real
-        #     if components == 'all':
-        #         return intensity
-        # else:
-        #     intensity = result[1]
-        #     sab = None
-
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
         if intensity_unit == IntensityUnits.PERCELL:
             scale_factor = rotations.shape[0] / np.prod(scaling)
             intensities = [res * scale_factor for res in intensities]
 
-        return energies, intensities, sab, wavefunctions
+        return energies, intensities, sab, wavefunctions, scaling, rlu_to_cart
 
     def spaghetti_plot_dual(self,
                             path: Path,
