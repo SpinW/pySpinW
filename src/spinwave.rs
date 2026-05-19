@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
 use faer::mat::{AsMatMut, AsMatRef};
-use faer::{mat, perm, unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
+use faer::{mat, perm, concat, unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
 use indicatif::ParallelProgressIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
@@ -295,7 +295,7 @@ pub fn calc_spinwave(
     let QIndependentComponents = calc_q_independent(rotations, magnitudes, &couplings, field);
 
     if rotating_components.is_some() {
-        // Caculate energies and intensities for a triplet of q-vectors in a rotating frame
+        // Calculate energies and intensities for a triplet of q-vectors in a rotating frame
         q_vectors
             .into_par_iter()
             .progress_count(n_q)
@@ -319,7 +319,10 @@ pub fn calc_spinwave(
                     })
                     .reduce_with(
                         |mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
+
                             triplet_results.energies.extend(result.energies);
+                            triplet_results.intensities.extend(result.intensities);
+
                             if save_Sab {
                                 triplet_results
                                     .sab
@@ -327,7 +330,17 @@ pub fn calc_spinwave(
                                     .unwrap()
                                     .extend(result.sab.unwrap());
                             }
-                            triplet_results.intensities.extend(result.intensities);
+
+                            if save_wavefunctions {
+                                triplet_results.wavefunctions =
+                                    triplet_results
+                                        .wavefunctions
+                                        .as_mut()
+                                        .map(|current_wavefunction| {
+                                            concat![[current_wavefunction], [result.wavefunctions.unwrap()]]
+                                            });
+                            }
+
                             triplet_results
                         },
                     )

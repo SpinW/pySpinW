@@ -1,5 +1,5 @@
 """Spinwave Calculations"""
-
+import logging
 import multiprocessing
 import traceback
 from concurrent.futures import wait
@@ -20,6 +20,7 @@ SINGULAR_TOL = 1e-7
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
 
+logger = logging.getLogger("spinwave")
 
 @dataclass
 class Coupling:
@@ -234,6 +235,7 @@ def spinwave_calculation(
         save_sab: bool = False,
         save_wavefunctions: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
+
     if rotating_frame is not None:
         km, nvec = tuple(rotating_frame)
         # Computes the transformation matrices for Sab after Toth & Lake, eq (39)
@@ -241,6 +243,9 @@ def spinwave_calculation(
         R2 = np.outer(nvec, nvec)
         R1 = (np.eye(3) - 1j*nmat - R2) / 2.
         rotating_frame = (nmat, R1, R2, km)
+
+        # TODO: There is a util function for this ^^, its just a general formula for a rotation matrix
+
         # Transforms the coupling matrices after Toth & Lake, eq (21)
         for coupling in couplings:
             qdotr = 2 * np.pi * np.dot(km, coupling.inter_site_vector)
@@ -282,7 +287,10 @@ def spinwave_calculation(
         sab = np.concat([result[2] for result in results], axis=3)
 
     if save_wavefunctions:
-        wavefunctions = np.concat([result[3] for result in results], axis=2).transpose(2, 0, 1)
+        wavefunctions = []
+        for result in results:
+            wavefunctions += result[3]
+
 
     return energies, intensities, sab, wavefunctions
 
@@ -347,22 +355,34 @@ def _calc_chunk_spinwave(
         sabs[:,:,:,ii] = sab
 
     if rotating_frame is not None:
+
         # Convert back into lab frame (eq 37)
         sabs = 0.5 * (sabs - np.einsum("ij,jklm,kn->inlm", nmat, sabs, nmat)
                            + np.einsum("ij,jklm,kn->inlm", nxn-np.eye(3), sabs, nxn)
                            + np.einsum("ij,jklm,kn->inlm", nxn, sabs, 2*nxn-np.eye(3)))
+
         # Apply the rotation transformation (eq 40)
         nq = int(q_vectors.shape[0] / 3)
         sabs = np.concatenate([np.einsum("ijkl,jm->imkl", sabs[:,:,:,:nq], R1.conj()),
                                np.einsum("ijkl,jm->imkl", sabs[:,:,:,nq:2*nq], nxn),
                                np.einsum("ijkl,jm->imkl", sabs[:,:,:,2*nq:], R1)], axis=2)
+
         energies = [np.hstack([energies[i], energies[nq+i], energies[2*nq+i]]) for i in range(nq)]
-        # Reset q vectors list for next loop
+
+        # Wavefunctions
+        wavefunctions = [np.vstack([
+                            wavefunctions[:, :, i],
+                            wavefunctions[:, :, nq + i],
+                            wavefunctions[:, :, 2 * nq + i]])
+                         for i in range(nq)]
+
+
+        # Set the q vectors for the loop that calculates the perpendicular component
         q_vectors = q_vectors[nq:2*nq,:]
 
     for ii, q in enumerate(q_vectors):
         # take perpendicular component s_perp of sab
-        if (q_mag := np.linalg.norm(q)) == 0:
+        if np.linalg.norm(q) == 0:
             norm_q = np.array([0, 0, 0])
         else:
             norm_q = q @ rlu_to_cart

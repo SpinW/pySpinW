@@ -410,6 +410,8 @@ class Hamiltonian(SPWSerialisable):
             save_sab=save_sab,
         )
 
+        # TODO: Check polarisation handling
+
         if save_sab:
             intensities = calculate_polarised_intensity(sab, intensities, q_vectors * scaling,
                                                       components, rlu_to_cart).real
