@@ -353,7 +353,7 @@ class Hamiltonian(SPWSerialisable):
 
     @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self,
-                                 q_vectors: np.ndarray,
+                                 path: Path,
                                  field: ArrayLike | None = None,
                                  use_rust: bool=True,
                                  use_rotating: bool=True,
@@ -362,14 +362,14 @@ class Hamiltonian(SPWSerialisable):
                                  ):
         """Calculate the energy levels of the system for the given q-vectors.
 
-        :param q_vectors: *required* An array of q-vectors
+        :param path: *required* Path along which to calculate
         :param field: Optional field direction
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
         """
         return self.without_nonmagnetic()._energies_and_intensities(
-            q_vectors=q_vectors,
+            q_vectors=path.q_points(),
             field=field,
             use_rust=use_rust,
             use_rotating=use_rotating,
@@ -410,8 +410,6 @@ class Hamiltonian(SPWSerialisable):
             save_sab=save_sab,
         )
 
-        # TODO: Check polarisation handling
-
         if save_sab:
             intensities = calculate_polarised_intensity(sab, intensities, q_vectors * scaling,
                                                       components, rlu_to_cart).real
@@ -437,6 +435,7 @@ class Hamiltonian(SPWSerialisable):
                 intensity_unit=intensity_unit,
                 save_sab=save_sab,
                 save_wavefunctions=save_wavefunctions)
+
 
         return energies, intensities, sab, wavefunctions
 

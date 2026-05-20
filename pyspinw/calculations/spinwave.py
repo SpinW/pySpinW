@@ -370,15 +370,20 @@ def _calc_chunk_spinwave(
         energies = [np.hstack([energies[i], energies[nq+i], energies[2*nq+i]]) for i in range(nq)]
 
         # Wavefunctions
-        wavefunctions = [np.vstack([
-                            wavefunctions[:, :, i],
-                            wavefunctions[:, :, nq + i],
-                            wavefunctions[:, :, 2 * nq + i]])
-                         for i in range(nq)]
+        if wavefunctions is not None:
+            wavefunctions = [np.vstack([
+                                wavefunctions[:, :, i],
+                                wavefunctions[:, :, nq + i],
+                                wavefunctions[:, :, 2 * nq + i]])
+                             for i in range(nq)]
 
 
         # Set the q vectors for the loop that calculates the perpendicular component
         q_vectors = q_vectors[nq:2*nq,:]
+
+    else:
+        if wavefunctions is not None:
+            wavefunctions = [wavefunctions[:,:,i] for i in range(wavefunctions.shape[2])]
 
     for ii, q in enumerate(q_vectors):
         # take perpendicular component s_perp of sab
