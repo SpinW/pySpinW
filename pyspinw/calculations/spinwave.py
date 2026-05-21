@@ -235,7 +235,6 @@ def spinwave_calculation(
         save_sab: bool = False,
         save_wavefunctions: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
-
     if rotating_frame is not None:
         km, nvec = tuple(rotating_frame)
         # Computes the transformation matrices for Sab after Toth & Lake, eq (39)

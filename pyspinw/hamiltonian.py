@@ -360,13 +360,14 @@ class Hamiltonian(SPWSerialisable):
                                  intensity_unit: IntensityUnits | str='cell',
                                  components: str='Sperp',
                                  ):
-        """Calculate the energy levels of the system for the given q-vectors.
+        """Calculate the energy levels and intensities of the system for the given q-vectors.
 
         :param path: *required* Path along which to calculate
         :param field: Optional field direction
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param components: Whether to compute a particular polarised neutron component (default: 'Sperp')
         """
         return self.without_nonmagnetic()._energies_and_intensities(
             q_vectors=path.q_points(),
@@ -394,8 +395,8 @@ class Hamiltonian(SPWSerialisable):
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param components: Whether to compute a particular polarised neutron component (default: 'Sperp')
         """
-
         #
         # Set up choice of calculation
         #
@@ -425,7 +426,20 @@ class Hamiltonian(SPWSerialisable):
                           save_sab: bool = False,
                           save_wavefunctions: bool = False
                           ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Performs a spin wave calculation of the system for the given q-point path.
 
+        :param path: *required* Path along which to calculate
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param save_sab: Whether return the Sab matrices (default: False)
+        :param save_wavefunctions: Whether to return the eigenvectors at each Q-point (default: False)
+
+        :return: energies, intensities, sab, wavefunctions
+
+        If save_sab or save_wavefunctions are False, then sab or wavefunctions will be None
+        """
         energies, intensities, sab, wavefunctions, scaling, rlu_to_cart = \
             self.without_nonmagnetic()._spinwave_calculation(
                 q_vectors=path.q_points(),
