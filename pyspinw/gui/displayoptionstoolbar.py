@@ -240,10 +240,11 @@ class DisplayOptionsToolbar(QWidget):
                                                                icon="latticeaxesorth",
                                                                value=settings.orthogonal_lattice_axes)
 
-        self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
-        
+
         self.reset_view = self._toolbar_button("Reset view", icon="datum")
         self.reset_view.clicked.connect(self.on_reset_view_clicked)
+
+        self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         self.snapshot = self._toolbar_button("Snapshot", icon="camera")
         self.snapshot.clicked.connect(self.on_snapshot)

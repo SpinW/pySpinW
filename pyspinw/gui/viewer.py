@@ -2,6 +2,7 @@
 import ctypes
 import os
 import sys
+import threading
 
 from imageio import imwrite
 
@@ -18,12 +19,21 @@ from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
 
 
+_unique_id_counter = -1
+def _generate_unique_id():
+    """ Generate a unique ID for each site currently loaded"""
+    global _unique_id_counter # noqa: PLW0603
+    _unique_id_counter += 1
+    return _unique_id_counter
+
 class Viewer(QWidget):
     """ Main viewer class """
 
     def __init__(self, hamiltonian: Hamiltonian, parent=None):
 
         super().__init__(parent)
+
+        self._unique_id = _generate_unique_id()
 
         render_model = RenderModel(hamiltonian)
 
@@ -136,9 +146,28 @@ class Viewer(QWidget):
         # Save settings on exit
         self.toolbar.save_settings()
 
+        try:
+            del _VIEWERS[self._unique_id]
+        except:
+            pass
+
         super().closeEvent(event)
 
-def snapshot(object: Hamiltonian | Structure, zoom_factor: float):
+
+_APP = None
+_VIEWERS = {}
+
+def get_app():
+    global _APP
+    app = QApplication.instance()
+    if app is None:
+        _APP = QApplication(sys.argv)
+        app = _APP
+    return app
+
+
+def show_object(object: Hamiltonian | Structure, block=True):
+    """ Show a Hamiltonian or structure in the viewer"""
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
     except Exception:
@@ -150,9 +179,7 @@ def snapshot(object: Hamiltonian | Structure, zoom_factor: float):
     if not isinstance(object, Hamiltonian):
         raise TypeError("Viewer needs to be given a Hamiltonian or Structure")
 
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
+    app = get_app()
 
     app.setWindowIcon(png_icon("pyspinw"))
 
@@ -165,35 +192,8 @@ def snapshot(object: Hamiltonian | Structure, zoom_factor: float):
     viewer.resize(800, 600)
     viewer.show()
 
-    app.exec()
+    # Save a reference
+    _VIEWERS[viewer._unique_id] = viewer
 
-
-def show_hamiltonian(object: Hamiltonian | Structure, block=True):
-    """ Show a Hamiltonian in the viewer"""
-    try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
-    except Exception:
-        pass
-
-    if isinstance(object, Structure):
-        object = Hamiltonian(object, [])
-
-    if not isinstance(object, Hamiltonian):
-        raise TypeError("Viewer needs to be given a Hamiltonian or Structure")
-
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-
-    app.setWindowIcon(png_icon("pyspinw"))
-
-    # Useful for checking particular display options
-    # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-    # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
-
-    viewer = Viewer(object)
-    viewer.setWindowTitle("Hamiltonian Viewer")
-    viewer.resize(800, 600)
-    viewer.show()
-
-    app.exec()
+    if block:
+        app.exec()
