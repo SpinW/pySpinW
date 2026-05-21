@@ -12,7 +12,8 @@ from pyspinw import Structure
 from pyspinw.gui.crystalview import CrystalViewerWidget
 from pyspinw.gui.icons.iconload import png_icon
 from pyspinw.gui.rendermodel import RenderModel
-from pyspinw.gui.renderoptions import DisplayOptions, DisplayOptionsToolbar
+from pyspinw.gui.displayoptionstoolbar import DisplayOptionsToolbar
+from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
 

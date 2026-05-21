@@ -23,7 +23,7 @@ from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
 from pyspinw.gui.rendering.object_shader import ObjectShader
 from pyspinw.gui.rendering.selectionmode import SelectionMode
 from pyspinw.gui.rendering.selection_shader import SelectionShader
-from pyspinw.gui.renderoptions import DisplayOptions
+from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.util import rotation_matrix
 
 logger = logging.Logger(__name__)
