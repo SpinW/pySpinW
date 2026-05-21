@@ -2,7 +2,7 @@
 
 import numpy as np
 from PySide6.QtCore import QTimer, QPoint, Signal
-from PySide6.QtGui import Qt, QKeyEvent
+from PySide6.QtGui import Qt, QKeyEvent, QImage
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from PySide6.QtWidgets import QApplication
@@ -137,7 +137,8 @@ class CrystalViewerWidget(QOpenGLWidget):
         glEnable(GL_CULL_FACE)
         glDisable(GL_BLEND)
 
-        glClearColor(0.05, 0.05, 0.08, 1.0)
+        background_r, background_g, background_b = self.display_options.background_color
+        glClearColor(background_r, background_g, background_b, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Work out camera movement stuff
@@ -193,7 +194,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for site in self.render_model.sites:
 
-                    self.object_shader.object_color = site.color
+                    self.object_shader.object_color = self.display_options.default_site_color \
+                        if site.color is None else site.color
 
                     if site.is_magnetic or self.display_options.show_nonmagnetic_atoms:
 
@@ -239,7 +241,9 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for exchange in self.render_model.exchanges:
 
-                    self.object_shader.object_color = exchange.color
+                    self.object_shader.object_color = \
+                        self.display_options.default_exchange_color \
+                            if exchange.color is None else exchange.color
 
                     if exchange.render_id in self.hover_ids:
                         if exchange.render_id in self.current_selection:
@@ -457,7 +461,20 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.last_hover_id = id
 
+    def snapshot(self) -> np.ndarray:
+        """ Get the data from the current frame """
 
+        qimage = self.grabFramebuffer()
+        qimage = qimage.convertToFormat(QImage.Format.Format_RGBA8888)
+
+        width = qimage.width()
+        height = qimage.height()
+
+        ptr = qimage.bits()
+        arr = np.frombuffer(ptr, dtype=np.uint8)
+        arr = arr.reshape(qimage.height(), qimage.width(), 4)
+
+        return arr.copy()
 
 
     def resizeGL(self, w, h):

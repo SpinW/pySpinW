@@ -35,6 +35,10 @@ class DisplayOptions:
     show_lattice_axes: bool = False
     orthogonal_lattice_axes: bool = False
 
+    background_color: tuple[float, float, float] = 0.05, 0.05, 0.08
+    default_exchange_color: tuple[float, float, float] = 0.2, 0.4, 0.8
+    default_site_color: tuple[float, float, float] = 0.7, 0.8, 0.6
+
 
     def serialise(self) -> str:
         """ Serialise settings object to a string"""
@@ -139,6 +143,8 @@ class DisplayOptionsToolbar(QWidget):
 
     displayOptionsChanged = Signal()
     requestViewReset = Signal()
+    requestSnapshot = Signal()
+    requestSettings = Signal()
 
     def _add_slider(self,
                     min_value: float, max_value: float, start_value: float,
@@ -278,8 +284,11 @@ class DisplayOptionsToolbar(QWidget):
                                                                value=settings.orthogonal_lattice_axes)
 
         self.reset_view = self._toolbar_button("Reset view", icon="datum")
-
         self.reset_view.clicked.connect(self.on_reset_view_clicked)
+
+        self.snapshot = self._toolbar_button("Snapshot", icon="camera")
+        self.snapshot.clicked.connect(self.on_snapshot)
+
 
         # Pad right, and set layout
         self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
@@ -325,6 +334,12 @@ class DisplayOptionsToolbar(QWidget):
         """ Save the current settings"""
         with open(self.settings_filename, 'w') as file:
             file.write(self.display_options().serialise())
+
+    def on_snapshot(self):
+        """ Save a snapshot of the current render """
+        self.requestSnapshot.emit()
+
+
 
     def closeEvent(self, event):
         """ Qt override, window closed"""

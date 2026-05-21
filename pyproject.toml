@@ -33,6 +33,7 @@ dependencies = [
     "pyopengl>=3.1.10",
     "PySide6-Essentials",
     "matplotlib>=3.10.5",
+    "imageio",
 ]
 
 [tool.maturin]

@@ -1,9 +1,12 @@
 """ Viewer window """
 import ctypes
+import os
 import sys
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication
+from imageio import imwrite
+
+from PySide6.QtCore import Qt, QDir
+from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication, QFileDialog, QMessageBox
 
 from pyspinw import Structure
 from pyspinw.gui.crystalview import CrystalViewerWidget
@@ -45,6 +48,7 @@ class Viewer(QWidget):
         self.viewer.display_options = self.toolbar.display_options()
         self.toolbar.displayOptionsChanged.connect(self.on_display_options_changed)
         self.toolbar.requestViewReset.connect(self.on_reset_view_requested)
+        self.toolbar.requestSnapshot.connect(self.on_snapshot_requested)
 
         #
         # Wire up text and graphics
@@ -54,6 +58,52 @@ class Viewer(QWidget):
         self.text_display.selectionChanged.connect(self.on_text_selection_changed)
         self.viewer.hoverChanged.connect(self.on_render_hover_changed)
         self.viewer.selectionChanged.connect(self.on_render_selection_changed)
+
+    def on_snapshot_requested(self):
+        """ Take a snapshot """
+
+        dialog = QFileDialog(self)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        dialog.setOption(QFileDialog.DontConfirmOverwrite, True)
+        dialog.setNameFilters([
+            "PNG Images (*.png)",
+            "JPEG Images (*.jpg *.jpeg)",
+            "All Files (*)"
+        ])
+        dialog.selectNameFilter("PNG Images (*.png)")
+        dialog.setDefaultSuffix("png")
+        dialog.setDirectory(QDir.currentPath())
+
+
+        if dialog.exec():
+            filename = dialog.selectedFiles()[0]
+        else:
+            return
+
+        if not filename:
+            # Cancelled
+            return
+
+        if os.path.exists(filename):
+            # File exists
+
+            result = QMessageBox.question(
+                self,
+                "Overwrite file?",
+                "This file already exists, do you want to replace it",
+                QMessageBox.Ok | QMessageBox.Cancel
+            )
+
+            if not result == QMessageBox.Ok:
+                return
+
+        self.save_snapshot(filename)
+
+
+    def save_snapshot(self, filename):
+        """ Write the current viewer data to a file"""
+        data = self.viewer.snapshot()
+        imwrite(filename, data)
 
 
     def on_display_options_changed(self):
@@ -87,8 +137,37 @@ class Viewer(QWidget):
 
         super().closeEvent(event)
 
+def snapshot(object: Hamiltonian | Structure, zoom_factor: float):
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
+    except Exception:
+        pass
 
-def show_hamiltonian(object: Hamiltonian | Structure):
+    if isinstance(object, Structure):
+        object = Hamiltonian(object, [])
+
+    if not isinstance(object, Hamiltonian):
+        raise TypeError("Viewer needs to be given a Hamiltonian or Structure")
+
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+
+    app.setWindowIcon(png_icon("pyspinw"))
+
+    # Useful for checking particular display options
+    # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+    # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
+    viewer = Viewer(object)
+    viewer.setWindowTitle("Hamiltonian Viewer")
+    viewer.resize(800, 600)
+    viewer.show()
+
+    app.exec()
+
+
+def show_hamiltonian(object: Hamiltonian | Structure, block=True):
     """ Show a Hamiltonian in the viewer"""
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
