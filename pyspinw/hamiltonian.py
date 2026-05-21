@@ -598,15 +598,16 @@ class Hamiltonian(SPWSerialisable):
 
         energies, intensities, sab, wavefunctions = result
 
-        if sab is not None:
-            sab = np.transpose(sab, (3, 2, 1, 0)) if use_rust else sab
-
+        if sab is not None and use_rust:
+            sab = np.transpose(sab, (3, 2, 1, 0))
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
         if intensity_unit == IntensityUnits.PERCELL:
             scale_factor = rotations.shape[0] / np.prod(scaling)
             intensities = [res * scale_factor for res in intensities]
+            if sab is not None:
+                sab = sab * scale_factor
 
         return energies, intensities, sab, wavefunctions, scaling, rlu_to_cart
 
