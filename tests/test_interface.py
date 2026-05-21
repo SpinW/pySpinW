@@ -16,11 +16,19 @@ QVECS = np.array([[0.1, 0, 0], [0.2, 0, 0], [0.1, 0.1, 0], [0.1, 0.1, 0.1], [0, 
 REFDAT = scipy.io.loadmat(os.path.join(os.path.dirname(__file__), 'matlab_test_data.mat'))
 INTHIGH = 100
 
-# Monkey patch the parallelisation routines so calculations show up in coverage
-from concurrent.futures import ThreadPoolExecutor
+# Monkey patch the parallelisation routines to run in serial so calculations show up in coverage
+from concurrent.futures import Future, Executor
 import sys
+class DummyExecutor(Executor):
+    def submit(self, fn, *args, **kwargs):
+        f = Future()
+        try:
+            f.set_result(fn(*args, **kwargs))
+        except BaseException as e:
+            f.set_exception(e)
+        return f
 def get_Executor():
-    return ThreadPoolExecutor
+    return DummyExecutor
 sys.modules['pyspinw.calculations.spinwave'].get_Executor = get_Executor
 
 def _test_ref_data(test_name, energy, intensity, ignoreQ=None, ref_id=1):
