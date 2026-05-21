@@ -52,7 +52,6 @@ def test_energy_behaviour_summation_supercell():
     E(UU, UU) = E(DD, UU)
     E(UU, UD) = D(UU, DU) = 0
     """
-
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
     x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
@@ -107,7 +106,6 @@ def test_energy_behaviour_summation_supercell():
     E(UU, UU) = E(DD, UU)
     E(UU, UD) = D(UU, DU) = 0
     """
-
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
     x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
@@ -162,7 +160,6 @@ def test_energy_behaviour_rotation_supercell():
     Check that:
     E(UU) = -E(UD)
     """
-
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
     x = LatticeSite(0, 0, 0.5, 0,0,1, name="X")
@@ -208,7 +205,6 @@ def test_rotation_supercell_error():
 
 def test_optimise_transformation_supercell():
     """ Test optimisation of a supercell where spins need to be as unaligned as possible """
-
     a = LatticeSite(0.25,0,0, 1, 0, 0, name="A")
     x = LatticeSite(0.5, 0, 0, 1, 1, 1, name="X")
 

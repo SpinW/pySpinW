@@ -1,6 +1,6 @@
 """ Tests for interface functions (doubles as system tests) """
 
-# Tests compares with Matlab output, generated from: 
+# Tests compares with Matlab output, generated from:
 # https://gist.github.com/mducle/1026b0940f3f9cf4f722261e728885d7
 
 import pytest

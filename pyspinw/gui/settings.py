@@ -1,3 +1,5 @@
+""" Window that shows when settings button is clicked """
+
 from dataclasses import replace
 
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QDialogButtonBox, QColorDialog, QWidget, QGridLayout
@@ -7,6 +9,8 @@ from pyspinw.gui.util import QRightLabel, QColorPatch
 
 
 class SettingsDialog(QDialog):
+    """ Dialog with settings options """
+
     def __init__(self, current_options: DisplayOptions, parent=None):
         self._current_options = current_options
         super().__init__(parent=parent)
@@ -46,6 +50,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(buttons)
 
     def new_display_options(self):
+        """ Get the updated display options """
         return replace(
             self._current_options,
             background_color = self._background.rgb,

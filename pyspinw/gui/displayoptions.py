@@ -1,3 +1,5 @@
+""" Dataclass for display/rendering options"""
+
 import json
 from dataclasses import dataclass, asdict
 

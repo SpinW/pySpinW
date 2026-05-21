@@ -72,7 +72,6 @@ class Viewer(QWidget):
 
     def on_snapshot_requested(self):
         """ Take a snapshot """
-
         dialog = QFileDialog(self)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         dialog.setOption(QFileDialog.DontConfirmOverwrite, True)
@@ -148,7 +147,7 @@ class Viewer(QWidget):
 
         try:
             del _VIEWERS[self._unique_id]
-        except:
+        except Exception:
             pass
 
         super().closeEvent(event)
@@ -158,7 +157,8 @@ _APP = None
 _VIEWERS = {}
 
 def get_app():
-    global _APP
+    """ Get the Qt instance """
+    global _APP #noqa: PLW0603
     app = QApplication.instance()
     if app is None:
         _APP = QApplication(sys.argv)

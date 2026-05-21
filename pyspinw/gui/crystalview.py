@@ -463,7 +463,6 @@ class CrystalViewerWidget(QOpenGLWidget):
 
     def snapshot(self) -> np.ndarray:
         """ Get the data from the current frame """
-
         qimage = self.grabFramebuffer()
         qimage = qimage.convertToFormat(QImage.Format.Format_RGBA8888)
 

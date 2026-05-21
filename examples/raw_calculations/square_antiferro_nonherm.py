@@ -1,6 +1,6 @@
 """Example of a square lattice antiferromagnet with axial SIA and imaginary modes
    
-   This example is to test the non-hermitian calculations
+This example is to test the non-hermitian calculations
 """
 import sys
 
