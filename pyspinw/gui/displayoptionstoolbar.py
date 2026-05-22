@@ -160,6 +160,10 @@ class DisplayOptionsToolbar(QWidget):
         self._sites_color = settings.default_site_color
         self._exchanges_color = settings.default_exchange_color
 
+        self._selected_color = settings.selected_color
+        self._hover_color = settings.hover_color
+        self._selected_hover_color = settings.selected_hover_color
+
         #
         # Show hide options
         #
@@ -295,7 +299,10 @@ class DisplayOptionsToolbar(QWidget):
             prettify = self.prettify.isChecked(),
             background_color = self._background_color,
             default_site_color = self._sites_color,
-            default_exchange_color = self._exchanges_color
+            default_exchange_color = self._exchanges_color,
+            selected_color = self._selected_color,
+            hover_color = self._hover_color,
+            selected_hover_color = self._selected_hover_color,
         )
 
     def on_snapshot(self):
@@ -311,6 +318,10 @@ class DisplayOptionsToolbar(QWidget):
             self._background_color = value.background_color
             self._sites_color = value.default_site_color
             self._exchanges_color = value.default_exchange_color
+
+            self._selected_color = value.selected_color
+            self._hover_color = value.hover_color
+            self._selected_hover_color = value.selected_hover_color
 
             self.displayOptionsChanged.emit()
 

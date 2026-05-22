@@ -174,6 +174,10 @@ class CrystalViewerWidget(QOpenGLWidget):
         #     self.object_shader.use()
         #     self.sphere.render_triangles()
 
+        # Set up colors for selection shaders
+        self.selection_shader.selected_color = self.display_options.selected_color
+        self.selection_shader.hover_color = self.display_options.hover_color
+        self.selection_shader.selected_hover_color = self.display_options.selected_hover_color
 
         # Do actual the rendering
 
@@ -465,9 +469,6 @@ class CrystalViewerWidget(QOpenGLWidget):
         """ Get the data from the current frame """
         qimage = self.grabFramebuffer()
         qimage = qimage.convertToFormat(QImage.Format.Format_RGBA8888)
-
-        width = qimage.width()
-        height = qimage.height()
 
         ptr = qimage.bits()
         arr = np.frombuffer(ptr, dtype=np.uint8)

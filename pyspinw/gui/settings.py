@@ -35,6 +35,18 @@ class SettingsDialog(QDialog):
         inner_layout.addWidget(QRightLabel("Exchange Default Color"), 2, 0)
         inner_layout.addWidget(self._exchanges, 2, 1)
 
+        self._selected = QColorPatch(*current_options.selected_color, parent=self)
+        inner_layout.addWidget(QRightLabel("Selection Color"), 3, 0)
+        inner_layout.addWidget(self._selected, 3, 1)
+
+        self._hover = QColorPatch(*current_options.hover_color, parent=self)
+        inner_layout.addWidget(QRightLabel("Hover Color"), 4, 0)
+        inner_layout.addWidget(self._hover, 4, 1)
+
+        self._selected_hover = QColorPatch(*current_options.selected_hover_color, parent=self)
+        inner_layout.addWidget(QRightLabel("Selected Hover Color"), 5, 0)
+        inner_layout.addWidget(self._selected_hover, 5, 1)
+
         # Add inner widget
         layout.addWidget(inner_widget)
 
@@ -55,7 +67,10 @@ class SettingsDialog(QDialog):
             self._current_options,
             background_color = self._background.rgb,
             default_exchange_color = self._exchanges.rgb,
-            default_site_color = self._sites.rgb)
+            default_site_color = self._sites.rgb,
+            selected_color = self._selected.rgb,
+            hover_color = self._hover.rgb,
+            selected_hover_color = self._selected_hover.rgb)
 
 
 if __name__ == "__main__":
