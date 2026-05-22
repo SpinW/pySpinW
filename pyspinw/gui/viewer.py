@@ -191,7 +191,6 @@ def snapshot(object: Hamiltonian | Structure,
              filename: str | None = None,
              view_point: ArrayLike = (0,0,10.0),
              display_options: DisplayOptions | None = None):
-
     """ Make (and display) an image of a structure/hamiltonian
 
     If filename is not a string, it will create a matplotlib plot window
@@ -203,7 +202,6 @@ def snapshot(object: Hamiltonian | Structure,
                             configured for.
 
     """
-
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
     except Exception:
