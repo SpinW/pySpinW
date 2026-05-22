@@ -4,10 +4,12 @@ import os
 import sys
 import threading
 
+import numpy as np
 from imageio import imwrite
 
 from PySide6.QtCore import Qt, QDir
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication, QFileDialog, QMessageBox
+from numpy._typing import ArrayLike
 
 from pyspinw import Structure
 from pyspinw.gui.crystalview import CrystalViewerWidget
@@ -17,7 +19,7 @@ from pyspinw.gui.displayoptionstoolbar import DisplayOptionsToolbar
 from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
-
+from pyspinw.util import rotation_matrix, rotation_from_z
 
 _unique_id_counter = -1
 def _generate_unique_id():
@@ -29,9 +31,28 @@ def _generate_unique_id():
 class Viewer(QWidget):
     """ Main viewer class """
 
-    def __init__(self, hamiltonian: Hamiltonian, parent=None):
+    def __init__(self,
+                 hamiltonian: Hamiltonian,
+                 initial_rotation: np.ndarray | None = None,
+                 initial_distance: float | None = None,
+                 display_options: DisplayOptions | None = None,
+                 parent=None):
 
         super().__init__(parent)
+
+        # Check parameters
+
+        if initial_rotation is not None:
+            if not np.allclose(initial_rotation @ initial_rotation.T, np.eye(3)):
+                raise ValueError("Expected initial_rotation to be orthogonal")
+
+            if not np.isclose(np.linalg.det(initial_rotation), 1):
+                raise ValueError("Expected a rotation, not a rotoreflection")
+
+        if initial_distance is not None and initial_distance <= 0:
+            raise ValueError("Expected initial distance to be strictly positive")
+
+        # Initialisation
 
         self._unique_id = _generate_unique_id()
 
@@ -39,10 +60,10 @@ class Viewer(QWidget):
 
         layout = QVBoxLayout()
 
-        self.toolbar = DisplayOptionsToolbar()
+        self.toolbar = DisplayOptionsToolbar(initial_display_options=display_options)
 
         splitter = QSplitter(Qt.Horizontal)
-        self.viewer = CrystalViewerWidget(render_model)
+        self.viewer = CrystalViewerWidget(render_model, initial_rotation, initial_distance)
         self.text_display = TextDisplay(render_model)
         splitter.addWidget(self.viewer)
         splitter.addWidget(self.text_display)
@@ -164,6 +185,49 @@ def get_app():
         _APP = QApplication(sys.argv)
         app = _APP
     return app
+
+
+def snapshot(object: Hamiltonian | Structure,
+             view_point: ArrayLike = (0,0,10.0),
+             display_options: DisplayOptions | None = None):
+
+    """ Make (and display) an image of a structure/hamiltonian """
+
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
+    except Exception:
+        pass
+
+    if isinstance(object, Structure):
+        object = Hamiltonian(object, [])
+
+    if not isinstance(object, Hamiltonian):
+        raise TypeError("Viewer needs to be given a Hamiltonian or Structure")
+
+    # Parameters for setting the view
+    view_point = np.array(view_point)
+    rotation = rotation_from_z(view_point)
+    distance = np.sqrt(np.sum(view_point**2))
+
+
+    app = get_app()
+
+    app.setWindowIcon(png_icon("pyspinw"))
+
+    # Useful for checking particular display options
+    # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+    # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
+    viewer = Viewer(object, rotation, distance, display_options)
+    viewer.setWindowTitle("Hamiltonian Viewer")
+    viewer.resize(800, 600)
+    viewer.show()
+
+    # Save a reference
+    _VIEWERS[viewer._unique_id] = viewer
+
+
+    app.exec()
 
 
 def show_object(object: Hamiltonian | Structure, block=True):

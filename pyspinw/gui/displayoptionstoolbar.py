@@ -136,7 +136,7 @@ class DisplayOptionsToolbar(QWidget):
 
         return btn
 
-    def __init__(self, parent=None):
+    def __init__(self, initial_display_options: DisplayOptions | None = None, parent=None):
         super().__init__(parent)
 
         self.bar_layout = QHBoxLayout()
@@ -145,12 +145,20 @@ class DisplayOptionsToolbar(QWidget):
         # Load settings
         #
 
-        if os.path.exists(self.settings_filename):
-            with open(self.settings_filename, 'r') as file:
-                settings = DisplayOptions.deserialise(file.read())
+        if initial_display_options is None:
+
+            if os.path.exists(self.settings_filename):
+                with open(self.settings_filename, 'r') as file:
+                    settings = DisplayOptions.deserialise(file.read())
+
+            else:
+                settings = DisplayOptions()
 
         else:
-            settings = DisplayOptions()
+            if not isinstance(initial_display_options, DisplayOptions):
+                raise TypeError("Expected initial_display_options to be an instance of DisplayOptions")
+
+            settings = initial_display_options
 
         #
         # Variables for color preference

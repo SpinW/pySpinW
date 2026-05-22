@@ -48,7 +48,10 @@ class CrystalViewerWidget(QOpenGLWidget):
     axes_size = 100
     axes_padding = 10
 
-    def __init__(self, render_model: RenderModel):
+    def __init__(self,
+                 render_model: RenderModel,
+                 initial_rotation: np.ndarray | None = None,
+                 initial_distance: float | None = None):
 
         super().__init__()
 
@@ -68,8 +71,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         # View details
         self.view_origin = render_model.expanded.structure.unit_cell.centre
-        self.view_rotation = np.eye(3)
-        self.view_radius = 10.0
+        self.view_rotation = np.eye(3) if initial_rotation is None else initial_rotation
+        self.view_radius = 10.0 if initial_distance is None else initial_distance
 
         # These variables are used for selection / highlighting
         self.mouse_position: QPoint | None = None
