@@ -285,7 +285,7 @@ class SingleCrystal(Sample3D):
                                  intensity_unit: IntensityUnits | str = 'cell'):
         """ Get energy and intensity data"""
         # Note: we don't use the _ method because we want to ignore non-magnetic sites
-        return self.hamiltonian.energies_and_intensities(
+        return self.hamiltonian._energies_and_intensities(
             q_points, field=field, use_rust=use_rust, use_rotating=use_rotating, intensity_unit=intensity_unit)
 
 
@@ -346,7 +346,7 @@ class Multidomain(Sample3D):
             transformed_q = q_vectors @ transformation.T
             transformed_field = None if field is None else field @ transformation.T
 
-            energy, intensities = self.hamiltonian.energies_and_intensities(
+            energy, intensities = self.hamiltonian._energies_and_intensities(
                         transformed_q,
                         field=transformed_field,
                         use_rust=use_rust)
@@ -465,7 +465,7 @@ class Powder(Sample1D):
         qs = path.q_values()
         points = np.concatenate([generator.points*q for q in qs], axis=0)
 
-        energies, intensities = self.hamiltonian.energies_and_intensities(points, use_rust=use_rust)
+        energies, intensities = self.hamiltonian._energies_and_intensities(points, use_rust=use_rust)
 
         energies = np.real(np.array(energies))
         intensities = np.real(np.array(intensities))

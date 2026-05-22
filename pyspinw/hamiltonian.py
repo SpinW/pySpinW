@@ -351,7 +351,7 @@ class Hamiltonian(SPWSerialisable):
         """ Print a textual summary to stdout"""
         print(self.text_summary)
 
-    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
+    @check_sizes(field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self,
                                  path: Path,
                                  field: ArrayLike | None = None,
@@ -378,6 +378,7 @@ class Hamiltonian(SPWSerialisable):
             components=components)
 
 
+    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def _energies_and_intensities(self,
                               q_vectors: np.ndarray,
                               field: ArrayLike | None = None,
@@ -645,8 +646,8 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                    intensity_unit, components))
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                     intensity_unit, components))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, np.real(series[0]), 'k')
@@ -688,8 +689,8 @@ class Hamiltonian(SPWSerialisable):
             ax = fig.get_axes()[0]
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                    intensity_unit, components))
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                     intensity_unit, components))
         intensity[np.where(np.isnan(intensity))] = 0
         energy[np.where(np.isnan(energy))] = 0
         if evect is None:
@@ -766,7 +767,7 @@ class Hamiltonian(SPWSerialisable):
         e_max = q_slice.e_max
 
         # Step 1: Calculate all energies and intensities at each q-point
-        energies, intensities = self.energies_and_intensities(
+        energies, intensities = self._energies_and_intensities(
             q_slice.q_points(),
             field=field,
             use_rust=use_rust,
@@ -845,7 +846,7 @@ class Hamiltonian(SPWSerialisable):
                                  field: ArrayLike | None = None,
                                  use_rust: bool = True) -> list[np.ndarray]:
         """ Return energies as series corresponding to q, sorted by energy """
-        energy, intensities = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+        energy, intensities = self._energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
 
         energy = np.array(energy)
 
