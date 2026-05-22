@@ -188,10 +188,21 @@ def get_app():
 
 
 def snapshot(object: Hamiltonian | Structure,
+             filename: str | None = None,
              view_point: ArrayLike = (0,0,10.0),
              display_options: DisplayOptions | None = None):
 
-    """ Make (and display) an image of a structure/hamiltonian """
+    """ Make (and display) an image of a structure/hamiltonian
+
+    If filename is not a string, it will create a matplotlib plot window
+
+    :param object: Hamiltonian or Structure object to show
+    :param filename: Output filename
+    :param view_point: Position of camera
+    :param display_options: DisplayOptions object to affect settings, otherwise, it will use whatever the viewer is
+                            configured for.
+
+    """
 
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
@@ -221,13 +232,37 @@ def snapshot(object: Hamiltonian | Structure,
     viewer = Viewer(object, rotation, distance, display_options)
     viewer.setWindowTitle("Hamiltonian Viewer")
     viewer.resize(800, 600)
+
+    viewer.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+
     viewer.show()
 
-    # Save a reference
-    _VIEWERS[viewer._unique_id] = viewer
+    app.processEvents()
 
+    # Force layout/polish/update
+    viewer.ensurePolished()
+    viewer.layout().activate()
 
-    app.exec()
+    # If needed:
+    viewer.repaint()
+
+    # Make the widget paint
+    # viewer.viewer.paintGL()
+
+    data = viewer.viewer.snapshot()
+
+    viewer.close()
+
+    if filename is None:
+
+        import matplotlib.pyplot as plt
+
+        return plt.imshow(data)
+
+    else:
+
+        # Write to file
+        imwrite(filename, data)
 
 
 def show_object(object: Hamiltonian | Structure, block=True):

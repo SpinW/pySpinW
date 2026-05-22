@@ -35,5 +35,13 @@ if __name__ == "__main__":
 
     hamiltonian.print_summary()
 
+    snapshot(hamiltonian,
+             filename="snapshot_test.png",
+             view_point=(0, 0, 10),
+             display_options=DisplayOptions(show_sites=False))
 
     snapshot(hamiltonian, view_point=(10,0,0), display_options=DisplayOptions(default_exchange_color=(1,0,0), show_sites=False))
+
+    import matplotlib.pyplot as plt
+
+    plt.show()
