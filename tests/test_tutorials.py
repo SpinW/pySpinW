@@ -24,7 +24,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutor
                           'kagome_antiferromagnet',
                           'kagome_ferromagnet',
                           'kagome_supercell',
-                          'powder_fitting',
+                          #'powder_fitting', # Takes too long and fails on OSX
                           'powder_spectrum',
                           'reciprocal_space_map',
                           'square_antiferromagnet',
