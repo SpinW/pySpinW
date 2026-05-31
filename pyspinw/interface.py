@@ -408,19 +408,19 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
     :param bond: The bond index (If this is given the _distance parameters are ignored)
     :param max_distance: Maximum Cartesian distance (in Angstrom) at which exchanges are made
     :param min_distance: Minimum Cartesian distance (in Angstrom) at which exchanges are made
-    :param direction_filter: Supply a DirectionalityFilter object (e.g. using `filter`)
+    :param direction_filter: Supply a DirectionalityFilter object (e.g. using ``filter``)
                              to only create exchanges in certain directions
     :param max_order: Maximum "order" of exchanges
-    :param j" Constant for scalar valued Heisenberg exchanges (only needed for Heisenberg)
-    :param j_x" Constant for x component of Heisenberg-like exchanges (only needed for Diagonal)
-    :param j_y" Constant for y component of Heisenberg-like exchanges (only needed for Diagonal)
-    :param j_z" Constant for z component of Heisenberg-like exchanges (only needed for Diagonal, Ising and XY)
-    :param j_xy" Constant for x and y components of Heisenberg-like exchanges (only needed for XY and XXZ)
-    :param d_x" Constant for x component of Dzyaloshinskii-Moriya exchange (DM)
-    :param d_y" Constant for y component of Dzyaloshinskii-Moriya exchange (DM)
-    :param d_z" Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
+    :param j: Constant for scalar valued Heisenberg exchanges (only needed for Heisenberg)
+    :param j_x: Constant for x component of Heisenberg-like exchanges (only needed for Diagonal)
+    :param j_y: Constant for y component of Heisenberg-like exchanges (only needed for Diagonal)
+    :param j_z: Constant for z component of Heisenberg-like exchanges (only needed for Diagonal, Ising and XY)
+    :param j_xy: Constant for x and y components of Heisenberg-like exchanges (only needed for XY and XXZ)
+    :param d_x: Constant for x component of Dzyaloshinskii-Moriya exchange (DM)
+    :param d_y: Constant for y component of Dzyaloshinskii-Moriya exchange (DM)
+    :param d_z: Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
     :param exchange_parameters: Parameters can be supplied in a dictionary instead
-    :param naming_pattern: String used to assign names to exchanges, see `apply_naming_convention`
+    :param naming_pattern: String used to assign names to exchanges, see ``apply_naming_convention``
     :param color: Colour to draw the exchange with
 
     :returns: list of exchanges
