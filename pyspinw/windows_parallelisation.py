@@ -19,14 +19,12 @@ def get_Executor():
 def set_up_windows_python_parallelisation():
     """ This needs to be run to enable python parallelisation on windows
 
-    Call it like this at the start of your script:
+    Call it like this at the start of your script::
 
-    ```
-    if __name__ == "__main__":
-        set_up_windows_python_parallelisation()
+        if __name__ == "__main__":
+            set_up_windows_python_parallelisation()
 
-        [your code]
-    ```
+            # Your code here
 
 
     Applies freeze_support() and sets a flag to be used elsewhere
