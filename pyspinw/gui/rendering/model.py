@@ -65,7 +65,9 @@ class Model:
         glCullFace(GL_FRONT)
         for vao, length in zip(self._vaos, self._lengths):
             glBindVertexArray(vao)
-            glLineWidth(1.0)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glDrawArrays(GL_TRIANGLES, 0, length)
+
+
         glBindVertexArray(0)
+

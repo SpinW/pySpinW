@@ -33,6 +33,7 @@ _z_axis_mat = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, .5], [0, 0, 0, 1]]
 _y_axis_mat = np.array([[1, 0, 0, 0], [0, 0, 1, .5], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 _x_axis_mat = np.array([[0, 0, 1, .5], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 
+_selection_size = 0.2
 
 class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
@@ -103,9 +104,17 @@ class CrystalViewerWidget(QOpenGLWidget):
         try:
             # Normal objects
             self.sphere= Sphere(3)
+            self.selection_sphere = Sphere(3, padding=0.1)
+
             self.small_sphere = Sphere(3, 0.1)
+            self.selection_small_sphere = Sphere(3, radius=0.1, padding=0.01)
+
             self.tube = Tube()
+            self.selection_tube = Tube(padding=0.2)
+
             self.arrow = Arrow()
+            self.selection_arrow = Arrow(padding=0.03, modify_ring=True)
+
             self.cube = WireframeCube()
 
             # Normal shaders
@@ -204,6 +213,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         exchange_scale = 0.1 * self.display_options.exchange_scaling
         exchange_scaling = np.diag([exchange_scale, exchange_scale, 1, 1])
+        exchange_selection_scale = ((1 + _selection_size)/1)*exchange_scale
+        exchange_selection_scaling = np.diag([exchange_selection_scale, exchange_selection_scale, 1, 1])
 
         if self.object_shader is not None and self.selection_shader is not None:
 
@@ -236,6 +247,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                         show_arrow = site.is_magnetic and self.display_options.show_atoms_not_spins
                         render_object = self.arrow if show_arrow else self.small_sphere
+                        selection_render_object = self.selection_arrow if show_arrow else self.selection_small_sphere
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
                             site_model_matrix = model_matrix @ spin_scale_matrix
@@ -252,7 +264,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                                 self.selection_shader.model_matrix = site_model_matrix
                                 self.selection_shader.mode = mode
                                 self.selection_shader.use()
-                                render_object.render_back()
+                                selection_render_object.render_back()
 
                             self.object_shader.model_matrix = site_model_matrix
                             self.object_shader.use()
@@ -280,14 +292,15 @@ class CrystalViewerWidget(QOpenGLWidget):
                             mode = SelectionMode.NOT_SELECTED
 
                     for model_matrix in exchange.model_matrices(self.display_options.prettify):
-                        exchange_model_matrix = model_matrix @ exchange_scaling
 
                         if mode != SelectionMode.NOT_SELECTED:
+                            exchange_model_matrix = model_matrix @ exchange_selection_scaling
                             self.selection_shader.model_matrix = exchange_model_matrix
                             self.selection_shader.mode = mode
                             self.selection_shader.use()
-                            self.tube.render_back()
+                            self.selection_tube.render_back()
 
+                        exchange_model_matrix = model_matrix @ exchange_scaling
                         self.object_shader.model_matrix = exchange_model_matrix
                         self.object_shader.use()
                         self.tube.render_triangles()
