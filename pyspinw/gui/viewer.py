@@ -5,6 +5,7 @@ import sys
 import threading
 
 import numpy as np
+from PySide6.QtGui import QSurfaceFormat
 from imageio import imwrite
 
 from PySide6.QtCore import Qt, QDir
@@ -20,6 +21,24 @@ from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.util import rotation_matrix, rotation_from_z
+
+# Force desktop OpenGL before any Qt import (critical on macOS)
+os.environ.setdefault("QT_OPENGL", "desktop")
+os.environ.setdefault("QT_MAC_WANTS_LAYER", "1")
+
+
+# Request OpenGL 4.1 core profile — must be called before QApplication is created.
+# Equivalent to GLFW's glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR/MINOR, 4/1)
+# and glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE).
+_fmt = QSurfaceFormat()
+_fmt.setVersion(4, 1)
+_fmt.setProfile(QSurfaceFormat.CoreProfile)
+_fmt.setRenderableType(QSurfaceFormat.OpenGL)
+_fmt.setSamples(4)
+_fmt.setDepthBufferSize(24)
+_fmt.setStencilBufferSize(8)
+QSurfaceFormat.setDefaultFormat(_fmt)
+
 
 _unique_id_counter = -1
 def _generate_unique_id():
