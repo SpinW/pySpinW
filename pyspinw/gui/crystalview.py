@@ -434,7 +434,9 @@ class CrystalViewerWidget(QOpenGLWidget):
         # ID framebuffer
         #
 
-        self.id_framebuffer.use(self.width(), self.height())
+        self.id_framebuffer.use(
+            int(self.width()*dpr),
+            int(self.height()*dpr))
 
         if self.id_shader is not None:
 
