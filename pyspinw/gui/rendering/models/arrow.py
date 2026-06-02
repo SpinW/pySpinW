@@ -33,7 +33,7 @@ class Arrow(Model):
         x_shaft = (r_shaft + padding) * x
         y_shaft = (r_shaft + padding) * y
 
-        z_transition =  1-(head_fraction + padding)
+        z_transition =  1-(head_fraction + 0.01*padding)
 
         vertices_and_normals = []
 
