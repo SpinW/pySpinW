@@ -78,7 +78,6 @@ class GraphicalSlider(QWidget):
 
     def value(self) -> float:
         """ Get the value in floats """
-
         zero_one = self.slider.value() / 1000
 
         return self.min_value + zero_one * (self.max_value - self.min_value)

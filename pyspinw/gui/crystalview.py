@@ -391,10 +391,10 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             # Lattice axes viewport
             glViewport(
-                (self.width() - self.axes_size - self.axes_padding) * dpr,
-                self.axes_padding * dpr,
-                self.axes_size * dpr,
-                self.axes_size * dpr
+                int((self.width() - self.axes_size - self.axes_padding) * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr)
             )
 
             self.axes_shader.camera = self.camera
