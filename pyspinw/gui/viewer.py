@@ -55,9 +55,12 @@ class Viewer(QWidget):
                  initial_rotation: np.ndarray | None = None,
                  initial_distance: float | None = None,
                  display_options: DisplayOptions | None = None,
+                 save_config_on_exit: bool = True,
                  parent=None):
 
         super().__init__(parent)
+
+        self.save_config_on_exit = save_config_on_exit
 
         # Check parameters
 
@@ -79,7 +82,10 @@ class Viewer(QWidget):
 
         layout = QVBoxLayout()
 
-        self.toolbar = DisplayOptionsToolbar(initial_display_options=display_options)
+        self.toolbar = DisplayOptionsToolbar(
+            initial_display_options=display_options,
+            save_config_on_exit=self.save_config_on_exit,
+            max_size_object_scaling=hamiltonian.structure.unit_cell.main_diagonal_length)
 
         splitter = QSplitter(Qt.Horizontal)
         self.viewer = CrystalViewerWidget(render_model, initial_rotation, initial_distance)
@@ -246,7 +252,7 @@ def snapshot(object: Hamiltonian | Structure,
     # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
     # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
-    viewer = Viewer(object, rotation, distance, display_options)
+    viewer = Viewer(object, rotation, distance, display_options, save_config_on_exit=False)
     viewer.setWindowTitle("Hamiltonian Viewer")
     viewer.resize(800, 600)
 

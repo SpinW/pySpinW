@@ -44,17 +44,17 @@ class GraphicalSlider(QWidget):
 
         self.min_value = min_value
         self.max_value = max_value
-        start_position = int(100 * (start_value - min_value) / (max_value - min_value))
+        start_position = int(1000 * (start_value - min_value) / (max_value - min_value))
 
         if start_position < 0:
             start_position = 0
 
-        elif start_position > 100:
-            start_position = 100
+        elif start_position > 1000:
+            start_position = 1000
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(0)
-        self.slider.setMaximum(100)
+        self.slider.setMaximum(1000)
         self.slider.setValue(start_position)
         self.slider.valueChanged.connect(self.on_slider_changed)
         self.slider.setMinimumSize(QSize(80, 20))
@@ -78,10 +78,8 @@ class GraphicalSlider(QWidget):
 
     def value(self) -> float:
         """ Get the value in floats """
-        ranged = 0.02 * self.slider.value() - 1 # in range [-1, 1]
-        ranged *= abs(ranged) # Make it quadratic
 
-        zero_one = 0.5*(ranged+1)
+        zero_one = self.slider.value() / 1000
 
         return self.min_value + zero_one * (self.max_value - self.min_value)
 
@@ -136,8 +134,15 @@ class DisplayOptionsToolbar(QWidget):
 
         return btn
 
-    def __init__(self, initial_display_options: DisplayOptions | None = None, parent=None):
+    def __init__(self,
+                 initial_display_options: DisplayOptions | None = None,
+                 max_size_object_scaling: float = 10.0,
+                 save_config_on_exit: bool = True,
+                 parent=None):
+
         super().__init__(parent)
+
+        self.save_config_on_exit = save_config_on_exit
 
         self.bar_layout = QHBoxLayout()
 
@@ -216,7 +221,7 @@ class DisplayOptionsToolbar(QWidget):
 
 
         self.spin_scale_slider = self._add_slider(
-            0, 10, settings.atom_spin_scaling,
+            0, max_size_object_scaling, settings.atom_spin_scaling,
             left_label=IconWidget("small_moments", "Smaller Sites"),
             right_label=IconWidget("big_moments", "Larger Sites"),
             alt_text="Site scale factor")
@@ -231,7 +236,7 @@ class DisplayOptionsToolbar(QWidget):
                                                    value=settings.use_atomic_radii)
 
         self.exchange_scale_slider = self._add_slider(
-            0, 1, settings.exchange_scaling,
+            0, max_size_object_scaling, settings.exchange_scaling,
             left_label=IconWidget("small_exchange", "Smaller Exchanges"),
             right_label=IconWidget("big_exchange", "Larger Exchanges"),
             alt_text="Exchange thickness")
@@ -341,7 +346,8 @@ class DisplayOptionsToolbar(QWidget):
     def closeEvent(self, event):
         """ Qt override, window closed"""
         # we want to save the settings before exiting
-        self.save_settings()
+        if self.save_config_on_exit:
+            self.save_settings()
 
         super().closeEvent(event)
 
