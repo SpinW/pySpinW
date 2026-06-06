@@ -54,12 +54,16 @@ requires = ["maturin>=1.3,<2.0",
             "numpy>=2.0.0"]
 build-backend = "maturin"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.15.16",
+]
+
 [tool.ruff]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["D1",  # undocumented objects 
-          "D2",  # docstring formating w.r.t. whitespace
+select = ["D",  # pydocstyle docstring checks
           "E",  # pycodestyle errors
           "PL",  # pylint
           "W",  # pycodestyle warnings
@@ -73,9 +77,11 @@ ignore = ["D105",  # Missing docstring in magic method (we know what magic metho
           "PLR",  # pylint refactor suggestions
           ]
 
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
 
 [tool.pytest.ini_options]
 markers = [
     "rust: marks tests that require the compiled Rust code",
 ]
-
