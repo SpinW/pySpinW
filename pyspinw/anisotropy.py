@@ -36,8 +36,10 @@ class Anisotropy(SPWSerialisable):
         3x3 matrix defining the anisotropy contribution for the site.
     """
 
+    #: Type name used when serialising anisotropy terms to SPW data.
     serialisation_name = "anisotropy"
 
+    #: Names of scalar fields that can be varied by parameter definitions.
     scalar_parameters = []
 
     @check_sizes(anisotropy_matrix=(3, 3))
@@ -111,6 +113,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         Principal anisotropy direction. The vector is normalized before use.
     """
 
+    #: Names of scalar fields that can be varied by parameter definitions.
     scalar_parameters = ["a"]
 
     @check_sizes(direction=(3,), force_numpy=True)
