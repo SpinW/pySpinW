@@ -26,7 +26,7 @@ def _generate_unique_anisotropy_id():
 
 
 class Anisotropy(SPWSerialisable):
-    """Represent a single-site anisotropy term.
+    """Represent the anisotropy term at a given site.
 
     Parameters
     ----------
