@@ -11,6 +11,8 @@ import numpy as np
 import spglib
 from difflib import get_close_matches
 
+from numpy.ma.core import identity
+
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
@@ -100,7 +102,7 @@ class SpaceGroup(SymmetryGroup):
                  international_symbol,
                  short_symbol,
                  preferred_symbol,
-                 operations,
+                 operations: list[SpaceOperation],
                  magnetic_variants: list[MagneticSpaceGroup],
                  lattice_system: LatticeSystem,
                  choice: str | None):
@@ -194,6 +196,31 @@ class SpaceGroup(SymmetryGroup):
             new_sites.append(new_site)
 
         return new_sites
+
+    def operations_between_sites(self, site_1, site_2, tolerance=1e-9):
+        """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
+        return [operation for operation in self.operations
+                if np.allclose(operation([site_1.ijk]), [site_2.ijk], atol=tolerance)]
+
+    def exchange_constraints(self, site_1: LatticeSite, site_2: LatticeSite):
+        """ Get the details of the allowed exchange matrices"""
+
+        #
+        # There are two cases here:
+        #  1) where the "bond" is preserved by keeping the sites the same
+        #  2) where it is preserved but with exchanging the sites
+        #
+        # In case 1, the constraint is on J, in the form J = M J M^T
+        # In case 2, the constraint is on J^T, as J->J^T constitutes an inversion, J = M J^T M^T
+
+        # Case 1:
+        identity_operations = set(self.operations_between_sites(site_1, site_1)).intersection(
+            set(self.operations_between_sites(site_2, site_2)))
+
+        # Case 2:
+        inversion_operations = set(self.operations_between_sites(site_1, site_2)).intersection(
+            set(self.operations_between_sites(site_2, site_1)))
+
 
 #
 #

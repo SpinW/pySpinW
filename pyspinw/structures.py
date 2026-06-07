@@ -350,3 +350,20 @@ class Structure(SPWSerialisable):
         """ Set the supercell """
         self._supercell = supercell
         self._build_sites()
+
+    def exchange_constraints(self, site_1: LatticeSite | str, site_2: LatticeSite | str):
+        """ Get the constraints """
+        if isinstance(site_1, str):
+            site_1 = self.site_by_name(site_1)
+
+        if isinstance(site_2, str):
+            site_2 = self.site_by_name(site_2)
+
+        if not isinstance(site_1, LatticeSite):
+            raise TypeError("Expected `site_1` to be a LatticeSite or a name")
+
+        if not isinstance(site_2, LatticeSite):
+            raise TypeError("Expected `site_2` to be a LatticeSite or a name")
+
+        return self.spacegroup.exchange_constraints(site_1, site_2)
+
