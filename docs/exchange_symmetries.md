@@ -5,7 +5,7 @@
 A spacegroup object in pySpinW contains a full list of operations, these can be considered ordered pairs of 
 transformation matrices and translations
 
-$ \mathcal{G} = \{(M_1, T_1), (M_2, T_2), ...\}$
+$\mathcal{G} = \{(M_1, T_1), (M_2, T_2), ...\}$
 
 These operations apply to points, but when considering the effect of symmetry on exchanges, we need to think about
 how this affects exchange contribution to the overall Hamilton. The exchange terms have a form $ S_i J_{ij} S_j^T $
@@ -15,16 +15,16 @@ but the spins orientation is dependent on the transformation part of a given sym
 Let's say that exchange terms are related by a symmetry operation with transformation matrix $M$, and let $i$ and $j$ 
 be the indices of the original spins, and $a$ and $b$ be the transformed spins. Then we should find that
 
-$ S_a J_{ab} S_b^T = S_i J_{ij} S_j^T $
+$S_a J_{ab} S_b^T = S_i J_{ij} S_j^T $
 
 Adopting the convention that the operations multiply on the left, we know that $S_a = M S_j$, so using 
 the fact we have $M^{-1} = M^T$ then we have
 
-$ S_i J_{ij} S_j^T = (M^T S_a) J_{ab} (M^T S_b)^T = S_a M^T J_{ab} M S_b$
+$S_i J_{ij} S_j^T = (M^T S_a) J_{ab} (M^T S_b)^T = S_a M^T J_{ab} M S_b$
 
 from which we can see that
 
-$ J_{ij} = M^T J_{ab} M$
+$J_{ij} = M^T J_{ab} M$
 
 and so, left and right multiplying by $M$ and $M^T$ respectively
 
@@ -53,11 +53,11 @@ But they give us what we need to work out the constraints on the exchange matrix
 This is very easy to show. It comes from noting that Hamilton should be invariant to the site swapping, that is,
 for a bilinear exchange
 
-$ S_i J_{ij} S_j^T $
+$S_i J_{ij} S_j^T $
 
 The corresponding swapped $J$, call it $K$, should give the same behaviour with the spins swapped, that is
 
-$ S_j K_{ij} S_i^T = S_i J_{ij} S_j^T$
+$S_j K_{ij} S_i^T = S_i J_{ij} S_j^T$
 
 so $K_{ij} = J_{ji}$, or just $K = J^T$
 
