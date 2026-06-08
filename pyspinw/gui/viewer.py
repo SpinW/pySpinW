@@ -85,7 +85,7 @@ class Viewer(QWidget):
         self.toolbar = DisplayOptionsToolbar(
             initial_display_options=display_options,
             save_config_on_exit=self.save_config_on_exit,
-            max_size_object_scaling=hamiltonian.structure.unit_cell.main_diagonal_length)
+            max_size_object_scaling=np.min(hamiltonian.structure.unit_cell.abc))
 
         splitter = QSplitter(Qt.Horizontal)
         self.viewer = CrystalViewerWidget(render_model, initial_rotation, initial_distance)
