@@ -78,4 +78,3 @@ ignore = ["D105",  # Missing docstring in magic method (we know what magic metho
 markers = [
     "rust: marks tests that require the compiled Rust code",
 ]
-
