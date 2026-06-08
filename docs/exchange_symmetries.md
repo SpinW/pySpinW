@@ -53,7 +53,7 @@ But they give us what we need to work out the constraints on the exchange matrix
 This is very easy to show. It comes from noting that Hamilton should be invariant to the site swapping, that is,
 for a bilinear exchange
 
-$S_i J_{ij} S_j^T $
+$S_i J_{ij} S_j^T$
 
 The corresponding swapped $J$, call it $K$, should give the same behaviour with the spins swapped, that is
 
@@ -70,8 +70,57 @@ these symmetries:
 * For the swapped symmetries: $J = M J^T M^T$
 
 From these we can build a set of equations on the elements of the matrix, find out which can be changed independently,
-which are zero, etc.
-
-The procedure can also be applied to the system as a whole, either to check the symmetry, or provide
+which are zero, etc.  The procedure can also be applied to the system as a whole, either to check the symmetry, or provide
 a symmetry constrained parametrisation.
 
+### Numerical Strategy
+
+A numerical solution can be obtained by Gaussian elimination / row-reduction.
+Essentially, we need to "flatten the equation", so, if $V$ is a vector of matrix components
+
+$J \to I V$
+
+$M J M \to (M \otimes M) V$
+
+And our symmetry constraints are of the form 
+
+$V (M \otimes M - I) = 0$
+
+To get the full system we build a matrix of $M \otimes M - I$ and row-reduce it.
+
+### In terms of symmetric and antisymmetric components
+
+This will be enough to give us a simplified set of equations for the system, 
+but it is not the preferred form for users. It's more understandable to consider 
+the symmetric and antisymmetic parts of the matrix separately.
+
+If $A_i$ are the transformation matrices of unswapped symmetries and $B_j$ are the swapped ones,
+and if we write $J = S + T$ where $S$ is symmetric and $T$ is antisymmetric. 
+From this it follows that $J^T = S - T$, meaning that we have two sets of equations:
+
+* Unswapped: 
+  * $S + T = ASA^T + ATA^T$
+  * $S + T = BSB^T + BTB^T$
+* Swapped:
+  * $S + T = ASA^T + ATA^T$
+  * $S + T = BSB^T - BTB^T$
+
+Let's now write $J$ in terms of matrix entries, with the aim of making a simple linear system in the form $Y = MX$
+
+$J = \left( \begin{array}{ccc} a & b & c \\ b & d & e \\ c & e & f \end{array} \right) + \left( \begin{array}{ccc} 0 & z & -y \\ -z & 0 & x \\ y & -x & 0 \end{array} \right)$
+
+We then want an equation to relate the entries to $V$ (dots used instead of zeros for readability)
+
+$V = \left(\begin{array}{ccccccccc}
+1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & 1 \\
+\cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & -1 & \cdot \\
+\cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & -1 \\
+\cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & 1 & \cdot & 1 & \cdot & \cdot \\
+\cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
+\cdot & \cdot & \cdot & \cdot & 1 & \cdot & -1 & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot \\
+\end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ x \\ y \\ z  \end{array}\right)$
+
+To get a system of equations in these terms, we can premultiply before doing the reduction.
