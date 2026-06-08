@@ -1,12 +1,6 @@
 """Benchmark for each of the raw calculation examples."""
 
-from examples.raw_calculations.ferromagnetic_chain import heisenberg_ferromagnet
-from examples.raw_calculations.antiferro_chain import antiferro_chain
-from examples.raw_calculations.antiferro_ef import antiferro_ef
-from examples.raw_calculations.kagome import kagome_ferromagnet
-from examples.raw_calculations.kagome_antiferro import kagome_antiferromagnet
-from examples.raw_calculations.kagome_supercell import kagome_supercell
-from examples.raw_calculations.utils import InternalClasses, py_classes
+from examples.raw_calculations.utils import InternalClasses
 
 from prettytable import PrettyTable
 from timeit import timeit
@@ -17,8 +11,6 @@ try:
     RUST_AVAILABLE = True
 except ModuleNotFoundError:
     RUST_AVAILABLE = False
-
-from pyspinw.calculations.spinwave import spinwave_calculation as py_spinwave
 
 examples = [
     "heisenberg_ferromagnet",

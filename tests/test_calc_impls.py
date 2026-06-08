@@ -31,6 +31,7 @@ from examples.raw_calculations.kagome_supercell import kagome_supercell
 from examples.raw_calculations.triangular_antiferro import triangular_antiferro
 from examples.raw_calculations.square_antiferro_nonherm import square_antiferro_nonherm
 
+
 @pytest.mark.rust
 @pytest.mark.parametrize("example",
                          [heisenberg_ferromagnet,
@@ -45,8 +46,8 @@ from examples.raw_calculations.square_antiferro_nonherm import square_antiferro_
                           ])
 def test_calc_impls(example):
     """Compare Rust and Python spinwave calculation implementations."""
-    rs_energies, rs_sqw = rs_spinwave(*example(classes=rs_classes))
-    py_energies, py_sqw = py_spinwave(*example(classes=py_classes))
+    rs_energies, rs_sqw, _, _ = rs_spinwave(*example(classes=rs_classes))
+    py_energies, py_sqw, _, _ = py_spinwave(*example(classes=py_classes))
 
     # we test to an absolute tolerance of 1e-6 in line with the MATLAB
     # np.sort only sorts by real part, so can have swapped values if have purely imaginary energies
