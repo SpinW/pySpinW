@@ -68,7 +68,7 @@ class IntegerBuffer:
         glDisable(GL_BLEND)
         glDisable(GL_DITHER)
 
-        glClearBufferuiv(GL_COLOR, 0, [0])  # Clear integer buffer
+        glClearBufferuiv(GL_COLOR, 0, np.array([0], dtype=np.uint32))  # Clear integer buffer
         glClear(GL_DEPTH_BUFFER_BIT)
 
     def get_image(self, width, height):

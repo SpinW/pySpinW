@@ -1,6 +1,7 @@
 """ Kagome Ferromagnet example
 
-Reproduces Tutorial 5: https://spinw.org/tutorials/05tutorial"""
+Reproduces Tutorial 5: https://spinw.org/tutorials/05tutorial
+"""
 
 from pyspinw import *
 

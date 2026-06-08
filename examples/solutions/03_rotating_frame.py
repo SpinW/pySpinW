@@ -1,12 +1,11 @@
-"""
-In this worksheet we will explore using the rotating frame calculations
+"""In this worksheet we will explore using the rotating frame calculations
 on a helical system with a Dzyaloshinskii-Moriya interaction
 """
 
 from pyspinw import *
 import time
 
-# Create a helical magnet with the helix propagating in the a-direction 
+# Create a helical magnet with the helix propagating in the a-direction
 # in a tetragonal structure with a pitch of 30 degrees.
 # Make the structure have a short a-axis, and long b- and  c-axes.
 
@@ -18,7 +17,7 @@ struc = generate_helical_structure(UnitCell(3, 4, 5),
 # interactions compete to generate a helical structure, and for this we
 # need to define a supercell rather than use the rotating-frame system.
 # This is because the energy minimisation routine to relax the spin
-# structure requires all the spins to be independent (whereas for the 
+# structure requires all the spins to be independent (whereas for the
 # rotating frame the spins would be fixed by their pitch / propagation vector)
 
 # This line converts the structure to a supercell
@@ -57,8 +56,8 @@ optstruc.print_summary()
 #%%
 
 # Now let's plot the dispersion along the (100) direction.
-# Note that because we have used an expanded supercell the reciprocal lattice now 
-# extends to 1/k where k is the propagation vector chosen at the start of the 
+# Note that because we have used an expanded supercell the reciprocal lattice now
+# extends to 1/k where k is the propagation vector chosen at the start of the
 # worksheet.
 
 # First plot the *un*-optimised supercell
@@ -85,7 +84,7 @@ print(t1 - t0, t3 - t2)
 
 # QUESTION: How does the dispersion compare in the two different methods?
 # ANSWER:   They should look almost the same
-# QUESTION: Which calculation is faster? (What happens if you decrease the pitch angle 
+# QUESTION: Which calculation is faster? (What happens if you decrease the pitch angle
 #           or reduce the propagation vector? [e.g. increase the supercell size])
 # ANSWER:   The rotating frame calculation is shorter as it needs to solve a smaller
 #           system with fewer magnetic atoms; but there are overhead costs in starting
@@ -97,7 +96,7 @@ print(t1 - t0, t3 - t2)
 optstruc.spaghetti_plot(Path([[0,0,0],[10,0,0]]))
 
 # QUESTION: What do you notice about this dispersion compared to the previous two?
-# ANSWER:   It could be very different depending on the value of J and D. This is 
+# ANSWER:   It could be very different depending on the value of J and D. This is
 #           because the rotating frame calculation locks in a helix but in real life
 #           you might not have such a structure, depending on the values of J/D etc.
 # QUESTION: What happens to the dispersion of the three models if you change the

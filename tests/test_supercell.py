@@ -11,7 +11,6 @@ from pyspinw.symmetry.supercell import TransformationSupercell, CommensurateProp
 
 def test_trivial_supercell():
     """ Test that trivial supercell works as it should """
-
     unit_cell = UnitCell(1, 1, 1)
 
     x = LatticeSite(0, 0, 0, 1, 0, 0, name="X")
@@ -74,7 +73,7 @@ def test_antiferromagnet_chain():
     delta = CellOffset(1, 0, 0)
 
     supercell = SummationSupercell(propagation_vectors=[k])
-    
+
     spin = supercell.spin(x, delta)
 
     assert np.allclose(spin, np.array([0, -1, 0]))

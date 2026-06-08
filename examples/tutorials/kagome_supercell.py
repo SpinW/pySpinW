@@ -1,6 +1,7 @@
 """ Kagome 3x3 Antiferromagnet example
 
-Reproduces Tutorial 8: https://spinw.org/tutorials/08tutorial"""
+Reproduces Tutorial 8: https://spinw.org/tutorials/08tutorial
+"""
 
 from pyspinw import *
 
