@@ -24,6 +24,7 @@ from pyspinw.symmetry.settings import Setting
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
     lattice_system_name_lookup
+from pyspinw.symmetry.variable_reduction import ExchangeMatrixConstraints
 
 from pyspinw.tolerances import tolerances
 
@@ -202,7 +203,7 @@ class SpaceGroup(SymmetryGroup):
         return [operation for operation in self.operations
                 if np.allclose(operation([site_1.ijk]), [site_2.ijk], atol=tolerance)]
 
-    def exchange_constraints(self, site_1: LatticeSite, site_2: LatticeSite):
+    def exchange_constraints(self, site_1: LatticeSite, site_2: LatticeSite, do_print: bool = True):
         """ Get the details of the allowed exchange matrices"""
 
         #
@@ -216,10 +217,19 @@ class SpaceGroup(SymmetryGroup):
         # Case 1:
         identity_operations = set(self.operations_between_sites(site_1, site_1)).intersection(
             set(self.operations_between_sites(site_2, site_2)))
+        identity_transforms = [op.point_operation_matrix for op in identity_operations]
 
         # Case 2:
         inversion_operations = set(self.operations_between_sites(site_1, site_2)).intersection(
             set(self.operations_between_sites(site_2, site_1)))
+        inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
+
+        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
+
+        if do_print:
+            check.print_summary()
+
+        return check
 
 
 #

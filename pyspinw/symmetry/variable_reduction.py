@@ -29,7 +29,18 @@ def rref(A, tol=1e-12):
     A[np.abs(A) < tol] = 0
     return A
 
-_symasym_matrix = np.array([
+_transpose_matrix = np.array([
+    [ 1, 0, 0, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 1, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 1, 0, 0 ],
+    [ 0, 1, 0, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 1, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 0, 1, 0 ],
+    [ 0, 0, 1, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 1, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 1 ]])
+
+_symantisym_matrix = np.array([
     [1, 0, 0, 0, 0, 0,  0,  0,  0],
     [0, 1, 0, 0, 0, 0,  0,  0,  1],
     [0, 0, 1, 0, 0, 0,  0, -1,  0],
@@ -41,7 +52,7 @@ _symasym_matrix = np.array([
     [0, 0, 0, 0, 0, 1,  0,  0,  0]
 ], dtype=float)
 
-_symasym_matrix_inv = np.linalg.inv(_symasym_matrix)
+_symasym_matrix_inv = np.linalg.inv(_symantisym_matrix)
 
 class PopString:
     def __init__(self, characters: str):
@@ -57,16 +68,30 @@ class PopString:
 
 class ExchangeMatrixConstraints:
     """ Object representing the constraints on the exchange matrix based on symmetry transformations """
-    def __init__(self, transformations: list[np.ndarray], tol=1e-12):
+    def __init__(self,
+                 transformations: list[np.ndarray],
+                 swapped_transformations: list[np.ndarray] | None = None,
+                 tol=1e-12):
 
-
-        self.transformations = transformations
-        self.tol = tol
+        swapped_transformations = [] if swapped_transformations is None else swapped_transformations
 
         if not isinstance(transformations, list):
             raise TypeError("Expected transformations to be a list")
-        matrix = np.vstack([(np.kron(transformation, transformation) - np.eye(9)) @ _symasym_matrix_inv.T
-                            for transformation in transformations])
+
+        if not isinstance(swapped_transformations, list):
+            raise TypeError("Expected swapped_transformations to be a list")
+
+        self.transformations = transformations
+        self.swapped_transformations = swapped_transformations
+        self.tol = tol
+
+        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ _symasym_matrix_inv.T
+                            for transformation in transformations]
+
+        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ _symasym_matrix_inv.T
+                            for transformation in transformations]
+
+        matrix = np.vstack(unswapped + swapped)
 
         reduced = rref(matrix)
 

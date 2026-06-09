@@ -16,6 +16,7 @@ class SpaceOperation:
         self.name = name
 
         self.point_operation = point_operation
+        self.point_operation_matrix = np.array(point_operation, dtype=float)
         self.translation = translation
 
         # Validate data in the point_operation field
