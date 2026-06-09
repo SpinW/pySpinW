@@ -76,34 +76,57 @@ a symmetry constrained parametrisation.
 ### Numerical Strategy
 
 A numerical solution can be obtained by Gaussian elimination / row-reduction.
-Essentially, we need to "flatten the equation", so, if $V$ is a vector of matrix components
+Essentially, we need to "flatten the equation"
+the unswapped constraints are calculated using the following vectorisation identity
+
+$\text{vec}(AXB)=(B^T \otimes A)\text{vec}(X)$
+
+where $\text{vec}$ denotes the vectorisation, i.e. such that
+
+$\text{vec} \left(\begin{array}{ccc} a & b & c \\ d & e & f \\ g & h & i \end{array}\right) = \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ g \\ h \\ i  \end{array}\right)$
+
+So, if $V = \text{vec}(J)$ is the vector of matrix components, then we can translate as
 
 $J \to I V$
 
-$M J M \to (M \otimes M) V$
+$M J M^T \to (M \otimes M) V$
 
 And our symmetry constraints are of the form 
 
-$V (M \otimes M - I) = 0$
+$(M \otimes M - I) V = 0$
 
-To get the full system we build a matrix of $M \otimes M - I$ and row-reduce it.
+The swapped constraints need a "commutation matrix", $K$, defined such that
+
+$\text{vec}(P^T) = K \text{vec}(P)$
+
+With this, for the swapped case we get
+
+$((M \otimes M) K - I) V = 0$
+
+To get a reduced system of equations for out matrix entries we build a $9$-by-$9n$
+matrix of $M \otimes M - I$ and $(M \otimes M)K - I$ and row-reduce it.
+
+### Interpreting the row reduction
+
+Once we have our matrix in reduce row echelon form, we can interpret the entries.
+The reduced matrix will have non-zero entries in at most the first 9 rows, the leftmost
+non-zero value on each row should always be 1 (if not all zeros).
+
+There are three basic cases to consider:
+1) *The row has a single non-zero entry*, and as such it corresponds to the equation $x_i = 0$, meaning that
+   zero is the only solution
+2) *The row has multiple non-zero entries.* This means that the entries are free, but are restricted by an equation of 
+   the form $x_i + c_0 x_j + c_1 x_k ... = 0$
+3) *The row is all zeros.* This entry provides no constraints at all on the system: $0=0$.
+
+We can also think about which entries are completely free, these will be the ones that have no non-zero
+entry in a given column.
 
 ### In terms of symmetric and antisymmetric components
 
 This will be enough to give us a simplified set of equations for the system, 
 but it is not the preferred form for users. It's more understandable to consider 
 the symmetric and antisymmetic parts of the matrix separately.
-
-If $A_i$ are the transformation matrices of unswapped symmetries and $B_j$ are the swapped ones,
-and if we write $J = S + T$ where $S$ is symmetric and $T$ is antisymmetric. 
-From this it follows that $J^T = S - T$, meaning that we have two sets of equations:
-
-* Unswapped: 
-  * $S + T = ASA^T + ATA^T$
-  * $S + T = BSB^T + BTB^T$
-* Swapped:
-  * $S + T = ASA^T + ATA^T$
-  * $S + T = BSB^T - BTB^T$
 
 Let's now write $J$ in terms of matrix entries, with the aim of making a simple linear system in the form $Y = MX$
 
