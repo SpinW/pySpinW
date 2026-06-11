@@ -147,3 +147,30 @@ $V = \left(\begin{array}{ccccccccc}
 \end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ x \\ y \\ z  \end{array}\right)$
 
 To get a system of equations in these terms, we can premultiply before doing the reduction.
+
+## Copying Exchanges
+
+### Uniqueness of symmetry based copying 
+
+*There is not necessarily a single operation that maps the points of an exchange, but the exchange matrix should
+change in the same way under all of them as long as it is valid according to that symmetry.*
+
+Proof: For a pair of ordered exchange $(s_1, s_2)$ and $(t_1, t_2)$ we find all the 
+operations $g\in\mathcal{G}_x$ in the symmetry group $\mathcal{G}$ that maps them together,
+i.e.
+
+$\mathcal{G}_x = \{ g\in\mathcal{G} \mid t_1 = g(s_1), t_2 = g(s_2) \}$
+
+Let's say there is more that there are two operation in $\mathcal{G}_x$: $g$ and $h$,
+then $g^{-1}$ and $h^{-1}$ must in the original space group. 
+Then also, so must $hg^{-1}$ (as well as all other combinations of $g$, $h$, $g^{-1}$ and $h^{-1}$).
+
+Since $h$ maps the point pair $(s_1, s_2)$ to $(t_1, t_2)$, then $h^{-1}$ must map $(t_1, t_2)$ to $(s_1, s_2)$.
+This means that $g h^{-1}$ must map $(t_1, t_2)$ to itself.
+
+We know that the exchange matrix needs to be invariant under all operations that send a point pair to itself.
+Remember that is not true of any arbitrary matrix, just those that obey the symmetries of the system.
+
+As $gh^{-1}$ leaves the symmetry constrained exchange matrix unchanged, $(gh^{-1}) h$ and $h$ should do the
+same thing to it. Then, because the operations $(gh^{-1}) h$ and $g$ are the same, $h$ and $g$ should do
+the same thing to any symmetry constrained exchange matrix.
