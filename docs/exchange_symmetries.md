@@ -173,4 +173,4 @@ Remember that is not true of any arbitrary matrix, just those that obey the symm
 
 As $gh^{-1}$ leaves the symmetry constrained exchange matrix unchanged, $(gh^{-1}) h$ and $h$ should do the
 same thing to it. Then, because the operations $(gh^{-1}) h$ and $g$ are the same, $h$ and $g$ should do
-the same thing to any symmetry constrained exchange matrix.
+the same thing to the exchange matrix.

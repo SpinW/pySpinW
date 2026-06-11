@@ -234,7 +234,7 @@ class Exchange(SPWSerialisable):
         # We want to copy the exchange under symmetry operations
         # There might be more than one symmetry operation that maps the pair of sites
         #  however, the effect on the exchange should be the same for all these operations,
-        # If this turns out not to be the case, then exchange itself does not obey the
+        # If this turns out not to be the case, then exchange itself does not need to obey the
         # symmetry constraints
 
 
