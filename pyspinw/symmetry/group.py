@@ -229,8 +229,6 @@ class SpaceGroup(SymmetryGroup):
                              site_2: LatticeSite | ArrayLike,
                              do_print: bool = True) -> ExchangeMatrixConstraints:
         """ Get the details of the allowed exchange matrices"""
-
-
         if not isinstance(site_1, LatticeSite):
             try:
                 site_1 = LatticeSite(i=float(site_1[0]),

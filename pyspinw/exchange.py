@@ -210,7 +210,6 @@ class Exchange(SPWSerialisable):
 
     def obeys_symmetry(self, spacegroup: SpaceGroup) -> bool:
         """ Check that this exchange is consistent with the symmetry group """
-
         # Checking is easier than finding the list of symmetry groups
         identity_operations, inversion_operations = spacegroup.operations_on_site_pairs(self.site_1, self.site_2)
 
@@ -223,7 +222,8 @@ class Exchange(SPWSerialisable):
         exchange_matrix_T = self._exchange_matrix.T
         for operation in inversion_operations:
             if not np.allclose(exchange_matrix,
-                               operation.point_operation_matrix @ exchange_matrix_T @ operation.point_operation_matrix.T):
+                               operation.point_operation_matrix @ exchange_matrix_T @
+                               operation.point_operation_matrix.T):
                 return False
 
         return True
