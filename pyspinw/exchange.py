@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+from pymatgen.symmetry.groups import SymmetryGroup
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
@@ -9,6 +10,7 @@ from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.group import SpaceGroup
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import triple_product_matrix
@@ -205,6 +207,26 @@ class Exchange(SPWSerialisable):
     def is_symmetric(self):
         """ Is this a symmetric exchange """
         return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
+
+    def obeys_symmetry(self, spacegroup: SpaceGroup) -> bool:
+        """ Check that this exchange is consistent with the symmetry group """
+
+        # Checking is easier than finding the list of symmetry groups
+        identity_operations, inversion_operations = spacegroup.operations_on_site_pairs(self.site_1, self.site_2)
+
+        exchange_matrix = self._exchange_matrix
+        for operation in identity_operations:
+            if not np.allclose(exchange_matrix,
+                           operation.point_operation_matrix @ exchange_matrix @ operation.point_operation_matrix.T):
+                return False
+
+        exchange_matrix_T = self._exchange_matrix.T
+        for operation in inversion_operations:
+            if not np.allclose(exchange_matrix,
+                               operation.point_operation_matrix @ exchange_matrix_T @ operation.point_operation_matrix.T):
+                return False
+
+        return True
 
 
 class HeisenbergExchange(Exchange):

@@ -3,6 +3,7 @@ import re
 
 import numpy as np
 from ase.data import chemical_symbols
+from numpy._typing import ArrayLike
 
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
@@ -351,7 +352,9 @@ class Structure(SPWSerialisable):
         self._supercell = supercell
         self._build_sites()
 
-    def exchange_constraints(self, site_1: LatticeSite | str, site_2: LatticeSite | str):
+    def exchange_constraints(self,
+                             site_1: LatticeSite | str | ArrayLike,
+                             site_2: LatticeSite | str | ArrayLike):
         """ Get the constraints """
         if isinstance(site_1, str):
             site_1 = self.site_by_name(site_1)
@@ -360,10 +363,22 @@ class Structure(SPWSerialisable):
             site_2 = self.site_by_name(site_2)
 
         if not isinstance(site_1, LatticeSite):
-            raise TypeError("Expected `site_1` to be a LatticeSite or a name")
+            try:
+                site_1 = LatticeSite(i=float(site_1[0]),
+                                     j=float(site_1[1]),
+                                     k=float(site_1[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_1` to be a LatticeSite, vector or a name") from e
 
         if not isinstance(site_2, LatticeSite):
-            raise TypeError("Expected `site_2` to be a LatticeSite or a name")
+            try:
+                site_2 = LatticeSite(i=float(site_2[0]),
+                                     j=float(site_2[1]),
+                                     k=float(site_2[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_2` to be a LatticeSite, vector or a name") from e
 
         return self.spacegroup.exchange_constraints(site_1, site_2)
 
