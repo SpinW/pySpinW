@@ -1,8 +1,9 @@
+""" Functions and classes for finding allowed, disallowed and restricted symmetries """
+
 import numpy as np
 
 def rref(A, tol=1e-12):
     """ Reduced row echelon form - not in scipy or numpy"""
-
     A = A.astype(float).copy()
     rows, cols = A.shape
     r = 0
@@ -55,10 +56,13 @@ _symantisym_matrix = np.array([
 _symasym_matrix_inv = np.linalg.inv(_symantisym_matrix)
 
 class PopString:
+    """ Helper class for assigning letters """
+
     def __init__(self, characters: str):
         self.characters = characters
 
     def pop(self) -> str:
+        """ Pop the first character """
         if len(self.characters) > 0:
             x = self.characters[0]
             self.characters = self.characters[1:]
@@ -68,6 +72,7 @@ class PopString:
 
 class ExchangeMatrixConstraints:
     """ Object representing the constraints on the exchange matrix based on symmetry transformations """
+
     def __init__(self,
                  transformations: list[np.ndarray],
                  swapped_transformations: list[np.ndarray] | None = None,
@@ -89,7 +94,7 @@ class ExchangeMatrixConstraints:
                             for transformation in transformations]
 
         swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ _symasym_matrix_inv.T
-                            for transformation in transformations]
+                            for transformation in swapped_transformations]
 
         matrix = np.vstack(unswapped + swapped)
 
@@ -98,9 +103,9 @@ class ExchangeMatrixConstraints:
         # print(reduced)
 
         # The reduced form should be interpretable as a list of constraints on the matrix
-        # It will not have non-zero entries in unless the row directly above has entries in the same column or to the left,
-        # or, in other words, if a row has entries starting at position i, then the next row will have entries starting at
-        #  position i or greater
+        # It will not have non-zero entries in unless the row directly above has entries in the same column or to
+        # the left, or, in other words, if a row has entries starting at position i, then the next row will have
+        # entries starting at position i or greater
         #
         # We can scan the rows,
         #   there will be at most 9 non-zero of them

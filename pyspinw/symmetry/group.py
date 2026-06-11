@@ -205,7 +205,6 @@ class SpaceGroup(SymmetryGroup):
 
     def exchange_constraints(self, site_1: LatticeSite, site_2: LatticeSite, do_print: bool = True):
         """ Get the details of the allowed exchange matrices"""
-
         #
         # There are two cases here:
         #  1) where the "bond" is preserved by keeping the sites the same
