@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use faer::linalg::triangular_solve::solve_upper_triangular_in_place;
 use faer::mat::{AsMatMut, AsMatRef};
-use faer::{mat, perm, unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
+use faer::{mat, perm, concat, unzip, zip, Col, ColRef, Mat, MatRef, Par, Side};
 use indicatif::ParallelProgressIterator;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
@@ -26,6 +26,7 @@ pub struct SpinwaveResult {
     pub energies: Vec<C64>,
     pub sab: Option<Vec<Mat<C64>>>,
     pub intensities: Vec<f64>,
+    pub wavefunctions: Option<Mat<C64>>
 }
 
 /// The q-independent components of the calculation.
@@ -252,6 +253,7 @@ pub fn calc_spinwave(
     field: Option<MagneticField>,
     rotating_frame: Option<Vec<ColRef<f64>>>,
     save_Sab: bool,
+    save_wavefunctions: bool,
 ) -> Vec<SpinwaveResult> {
     let n_sites = rotations.len();
     let n_q = q_vectors.len() as u64;
@@ -293,7 +295,7 @@ pub fn calc_spinwave(
     let QIndependentComponents = calc_q_independent(rotations, magnitudes, &couplings, field);
 
     if rotating_components.is_some() {
-        // Caculate energies and intensities for a triplet of q-vectors in a rotating frame
+        // Calculate energies and intensities for a triplet of q-vectors in a rotating frame
         q_vectors
             .into_par_iter()
             .progress_count(n_q)
@@ -311,12 +313,16 @@ pub fn calc_spinwave(
                             rlu_to_cart,
                             &rotating_components,
                             save_Sab,
+                            save_wavefunctions,
                             tri_id as f64,
                         )
                     })
                     .reduce_with(
                         |mut triplet_results: SpinwaveResult, result: SpinwaveResult| {
+
                             triplet_results.energies.extend(result.energies);
+                            triplet_results.intensities.extend(result.intensities);
+
                             if save_Sab {
                                 triplet_results
                                     .sab
@@ -324,7 +330,17 @@ pub fn calc_spinwave(
                                     .unwrap()
                                     .extend(result.sab.unwrap());
                             }
-                            triplet_results.intensities.extend(result.intensities);
+
+                            if save_wavefunctions {
+                                triplet_results.wavefunctions =
+                                    triplet_results
+                                        .wavefunctions
+                                        .as_mut()
+                                        .map(|current_wavefunction| {
+                                            concat![[current_wavefunction], [result.wavefunctions.unwrap()]]
+                                            });
+                            }
+
                             triplet_results
                         },
                     )
@@ -345,6 +361,7 @@ pub fn calc_spinwave(
                     rlu_to_cart,
                     &rotating_components,
                     save_Sab,
+                    save_wavefunctions,
                     0.,
                 )
             })
@@ -500,6 +517,7 @@ fn solve_ham_nonherm(hamiltonian: Mat<C64>, n_sites: usize) -> HamiltonianResult
 /// - `rlu_to_cart`: Optional matrix to transform q to Cartesian for intensity calculation.
 /// - `rotating_components`: Option with fields needed for rotating frame calculation.
 /// - `save_sab`: Whether to save the 3x3 Sab tensors or not (default: False).
+/// - `save_wavefunctions`: Whether to save the transformations from individual spins to magnon modes
 /// - `tri_id`: For optional rotating frame calculation, whether this is -k, 0 or +k
 ///
 ///# Returns
@@ -515,6 +533,7 @@ fn spinwave_single_q(
     rlu_to_cart: Option<MatRef<f64>>,
     rotating_components: &Option<RotatingFrameComponents>,
     save_Sab: bool,
+    save_wavefunctions: bool,
     tri_id: f64,
 ) -> SpinwaveResult {
     let sab_blocks = &q_independent_components.sab_blocks;
@@ -616,16 +635,20 @@ fn spinwave_single_q(
             .collect()
     };
 
-    match save_Sab {
-        true => SpinwaveResult {
+    let sab_out = match save_Sab {
+            true => Some(Sab),
+            false => None
+    };
+
+    let wavefunctions_out = match save_wavefunctions {
+        true => Some(T.clone()),
+        false => None
+    };
+
+    SpinwaveResult {
             energies: eigvals.iter().copied().collect(),
-            sab: Some(Sab),
-            intensities,
-        },
-        false => SpinwaveResult {
-            energies: eigvals.iter().copied().collect(),
-            sab: None,
-            intensities,
-        },
+            sab: sab_out,
+            intensities: intensities,
+            wavefunctions: wavefunctions_out
     }
 }

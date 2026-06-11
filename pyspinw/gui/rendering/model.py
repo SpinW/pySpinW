@@ -59,13 +59,15 @@ class Model:
             glDrawArrays(GL_TRIANGLES, 0, length)
         glBindVertexArray(0)
 
-    def render_back_wireframe(self):
+    def render_back(self):
         """ Render the back faces using wireframe - used for making selections """
         glEnable(GL_CULL_FACE)
         glCullFace(GL_FRONT)
         for vao, length in zip(self._vaos, self._lengths):
             glBindVertexArray(vao)
-            glLineWidth(4)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glDrawArrays(GL_TRIANGLES, 0, length)
+
+
         glBindVertexArray(0)
+

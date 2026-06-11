@@ -2,7 +2,7 @@ from multiprocessing import freeze_support
 
 from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.exchange import HeisenbergExchange
-from pyspinw.gui.viewer import show_hamiltonian
+from pyspinw.gui.viewer import show_object
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structures import Structure
@@ -27,4 +27,4 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
 
-    show_hamiltonian(hamiltonian)
+    show_object(hamiltonian)

@@ -13,7 +13,6 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 def test_expansion_chain_no_rot():
     """ Test the expansion with a simple chain and simple duplication """
-
     site = LatticeSite(0,0,0,0,0,1)
 
     unexpanded_unit_cell = UnitCell(1,1,1)

@@ -1,6 +1,7 @@
 """ Antiferromagnetic chain example with applied magnetic field
 
-Same as antiferromagnetic_chain.py, bit with field """
+Same as antiferromagnetic_chain.py, bit with field
+"""
 
 from pyspinw import *
 

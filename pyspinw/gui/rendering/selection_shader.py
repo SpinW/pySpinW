@@ -22,11 +22,17 @@ class SelectionShader(Shader):
         self.model_matrix = np.eye(4, dtype=np.float32)
         self.projection_view = np.eye(4, dtype=np.float32)
 
+        # Colours for selections
+        self.selected_color = 1.0, 0.6, 0.1
+        self.hover_color = 1.0, 1.0, 1.0
+        self.selected_hover_color = 1.0, 0.8, 0.1
+
         # Uniform locations
         self._model_loc = glGetUniformLocation(self.shader_program, "model")
         self._projection_view_loc = glGetUniformLocation(self.shader_program, "projectionView")
 
         self._selection_color_loc = glGetUniformLocation(self.shader_program, "objectColor")
+
 
 
     @property
@@ -50,11 +56,11 @@ class SelectionShader(Shader):
 
         match self.mode:
             case SelectionMode.NOT_SELECTED:
-                glUniform3f(self._selection_color_loc, 1.0, 0.2, 0.2)
-            case SelectionMode.SELECTED:
-                glUniform3f(self._selection_color_loc, 1.0, 0.6, 0.1)
-            case SelectionMode.HOVER:
                 glUniform3f(self._selection_color_loc, 1.0, 1.0, 1.0)
+            case SelectionMode.SELECTED:
+                glUniform3f(self._selection_color_loc, *self.selected_color)
+            case SelectionMode.HOVER:
+                glUniform3f(self._selection_color_loc, *self.hover_color)
             case SelectionMode.SELECTED_HOVER:
-                glUniform3f(self._selection_color_loc, 1.0, 0.8, 0.1)
+                glUniform3f(self._selection_color_loc, *self.selected_hover_color)
 

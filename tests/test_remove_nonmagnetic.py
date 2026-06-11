@@ -23,7 +23,6 @@ def test_without_nonmagnetic_hamiltonian():
 
     Assumes that structure removal works (tested elsewhere)
     """
-
     unit_cell = UnitCell(1, 1, 1)
 
     magnetic = LatticeSite(0.1, 0, 0, 0, 0, 1)

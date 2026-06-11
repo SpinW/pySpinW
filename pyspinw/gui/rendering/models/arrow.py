@@ -12,7 +12,9 @@ class Arrow(Model):
                  n_points=51,
                  r_shaft: float = 0.05,
                  r_head: float = 0.1,
-                 head_fraction: float = 0.3):
+                 head_fraction: float = 0.3,
+                 padding: float = 0.0,
+                 modify_ring: bool = False):
 
         super().__init__()
 
@@ -25,13 +27,13 @@ class Arrow(Model):
         x = np.cos(angles)
         y = np.sin(angles)
 
-        x_head = r_head * x
-        y_head = r_head * y
+        x_head = (r_head + padding) * x
+        y_head = (r_head + padding) * y
 
-        x_shaft = r_shaft * x
-        y_shaft = r_shaft * y
+        x_shaft = (r_shaft + padding) * x
+        y_shaft = (r_shaft + padding) * y
 
-        z_transition =  1-head_fraction
+        z_transition =  1-(head_fraction + 0.01*padding)
 
         vertices_and_normals = []
 
@@ -63,10 +65,12 @@ class Arrow(Model):
             y_normal_0 = head_normal_r * y[i]
             y_normal_1 = head_normal_r * y[i+1]
 
+            z_with_pad = 1 + padding * head_fraction/r_head
+
             section += [
                 [x_0, y_0, z_transition, x_normal_0, y_normal_0, head_normal_z],
                 [x_1, y_1, z_transition, x_normal_1, y_normal_1, head_normal_z],
-                [0,   0,   1,            x_mid[i],   y_mid[i],   head_normal_z],
+                [0,   0,   z_with_pad,   x_mid[i],   y_mid[i],   head_normal_z],
             ]
 
 
@@ -90,14 +94,37 @@ class Arrow(Model):
             y_outer_0 = y_head[i]
             y_outer_1 = y_head[i+1]
 
-            section += [
-                [x_inner_0, y_inner_0, z_transition, 0, 0, -1],
-                [x_inner_1, y_inner_1, z_transition, 0, 0, -1],
-                [x_outer_0, y_outer_0, z_transition, 0, 0, -1],
-                [x_inner_1, y_inner_1, z_transition, 0, 0, -1],
-                [x_outer_1, y_outer_1, z_transition, 0, 0, -1],
-                [x_outer_0, y_outer_0, z_transition, 0, 0, -1],
-            ]
+
+
+            # If the ring flag is not set, we want to set the normals to be pointing outward, so they get culled
+            #  in a good way
+            if modify_ring:
+                nx_0 = -x[i]
+                nx_1 = -x[i + 1]
+
+                ny_0 = -y[i]
+                ny_1 = -y[i + 1]
+
+                section += [
+                    [x_inner_0, y_inner_0, z_transition, nx_0, ny_0, 0],
+                    [x_inner_1, y_inner_1, z_transition, nx_1, ny_1, 0],
+                    [x_outer_0, y_outer_0, z_transition, nx_0, ny_0, 0],
+                    [x_inner_1, y_inner_1, z_transition, nx_1, ny_1, 0],
+                    [x_outer_1, y_outer_1, z_transition, nx_1, ny_1, 0],
+                    [x_outer_0, y_outer_0, z_transition, nx_0, ny_0, 0],
+                ]
+
+
+            else:
+                section += [
+                    [x_inner_0, y_inner_0, z_transition, 0, 0, -1],
+                    [x_inner_1, y_inner_1, z_transition, 0, 0, -1],
+                    [x_outer_0, y_outer_0, z_transition, 0, 0, -1],
+                    [x_inner_1, y_inner_1, z_transition, 0, 0, -1],
+                    [x_outer_1, y_outer_1, z_transition, 0, 0, -1],
+                    [x_outer_0, y_outer_0, z_transition, 0, 0, -1],
+                ]
+
 
         vertices_and_normals.append(section)
 
@@ -143,9 +170,9 @@ class Arrow(Model):
             y_1 = y_shaft[i + 1]
 
             section += [
-                [x_1, y_1, 0, 0, 0, -1],
-                [x_0, y_0, 0, 0, 0, -1],
-                [0,   0,   0, 0, 0, -1],
+                [ x_1,      y_1,     0, 0, 0, -1],
+                [ x_0,      y_0,     0, 0, 0, -1],
+                [-padding, -padding, 0, 0, 0, -1],
             ]
 
         vertices_and_normals.append(section)

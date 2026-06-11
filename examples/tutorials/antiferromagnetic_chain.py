@@ -1,6 +1,7 @@
 """ Antiferromagnetic chain example
 
-Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial"""
+Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial
+"""
 
 from pyspinw import *
 

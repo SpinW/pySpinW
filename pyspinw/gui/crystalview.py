@@ -2,7 +2,7 @@
 
 import numpy as np
 from PySide6.QtCore import QTimer, QPoint, Signal
-from PySide6.QtGui import Qt, QKeyEvent
+from PySide6.QtGui import Qt, QKeyEvent, QImage, QSurfaceFormat
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from PySide6.QtWidgets import QApplication
@@ -23,7 +23,7 @@ from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
 from pyspinw.gui.rendering.object_shader import ObjectShader
 from pyspinw.gui.rendering.selectionmode import SelectionMode
 from pyspinw.gui.rendering.selection_shader import SelectionShader
-from pyspinw.gui.renderoptions import DisplayOptions
+from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.util import rotation_matrix
 
 logger = logging.Logger(__name__)
@@ -33,6 +33,7 @@ _z_axis_mat = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, .5], [0, 0, 0, 1]]
 _y_axis_mat = np.array([[1, 0, 0, 0], [0, 0, 1, .5], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 _x_axis_mat = np.array([[0, 0, 1, .5], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 
+_selection_size = 0.2
 
 class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
@@ -48,9 +49,14 @@ class CrystalViewerWidget(QOpenGLWidget):
     axes_size = 100
     axes_padding = 10
 
-    def __init__(self, render_model: RenderModel):
+    def __init__(self,
+                 render_model: RenderModel,
+                 initial_rotation: np.ndarray | None = None,
+                 initial_distance: float | None = None):
 
         super().__init__()
+
+        self.initialised = False
 
         self.render_model = render_model
 
@@ -62,14 +68,16 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.selection_shader: SelectionShader | None = None
 
         # Set up antialiasing
-        format = self.format()
-        format.setSamples(4)
-        self.setFormat(format)
+        fmt = QSurfaceFormat()
+        fmt.setVersion(4, 1)
+        fmt.setProfile(QSurfaceFormat.CoreProfile)
+        fmt.setSamples(4)
+        self.setFormat(fmt)
 
         # View details
         self.view_origin = render_model.expanded.structure.unit_cell.centre
-        self.view_rotation = np.eye(3)
-        self.view_radius = 10.0
+        self.view_rotation = np.eye(3) if initial_rotation is None else initial_rotation
+        self.view_radius = 10.0 if initial_distance is None else initial_distance
 
         # These variables are used for selection / highlighting
         self.mouse_position: QPoint | None = None
@@ -96,9 +104,17 @@ class CrystalViewerWidget(QOpenGLWidget):
         try:
             # Normal objects
             self.sphere= Sphere(3)
+            self.selection_sphere = Sphere(3, padding=0.1)
+
             self.small_sphere = Sphere(3, 0.1)
+            self.selection_small_sphere = Sphere(3, radius=0.1, padding=0.01)
+
             self.tube = Tube()
+            self.selection_tube = Tube(padding=0.2)
+
             self.arrow = Arrow()
+            self.selection_arrow = Arrow(padding=0.03, modify_ring=True)
+
             self.cube = WireframeCube()
 
             # Normal shaders
@@ -123,6 +139,8 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.timer.timeout.connect(self.update)
             self.timer.start(16)
 
+            self.initialised = True
+
 
         except Exception as e:
             logger.exception(e)
@@ -133,11 +151,21 @@ class CrystalViewerWidget(QOpenGLWidget):
         # Normal painting, let Qt do its thing
         #
 
+        if not self.initialised:
+            self.initializeGL()
+            return
+
+        glBindFramebuffer(GL_FRAMEBUFFER, self.defaultFramebufferObject())
+        dpr = self.devicePixelRatio()
+        pw, ph = int(self.width() * dpr), int(self.height() * dpr)
+        glViewport(0, 0, pw, ph)
+
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_CULL_FACE)
         glDisable(GL_BLEND)
 
-        glClearColor(0.05, 0.05, 0.08, 1.0)
+        background_r, background_g, background_b = self.display_options.background_color
+        glClearColor(background_r, background_g, background_b, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Work out camera movement stuff
@@ -173,6 +201,10 @@ class CrystalViewerWidget(QOpenGLWidget):
         #     self.object_shader.use()
         #     self.sphere.render_triangles()
 
+        # Set up colors for selection shaders
+        self.selection_shader.selected_color = self.display_options.selected_color
+        self.selection_shader.hover_color = self.display_options.hover_color
+        self.selection_shader.selected_hover_color = self.display_options.selected_hover_color
 
         # Do actual the rendering
 
@@ -181,6 +213,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         exchange_scale = 0.1 * self.display_options.exchange_scaling
         exchange_scaling = np.diag([exchange_scale, exchange_scale, 1, 1])
+        exchange_selection_scale = ((1 + _selection_size)/1)*exchange_scale
+        exchange_selection_scaling = np.diag([exchange_selection_scale, exchange_selection_scale, 1, 1])
 
         if self.object_shader is not None and self.selection_shader is not None:
 
@@ -193,7 +227,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for site in self.render_model.sites:
 
-                    self.object_shader.object_color = site.color
+                    self.object_shader.object_color = self.display_options.default_site_color \
+                        if site.color is None else site.color
 
                     if site.is_magnetic or self.display_options.show_nonmagnetic_atoms:
 
@@ -212,6 +247,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                         show_arrow = site.is_magnetic and self.display_options.show_atoms_not_spins
                         render_object = self.arrow if show_arrow else self.small_sphere
+                        selection_render_object = self.selection_arrow if show_arrow else self.selection_small_sphere
 
                         for model_matrix in site.model_matrices(self.display_options.prettify):
                             site_model_matrix = model_matrix @ spin_scale_matrix
@@ -228,7 +264,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                                 self.selection_shader.model_matrix = site_model_matrix
                                 self.selection_shader.mode = mode
                                 self.selection_shader.use()
-                                render_object.render_back_wireframe()
+                                selection_render_object.render_back()
 
                             self.object_shader.model_matrix = site_model_matrix
                             self.object_shader.use()
@@ -239,7 +275,9 @@ class CrystalViewerWidget(QOpenGLWidget):
 
                 for exchange in self.render_model.exchanges:
 
-                    self.object_shader.object_color = exchange.color
+                    self.object_shader.object_color = \
+                        self.display_options.default_exchange_color \
+                            if exchange.color is None else exchange.color
 
                     if exchange.render_id in self.hover_ids:
                         if exchange.render_id in self.current_selection:
@@ -254,14 +292,15 @@ class CrystalViewerWidget(QOpenGLWidget):
                             mode = SelectionMode.NOT_SELECTED
 
                     for model_matrix in exchange.model_matrices(self.display_options.prettify):
-                        exchange_model_matrix = model_matrix @ exchange_scaling
 
                         if mode != SelectionMode.NOT_SELECTED:
+                            exchange_model_matrix = model_matrix @ exchange_selection_scaling
                             self.selection_shader.model_matrix = exchange_model_matrix
                             self.selection_shader.mode = mode
                             self.selection_shader.use()
-                            self.tube.render_back_wireframe()
+                            self.selection_tube.render_back()
 
+                        exchange_model_matrix = model_matrix @ exchange_scaling
                         self.object_shader.model_matrix = exchange_model_matrix
                         self.object_shader.use()
                         self.tube.render_triangles()
@@ -303,15 +342,15 @@ class CrystalViewerWidget(QOpenGLWidget):
         if self.display_options.show_cartesian_axes:
 
             # Save state
-            glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+            saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
             glDisable(GL_DEPTH_TEST)
 
             # Axes viewport
             glViewport(
-                self.axes_padding,
-                self.axes_padding,
-                self.axes_size,
-                self.axes_size
+                int(self.axes_padding * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr),
             )
 
             self.axes_shader.camera = self.camera
@@ -336,9 +375,9 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
             # Restore state
-
-            glEnable(GL_DEPTH_TEST)
-            glPopAttrib()
+            glViewport(0, 0, pw, ph)
+            if saved_depth_test:
+                glEnable(GL_DEPTH_TEST)
 
         #
         # Other corner viewport for lattice axes
@@ -347,15 +386,15 @@ class CrystalViewerWidget(QOpenGLWidget):
         if self.display_options.show_lattice_axes:
 
             # Save state
-            glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT)
+            saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
             glDisable(GL_DEPTH_TEST)
 
             # Lattice axes viewport
             glViewport(
-                self.width() - self.axes_size - self.axes_padding,
-                self.axes_padding,
-                self.axes_size,
-                self.axes_size
+                int((self.width() - self.axes_size - self.axes_padding) * dpr),
+                int(self.axes_padding * dpr),
+                int(self.axes_size * dpr),
+                int(self.axes_size * dpr)
             )
 
             self.axes_shader.camera = self.camera
@@ -385,14 +424,19 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             # Restore state
 
-            glEnable(GL_DEPTH_TEST)
-            glPopAttrib()
+            if saved_depth_test:
+                glEnable(GL_DEPTH_TEST)
+
+            glViewport(0, 0, pw, ph)
+
 
         #
         # ID framebuffer
         #
 
-        self.id_framebuffer.use(self.width(), self.height())
+        self.id_framebuffer.use(
+            int(self.width()*dpr),
+            int(self.height()*dpr))
 
         if self.id_shader is not None:
 
@@ -436,7 +480,8 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             id = np.zeros((1,), dtype=np.uint32) # Buffer to set data in
 
-            x, y = self.mouse_position.x(), self.height() - self.mouse_position.y()
+            x = int(self.mouse_position.x() * dpr)
+            y = int((self.height() - self.mouse_position.y()) * dpr)
 
             glReadPixels(
                 x, y,
@@ -457,14 +502,24 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.last_hover_id = id
 
+    def snapshot(self) -> np.ndarray:
+        """ Get the data from the current frame """
+        qimage = self.grabFramebuffer()
+        qimage = qimage.convertToFormat(QImage.Format.Format_RGBA8888)
 
+        ptr = qimage.bits()
+        arr = np.frombuffer(ptr, dtype=np.uint8)
+        arr = arr.reshape(qimage.height(), qimage.width(), 4)
+
+        return arr.copy()
 
 
     def resizeGL(self, w, h):
         """ Qt override, called when window is resized """
         self.camera.horizontal_pixels = w
         self.camera.vertical_pixels = h
-        glViewport(0, 0, w, h)
+        dpr = self.devicePixelRatio()
+        glViewport(0, 0, int(w * dpr), int(h * dpr))
 
 
     def reset_view(self):

@@ -351,39 +351,118 @@ class Hamiltonian(SPWSerialisable):
         """ Print a textual summary to stdout"""
         print(self.text_summary)
 
-    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
+    @check_sizes(field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self,
-                                 q_vectors: np.ndarray,
+                                 path: Path,
                                  field: ArrayLike | None = None,
                                  use_rust: bool=True,
                                  use_rotating: bool=True,
                                  intensity_unit: IntensityUnits | str='cell',
                                  components: str='Sperp',
                                  ):
-        """Calculate the energy levels of the system for the given q-vectors.
+        """Calculate the energy levels and intensities of the system for the given q-vectors.
 
-        :param q_vectors: *required* An array of q-vectors
+        :param path: *required* Path along which to calculate
         :param field: Optional field direction
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param components: Whether to compute a particular polarised neutron component (default: 'Sperp')
         """
         return self.without_nonmagnetic()._energies_and_intensities(
-            q_vectors=q_vectors,
+            q_vectors=path.q_points(),
             field=field,
             use_rust=use_rust,
             use_rotating=use_rotating,
             intensity_unit=intensity_unit,
             components=components)
 
+
+    @check_sizes(q_vectors=(-1, 3), field=(3,), allow_nones=True, force_numpy=True)
     def _energies_and_intensities(self,
-                                 q_vectors: np.ndarray,
-                                 field: ArrayLike | None = None,
-                                 use_rust: bool=True,
-                                 use_rotating: bool=True,
-                                 intensity_unit: IntensityUnits | str='cell',
-                                 components: str='Sperp',
-                                 ):
+                              q_vectors: np.ndarray,
+                              field: ArrayLike | None = None,
+                              use_rust: bool=True,
+                              use_rotating: bool=True,
+                              intensity_unit: IntensityUnits | str='cell',
+                              components: str='Sperp'
+                              ):
+        """Calculate the energy levels of the system for the given q-vectors.
+
+        ** Does not remove nonmagnetic sites **
+
+        :param q_vectors: *required* An array of q-vectors
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param components: Whether to compute a particular polarised neutron component (default: 'Sperp')
+        """
+        #
+        # Set up choice of calculation
+        #
+        save_sab = components != 'Sperp'
+
+        energies, intensities, sab, _, scaling, rlu_to_cart = self._spinwave_calculation(
+            q_vectors=q_vectors,
+            field=field,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit,
+            save_sab=save_sab,
+        )
+
+        if save_sab:
+            intensities = calculate_polarised_intensity(sab, intensities, q_vectors * scaling,
+                                                      components, rlu_to_cart).real
+
+        return energies, intensities
+
+    def spinwave_calculation(self,
+                          path: Path,
+                          field: ArrayLike | None = None,
+                          use_rust: bool = True,
+                          use_rotating: bool = True,
+                          intensity_unit: IntensityUnits | str = 'cell',
+                          save_sab: bool = False,
+                          save_wavefunctions: bool = False
+                          ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Performs a spin wave calculation of the system for the given q-point path.
+
+        :param path: *required* Path along which to calculate
+        :param field: Optional field direction
+        :param use_rust: Whether to use Rust or Python calculator (default: True)
+        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
+        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        :param save_sab: Whether return the Sab matrices (default: False)
+        :param save_wavefunctions: Whether to return the eigenvectors at each Q-point (default: False)
+
+        :return: energies, intensities, sab, wavefunctions
+
+        If save_sab or save_wavefunctions are False, then sab or wavefunctions will be None
+        """
+        energies, intensities, sab, wavefunctions, scaling, rlu_to_cart = \
+            self.without_nonmagnetic()._spinwave_calculation(
+                q_vectors=path.q_points(),
+                field=field,
+                use_rust=use_rust,
+                use_rotating=use_rotating,
+                intensity_unit=intensity_unit,
+                save_sab=save_sab,
+                save_wavefunctions=save_wavefunctions)
+
+
+        return energies, intensities, sab, wavefunctions
+
+    def _spinwave_calculation(self,
+                              q_vectors: np.ndarray,
+                              field: ArrayLike | None = None,
+                              use_rust: bool=True,
+                              use_rotating: bool=True,
+                              intensity_unit: IntensityUnits | str='cell',
+                              save_sab: bool=False,
+                              save_wavefunctions: bool=False
+                              ):
         """Calculate the energy levels of the system for the given q-vectors.
 
         ** Does not remove nonmagnetic sites **
@@ -398,37 +477,26 @@ class Hamiltonian(SPWSerialisable):
         if intensity_unit == IntensityUnits.BARNPERATOM or intensity_unit == IntensityUnits.BARNPERCELL:
             raise NotImplementedError('Intensity scale in barn/sr/meV/atom not yet implemented.')
 
-        #
-        # Set up choice of calculation
-        #
-        save_sab = components != 'Sperp'
+
 
         # Rotating frame calculations should only be run on RotationSupercells
         use_rotating = use_rotating and isinstance(self.structure.supercell, RotationSupercell)
 
         # default to Python unless Rust is requested (which it is by default) and available
         coupling_class = PyCoupling
-        if save_sab:
-            def _swcalc(*a, **k):
-                return py_spinwave(*a, **k, save_sab=True)
-            spinwave_calculation = _swcalc
-        else:
-            spinwave_calculation = py_spinwave
+
+        spinwave_calculation = py_spinwave
         magnetic_field_class = PyMagneticField
 
         if use_rust:
             try:
                 from pyspinw.rust import (
                     spinwave_calculation as rs_spinwave,
-                    spinwave_calculation_Sab as rs_spinwave_sab,
                     Coupling as RsCoupling,
                     MagneticField as RsMagneticField)
 
                 coupling_class = RsCoupling
-                if save_sab:
-                    spinwave_calculation = rs_spinwave_sab
-                else:
-                    spinwave_calculation = rs_spinwave
+                spinwave_calculation = rs_spinwave
                 magnetic_field_class = RsMagneticField
 
 
@@ -465,11 +533,9 @@ class Hamiltonian(SPWSerialisable):
         positions = []
         unique_id_to_index: dict[int, int] = {}
         for index, site in enumerate(expanded.structure.sites):
-            # TODO: Sort out spins for supercells
+
             spins.append(site.base_spin)
-
             positions.append(site.ijk)
-
             unique_id_to_index[site._unique_id] = index
 
         # Get the field object
@@ -541,24 +607,24 @@ class Hamiltonian(SPWSerialisable):
                         positions=positions,
                         rlu_to_cart=rlu_to_cart,
                         field=magnetic_field,
-                        rotating_frame=rotating_frame)
+                        rotating_frame=rotating_frame,
+                        save_sab=save_sab,
+                        save_wavefunctions=save_wavefunctions)
 
-        if save_sab:
-            sab = np.transpose(result[2], (3,2,1,0)) if use_rust else result[2]
-            intensity = calculate_polarised_intensity(sab, result[1], q_vectors * scaling,
-                                                      components, rlu_to_cart).real
-            if components == 'all':
-                return intensity
-        else:
-            intensity = result[1]
+        energies, intensities, sab, wavefunctions = result
+
+        if sab is not None and use_rust:
+            sab = np.transpose(sab, (3, 2, 1, 0))
 
         # Applies a rescaling to agree with Matlab code for Sab
         # Toth & Lake eq (46) gives a 1/(2Natom) prefactor but the Matlab code uses 1/(2*Ncell)
         if intensity_unit == IntensityUnits.PERCELL:
             scale_factor = rotations.shape[0] / np.prod(scaling)
-            intensity = [res * scale_factor for res in intensity]
+            intensities = [res * scale_factor for res in intensities]
+            if sab is not None:
+                sab = sab * scale_factor
 
-        return result[0], intensity
+        return energies, intensities, sab, wavefunctions, scaling, rlu_to_cart
 
     def spaghetti_plot_dual(self,
                             path: Path,
@@ -580,8 +646,8 @@ class Hamiltonian(SPWSerialisable):
                 axs.append(fig.add_subplot(2,1,ii+1))
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                    intensity_unit, components))
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                     intensity_unit, components))
         n_mode = energy.shape[1]
         for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
             axs[0].plot(x_values, np.real(series[0]), 'k')
@@ -623,8 +689,8 @@ class Hamiltonian(SPWSerialisable):
             ax = fig.get_axes()[0]
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self.energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                    intensity_unit, components))
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                     intensity_unit, components))
         intensity[np.where(np.isnan(intensity))] = 0
         energy[np.where(np.isnan(energy))] = 0
         if evect is None:
@@ -701,7 +767,7 @@ class Hamiltonian(SPWSerialisable):
         e_max = q_slice.e_max
 
         # Step 1: Calculate all energies and intensities at each q-point
-        energies, intensities = self.energies_and_intensities(
+        energies, intensities = self._energies_and_intensities(
             q_slice.q_points(),
             field=field,
             use_rust=use_rust,
@@ -780,7 +846,7 @@ class Hamiltonian(SPWSerialisable):
                                  field: ArrayLike | None = None,
                                  use_rust: bool = True) -> list[np.ndarray]:
         """ Return energies as series corresponding to q, sorted by energy """
-        energy, intensities = self.energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+        energy, intensities = self._energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
 
         energy = np.array(energy)
 
