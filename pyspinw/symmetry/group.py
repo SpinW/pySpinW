@@ -228,9 +228,7 @@ class SpaceGroup(SymmetryGroup):
                                  pair_1: tuple[LatticeSite, LatticeSite],
                                  pair_2: tuple[LatticeSite, LatticeSite],
                                  tolerance: float=1e-10) -> set[SpaceOperation]:
-
         """ Operations in this group that transform one ordered pair into another """
-
         left_operations = self.operations_between_sites(pair_1[0], pair_2[0], tolerance=tolerance)
         right_operations = self.operations_between_sites(pair_1[1], pair_2[1], tolerance=tolerance)
 
