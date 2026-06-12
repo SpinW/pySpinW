@@ -199,12 +199,12 @@ class SpaceGroup(SymmetryGroup):
 
         return new_sites
 
-    def operations_between_sites(self, site_1, site_2, tolerance=1e-9):
+    def operations_between_sites(self, site_1, site_2, tolerance=1e-10):
         """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
         return [operation for operation in self.operations
                 if np.allclose(operation([site_1.ijk]), [site_2.ijk], atol=tolerance)]
 
-    def operations_on_site_pairs(self, site_1, site_2) -> tuple[set[SpaceOperation], set[SpaceOperation]]:
+    def operations_on_single_site_pairs(self, site_1, site_2) -> tuple[set[SpaceOperation], set[SpaceOperation]]:
         """ Get operations on pairs of sites """
         #
         # There are two cases here:
@@ -223,6 +223,21 @@ class SpaceGroup(SymmetryGroup):
             set(self.operations_between_sites(site_2, site_1)))
 
         return identity_operations, inversion_operations
+
+    def operations_between_pairs(self,
+                                 pair_1: tuple[LatticeSite, LatticeSite],
+                                 pair_2: tuple[LatticeSite, LatticeSite],
+                                 tolerance: float=1e-10) -> set[SpaceOperation]:
+
+        """ Operations in this group that transform one ordered pair into another """
+
+        left_operations = self.operations_between_sites(pair_1[0], pair_2[0], tolerance=tolerance)
+        right_operations = self.operations_between_sites(pair_1[1], pair_2[1], tolerance=tolerance)
+
+        return set(left_operations).intersection(right_operations)
+
+
+
 
     def exchange_constraints(self,
                              site_1: LatticeSite | ArrayLike,
@@ -247,7 +262,7 @@ class SpaceGroup(SymmetryGroup):
             except Exception as e:
                 raise TypeError("Expected `site_2` to be a LatticeSite or vector") from e
 
-        identity_operations, inversion_operations = self.operations_on_site_pairs(site_1, site_2)
+        identity_operations, inversion_operations = self.operations_on_single_site_pairs(site_1, site_2)
 
         inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
         identity_transforms = [op.point_operation_matrix for op in identity_operations]

@@ -136,8 +136,8 @@ class SpaceOperation:
             SpaceOperation._from_numpy(point_operation, translation)
 
         return SpaceOperation(point_operation=point_operation,
-                                 translation=translation,
-                                 name=name)
+                              translation=translation,
+                              name=name)
 
     @staticmethod
     def from_transformation_matrix(matrix: np.ndarray, name: str | None = None):
