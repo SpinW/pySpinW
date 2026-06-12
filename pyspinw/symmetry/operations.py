@@ -16,6 +16,7 @@ class SpaceOperation:
         self.name = name
 
         self.point_operation = point_operation
+        self.point_operation_matrix = np.array(point_operation, dtype=float)
         self.translation = translation
 
         # Validate data in the point_operation field
@@ -52,6 +53,9 @@ class SpaceOperation:
         """ Equality, should be exact because we're using integers """
         return (self.point_operation, self.translation) == \
             (other.point_operation, other.translation)
+
+    def __hash__(self):
+        return hash((self.point_operation, self.translation))
 
 
     @staticmethod
@@ -135,8 +139,8 @@ class SpaceOperation:
             SpaceOperation._from_numpy(point_operation, translation)
 
         return SpaceOperation(point_operation=point_operation,
-                                 translation=translation,
-                                 name=name)
+                              translation=translation,
+                              name=name)
 
     @staticmethod
     def from_transformation_matrix(matrix: np.ndarray, name: str | None = None):

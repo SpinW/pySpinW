@@ -9,9 +9,12 @@ from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.group import SpaceGroup
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import triple_product_matrix
+
 
 _exchange_id_counter = -1
 def _generate_unique_exchange_id():
@@ -205,6 +208,68 @@ class Exchange(SPWSerialisable):
     def is_symmetric(self):
         """ Is this a symmetric exchange """
         return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
+
+    def _obeys_symmetry(self,
+                        identity_operations: set[SpaceOperation],
+                        inversion_operations: set[SpaceOperation]) -> bool:
+        """ Main logic for symmetry checking """
+        exchange_matrix = self._exchange_matrix
+        for operation in identity_operations:
+            if not np.allclose(exchange_matrix,
+                           operation.point_operation_matrix @ exchange_matrix @ operation.point_operation_matrix.T):
+                return False
+
+        exchange_matrix_T = self._exchange_matrix.T
+        for operation in inversion_operations:
+            if not np.allclose(exchange_matrix,
+                               operation.point_operation_matrix @ exchange_matrix_T @
+                               operation.point_operation_matrix.T):
+                return False
+
+        return True
+
+    def obeys_symmetry(self, spacegroup: SpaceGroup) -> bool:
+        """ Check that this exchange is consistent with the symmetry group """
+        # Checking is easier than finding the list of symmetry groups
+        identity_operations, inversion_operations = spacegroup.operations_on_single_site_pairs(self.site_1, self.site_2)
+        return self._obeys_symmetry(identity_operations, inversion_operations)
+
+    def symmetry_copy(self,
+                      spacegroup: SpaceGroup,
+                      site_1: LatticeSite,
+                      site_2: LatticeSite,
+                      cell_offset: CellOffsetCoercible = (0,0,0)):
+        """ Copy this exchange using symmetry operations """
+        # We want to copy the exchange under symmetry operations
+        # There might be more than one symmetry operation that maps the pair of sites
+        #  however, the effect on the exchange should be the same for all these operations,
+        #  this means we can just pick an arbitrary one.
+        # If this turns out not to be the case, then exchange itself does not need to obey the
+        # symmetry constraints
+
+        if self.obeys_symmetry(spacegroup):
+            # find the operations that map the pairs
+
+            pair_operations = spacegroup.operations_between_pairs(
+                (self.site_1, self.site_2),
+                (site_1, site_2))
+
+            if len(pair_operations) == 0:
+                raise ValueError("New points are not related to the original by symmetry")
+
+            # Pick one element for the transformation
+            op = next(iter(pair_operations))
+            transform = op.point_operation_matrix
+
+            new_exchange_matrix = transform @ self.exchange_matrix @ transform.T
+
+            return Exchange(site_1, site_2,
+                            exchange_matrix=new_exchange_matrix,
+                            name=f"{self.name} [{op.text_form}]",
+                            cell_offset=CellOffset.coerce(cell_offset))
+
+        else:
+            raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
 
 class HeisenbergExchange(Exchange):

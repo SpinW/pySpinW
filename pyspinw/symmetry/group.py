@@ -11,6 +11,9 @@ import numpy as np
 import spglib
 from difflib import get_close_matches
 
+from numpy._typing import ArrayLike
+from numpy.ma.core import identity
+
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
@@ -22,6 +25,7 @@ from pyspinw.symmetry.settings import Setting
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
     lattice_system_name_lookup
+from pyspinw.symmetry.variable_reduction import ExchangeMatrixConstraints
 
 from pyspinw.tolerances import tolerances
 
@@ -100,7 +104,7 @@ class SpaceGroup(SymmetryGroup):
                  international_symbol,
                  short_symbol,
                  preferred_symbol,
-                 operations,
+                 operations: list[SpaceOperation],
                  magnetic_variants: list[MagneticSpaceGroup],
                  lattice_system: LatticeSystem,
                  choice: str | None):
@@ -194,6 +198,80 @@ class SpaceGroup(SymmetryGroup):
             new_sites.append(new_site)
 
         return new_sites
+
+    def operations_between_sites(self, site_1, site_2, tolerance=1e-10):
+        """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
+        return [operation for operation in self.operations
+                if np.allclose(operation([site_1.ijk]), [site_2.ijk], atol=tolerance)]
+
+    def operations_on_single_site_pairs(self, site_1, site_2) -> tuple[set[SpaceOperation], set[SpaceOperation]]:
+        """ Get operations on pairs of sites """
+        #
+        # There are two cases here:
+        #  1) where the "bond" is preserved by keeping the sites the same
+        #  2) where it is preserved but with exchanging the sites
+        #
+        # In case 1, the constraint is on J, in the form J = M J M^T
+        # In case 2, the constraint is on J^T, as J->J^T constitutes an inversion, J = M J^T M^T
+
+        # Case 1:
+        identity_operations = set(self.operations_between_sites(site_1, site_1)).intersection(
+            set(self.operations_between_sites(site_2, site_2)))
+
+        # Case 2:
+        inversion_operations = set(self.operations_between_sites(site_1, site_2)).intersection(
+            set(self.operations_between_sites(site_2, site_1)))
+
+        return identity_operations, inversion_operations
+
+    def operations_between_pairs(self,
+                                 pair_1: tuple[LatticeSite, LatticeSite],
+                                 pair_2: tuple[LatticeSite, LatticeSite],
+                                 tolerance: float=1e-10) -> set[SpaceOperation]:
+        """ Operations in this group that transform one ordered pair into another """
+        left_operations = self.operations_between_sites(pair_1[0], pair_2[0], tolerance=tolerance)
+        right_operations = self.operations_between_sites(pair_1[1], pair_2[1], tolerance=tolerance)
+
+        return set(left_operations).intersection(right_operations)
+
+
+
+
+    def exchange_constraints(self,
+                             site_1: LatticeSite | ArrayLike,
+                             site_2: LatticeSite | ArrayLike,
+                             do_print: bool = True) -> ExchangeMatrixConstraints:
+        """ Get the details of the allowed exchange matrices"""
+        if not isinstance(site_1, LatticeSite):
+            try:
+                site_1 = LatticeSite(i=float(site_1[0]),
+                                     j=float(site_1[1]),
+                                     k=float(site_1[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_1` to be a LatticeSite or vector") from e
+
+        if not isinstance(site_2, LatticeSite):
+            try:
+                site_2 = LatticeSite(i=float(site_2[0]),
+                                     j=float(site_2[1]),
+                                     k=float(site_2[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_2` to be a LatticeSite or vector") from e
+
+        identity_operations, inversion_operations = self.operations_on_single_site_pairs(site_1, site_2)
+
+        inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
+        identity_transforms = [op.point_operation_matrix for op in identity_operations]
+
+        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
+
+        if do_print:
+            check.print_summary()
+
+        return check
+
 
 #
 #
