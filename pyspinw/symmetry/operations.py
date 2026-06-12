@@ -54,6 +54,9 @@ class SpaceOperation:
         return (self.point_operation, self.translation) == \
             (other.point_operation, other.translation)
 
+    def __hash__(self):
+        return hash((self.point_operation, self.translation))
+
 
     @staticmethod
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray) -> \

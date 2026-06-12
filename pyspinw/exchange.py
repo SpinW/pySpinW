@@ -262,7 +262,8 @@ class Exchange(SPWSerialisable):
 
             return Exchange(site_1, site_2,
                             exchange_matrix=new_exchange_matrix,
-                            name=f"{self.name} [{op.text_form}]")
+                            name=f"{self.name} [{op.text_form}]",
+                            cell_offset=self.cell_offset)
 
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
