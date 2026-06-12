@@ -234,7 +234,11 @@ class Exchange(SPWSerialisable):
         identity_operations, inversion_operations = spacegroup.operations_on_single_site_pairs(self.site_1, self.site_2)
         return self._obeys_symmetry(identity_operations, inversion_operations)
 
-    def symmetry_copy(self, site_1: LatticeSite, site_2: LatticeSite, spacegroup: SpaceGroup):
+    def symmetry_copy(self,
+                      spacegroup: SpaceGroup,
+                      site_1: LatticeSite,
+                      site_2: LatticeSite,
+                      cell_offset: CellOffsetCoercible = (0,0,0)):
         """ Copy this exchange using symmetry operations """
         # We want to copy the exchange under symmetry operations
         # There might be more than one symmetry operation that maps the pair of sites
@@ -262,7 +266,7 @@ class Exchange(SPWSerialisable):
             return Exchange(site_1, site_2,
                             exchange_matrix=new_exchange_matrix,
                             name=f"{self.name} [{op.text_form}]",
-                            cell_offset=self.cell_offset)
+                            cell_offset=CellOffset.coerce(cell_offset))
 
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
