@@ -48,6 +48,46 @@ These have to be dealt with differently, because changing the order of $S_i$ and
 above results in a transposition. 
 But they give us what we need to work out the constraints on the exchange matrix. 
 
+### Equivalence with midpoint transformation
+
+The action of a spacegroup operation is linear, so if $g$ fixes two points, i.e.
+$g(s_1) = s_1$ and $g(s_2) = s_2$, then it also fixes linear combinations of these points:
+
+Say the symmetry operation is $x \to M x + T$, then we can apply the symmetry operations to
+the individual points to and compare the result to the operation of $g$ to on their components.
+i.e. from the fixing of $s_1$ and $s_2$ individually:
+
+$a s_1 + b s_2 = a g(s_1) + b g(s_2)$
+
+Then applying the definition of the transformation
+
+$= a M s_1 + a T + b M s_2 + b T = M (a s_1 + b s_2) + (a+b) T$
+
+and as long as $a + b = 1$
+
+$ = g(a s_1 + b s_2)$
+ 
+So, we can write it using this constraint as a convex combination, and compare to our starting point, giving:
+
+$g(k s_1 + (1-k)s_2) = k s_1 + (1 - k) s_2$
+
+which can easily be interpreted as the symmetries acting on any point on the line between $s_1$ and $s_2$.
+
+Similarly, if $g(s_1) = s_2$ and $g(s_2) = s_1$ then
+
+$k s_1 + (k-1) s_2 = k g(s_1) + (1-k)g(s_2)$
+
+and applying the definition of the transform we get
+
+$= (k-1) M s_1 + k M s_2 + T = g((k-1) s_1 + k s_2)$
+
+and in this case we can see that there is a further restriction in this case, so that
+
+$g(k s_1 + (1-k) s_2) = g((k-1) s_1 + k s_2)$
+
+i.e. $k = 1-k$, or $k = 1/2$. That is to say, the symmetries when swapped are symmetries of the midpoint.  
+
+
 ### Swapping the sites transposes the exchange matrix
 
 This is very easy to show. It comes from noting that Hamilton should be invariant to the site swapping, that is,
@@ -171,6 +211,8 @@ This means that $g h^{-1}$ must map $(t_1, t_2)$ to itself.
 We know that the exchange matrix needs to be invariant under all operations that send a point pair to itself.
 Remember that is not true of any arbitrary matrix, just those that obey the symmetries of the system.
 
-As $gh^{-1}$ leaves the symmetry constrained exchange matrix unchanged, $(gh^{-1}) h$ and $h$ should do the
-same thing to it. Then, because the operations $(gh^{-1}) h$ and $g$ are the same, $h$ and $g$ should do
-the same thing to the exchange matrix.
+As $gh^{-1}$ leaves the symmetry constrained exchange matrix unchanged, $(gh^{-1}) h$ and $h$ should result in the
+same exchange matrix.
+Then, as the operations on the exchange matrix compose in the same way as the groups themselves,
+and as $(gh^{-1}) h$ and $g$ are identical, 
+$h$ and $g$ should also result in the same thing when applied to a symmetry constrained exchange matrix.
