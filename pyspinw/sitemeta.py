@@ -15,7 +15,7 @@ def _build_regex():
     symbols_sorted = sorted(chemical_symbols[1:], key=lambda x: (-len(x), x))
 
     # Build regex
-    pattern = r"^(?:{})".format("|".join(symbols_sorted))
+    pattern = r"^\s*({})(?:[^a-zA-Z]?.*)?$".format("|".join(symbols_sorted))
     return re.compile(pattern)
 
 
@@ -45,16 +45,26 @@ class SiteMetadata(SPWSerialisable):
         return SiteMetadata(self.element, self.radius, self.color)
 
     @staticmethod
+    def extract_element(string: str):
+        """ Get a chemical element from a string """
+        match_result = _chemical_pattern.match(string)
+
+        if match_result:
+            return match_result.group(1)
+
+        else:
+            return None
+
+    @staticmethod
     def metadata_from_name(name: str | None):
         """ Extract metadata based on name"""
         if name is None:
             return SiteMetadata()
 
         # See if the name starts with a known element, the first in the ASE list is X, ignore that
-        match_result = _chemical_pattern.match(name)
+        element = SiteMetadata.extract_element(name)
 
-        if match_result:
-            element = match_result.group()
+        if element is not None:
             z = atomic_numbers[element]
 
             color = jmol_colors[z]

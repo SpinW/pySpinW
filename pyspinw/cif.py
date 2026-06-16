@@ -90,7 +90,6 @@ def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell
                 data["_atom_site_fract_z"]):
 
             metadata = SiteMetadata.metadata_from_name(label)
-            metadata.element = atom
 
             if radius_lookup is not None:
                 metadata.radius = radius_lookup[atom]
