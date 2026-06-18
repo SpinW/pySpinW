@@ -85,7 +85,10 @@ and in this case we can see that there is a further restriction in this case, so
 
 $g(k s_1 + (1-k) s_2) = g((k-1) s_1 + k s_2)$
 
-i.e. $k = 1-k$, or $k = 1/2$. That is to say, the symmetries when swapped are symmetries of the midpoint.  
+i.e. $k = 1-k$, or $k = 1/2$. That is to say, the symmetries when swapped are symmetries of the midpoint.
+
+This doesn't prove that all symmetries of the midpoint are symmetries of the point pair, just that symmetries
+of the point pair are symmetries of the midpoint.
 
 
 ### Swapping the sites transposes the exchange matrix

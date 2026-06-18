@@ -25,7 +25,7 @@ from pyspinw.symmetry.settings import Setting
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
     lattice_system_name_lookup
-from pyspinw.symmetry.variable_reduction import ExchangeMatrixConstraints
+from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints
 
 from pyspinw.tolerances import tolerances
 

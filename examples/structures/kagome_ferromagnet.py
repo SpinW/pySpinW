@@ -8,7 +8,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.sample import Powder
 from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 import sys
 
 """

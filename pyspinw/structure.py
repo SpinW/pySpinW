@@ -382,3 +382,5 @@ class Structure(SPWSerialisable):
 
         return self.spacegroup.exchange_constraints(site_1, site_2)
 
+
+

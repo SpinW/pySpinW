@@ -6,7 +6,7 @@ from typing import Callable
 
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import (TiledSupercell, RotationSupercell, SummationSupercell,
                                         CommensuratePropagationVector)
 

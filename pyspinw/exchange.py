@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from pyspinw.structure import Structure
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
 from pyspinw.exchangemetadata import ExchangeMetadata
@@ -235,7 +236,7 @@ class Exchange(SPWSerialisable):
         return self._obeys_symmetry(identity_operations, inversion_operations)
 
     def symmetry_copy(self,
-                      spacegroup: SpaceGroup,
+                      structure: Structure,
                       site_1: LatticeSite,
                       site_2: LatticeSite,
                       cell_offset: CellOffsetCoercible = (0,0,0)):
@@ -246,6 +247,9 @@ class Exchange(SPWSerialisable):
         #  this means we can just pick an arbitrary one.
         # If this turns out not to be the case, then exchange itself does not need to obey the
         # symmetry constraints
+
+        spacegroup = structure.spacegroup
+        unit_cell = structure.unit_cell
 
         if self.obeys_symmetry(spacegroup):
             # find the operations that map the pairs

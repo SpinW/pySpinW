@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 
-from pyspinw.symmetry.variable_reduction import _symantisym_matrix, _transpose_matrix
+from pyspinw.symmetry.symmetry_checking import _symantisym_matrix, _transpose_matrix
 
 def vectorise(mat):
     """ Turn a matrix into vector """

@@ -7,7 +7,7 @@ from pyspinw.interface import generate_exchanges
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector, \
     TransformationSupercell, RotationTransform
 

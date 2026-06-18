@@ -9,7 +9,7 @@ from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 import sys
 
 """
