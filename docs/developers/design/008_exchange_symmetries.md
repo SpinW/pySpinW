@@ -130,13 +130,26 @@ $\text{vec} \left(\begin{array}{ccc} a & b & c \\ d & e & f \\ g & h & i \end{ar
 
 So, if $V = \text{vec}(J)$ is the vector of matrix components, then we can translate as
 
-$J \to I V$
+$J \to I V$ &nbsp;&nbsp;&nbsp;&nbsp; (1)
 
-$M J M^T \to (M \otimes M) V$
+$M J M^T \to (M \otimes M) V$ &nbsp;&nbsp;&nbsp;&nbsp; (2)
+
+The calculation above is done in lattice units, but we have our exchange matrix expressed in terms of cartesian spin coordinates.
+If $J = J_\text{lattice} = RJ_\text{Cartesian}R^T$ then we have
+
+$J \to (R \otimes R) V$
+
+So, (1) and (2) become
+
+$J \to I (R \otimes R) V$
+
+and
+
+$M J M^T \to (M \otimes M) (R \otimes R) V$ &nbsp;&nbsp;&nbsp;&nbsp; (2)
 
 And our symmetry constraints are of the form 
 
-$(M \otimes M - I) V = 0$
+$(M \otimes M - I) (R \otimes R) V = 0$
 
 The swapped constraints need a "commutation matrix", $K$, defined such that
 
@@ -144,7 +157,7 @@ $\text{vec}(P^T) = K \text{vec}(P)$
 
 With this, for the swapped case we get
 
-$((M \otimes M) K - I) V = 0$
+$((M \otimes M) K - I) (R \otimes R) V = 0$
 
 To get a reduced system of equations for out matrix entries we build a $9$-by-$9n$
 matrix of $M \otimes M - I$ and $(M \otimes M)K - I$ and row-reduce it.

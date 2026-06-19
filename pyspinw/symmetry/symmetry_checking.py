@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 def rref(A, tol=1e-12):
     """ Reduced row echelon form - not in scipy or numpy"""
     A = A.astype(float).copy()
@@ -53,7 +54,7 @@ _symantisym_matrix = np.array([
     [0, 0, 0, 0, 0, 1,  0,  0,  0]
 ], dtype=float)
 
-_symasym_matrix_inv = np.linalg.inv(_symantisym_matrix)
+_symantisym_matrix_inv = np.linalg.inv(_symantisym_matrix)
 
 class PopString:
     """ Helper class for assigning letters """
@@ -76,7 +77,11 @@ class ExchangeMatrixConstraints:
     def __init__(self,
                  transformations: list[np.ndarray],
                  swapped_transformations: list[np.ndarray] | None = None,
+                 ijk_to_xyz: np.ndarray | None = None,
                  tol=1e-12):
+
+        if ijk_to_xyz is None:
+            ijk_to_xyz = np.eye(3)
 
         swapped_transformations = [] if swapped_transformations is None else swapped_transformations
 
@@ -90,11 +95,13 @@ class ExchangeMatrixConstraints:
         self.swapped_transformations = swapped_transformations
         self.tol = tol
 
-        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ _symasym_matrix_inv.T
-                            for transformation in transformations]
+        to_presentation_form = np.kron(ijk_to_xyz, ijk_to_xyz) @ _symantisym_matrix_inv # TODO: Verify this
 
-        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ _symasym_matrix_inv.T
-                            for transformation in swapped_transformations]
+        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ to_presentation_form
+                     for transformation in transformations]
+
+        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ to_presentation_form
+                   for transformation in swapped_transformations]
 
         matrix = np.vstack(unswapped + swapped)
 

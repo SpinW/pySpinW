@@ -2,8 +2,6 @@
 import os.path
 import pickle
 from collections import defaultdict
-from enum import Enum
-from typing import Callable
 
 from abc import ABC, abstractmethod
 
@@ -12,7 +10,6 @@ import spglib
 from difflib import get_close_matches
 
 from numpy._typing import ArrayLike
-from numpy.ma.core import identity
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
@@ -22,8 +19,9 @@ from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_f
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
 from pyspinw.symmetry.data.msg_symbols import msg_symbols
 from pyspinw.symmetry.settings import Setting
+from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.symmetry.supercell import Supercell
-from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
+from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, \
     lattice_system_name_lookup
 from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints
 
@@ -240,6 +238,7 @@ class SpaceGroup(SymmetryGroup):
     def exchange_constraints(self,
                              site_1: LatticeSite | ArrayLike,
                              site_2: LatticeSite | ArrayLike,
+                             unit_cell: UnitCell,
                              do_print: bool = True) -> ExchangeMatrixConstraints:
         """ Get the details of the allowed exchange matrices"""
         if not isinstance(site_1, LatticeSite):
@@ -265,7 +264,8 @@ class SpaceGroup(SymmetryGroup):
         inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
         identity_transforms = [op.point_operation_matrix for op in identity_operations]
 
-        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
+        # TODO: Verify the choice of transform here (inv?)
+        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms, unit_cell._xyz_spins_inv)
 
         if do_print:
             check.print_summary()

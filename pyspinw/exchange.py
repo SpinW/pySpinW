@@ -211,10 +211,15 @@ class Exchange(SPWSerialisable):
         return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
 
     def _obeys_symmetry(self,
+                        unit_cell: UnitCell,
                         identity_operations: set[SpaceOperation],
                         inversion_operations: set[SpaceOperation]) -> bool:
+
         """ Main logic for symmetry checking """
-        exchange_matrix = self._exchange_matrix
+
+        # We want the exchange matrix in lattice units TODO: Verify the details of this transform
+        exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
+
         for operation in identity_operations:
             if not np.allclose(exchange_matrix,
                            operation.point_operation_matrix @ exchange_matrix @ operation.point_operation_matrix.T):
@@ -229,11 +234,14 @@ class Exchange(SPWSerialisable):
 
         return True
 
-    def obeys_symmetry(self, spacegroup: SpaceGroup) -> bool:
+    def obeys_symmetry(self, structure: Structure) -> bool:
         """ Check that this exchange is consistent with the symmetry group """
+        spacegroup = structure.spacegroup
+        unit_cell = structure.unit_cell
+
         # Checking is easier than finding the list of symmetry groups
         identity_operations, inversion_operations = spacegroup.operations_on_single_site_pairs(self.site_1, self.site_2)
-        return self._obeys_symmetry(identity_operations, inversion_operations)
+        return self._obeys_symmetry(unit_cell, identity_operations, inversion_operations)
 
     def symmetry_copy(self,
                       structure: Structure,
@@ -265,7 +273,10 @@ class Exchange(SPWSerialisable):
             op = next(iter(pair_operations))
             transform = op.point_operation_matrix
 
-            new_exchange_matrix = transform @ self.exchange_matrix @ transform.T
+            # Apply after transforming to xyz space TODO: Verify, could require inverses/transforms
+            exchange_matrix_ijk = unit_cell._xyz_spins @ self.exchange_matrix @ unit_cell._xyz_spins.T
+            new_exchange_matrix_ijk = transform @ exchange_matrix_ijk @ transform.T
+            new_exchange_matrix = unit_cell._xyz_spins_inv @ new_exchange_matrix_ijk @ unit_cell._xyz_spins_inv.T
 
             return Exchange(site_1, site_2,
                             exchange_matrix=new_exchange_matrix,
@@ -275,6 +286,8 @@ class Exchange(SPWSerialisable):
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
+    def symmetry_fill(self, structure: Structure):
+        """ Make multiple copies of this exchange so that symmetry is satisfied """
 
 class HeisenbergExchange(Exchange):
     """Heisenberg Exchange, which takes the form
