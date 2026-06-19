@@ -60,7 +60,7 @@ class Experiment(SPWSerialisable):
         return energies
 
     def fit(self, data: Data):
-        """Fitting has not been implemented yet."""
+        """Fit the experimental model to a dataset. This has not been implemented yet."""
         q_values = data.q
         raise NotImplementedError()
 
