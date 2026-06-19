@@ -1,60 +1,13 @@
 """ Toolbar and display options data for the viewer"""
-import ctypes
-import json
 import os
-
-from dataclasses import dataclass, asdict
 
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QIcon, QPainter
-from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy, QSlider
+from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy, QSlider, QDialog
 
+from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.icons.iconload import load_icon
-
-
-@dataclass
-class DisplayOptions:
-    """ Options for how things should display """
-
-    show_sites: bool = True
-    show_exchanges: bool = True
-    show_anisotropies: bool = True
-    show_unit_cell: bool = False
-    show_supercell: bool = False
-
-    prettify: bool = True
-
-    show_nonmagnetic_atoms: bool = True
-    use_atomic_radii: bool = True
-    show_atoms_not_spins: bool = False
-
-    atom_spin_scaling: float = 0.35
-    exchange_scaling: float = 0.20
-
-    show_cartesian_axes: bool = True
-    show_lattice_axes: bool = False
-    orthogonal_lattice_axes: bool = False
-
-
-    def serialise(self) -> str:
-        """ Serialise settings object to a string"""
-        out = asdict(self)
-
-        return json.dumps(out)
-
-    @staticmethod
-    def deserialise(serialised: str):
-        """ Deserialise a setting object from a string"""
-        try:
-            data = json.loads(serialised)
-
-            return DisplayOptions(**data)
-
-        except Exception: # Anything at all goes wrong, just return default
-
-            return DisplayOptions()
-
-
+from pyspinw.gui.settings import SettingsDialog
 
 
 class IconWidget(QWidget):
@@ -91,17 +44,17 @@ class GraphicalSlider(QWidget):
 
         self.min_value = min_value
         self.max_value = max_value
-        start_position = int(100 * (start_value - min_value) / (max_value - min_value))
+        start_position = int(1000 * (start_value - min_value) / (max_value - min_value))
 
         if start_position < 0:
             start_position = 0
 
-        elif start_position > 100:
-            start_position = 100
+        elif start_position > 1000:
+            start_position = 1000
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(0)
-        self.slider.setMaximum(100)
+        self.slider.setMaximum(1000)
         self.slider.setValue(start_position)
         self.slider.valueChanged.connect(self.on_slider_changed)
         self.slider.setMinimumSize(QSize(80, 20))
@@ -125,10 +78,7 @@ class GraphicalSlider(QWidget):
 
     def value(self) -> float:
         """ Get the value in floats """
-        ranged = 0.02 * self.slider.value() - 1 # in range [-1, 1]
-        ranged *= abs(ranged) # Make it quadratic
-
-        zero_one = 0.5*(ranged+1)
+        zero_one = self.slider.value() / 1000
 
         return self.min_value + zero_one * (self.max_value - self.min_value)
 
@@ -139,6 +89,8 @@ class DisplayOptionsToolbar(QWidget):
 
     displayOptionsChanged = Signal()
     requestViewReset = Signal()
+    requestSnapshot = Signal()
+    requestSettings = Signal()
 
     def _add_slider(self,
                     min_value: float, max_value: float, start_value: float,
@@ -181,8 +133,15 @@ class DisplayOptionsToolbar(QWidget):
 
         return btn
 
-    def __init__(self, parent=None):
+    def __init__(self,
+                 initial_display_options: DisplayOptions | None = None,
+                 max_size_object_scaling: float = 10.0,
+                 save_config_on_exit: bool = True,
+                 parent=None):
+
         super().__init__(parent)
+
+        self.save_config_on_exit = save_config_on_exit
 
         self.bar_layout = QHBoxLayout()
 
@@ -190,12 +149,32 @@ class DisplayOptionsToolbar(QWidget):
         # Load settings
         #
 
-        if os.path.exists(self.settings_filename):
-            with open(self.settings_filename, 'r') as file:
-                settings = DisplayOptions.deserialise(file.read())
+        if initial_display_options is None:
+
+            if os.path.exists(self.settings_filename):
+                with open(self.settings_filename, 'r') as file:
+                    settings = DisplayOptions.deserialise(file.read())
+
+            else:
+                settings = DisplayOptions()
 
         else:
-            settings = DisplayOptions()
+            if not isinstance(initial_display_options, DisplayOptions):
+                raise TypeError("Expected initial_display_options to be an instance of DisplayOptions")
+
+            settings = initial_display_options
+
+        #
+        # Variables for color preference
+        #
+
+        self._background_color = settings.background_color
+        self._sites_color = settings.default_site_color
+        self._exchanges_color = settings.default_exchange_color
+
+        self._selected_color = settings.selected_color
+        self._hover_color = settings.hover_color
+        self._selected_hover_color = settings.selected_hover_color
 
         #
         # Show hide options
@@ -241,7 +220,7 @@ class DisplayOptionsToolbar(QWidget):
 
 
         self.spin_scale_slider = self._add_slider(
-            0, 10, settings.atom_spin_scaling,
+            0, max_size_object_scaling, settings.atom_spin_scaling,
             left_label=IconWidget("small_moments", "Smaller Sites"),
             right_label=IconWidget("big_moments", "Larger Sites"),
             alt_text="Site scale factor")
@@ -256,7 +235,7 @@ class DisplayOptionsToolbar(QWidget):
                                                    value=settings.use_atomic_radii)
 
         self.exchange_scale_slider = self._add_slider(
-            0, 1, settings.exchange_scaling,
+            0, max_size_object_scaling, settings.exchange_scaling,
             left_label=IconWidget("small_exchange", "Smaller Exchanges"),
             right_label=IconWidget("big_exchange", "Larger Exchanges"),
             alt_text="Exchange thickness")
@@ -277,9 +256,19 @@ class DisplayOptionsToolbar(QWidget):
                                                                icon="latticeaxesorth",
                                                                value=settings.orthogonal_lattice_axes)
 
-        self.reset_view = self._toolbar_button("Reset view", icon="datum")
 
+        self.reset_view = self._toolbar_button("Reset view", icon="datum")
         self.reset_view.clicked.connect(self.on_reset_view_clicked)
+
+        self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
+
+        self.snapshot = self._toolbar_button("Snapshot", icon="camera")
+        self.snapshot.clicked.connect(self.on_snapshot)
+
+
+        self.snapshot = self._toolbar_button("Settings", icon="settings")
+        self.snapshot.clicked.connect(self.on_settings)
+
 
         # Pad right, and set layout
         self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
@@ -319,7 +308,34 @@ class DisplayOptionsToolbar(QWidget):
             show_cartesian_axes = self.show_cartesian_axes.isChecked(),
             show_lattice_axes = self.show_lattice_axes.isChecked(),
             orthogonal_lattice_axes = self.orthogonal_lattice_axes.isChecked(),
-            prettify = self.prettify.isChecked())
+            prettify = self.prettify.isChecked(),
+            background_color = self._background_color,
+            default_site_color = self._sites_color,
+            default_exchange_color = self._exchanges_color,
+            selected_color = self._selected_color,
+            hover_color = self._hover_color,
+            selected_hover_color = self._selected_hover_color,
+        )
+
+    def on_snapshot(self):
+        """ Save a snapshot of the current render """
+        self.requestSnapshot.emit()
+
+    def on_settings(self):
+        """ Change the settings that are not on the toolbar """
+        widget = SettingsDialog(self.display_options(), parent=self)
+
+        if widget.exec() == QDialog.Accepted:
+            value = widget.new_display_options()
+            self._background_color = value.background_color
+            self._sites_color = value.default_site_color
+            self._exchanges_color = value.default_exchange_color
+
+            self._selected_color = value.selected_color
+            self._hover_color = value.hover_color
+            self._selected_hover_color = value.selected_hover_color
+
+            self.displayOptionsChanged.emit()
 
     def save_settings(self):
         """ Save the current settings"""
@@ -329,7 +345,8 @@ class DisplayOptionsToolbar(QWidget):
     def closeEvent(self, event):
         """ Qt override, window closed"""
         # we want to save the settings before exiting
-        self.save_settings()
+        if self.save_config_on_exit:
+            self.save_settings()
 
         super().closeEvent(event)
 
@@ -339,6 +356,6 @@ if __name__ == "__main__":
 
     app = QApplication()
     widget = DisplayOptionsToolbar()
-    widget.resize(800, 600)
+    # widget.resize(800, 600)
     widget.show()
     sys.exit(app.exec())

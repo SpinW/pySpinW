@@ -1,5 +1,4 @@
-"""
-In this worksheet we will explore doing a simulation of an XYZ polarised experiment
+"""In this worksheet we will explore doing a simulation of an XYZ polarised experiment
 """
 
 from pyspinw import *
@@ -36,6 +35,6 @@ ham.spaghetti_plot(Path([[1,0,0],[0,0,0],[1,1,0]]), components='Pzz')
 #           components here, we cannot see any magnetic signal in Pxx, and
 #           Pyy is only sensitive to precession along z, whilst
 #           Pzz is only sensitive to precession along y.
-#           
+#
 #           We see only signal in Pzz along (110) implying precession in-plane.
 #           Along (100) we see no signal at all, implying precession along (100)

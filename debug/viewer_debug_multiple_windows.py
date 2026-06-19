@@ -17,9 +17,8 @@ if __name__ == "__main__":
     x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
     y = LatticeSite(0.5, 0, 0, 0, 0, 1, name="Y")
     z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="Z")
-    w = LatticeSite(0.5, 0.5, 0, 0, 0, 0, name="W")
 
-    sites = [x, y, z, w]
+    sites = [x, y, z]
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(3, 3, 1)))
 
@@ -29,9 +28,12 @@ if __name__ == "__main__":
                                    exchange_type=HeisenbergExchange,
                                    j=-1)
 
-    hamiltonian = Hamiltonian(s, exchanges)
+    anisotropies = axis_anisotropies([x], 1, (0,0,1)) + axis_anisotropies([x,y], 1, (0,1,0))
+
+    hamiltonian = Hamiltonian(s, exchanges, anisotropies=anisotropies)
 
     hamiltonian.print_summary()
 
 
+    show_object(hamiltonian, block=False)
     show_object(hamiltonian)

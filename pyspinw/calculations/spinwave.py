@@ -1,5 +1,5 @@
 """Spinwave Calculations"""
-
+import logging
 import multiprocessing
 import traceback
 from concurrent.futures import wait
@@ -20,6 +20,7 @@ SINGULAR_TOL = 1e-7
 # Disable linting for bad variable names, because they should match the docs
 # ruff: noqa: E741
 
+logger = logging.getLogger("spinwave")
 
 @dataclass
 class Coupling:
@@ -231,7 +232,8 @@ def spinwave_calculation(
         rlu_to_cart: np.ndarray = np.eye(3),
         field: MagneticField | None = None,
         rotating_frame: list[np.ndarray] | None = None,
-        save_sab: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+        save_sab: bool = False,
+        save_wavefunctions: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
     """Calculate the energies and spin-spin correlation for a set of q-vectors."""
     if rotating_frame is not None:
         km, nvec = tuple(rotating_frame)
@@ -240,6 +242,9 @@ def spinwave_calculation(
         R2 = np.outer(nvec, nvec)
         R1 = (np.eye(3) - 1j*nmat - R2) / 2.
         rotating_frame = (nmat, R1, R2, km)
+
+        # TODO: There is a util function for this ^^, its just a general formula for a rotation matrix
+
         # Transforms the coupling matrices after Toth & Lake, eq (21)
         for coupling in couplings:
             qdotr = 2 * np.pi * np.dot(km, coupling.inter_site_vector)
@@ -258,7 +263,7 @@ def spinwave_calculation(
         q_calculations = [
             executor.submit(
                 _calc_chunk_spinwave, q, C, n_sites, z, spin_coefficients, couplings, positions,
-                sab_blocks, rlu_to_cart, rotating_frame, Az, save_sab
+                sab_blocks, rlu_to_cart, rotating_frame, Az, save_sab, save_wavefunctions
             )
             for q in _get_q_chunks(q_vectors, n_proc)
         ]
@@ -274,13 +279,19 @@ def spinwave_calculation(
 
     energies = np.concat(tuple(result[0] for result in results))
     intensities = np.concat([result[1] for result in results])
+    sab = None
+    wavefunctions = None
 
     if save_sab:
-        # return SpinwaveResult(q_vectors, energies, intensities, sab)
-        return energies, intensities, np.concat([result[2] for result in results], axis=3)
+        sab = np.concat([result[2] for result in results], axis=3)
 
-    # return SpinwaveResult(q_vectors, energies, intensities)
-    return energies, intensities
+    if save_wavefunctions:
+        wavefunctions = []
+        for result in results:
+            wavefunctions += result[3]
+
+
+    return energies, intensities, sab, wavefunctions
 
 def _calc_chunk_spinwave(
         q_vectors: np.ndarray,
@@ -294,7 +305,8 @@ def _calc_chunk_spinwave(
         rlu_to_cart: np.ndarray,
         rotating_frame: list[np.ndarray] | None = None,
         Az: np.ndarray | None = None,
-        save_sab: bool = False) \
+        save_sab: bool = False,
+        save_wavefunctions: bool=False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
     """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
     energies = []
@@ -305,6 +317,10 @@ def _calc_chunk_spinwave(
         q_vectors = np.vstack([q_vectors-km, q_vectors, q_vectors+km])
 
     sabs = np.empty((3, 3, 2*n_sites, q_vectors.shape[0]), dtype=complex)
+    if save_wavefunctions:
+        wavefunctions = np.empty((2*n_sites, 2*n_sites, q_vectors.shape[0]), dtype=complex)
+    else:
+        wavefunctions = None
 
     for ii, q in enumerate(q_vectors):
         hamiltonian = _calc_spin_hamiltonian(q, C, n_sites, z, spin_coefficients, couplings, Az)
@@ -313,6 +329,9 @@ def _calc_chunk_spinwave(
             eigvals, T = _solve_ham_hermitian(hamiltonian, n_sites)
         except AssertionError:
             eigvals, T = _solve_ham_nonherm(hamiltonian, n_sites)
+
+        if save_wavefunctions:
+            wavefunctions[:, :, ii] = T
 
         energies.append(eigvals)
 
@@ -335,22 +354,39 @@ def _calc_chunk_spinwave(
         sabs[:,:,:,ii] = sab
 
     if rotating_frame is not None:
+
         # Convert back into lab frame (eq 37)
         sabs = 0.5 * (sabs - np.einsum("ij,jklm,kn->inlm", nmat, sabs, nmat)
                            + np.einsum("ij,jklm,kn->inlm", nxn-np.eye(3), sabs, nxn)
                            + np.einsum("ij,jklm,kn->inlm", nxn, sabs, 2*nxn-np.eye(3)))
+
         # Apply the rotation transformation (eq 40)
         nq = int(q_vectors.shape[0] / 3)
         sabs = np.concatenate([np.einsum("ijkl,jm->imkl", sabs[:,:,:,:nq], R1.conj()),
                                np.einsum("ijkl,jm->imkl", sabs[:,:,:,nq:2*nq], nxn),
                                np.einsum("ijkl,jm->imkl", sabs[:,:,:,2*nq:], R1)], axis=2)
+
         energies = [np.hstack([energies[i], energies[nq+i], energies[2*nq+i]]) for i in range(nq)]
-        # Reset q vectors list for next loop
+
+        # Wavefunctions
+        if wavefunctions is not None:
+            wavefunctions = [np.vstack([
+                                wavefunctions[:, :, i],
+                                wavefunctions[:, :, nq + i],
+                                wavefunctions[:, :, 2 * nq + i]])
+                             for i in range(nq)]
+
+
+        # Set the q vectors for the loop that calculates the perpendicular component
         q_vectors = q_vectors[nq:2*nq,:]
+
+    else:
+        if wavefunctions is not None:
+            wavefunctions = [wavefunctions[:,:,i] for i in range(wavefunctions.shape[2])]
 
     for ii, q in enumerate(q_vectors):
         # take perpendicular component s_perp of sab
-        if (q_mag := np.linalg.norm(q)) == 0:
+        if np.linalg.norm(q) == 0:
             norm_q = np.array([0, 0, 0])
         else:
             norm_q = q @ rlu_to_cart
@@ -360,7 +396,9 @@ def _calc_chunk_spinwave(
         s_perp = np.einsum("ijk,ij->k", sabs[:,:,:,ii], perp_factor)
         intensities.append(s_perp.real)
 
-    if save_sab:
-        return energies, intensities, sabs
+    sabs_out = None
 
-    return energies, intensities
+    if save_sab:
+        sabs_out = sabs
+
+    return energies, intensities, sabs_out, wavefunctions

@@ -20,7 +20,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
 
 try:
-    from pyspinw.gui.viewer import show_hamiltonian
+    from pyspinw.gui.viewer import show_object
 except ModuleNotFoundError:
     def show_hamiltonian(*args, **kwargs):
         """ Show a Hamiltonian in the viewer"""
@@ -505,4 +505,4 @@ def matrix_anisotropies(
 
 def view(hamiltonian: Hamiltonian):
     """ Show the current Hamiltonian in the viewer"""
-    show_hamiltonian(hamiltonian)
+    show_object(hamiltonian)

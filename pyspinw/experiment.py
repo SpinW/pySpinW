@@ -55,7 +55,7 @@ class Experiment(SPWSerialisable):
             Energies and intensities calculated from the generated q-points.
         """
         generated_q = self.sample.generate_q(input_q, n_q, field, self.instrument.resolution)
-        energies = self.sample.hamiltonian.energies_and_intensities(generated_q)
+        energies, _ = self.sample.hamiltonian._energies_and_intensities(generated_q)
 
         return energies
 

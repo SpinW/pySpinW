@@ -60,7 +60,6 @@ test_functions = [
 @pytest.mark.parametrize("cls", point_generator_classes)
 def test_integrate_functions(cls, function, integral):
     """ Check integration with known function, f(x,y,z)= (x y z)^2, integral should be pi/35"""
-
     if cls.method_name == "Random":
         n = 100_000
         tol = 1e-1

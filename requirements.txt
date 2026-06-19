@@ -6,3 +6,4 @@ spglib == 2.5.0
 pyopengl
 PySide6-Essentials
 scipy
+imageio

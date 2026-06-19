@@ -1,6 +1,7 @@
 """ Triangular Antiferromagnet example
 
-Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial"""
+Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial
+"""
 
 from pyspinw import *
 import matplotlib.pyplot as plt
