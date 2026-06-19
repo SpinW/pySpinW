@@ -65,8 +65,14 @@ class Experiment(SPWSerialisable):
         raise NotImplementedError()
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
-        return {"sample": self.sample.serialise(), "instrument": self.instrument.serialise()}
+        return {
+            "sample": self.sample.serialise(),
+            "instrument": self.instrument.serialise(),
+        }
 
     @staticmethod
     def _deserialise(data: dict, context: SPWDeserialisationContext):
-        return Experiment(Sample.deserialise(data["sample"]), Instrument.deserialise(data["instrument"]))
+        return Experiment(
+            Sample.deserialise(data["sample"]),
+            Instrument.deserialise(data["instrument"]),
+        )
