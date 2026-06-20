@@ -331,7 +331,10 @@ class HeisenbergExchange(Exchange):
             j = data["j"])
 
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        A Heisenberg exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
     def updated(self,
@@ -460,7 +463,10 @@ class DiagonalExchange(Exchange):
             j_z = data["j_z"])
 
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        A diagonal exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
     def updated(self,
@@ -569,7 +575,10 @@ class XYExchange(Exchange):
             j = data["j"])
 
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        An XY exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
     def updated(self,
@@ -724,7 +733,10 @@ class XXZExchange(Exchange):
                 j_z=self.j_z if j_z is None else j_z,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        An XXZ exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
 class IsingExchange(Exchange):
@@ -828,7 +840,10 @@ class IsingExchange(Exchange):
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        An Ising exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
 class DMExchange(Exchange):
