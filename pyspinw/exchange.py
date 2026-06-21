@@ -110,10 +110,15 @@ class Exchange(SPWSerialisable):
 
     @property
     def exchange_matrix(self) -> np.ndarray:
-        """The exchange matrix for this exchange.
+        r"""The exchange matrix for this exchange.
 
-        If H is the energy contribution for this exchange, S_i and S_j are the
-        spin states, and M is the exchange matrix, then H = S_i^T M S_j.
+        If :math:`H` is the energy contribution for this exchange,
+        :math:`\mathbf{S}_i` and :math:`\mathbf{S}_j` are the spin states,
+        and :math:`M` is the exchange matrix, then
+
+        .. math::
+
+            H = \mathbf{S}_i^T M \mathbf{S}_j.
         """
         return self._exchange_matrix
 
@@ -262,16 +267,20 @@ class Exchange(SPWSerialisable):
 
 
 class HeisenbergExchange(Exchange):
-    """Represent a Heisenberg exchange term.
+    r"""Represent a Heisenberg exchange term.
 
-    The exchange takes the form H_ij = J_ij (S_i . S_j).
+    The exchange takes the form
+
+    .. math::
+
+        H_{ij} = J_{ij} \, (\mathbf{S}_i \cdot \mathbf{S}_j).
 
     Parameters
     ----------
     site_1
-        Lattice site associated with S_i.
+        Lattice site associated with :math:`\mathbf{S}_i`.
     site_2
-        Lattice site associated with S_j.
+        Lattice site associated with :math:`\mathbf{S}_j`.
     j
         Exchange coefficient.
     cell_offset, optional
@@ -375,17 +384,21 @@ class HeisenbergExchange(Exchange):
 
 
 class DiagonalExchange(Exchange):
-    """Represent a diagonal exchange term.
+    r"""Represent a diagonal exchange term.
 
     The exchange takes the form
-    H_ij = Jxx_ij S^x_i S^x_j + Jyy_ij S^y_i S^y_j + Jzz_ij S^z_i S^z_j.
+
+    .. math::
+
+        H_{ij} = J^{xx}_{ij} S^x_i S^x_j + J^{yy}_{ij} S^y_i S^y_j
+                 + J^{zz}_{ij} S^z_i S^z_j.
 
     Parameters
     ----------
     site_1
-        Lattice site associated with S_i.
+        Lattice site associated with :math:`\mathbf{S}_i`.
     site_2
-        Lattice site associated with S_j.
+        Lattice site associated with :math:`\mathbf{S}_j`.
     j_x, j_y, j_z
         Scalar exchange coefficients for the x, y, and z components.
     cell_offset, optional
@@ -507,16 +520,20 @@ class DiagonalExchange(Exchange):
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 class XYExchange(Exchange):
-    """Represent an XY exchange term.
+    r"""Represent an XY exchange term.
 
-    The exchange takes the form H_ij = J_ij (S^x_i S^x_j + S^y_i S^y_j).
+    The exchange takes the form
+
+    .. math::
+
+        H_{ij} = J_{ij} \, (S^x_i S^x_j + S^y_i S^y_j).
 
     Parameters
     ----------
     site_1
-        Lattice site associated with S_i.
+        Lattice site associated with :math:`\mathbf{S}_i`.
     site_2
-        Lattice site associated with S_j.
+        Lattice site associated with :math:`\mathbf{S}_j`.
     j
         Exchange coefficient for the x and y components.
     cell_offset, optional
@@ -614,17 +631,20 @@ class XYExchange(Exchange):
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 class XXZExchange(Exchange):
-    """Represent an XXZ exchange term.
+    r"""Represent an XXZ exchange term.
 
     The exchange takes the form
-    H_ij = J_xy (S^x_i S^x_j + S^y_i S^y_j) + J_z (S^z_i S^z_j).
+
+    .. math::
+
+        H_{ij} = J_{xy} \, (S^x_i S^x_j + S^y_i S^y_j) + J_z \, (S^z_i S^z_j).
 
     Parameters
     ----------
     site_1
-        Lattice site associated with S_i.
+        Lattice site associated with :math:`\mathbf{S}_i`.
     site_2
-        Lattice site associated with S_j.
+        Lattice site associated with :math:`\mathbf{S}_j`.
     j_xy
         Exchange coefficient for the x and y components.
     j_z
@@ -740,16 +760,20 @@ class XXZExchange(Exchange):
         return True
 
 class IsingExchange(Exchange):
-    """Represent an Ising exchange term for the z component.
+    r"""Represent an Ising exchange term for the z component.
 
-    The exchange takes the form H_ij = J_ij S^z_i S^z_j.
+    The exchange takes the form
+
+    .. math::
+
+        H_{ij} = J_{ij} \, S^z_i S^z_j.
 
     Parameters
     ----------
     site_1
-        Lattice site associated with S_i.
+        Lattice site associated with :math:`\mathbf{S}_i`.
     site_2
-        Lattice site associated with S_j.
+        Lattice site associated with :math:`\mathbf{S}_j`.
     j_z
         Exchange coefficient for the z component.
     cell_offset, optional
@@ -847,16 +871,20 @@ class IsingExchange(Exchange):
         return True
 
 class DMExchange(Exchange):
-    """Represent a Dzyaloshinskii-Moriya exchange term.
+    r"""Represent a Dzyaloshinskii-Moriya exchange term.
 
-    The exchange takes the form H_ij = D_ij (S_i x S_j).
+    The exchange takes the form
+
+    .. math::
+
+        H_{ij} = \mathbf{D}_{ij} \cdot (\mathbf{S}_i \times \mathbf{S}_j).
 
     Parameters
     ----------
     site_1
-        Lattice site associated with S_i.
+        Lattice site associated with :math:`\mathbf{S}_i`.
     site_2
-        Lattice site associated with S_j.
+        Lattice site associated with :math:`\mathbf{S}_j`.
     d_x
         x component of the D vector.
     d_y
