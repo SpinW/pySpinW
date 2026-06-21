@@ -1,4 +1,4 @@
-""" Paths through q-space"""
+"""Paths through q-space."""
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -6,7 +6,7 @@ from numpy._typing import ArrayLike
 
 
 class Path:
-    """ Path through q-space"""
+    """Path through q-space."""
 
     def __init__(self,
                  points: ArrayLike,
@@ -44,7 +44,7 @@ class Path:
             self._section_scalings = [1.0 for _ in range(1, self._n_points)]
 
     def q_points(self):
-        """ Get list of q points"""
+        """Get the list of q-points along the path."""
         output = []
         if self._avoid_endpoints:
             # If we avoid endpoints, we choose points that are close to each of the positions, but not equal
@@ -79,7 +79,7 @@ class Path:
         return np.concatenate(output, axis=1).T
 
     def x_values(self):
-        """ x values for plotting """
+        """Get the x values used for plotting."""
         output = []
         f = np.linspace(0, 1, self._n_points_per_segment)
 
@@ -96,18 +96,18 @@ class Path:
         return np.concatenate(output).T
 
     def x_ticks(self):
-        """ x positions of ticks used to mark positions on a plot"""
+        """Get the x positions of ticks used to mark positions on a plot."""
         # we want the cumulative sum including a leading zero
         return np.cumsum([0] + self._section_scalings)
 
     def x_tick_labels(self):
-        """ x-axis tick labels corresponding to tick positions """
+        """Get the x-axis tick labels corresponding to the tick positions."""
         return self._labels
 
     def format_plot(self, plt_or_fig=None):
-        """ Apply formatting to a matplotlib plot/figure/axis
+        """Apply formatting to a matplotlib plot/figure/axis.
 
-        If None, it will import matplotlib.pyplot and work on that
+        If None, it will import matplotlib.pyplot and work on that.
         """
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
@@ -306,17 +306,17 @@ class Slice:
 
 
 class Path1DBase(ABC):
-    """ Base class for 1D paths """
+    """Base class for 1D paths."""
 
     def __init__(self):
         self.n_points = None
 
     @abstractmethod
     def q_values(self):
-        """ Get the q values for this path"""
+        """Get the q values for this path."""
 
 class Path1D(Path1DBase):
-    """ 1D Path, i.e. just values in absolute q """
+    """1D path, i.e. just values in absolute q."""
 
     def __init__(self,
                  q_min: float = 0.0,
@@ -332,7 +332,7 @@ class Path1D(Path1DBase):
         self.avoid_endpoints = avoid_endpoints
 
     def q_values(self):
-        """ Get q magnitudes """
+        """Get the q magnitudes."""
         base = np.linspace(0, 1, self.n_points)
 
         if self.avoid_endpoints:
@@ -343,7 +343,7 @@ class Path1D(Path1DBase):
 
 
 class EmpiricalPath1D(Path1DBase):
-    """ Path based on data specifying each q value, rather min, max, n"""
+    """Path based on data specifying each q value, rather than min, max, n."""
 
     def __init__(self, q_values: ArrayLike):
 
@@ -355,7 +355,7 @@ class EmpiricalPath1D(Path1DBase):
             raise ValueError("Expected q_values to be a 1D array")
 
     def q_values(self):
-        """ Get the q values"""
+        """Get the q values."""
         return self._q_values
 
 
