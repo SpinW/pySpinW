@@ -1,4 +1,4 @@
-""" Paths through q-space"""
+"""Paths through q-space."""
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -6,7 +6,7 @@ from numpy._typing import ArrayLike
 
 
 class Path:
-    """ Path through q-space"""
+    """Path through q-space."""
 
     def __init__(self,
                  points: ArrayLike,
@@ -44,7 +44,7 @@ class Path:
             self._section_scalings = [1.0 for _ in range(1, self._n_points)]
 
     def q_points(self):
-        """ Get list of q points"""
+        """Get the list of q-points along the path."""
         output = []
         if self._avoid_endpoints:
             # If we avoid endpoints, we choose points that are close to each of the positions, but not equal
@@ -79,7 +79,7 @@ class Path:
         return np.concatenate(output, axis=1).T
 
     def x_values(self):
-        """ x values for plotting """
+        """Get the x values used for plotting."""
         output = []
         f = np.linspace(0, 1, self._n_points_per_segment)
 
@@ -96,18 +96,18 @@ class Path:
         return np.concatenate(output).T
 
     def x_ticks(self):
-        """ x positions of ticks used to mark positions on a plot"""
+        """Get the x positions of ticks used to mark positions on a plot."""
         # we want the cumulative sum including a leading zero
         return np.cumsum([0] + self._section_scalings)
 
     def x_tick_labels(self):
-        """ x-axis tick labels corresponding to tick positions """
+        """Get the x-axis tick labels corresponding to the tick positions."""
         return self._labels
 
     def format_plot(self, plt_or_fig=None):
-        """ Apply formatting to a matplotlib plot/figure/axis
+        """Apply formatting to a matplotlib plot/figure/axis.
 
-        If None, it will import matplotlib.pyplot and work on that
+        If None, it will import matplotlib.pyplot and work on that.
         """
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
@@ -118,34 +118,35 @@ class Path:
             plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
 
     def __repr__(self):
+        """Return a string representation of the path."""
         path_string = ", ".join([repr(pt) for pt in self._points])
         return f"Path({path_string})"
 
 
 class Slice:
-    """Initialize a 2D slice in reciprocal space.
+    """A 2D rectangular slice through reciprocal space.
 
     Parameters
     ----------
     origin :
-        Corner point of the rectangle (3D q-vector)
+        Corner point of the rectangle as a 3D q-vector.
     axis_1 :
-        First edge vector (defines the horizontal axis for plotting)
+        First edge vector, defining the horizontal plotting axis.
     axis_2 :
-        Second edge vector (defines the vertical axis for plotting)
+        Second edge vector, defining the vertical plotting axis.
     n_a :
-        Number of points along axis_1 direction
+        Number of points along ``axis_1``.
     n_b :
-        Number of points along axis_2 direction
+        Number of points along ``axis_2``.
     labels :
-        Optional [a_label, b_label] for plot axes
+        Optional ``[a_label, b_label]`` for the plot axes.
     padding :
-        Extra padding beyond the slice boundaries, as a fraction of the slice size.
-        For example, padding=0.1 extends the slice by 10% on both sides.
+        Extra padding beyond the slice boundaries as a fraction of the slice
+        size (e.g. ``0.1`` extends the slice by 10% on each side).
     e_min :
-        Optional minimum energy in meV for intensity_map() integration window
+        Optional minimum energy in meV for the ``intensity_map()`` integration window.
     e_max :
-        Optional maximum energy in meV for intensity_map() integration window
+        Optional maximum energy in meV for the ``intensity_map()`` integration window.
     """
 
     def __init__(
@@ -191,10 +192,7 @@ class Slice:
             self.labels = labels
 
     def q_points(self) -> np.ndarray:
-        """Get all q-points in the slice as an (N, 3) array.
-
-        Returns an array of shape (n_a * n_b, 3) with q-points ordered
-        """
+        """Get all q-points in the slice as an ``(n_a * n_b, 3)`` array."""
         # Create parameters s and t from -padding to 1+padding
         s = np.linspace(-self.padding, 1 + self.padding, self.n_a)  # shape = (n_a,)
         t = np.linspace(-self.padding, 1 + self.padding, self.n_b)  # shape = (n_b,)
@@ -212,18 +210,18 @@ class Slice:
         return q_points
 
     def grid_shape(self):
-          """Shape of the 2D grid for reshaping results: (n_a, n_b).
+          """Get the grid shape ``(n_a, n_b)`` for reshaping flattened results.
 
           First dimension corresponds to axis_1 (horizontal), second to axis_2 (vertical).
           """
           return (self.n_a, self.n_b)
 
     def extent(self) -> list[float]:
-          """Extent in parameter space [s_min, s_max, t_min, t_max]."""
+          """Get the parameter-space extent ``[s_min, s_max, t_min, t_max]``."""
           return [-self.padding, 1 + self.padding, -self.padding, 1 + self.padding]
 
     def x_ticks(self):
-        """X-axis tick positions in data space for axis_1 direction."""
+        """Get the x-axis tick positions along the ``axis_1`` direction."""
         extent = self.extent()
         a_min, a_max = extent[0], extent[1]
         # Ticks at min, middle, and max of the data range
@@ -231,7 +229,7 @@ class Slice:
         return tick_positions
 
     def x_tick_labels(self):
-        """X-axis tick labels showing actual (hkl) q-vectors."""
+        """Get the x-axis tick labels as (hkl) q-vectors."""
         # X-axis labels show coordinates along the bottom edge of the plot
         # With padding, the bottom edge is at t=-padding (not t=0)
         # Ticks are at s = -padding, 0.5, 1+padding
@@ -246,7 +244,7 @@ class Slice:
         return labels
 
     def y_ticks(self):
-        """Y-axis tick positions in data space for axis_2 direction."""
+        """Get the y-axis tick positions along the ``axis_2`` direction."""
         extent = self.extent()
         b_min, b_max = extent[2], extent[3]
         # Ticks at min, middle, and max of the data range
@@ -254,7 +252,7 @@ class Slice:
         return tick_positions
 
     def y_tick_labels(self):
-        """Y-axis tick labels showing actual (hkl) q-vectors."""
+        """Get the y-axis tick labels as (hkl) q-vectors."""
         # Y-axis labels show coordinates along the left edge of the plot
         # With padding, the left edge is at s=-padding (not s=0)
         # Ticks are at t = -padding, 0.5, 1+padding
@@ -274,12 +272,12 @@ class Slice:
         return labels
 
     def format_plot(self, plt_or_fig=None):
-        """Apply x and y labels and ticks to a matplotlib plot/figure/axis.
+        """Apply axis labels and reciprocal-space ticks to a matplotlib target.
 
         Sets both axis labels and ticks with corresponding tick labels
         showing actual reciprocal space coordinates.
 
-        If None, it will import matplotlib.pyplot and work on that
+        If None, it will import matplotlib.pyplot and work on that.
         """
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
@@ -298,6 +296,7 @@ class Slice:
             plt_or_fig.set_yticks(self.y_ticks(), self.y_tick_labels())
 
     def __repr__(self):
+        """Return a string representation of the slice."""
         return (
             f"Slice(origin={self.origin}, "
             f"axis_1={self.axis_1}, axis_2={self.axis_2}, "
@@ -306,17 +305,17 @@ class Slice:
 
 
 class Path1DBase(ABC):
-    """ Base class for 1D paths """
+    """Base class for 1D paths."""
 
     def __init__(self):
         self.n_points = None
 
     @abstractmethod
     def q_values(self):
-        """ Get the q values for this path"""
+        """Get the q values for this path."""
 
 class Path1D(Path1DBase):
-    """ 1D Path, i.e. just values in absolute q """
+    """1D path, i.e. just values in absolute q."""
 
     def __init__(self,
                  q_min: float = 0.0,
@@ -332,7 +331,7 @@ class Path1D(Path1DBase):
         self.avoid_endpoints = avoid_endpoints
 
     def q_values(self):
-        """ Get q magnitudes """
+        """Get the q magnitudes."""
         base = np.linspace(0, 1, self.n_points)
 
         if self.avoid_endpoints:
@@ -343,7 +342,7 @@ class Path1D(Path1DBase):
 
 
 class EmpiricalPath1D(Path1DBase):
-    """ Path based on data specifying each q value, rather min, max, n"""
+    """Path based on data specifying each q value, rather than min, max, n."""
 
     def __init__(self, q_values: ArrayLike):
 
@@ -355,7 +354,7 @@ class EmpiricalPath1D(Path1DBase):
             raise ValueError("Expected q_values to be a 1D array")
 
     def q_values(self):
-        """ Get the q values"""
+        """Get the q values."""
         return self._q_values
 
 

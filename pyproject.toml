@@ -72,6 +72,7 @@ ignore = ["D105",  # Missing docstring in magic method (we know what magic metho
           "D210",  # whitespace surrounding docstring text
           "D213",  # multi-line summary starts at second line
           "PLR",  # pylint refactor suggestions
+          "PLC0415",  # import-outside-top-level (we use deliberate lazy imports, e.g. matplotlib)
           ]
 
 
