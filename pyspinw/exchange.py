@@ -282,7 +282,7 @@ class HeisenbergExchange(Exchange):
     site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
     j : float
-        Exchange coefficient.
+        Exchange coefficient, :math:`J_{ij}`.
     cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
     name : str, optional
@@ -390,8 +390,8 @@ class DiagonalExchange(Exchange):
 
     .. math::
 
-        H_{ij} = J^{xx}_{ij} S^x_i S^x_j + J^{yy}_{ij} S^y_i S^y_j
-                 + J^{zz}_{ij} S^z_i S^z_j.
+        H_{ij} = J^{xx}_{ij} \mathbf{S}^x_i \mathbf{S}^x_j + J^{yy}_{ij} \mathbf{S}^y_i \mathbf{S}^y_j
+                 + J^{zz}_{ij} \mathbf{S}^z_i \mathbf{S}^z_j.
 
     Parameters
     ----------
@@ -533,7 +533,7 @@ class XYExchange(Exchange):
 
     .. math::
 
-        H_{ij} = J_{ij} \, (S^x_i S^x_j + S^y_i S^y_j).
+        H_{ij} = J_{ij} \, (\mathbf{S}^x_i \mathbf{S}^x_j + \mathbf{S}^y_i \mathbf{S}^y_j).
 
     Parameters
     ----------
@@ -542,7 +542,7 @@ class XYExchange(Exchange):
     site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
     j : float
-        Exchange coefficient for the x and y components.
+        Exchange coefficient for the x and y components, :math:`J_{ij}`.
     cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
     name : str, optional
@@ -644,7 +644,7 @@ class XXZExchange(Exchange):
 
     .. math::
 
-        H_{ij} = J_{xy} \, (S^x_i S^x_j + S^y_i S^y_j) + J_z \, (S^z_i S^z_j).
+        H_{ij} = J_{xy} \, (\mathbf{S}^x_i \mathbf{S}^x_j + \mathbf{S}^y_i \mathbf{S}^y_j) + J_z \, (\mathbf{S}^z_i \mathbf{S}^z_j).
 
     Parameters
     ----------
@@ -653,9 +653,9 @@ class XXZExchange(Exchange):
     site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
     j_xy : float
-        Exchange coefficient for the x and y components.
+        Exchange coefficient for the x and y components, :math:`J_{xy}`.
     j_z : float
-        Exchange coefficient for the z component.
+        Exchange coefficient for the z component, :math:`J_z`.
     cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
     name : str, optional
@@ -773,7 +773,7 @@ class IsingExchange(Exchange):
 
     .. math::
 
-        H_{ij} = J_{ij} \, S^z_i S^z_j.
+        H_{ij} = J_{ij} \, \mathbf{S}^z_i \mathbf{S}^z_j.
 
     Parameters
     ----------
@@ -782,7 +782,7 @@ class IsingExchange(Exchange):
     site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
     j_z : float
-        Exchange coefficient for the z component.
+        Exchange coefficient for the z component, :math:`J_{ij}`.
     cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
     name : str, optional
@@ -893,11 +893,11 @@ class DMExchange(Exchange):
     site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
     d_x : float
-        x component of the D vector, :math:`D^x_{ij}`.
+        x component of the D vector, :math:`\mathbf{D}^x_{ij}`.
     d_y : float
-        y component of the D vector, :math:`D^y_{ij}`.
+        y component of the D vector, :math:`\mathbf{D}^y_{ij}`.
     d_z : float
-        z component of the D vector, :math:`D^z_{ij}`.
+        z component of the D vector, :math:`\mathbf{D}^z_{ij}`.
     cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
     name : str, optional
