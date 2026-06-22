@@ -644,7 +644,8 @@ class XXZExchange(Exchange):
 
     .. math::
 
-        H_{ij} = J_{xy} \, (\mathbf{S}^x_i \mathbf{S}^x_j + \mathbf{S}^y_i \mathbf{S}^y_j) + J_z \, (\mathbf{S}^z_i \mathbf{S}^z_j).
+        H_{ij} = J_{xy} \, (\mathbf{S}^x_i \mathbf{S}^x_j
+        + \mathbf{S}^y_i \mathbf{S}^y_j) + J_z \, (\mathbf{S}^z_i \mathbf{S}^z_j).
 
     Parameters
     ----------
