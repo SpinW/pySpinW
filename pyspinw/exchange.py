@@ -36,19 +36,19 @@ class Exchange(SPWSerialisable):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         First lattice site in the exchange term.
-    site_2
+    site_2 : LatticeSite
         Second lattice site in the exchange term.
-    cell_offset
+    cell_offset : CellOffsetCoercible
         Offset between the unit cells containing the two sites.
-    exchange_matrix
+    exchange_matrix : numpy.ndarray
         3x3 matrix defining the exchange interaction.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
@@ -199,17 +199,17 @@ class Exchange(SPWSerialisable):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        exchange_matrix, optional
+        exchange_matrix : numpy.ndarray, optional
             Replacement exchange matrix. If omitted, the current matrix is reused.
-        metadata, optional
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return Exchange(
@@ -277,19 +277,19 @@ class HeisenbergExchange(Exchange):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2
+    site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
-    j
+    j : float
         Exchange coefficient.
-    cell_offset, optional
+    cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
@@ -358,17 +358,17 @@ class HeisenbergExchange(Exchange):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        j, optional
+        j : float, optional
             Replacement exchange coefficient. If omitted, the current coefficient is reused.
-        metadata, optional
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return HeisenbergExchange(
@@ -395,23 +395,26 @@ class DiagonalExchange(Exchange):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2
+    site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
-    j_x, j_y, j_z
-        Scalar exchange coefficients for the x, y, and z components.
-    cell_offset, optional
+    j_x : float
+        Scalar exchange coefficient for the x component, :math:`J^{xx}_{ij}`.
+    j_y : float
+        Scalar exchange coefficient for the y component, :math:`J^{yy}_{ij}`.
+    j_z : float
+        Scalar exchange coefficient for the z component, :math:`J^{zz}_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
-    exchange_type = "Diagonal"
     parameters = ["j_x", "j_y", "j_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "J"
@@ -496,17 +499,21 @@ class DiagonalExchange(Exchange):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        j_x, j_y, j_z, optional
-            Replacement exchange coefficients. If omitted, the current coefficients are reused.
-        metadata, optional
+        j_x : float, optional
+            Replacement x exchange coefficient. If omitted, the current coefficient is reused.
+        j_y : float, optional
+            Replacement y exchange coefficient. If omitted, the current coefficient is reused.
+        j_z : float, optional
+            Replacement z exchange coefficient. If omitted, the current coefficient is reused.
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return DiagonalExchange(
@@ -530,19 +537,19 @@ class XYExchange(Exchange):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2
+    site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
-    j
+    j : float
         Exchange coefficient for the x and y components.
-    cell_offset, optional
+    cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
@@ -609,17 +616,17 @@ class XYExchange(Exchange):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        j, optional
+        j : float, optional
             Replacement exchange coefficient. If omitted, the current coefficient is reused.
-        metadata, optional
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return XYExchange(
@@ -641,21 +648,21 @@ class XXZExchange(Exchange):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2
+    site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
-    j_xy
+    j_xy : float
         Exchange coefficient for the x and y components.
-    j_z
+    j_z : float
         Exchange coefficient for the z component.
-    cell_offset, optional
+    cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
@@ -729,19 +736,19 @@ class XXZExchange(Exchange):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        j_xy, optional
+        j_xy : float, optional
             Replacement x-y exchange coefficient. If omitted, the current coefficient is reused.
-        j_z, optional
+        j_z : float, optional
             Replacement z exchange coefficient. If omitted, the current coefficient is reused.
-        metadata, optional
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return XXZExchange(
@@ -770,19 +777,19 @@ class IsingExchange(Exchange):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2
+    site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
-    j_z
+    j_z : float
         Exchange coefficient for the z component.
-    cell_offset, optional
+    cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
@@ -842,17 +849,17 @@ class IsingExchange(Exchange):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        j_z, optional
+        j_z : float, optional
             Replacement z exchange coefficient. If omitted, the current coefficient is reused.
-        metadata, optional
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return IsingExchange(
@@ -881,23 +888,23 @@ class DMExchange(Exchange):
 
     Parameters
     ----------
-    site_1
+    site_1 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2
+    site_2 : LatticeSite
         Lattice site associated with :math:`\mathbf{S}_j`.
-    d_x
-        x component of the D vector.
-    d_y
-        y component of the D vector.
-    d_z
-        z component of the D vector.
-    cell_offset, optional
+    d_x : float
+        x component of the D vector, :math:`D^x_{ij}`.
+    d_y : float
+        y component of the D vector, :math:`D^y_{ij}`.
+    d_z : float
+        z component of the D vector, :math:`D^z_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
         Offset between the unit cells containing the two sites.
-    name, optional
-        Name for the exchange term.
-    color, optional
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
         RGB color used when displaying the exchange term.
-    metadata, optional
+    metadata : ExchangeMetadata, optional
         Metadata attached to the exchange term.
     """
 
@@ -978,17 +985,21 @@ class DMExchange(Exchange):
 
         Parameters
         ----------
-        site_1, optional
+        site_1 : LatticeSite, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2, optional
+        site_2 : LatticeSite, optional
             Replacement second lattice site. If omitted, the current site is reused.
-        cell_offset, optional
+        cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
-        name, optional
+        name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        d_x, d_y, d_z, optional
-            Replacement D-vector components. If omitted, the current components are reused.
-        metadata, optional
+        d_x : float, optional
+            Replacement x D-vector component. If omitted, the current component is reused.
+        d_y : float, optional
+            Replacement y D-vector component. If omitted, the current component is reused.
+        d_z : float, optional
+            Replacement z D-vector component. If omitted, the current component is reused.
+        metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
         """
         return DMExchange(
