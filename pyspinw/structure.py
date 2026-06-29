@@ -7,7 +7,7 @@ from numpy._typing import ArrayLike
 
 from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.serialisation import SPWSerialisable
-from pyspinw.site import LatticeSite
+from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
@@ -130,7 +130,8 @@ class Structure(SPWSerialisable):
                     same_spin = False
 
             if same_spin:
-                unique_sites.append(LatticeSite(
+                unique_sites.append(ImpliedLatticeSite(
+                    site_1.parent_site,
                     site_1.i,
                     site_1.j,
                     site_1.k,
@@ -140,7 +141,8 @@ class Structure(SPWSerialisable):
                 ))
 
             else:
-                unique_sites.append(LatticeSite(
+                unique_sites.append(ImpliedLatticeSite(
+                    site_1.parent_site,
                     site_1.i,
                     site_1.j,
                     site_1.k,
