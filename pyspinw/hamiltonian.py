@@ -363,9 +363,9 @@ class Hamiltonian(SPWSerialisable):
 
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
-    def sites_by_name(self, regex) -> list[LatticeSite]:
+    def sites_by_name(self, test_string) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        return self.structure.sites_by_name(regex)
+        return self.structure.sites_by_name(test_string)
 
     def print_summary(self):
         """ Print a textual summary to stdout"""

@@ -130,8 +130,7 @@ class Structure(SPWSerialisable):
                     same_spin = False
 
             if same_spin:
-                unique_sites.append(ImpliedLatticeSite(
-                    site_1.parent_site,
+                unique_sites.append(LatticeSite(
                     site_1.i,
                     site_1.j,
                     site_1.k,
@@ -141,8 +140,7 @@ class Structure(SPWSerialisable):
                 ))
 
             else:
-                unique_sites.append(ImpliedLatticeSite(
-                    site_1.parent_site,
+                unique_sites.append(LatticeSite(
                     site_1.i,
                     site_1.j,
                     site_1.k,
@@ -225,7 +223,7 @@ class Structure(SPWSerialisable):
 
     def sites_by_name(self, name) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        return [site for site in self._sites if site.name.lower().startswith(name.lower()) is not None]
+        return [site for site in self._sites if site.name.lower().startswith(name.lower())]
 
     def site_by_name(self, name: str):
         """ Get a single site by its name"""
