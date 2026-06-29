@@ -102,8 +102,7 @@ class SpaceGroup(SymmetryGroup):
                  international_symbol,
                  short_symbol,
                  preferred_symbol,
-                 operations: list[SpaceOperation],
-                 magnetic_variants: list[MagneticSpaceGroup],
+                 operations,
                  lattice_system: LatticeSystem,
                  choice: str | None):
 
@@ -113,7 +112,6 @@ class SpaceGroup(SymmetryGroup):
         self.short_symbol = short_symbol
         self.preferred_symbol = preferred_symbol
         self.operations = operations
-        self.magnetic_variants = magnetic_variants
         self.lattice_system = lattice_system
         self.choice = choice
         self.setting = Setting.from_optional_string(choice)
@@ -319,38 +317,7 @@ class SpacegroupDatabase:
         "R": "R",
     }
 
-
     def __init__(self):
-
-        # We need to know which magnetic group is associated with each spacegroup before
-        #  constructing the spacegroup instances
-        spacegroup_to_magnetic_group = defaultdict(list[int])
-        for hall_number in range(1,1652):
-            metadata = spglib.get_magnetic_spacegroup_type(hall_number)
-            spacegroup_to_magnetic_group[metadata.number].append(hall_number)
-
-        # Create magnetic groups
-        self.magnetic_groups = []
-        for hall_number in range(1,1652):
-
-            op_data = spglib.get_magnetic_symmetry_from_database(hall_number)
-            # metadata = spglib.get_magnetic_spacegroup_type(i)
-            # print(metadata)
-
-            rotations = op_data["rotations"]
-            translations = op_data["translations"]
-            time_reversals = 1 - 2*op_data["time_reversals"]
-
-            symbol = msg_symbols[hall_number].uni
-
-            operations = []
-            for rotation, translation, time_reversal in zip(rotations, translations, time_reversals):
-                op = MagneticOperation.from_numpy(rotation, translation, time_reversal)
-                operations.append(op)
-
-            group = MagneticSpaceGroup(hall_number, symbol, operations)
-            self.magnetic_groups.append(group)
-
 
         # Create spacegroups
         self._lattice_symbol_to_spacegroups = defaultdict(list[SpaceGroup])
@@ -363,8 +330,6 @@ class SpacegroupDatabase:
 
             sg_data = spglib.get_spacegroup_type(hall_number)
             op_data = spglib.get_symmetry_from_database(hall_number)
-            corresponding_magnetic_groups = [self.magnetic_groups[idx-1]
-                                             for idx in spacegroup_to_magnetic_group[hall_number]]
 
             # Classify
             name = sg_data.international_full
@@ -383,12 +348,6 @@ class SpacegroupDatabase:
             for translation, rotation, in zip(translations, rotations):
                 op = SpaceOperation.from_numpy(rotation.T, translation)
                 operations.append(op)
-
-            # operations = []
-            # pyxtal_group = pyxtal.Group(hall_number, use_hall=True)
-            # for op in pyxtal_group[0].ops:
-            #     matrix = op.affine_matrix
-            #     operations.append(SpaceOperation.from_transformation_matrix(matrix))
 
             self._operation_lookup.append(
                 {canonise_string(operation.text_form) for operation in operations})
@@ -409,23 +368,14 @@ class SpacegroupDatabase:
                 preferred_symbol=preferred_names[hall_number],
                 operations=operations,
                 choice=choice,
-                magnetic_variants=corresponding_magnetic_groups,
                 lattice_system=lattice_system)
 
             self.spacegroups.append(group)
             self._lattice_symbol_to_spacegroups[bravais_lattice].append(group)
 
-
         # Lookup for spacegroups by long/short international symbol
         self._spacegroup_symbol_lookup: dict[str, SpaceGroup] = {group.symbol: group for group in self.spacegroups}
         self._spacegroup_symbol_lookup.update({group.short_symbol: group for group in self.spacegroups})
-
-        # Lookup for magnetic spacegroups
-        self._magnetic_group_symbol_lookup: dict[str, MagneticSpaceGroup] = {
-                group.symbol: group for group in self.magnetic_groups }
-
-        self._canonical_magnetic_spacegroup_name_to_index = {
-            canonise_string(group.symbol): group for group in self.magnetic_groups }
 
         # Lookup for spacegroups based on their number
         self._spacegroup_number_lookup = defaultdict(list[SpaceGroup])
@@ -485,40 +435,9 @@ class SpacegroupDatabase:
 
         raise NoSuchGroup(message_string)
 
+# Create the database
+database = SpacegroupDatabase()
 
-    def magnetic_spacegroup_by_name(self, name: str) -> MagneticSpaceGroup:
-        """ Get a magnetic spacegroup by name
-
-        TODO: make this work more like the normal spacegroup one
-        """
-        #
-        # lower_name = name.lower()
-        # if lower_name in _lowercase_magnetic_group_lookup:
-        #     return _lowercase_magnetic_group_lookup[lower_name]
-        #
-        # similar = get_close_matches(lower_name, _lowercase_magnetic_group_lookup.keys(), n=3)
-        # formatted = [_lowercase_magnetic_group_lookup[key].symbol for key in similar]
-        #
-        # if similar:
-        #     suggestion_string = ", ".join([f"'{s}'" for s in formatted])
-        #     message_string = (f"Unknown space group '{name}', "
-        #                       f"perhaps you meant {suggestion_string} or something similar.")
-        #
-        # else:
-        #
-        #     message_string = f"Unknown space group '{name}', doesn't seem to be even close to a magnetic space group."
-        #
-        # raise NoSuchGroup(message_string)
-
-# Create/load the database
-_spacegroup_filename = "spacegroup_database.pickle"
-if os.path.exists(_spacegroup_filename):
-    with open(_spacegroup_filename, 'rb') as file:
-        database = pickle.load(file)
-else:
-    database = SpacegroupDatabase()
-    with open(_spacegroup_filename, 'wb') as file:
-        pickle.dump(database, file)
 
 if __name__ == "__main__":
     # print(database.spacegroup_by_name("b2/m"))

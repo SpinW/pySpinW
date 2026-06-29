@@ -1,0 +1,10 @@
+extend = "pyproject.toml"
+
+[lint]
+extend-select = [
+    "D3",
+    "D4",
+]
+
+[lint.pydocstyle]
+convention = "numpy"

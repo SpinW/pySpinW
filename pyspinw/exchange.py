@@ -1,4 +1,4 @@
-"""Exchange Terms"""
+"""Exchange terms between lattice sites."""
 from dataclasses import dataclass
 
 import numpy as np
@@ -18,14 +18,14 @@ from pyspinw.util import triple_product_matrix
 
 _exchange_id_counter = -1
 def _generate_unique_exchange_id():
-    """ Generate a unique ID for each site currently loaded"""
+    """Generate a unique ID for each exchange currently loaded."""
     global _exchange_id_counter # noqa: PLW0603
     _exchange_id_counter += 1
     return _exchange_id_counter
 
 @dataclass
 class ExchangeBaseDeserialisation:
-    """ Class to hold basic properties of the exchange """
+    """Hold basic properties of an exchange term."""
 
     name: str
     site_1: LatticeSite
@@ -35,7 +35,25 @@ class ExchangeBaseDeserialisation:
 
 
 class Exchange(SPWSerialisable):
-    """Exchange between different sites"""
+    """Represent an exchange term between two lattice sites.
+
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        First lattice site in the exchange term.
+    site_2 : LatticeSite
+        Second lattice site in the exchange term.
+    cell_offset : CellOffsetCoercible
+        Offset between the unit cells containing the two sites.
+    exchange_matrix : numpy.ndarray
+        3x3 matrix defining the exchange interaction.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
+    """
 
     serialisation_name = "exchange"
 
@@ -70,43 +88,46 @@ class Exchange(SPWSerialisable):
 
     @property
     def name(self):
-        """ Name of this exchange """
+        """Name of this exchange."""
         return self._name
 
     @property
     def unique_id(self) -> int:
-        """ Unique identifier for this exchange """
+        """Unique identifier for this exchange."""
         return self._unique_id
 
     @property
     def site_1(self):
-        """ First site"""
+        """First site in the exchange term."""
         return self._site_1
 
     @property
     def site_2(self):
-        """ Second site"""
+        """Second site in the exchange term."""
         return self._site_2
 
     @property
     def cell_offset(self):
-        """ Offset between unit cells containing sites 1 and 2"""
+        """Offset between unit cells containing sites 1 and 2."""
         return self._cell_offset
 
     @property
     def exchange_matrix(self) -> np.ndarray:
-        """The exchange matrix for this exchange
+        r"""The exchange matrix for this exchange.
 
-        i.e. if H is the energy contribution for this exchange, S is the spin state, and
-        M is the exchange matrix, we have
+        If :math:`H` is the energy contribution for this exchange,
+        :math:`\mathbf{S}_i` and :math:`\mathbf{S}_j` are the spin states,
+        and :math:`M` is the exchange matrix, then
 
-        H = S^T M S
+        .. math::
+
+            H = \mathbf{S}_i^T M \mathbf{S}_j.
         """
         return self._exchange_matrix
 
     @property
     def parameter_string(self) -> str:
-        """ String representation of parameters """
+        """String representation of the exchange parameters."""
         # Note that we reference the _parameter value, not the property that references it
         substrings = []
         for parameter in self.parameters:
@@ -127,15 +148,37 @@ class Exchange(SPWSerialisable):
 
     @property
     def lattice_vector(self):
-        """ Vector from site 1 to site 2 in lattice coordinates"""
+        """Vector from site 1 to site 2 in lattice coordinates."""
         return self.cell_offset.vector + self._site_2.ijk - self._site_1.ijk
 
     def vector(self, unit_cell: UnitCell):
-        """ Vector from site 1 to site 2 in cartesian coordinates (requires a unit cell definition)"""
+        """Return the vector from site 1 to site 2 in Cartesian coordinates.
+
+        Parameters
+        ----------
+        unit_cell
+            Unit cell used to convert lattice coordinates to Cartesian coordinates.
+
+        Returns
+        -------
+        numpy.ndarray
+            Vector from site 1 to site 2 in Cartesian coordinates.
+        """
         return unit_cell.lattice_units_to_cartesian(self.lattice_vector)
 
     def distance(self, unit_cell: UnitCell):
-        """ Distance between sites """
+        """Return the distance between site 1 and site 2 in Cartesian coordinates.
+
+        Parameters
+        ----------
+        unit_cell
+            Unit cell used to convert lattice coordinates to Cartesian coordinates.
+
+        Returns
+        -------
+        float
+            Distance between site 1 and site 2 in Cartesian coordinates.
+        """
         return np.sqrt(np.sum(self.vector(unit_cell)**2))
 
     def _base_serialisation(self, context: SPWSerialisationContext):
@@ -155,7 +198,23 @@ class Exchange(SPWSerialisable):
                 name: str | None = None,
                 exchange_matrix: np.ndarray | None = None,
                 metadata: ExchangeMetadata | None = None):
-        """ Get version of this site with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        exchange_matrix : numpy.ndarray, optional
+            Replacement exchange matrix. If omitted, the current matrix is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return Exchange(
             site_1=self.site_1 if site_1 is None else site_1,
             site_2=self.site_2 if site_2 is None else site_2,
@@ -206,7 +265,7 @@ class Exchange(SPWSerialisable):
             exchange_matrix=numpy_deserialise(data["matrix"]))
 
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange."""
         return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
 
     def _obeys_symmetry(self,
@@ -289,14 +348,30 @@ class Exchange(SPWSerialisable):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
 
 class HeisenbergExchange(Exchange):
-    """Heisenberg Exchange, which takes the form
+    r"""Represent a Heisenberg exchange term.
 
-    H_ij = J_ij (S_i . S_j)
+    The exchange takes the form
 
-    :param site_1: Identifier for S_i
-    :param site_2: Identifier for S_j
-    :param j: The exchange coefficient
+    .. math::
 
+        H_{ij} = J_{ij} \, (\mathbf{S}_i \cdot \mathbf{S}_j).
+
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_i`.
+    site_2 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_j`.
+    j : float
+        Exchange coefficient, :math:`J_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
+        Offset between the unit cells containing the two sites.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
     """
 
     exchange_type = "Heisenberg"
@@ -325,7 +400,7 @@ class HeisenbergExchange(Exchange):
 
     @property
     def j(self):
-        """ Exchange constant """
+        """Exchange constant."""
         return self._j
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
@@ -346,7 +421,10 @@ class HeisenbergExchange(Exchange):
             j = data["j"])
 
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange.
+
+        A Heisenberg exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
     def updated(self,
@@ -357,7 +435,23 @@ class HeisenbergExchange(Exchange):
                 j: float | None = None,
                 metadata: ExchangeMetadata | None = None
                 ):
-        """ Get version of this exchange with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        j : float, optional
+            Replacement exchange coefficient. If omitted, the current coefficient is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return HeisenbergExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
@@ -371,18 +465,37 @@ class HeisenbergExchange(Exchange):
 
 
 class DiagonalExchange(Exchange):
-    """Diagonal exchange, which takes the form
+    r"""Represent a diagonal exchange term.
 
-    H_ij = Jxx_ij S^x_i S^x_j + Jyy_ij S^y_i S^y_j + Jzz_ij S^z_i S^z_j
+    The exchange takes the form
 
+    .. math::
 
-    :param site_1: Identifier for S_i
-    :param site_2: Identifier for S_j
-    :param j_x, j_y, j_z: Vector containing the exchange coefficients for x, y, and z.
+        H_{ij} = J^{xx}_{ij} \mathbf{S}^x_i \mathbf{S}^x_j + J^{yy}_{ij} \mathbf{S}^y_i \mathbf{S}^y_j
+                 + J^{zz}_{ij} \mathbf{S}^z_i \mathbf{S}^z_j.
 
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_i`.
+    site_2 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_j`.
+    j_x : float
+        Scalar exchange coefficient for the x component, :math:`J^{xx}_{ij}`.
+    j_y : float
+        Scalar exchange coefficient for the y component, :math:`J^{yy}_{ij}`.
+    j_z : float
+        Scalar exchange coefficient for the z component, :math:`J^{zz}_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
+        Offset between the unit cells containing the two sites.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
     """
 
-    exchange_type = "Diagonal"
     parameters = ["j_x", "j_y", "j_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "J"
@@ -410,19 +523,19 @@ class DiagonalExchange(Exchange):
 
     @property
     def j_x(self):
-        """ Exchange constant for x """
+        """Exchange constant for x."""
         return self._j_x
 
 
     @property
     def j_y(self):
-        """ Exchange constant for y """
+        """Exchange constant for y."""
         return self._j_y
 
 
     @property
     def j_z(self):
-        """ Exchange constant for z """
+        """Exchange constant for z."""
         return self._j_z
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
@@ -447,7 +560,10 @@ class DiagonalExchange(Exchange):
             j_z = data["j_z"])
 
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange.
+
+        A diagonal exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
     def updated(self,
@@ -460,7 +576,27 @@ class DiagonalExchange(Exchange):
                 j_z: float | None = None,
                 metadata: ExchangeMetadata | None = None,
                 ):
-        """ Get version of this exchange with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        j_x : float, optional
+            Replacement x exchange coefficient. If omitted, the current coefficient is reused.
+        j_y : float, optional
+            Replacement y exchange coefficient. If omitted, the current coefficient is reused.
+        j_z : float, optional
+            Replacement z exchange coefficient. If omitted, the current coefficient is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return DiagonalExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2 = self.site_2 if site_2 is None else site_2,
@@ -472,14 +608,30 @@ class DiagonalExchange(Exchange):
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 class XYExchange(Exchange):
-    """ "XY"  exchange, which takes the form
+    r"""Represent an XY exchange term.
 
-    H_ij = J_ij (S^x_i S^x_j + S^y_i S^y_j)
+    The exchange takes the form
 
-    :param site_1: Identifier for S_i
-    :param site_2: Identifier for S_j
-    :param j: The exchange coefficient for the x and y components.
+    .. math::
 
+        H_{ij} = J_{ij} \, (\mathbf{S}^x_i \mathbf{S}^x_j + \mathbf{S}^y_i \mathbf{S}^y_j).
+
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_i`.
+    site_2 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_j`.
+    j : float
+        Exchange coefficient for the x and y components, :math:`J_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
+        Offset between the unit cells containing the two sites.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
     """
 
     exchange_type = "XY"
@@ -490,7 +642,7 @@ class XYExchange(Exchange):
 
     @property
     def j(self):
-        """ Exchange constant for x and y """
+        """Exchange constant for x and y."""
         return self._j
 
     def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
@@ -528,7 +680,10 @@ class XYExchange(Exchange):
             j = data["j"])
 
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange.
+
+        An XY exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
     def updated(self,
@@ -538,7 +693,23 @@ class XYExchange(Exchange):
                 name: str | None = None,
                 j: float | None = None,
                 metadata: ExchangeMetadata | None = None):
-        """ Get version of this exchange with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        j : float, optional
+            Replacement exchange coefficient. If omitted, the current coefficient is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return XYExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -548,15 +719,33 @@ class XYExchange(Exchange):
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
 class XXZExchange(Exchange):
-    """ "XXZ" exchange, which takes the form
+    r"""Represent an XXZ exchange term.
 
-    H_ij = J_xy (S^x_i S^x_j + S^y_i S^y_j) + J_z (S^z_i S^z_j)
+    The exchange takes the form
 
-    :param site_1: Identifier for S_i
-    :param site_2: Identifier for S_j
-    :param j_xy: The exchange coefficient for the x and y components.
-    :param j_z: The exchange coefficient for the z component
+    .. math::
 
+        H_{ij} = J_{xy} \, (\mathbf{S}^x_i \mathbf{S}^x_j
+        + \mathbf{S}^y_i \mathbf{S}^y_j) + J_z \, (\mathbf{S}^z_i \mathbf{S}^z_j).
+
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_i`.
+    site_2 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_j`.
+    j_xy : float
+        Exchange coefficient for the x and y components, :math:`J_{xy}`.
+    j_z : float
+        Exchange coefficient for the z component, :math:`J_z`.
+    cell_offset : CellOffsetCoercible, optional
+        Offset between the unit cells containing the two sites.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
     """
 
     exchange_type = "XXZ"
@@ -588,13 +777,13 @@ class XXZExchange(Exchange):
 
     @property
     def j_xy(self):
-        """ Exchange constant for x and y """
+        """Exchange constant for x and y."""
         return self._j_xy
 
 
     @property
     def j_z(self):
-        """ Exchange constant for z """
+        """Exchange constant for z."""
         return self._j_z
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
@@ -625,7 +814,25 @@ class XXZExchange(Exchange):
                 j_z: float | None = None,
                 metadata: ExchangeMetadata | None = None
                 ):
-        """ Get version of this exchange with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        j_xy : float, optional
+            Replacement x-y exchange coefficient. If omitted, the current coefficient is reused.
+        j_z : float, optional
+            Replacement z exchange coefficient. If omitted, the current coefficient is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return XXZExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -635,18 +842,37 @@ class XXZExchange(Exchange):
                 j_z=self.j_z if j_z is None else j_z,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange.
+
+        An XXZ exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
 class IsingExchange(Exchange):
-    """Ising exchange (z component only), which takes the form
+    r"""Represent an Ising exchange term for the z component.
 
-    H_ij = J_ij S^z_i S^z_j
+    The exchange takes the form
 
-    :param site_1: Identifier for S_i
-    :param site_2: Identifier for S_j
-    :param j: Scalar. The exchange coefficient J_ij.
+    .. math::
 
+        H_{ij} = J_{ij} \, \mathbf{S}^z_i \mathbf{S}^z_j.
+
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_i`.
+    site_2 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_j`.
+    j_z : float
+        Exchange coefficient for the z component, :math:`J_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
+        Offset between the unit cells containing the two sites.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
     """
 
     exchange_type = "Ising"
@@ -674,7 +900,7 @@ class IsingExchange(Exchange):
 
     @property
     def j_z(self):
-        """ Exchange constant for z """
+        """Exchange constant for z."""
         return self._j_z
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
@@ -701,7 +927,23 @@ class IsingExchange(Exchange):
                 name: str | None = None,
                 j_z: float | None = None,
                 metadata: ExchangeMetadata | None = None):
-        """ Get version of this exchange with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        j_z : float, optional
+            Replacement z exchange coefficient. If omitted, the current coefficient is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return IsingExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -711,20 +953,41 @@ class IsingExchange(Exchange):
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange.
+
+        An Ising exchange is always symmetric, so this always returns ``True``.
+        """
         return True
 
 class DMExchange(Exchange):
-    """Dzyaloshinskii–Moriya exchange, which takes the form
+    r"""Represent a Dzyaloshinskii-Moriya exchange term.
 
-    H_ij = D_ij (S_i x S_j)
+    The exchange takes the form
 
-    :param site_1: Identifier for S_i
-    :param site_2: Identifier for S_j
-    :param d_x: x component of the d vector above
-    :param d_y: x component of the d vector above
-    :param d_z: x component of the d vector above
+    .. math::
 
+        H_{ij} = \mathbf{D}_{ij} \cdot (\mathbf{S}_i \times \mathbf{S}_j).
+
+    Parameters
+    ----------
+    site_1 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_i`.
+    site_2 : LatticeSite
+        Lattice site associated with :math:`\mathbf{S}_j`.
+    d_x : float
+        x component of the D vector, :math:`\mathbf{D}^x_{ij}`.
+    d_y : float
+        y component of the D vector, :math:`\mathbf{D}^y_{ij}`.
+    d_z : float
+        z component of the D vector, :math:`\mathbf{D}^z_{ij}`.
+    cell_offset : CellOffsetCoercible, optional
+        Offset between the unit cells containing the two sites.
+    name : str, optional
+        Name for the exchange term. Default is ``""``.
+    color : tuple of float, optional
+        RGB color used when displaying the exchange term.
+    metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
     """
 
     exchange_type = "Dzyaloshinskii-Moriya"
@@ -757,17 +1020,17 @@ class DMExchange(Exchange):
 
     @property
     def d_x(self):
-        """ DM exchange constant for x """
+        """DM exchange constant for x."""
         return self._d_x
 
     @property
     def d_y(self):
-        """ DM exchange constant for y """
+        """DM exchange constant for y."""
         return self._d_y
 
     @property
     def d_z(self):
-        """ DM exchange constant for z """
+        """DM exchange constant for z."""
         return self._d_z
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
@@ -800,7 +1063,27 @@ class DMExchange(Exchange):
                 d_y: float | None = None,
                 d_z: float | None = None,
                 metadata: ExchangeMetadata | None = None):
-        """ Get version of this exchange with specified parameters updated"""
+        """Return a copy of this exchange with variables replaced.
+
+        Parameters
+        ----------
+        site_1 : LatticeSite, optional
+            Replacement first lattice site. If omitted, the current site is reused.
+        site_2 : LatticeSite, optional
+            Replacement second lattice site. If omitted, the current site is reused.
+        cell_offset : CellOffset, optional
+            Replacement unit-cell offset. If omitted, the current offset is reused.
+        name : str, optional
+            Replacement exchange name. If omitted, the current name is reused.
+        d_x : float, optional
+            Replacement x D-vector component. If omitted, the current component is reused.
+        d_y : float, optional
+            Replacement y D-vector component. If omitted, the current component is reused.
+        d_z : float, optional
+            Replacement z D-vector component. If omitted, the current component is reused.
+        metadata : ExchangeMetadata, optional
+            Replacement metadata. If omitted, the current metadata is copied.
+        """
         return DMExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
                 site_2=self.site_2 if site_2 is None else site_2,
@@ -813,7 +1096,7 @@ class DMExchange(Exchange):
 
 
     def is_symmetric(self):
-        """ Is this a symmetric exchange """
+        """Return whether this is a symmetric exchange."""
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
 
