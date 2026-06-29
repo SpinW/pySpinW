@@ -8,7 +8,7 @@ from pyspinw.data import Data
 
 import numpy as np
 
-from instrument import Instrument
+from pyspinw.instrument import Instrument
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 
 
