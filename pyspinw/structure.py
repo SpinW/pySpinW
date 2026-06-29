@@ -9,6 +9,7 @@ from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
@@ -317,9 +318,19 @@ class Structure(SPWSerialisable):
 
             sites_to_check.append(test_site)
 
+            # TODO: Finish
 
+    def symmetry_related(self, site: LatticeSite) -> list[tuple[LatticeSite, set[SpaceOperation]]]:
+        """ Get a list of sites related to the specified site by symmetry, including the original site"""
 
+        symmetry_related = []
+        for other_site in self._sites:
 
+            ops = self.spacegroup.operations_between_sites(site, other_site)
+            if len(ops) > 0:
+                symmetry_related.append((other_site, set(ops)))
+
+        return symmetry_related
 
     @property
     def text_summary(self) -> str:

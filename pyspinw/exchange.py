@@ -344,14 +344,84 @@ class Exchange(SPWSerialisable):
     def symmetry_fill(self, structure: "Structure"):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
         # Get the symmetry related sites
-        parent_1 = self.site_1.parent_site.unique_id
-        parent_2 = self.site_2.parent_site.unique_id
 
-        site_1_related = [site for site in structure.sites if site.parent_site.unique_id == parent_1]
-        site_2_related = [site for site in structure.sites if site.parent_site.unique_id == parent_2]
+        site_1_related = structure.symmetry_related(self.site_1)
+        site_2_related = structure.symmetry_related(self.site_2)
 
-        print(site_1_related)
-        print(site_2_related)
+        # Go through all possible pairs, and see if they have any symmetry operations relating them
+        symmetry_related = []
+        for site_1, site_1_ops in site_1_related:
+            for site_2, site_2_ops in site_2_related:
+                shared_ops = site_1_ops.intersection(site_2_ops)
+                if len(shared_ops) > 0:
+                    symmetry_related.append((site_1, site_2, shared_ops))
+
+        new_exchanges = []
+
+        to_cart = structure.unit_cell._xyz_spins # TODO: Check this is the right way round
+        to_lattice = structure.unit_cell._xyz_spins_inv
+        for site_1, site_2, operations in symmetry_related:
+            # Check they're not the same as this site, could instead check whether identity is in the ops
+            if site_1.unique_id == self.site_1.unique_id and site_2.unique_id == self.site_2.unique_id:
+                continue
+
+            # Generate new exchange
+            matrix = None
+            offset = None
+            for operation in operations:
+
+                # Get the transformed matrix
+                op = to_cart @ operation.point_operation_matrix @ to_lattice
+                new_matrix = op @ self._exchange_matrix @ op.T
+
+                ## Validate the symmetry
+                if matrix is None:
+                    matrix = new_matrix
+                else:
+                    if not np.allclose(matrix, new_matrix):
+                        raise ValueError(f"Cannot copy {self} by symmetry with operations ({operations}), "
+                                         f"as it does not conform to symmetry requirements")
+
+                # Try to get the transformed cell offset
+                vector = self.lattice_vector
+                new_vector = operation.point_operation_matrix @ vector
+
+                new_in_cell_vector = site_2.ijk - site_1.ijk
+
+                expected_cell_offset = new_vector - new_in_cell_vector
+
+                ## Check the offset is valid, and consistent
+                integered = np.round(expected_cell_offset)
+                if np.allclose(expected_cell_offset, integered):
+                    cell_offset = tuple([int(x) for x in integered])
+                    if offset is None:
+                        offset = cell_offset
+                    else:
+                        if offset != cell_offset:
+                            raise ValueError(f"Cell offsets are not consistent across operations ({operations})")
+
+                else:
+                    raise ValueError("Expected integer values for cell offset")
+
+
+            if matrix is None or offset is None:
+                raise RuntimeError("No matrix or offset, this shouldn't happen as operation lists should have"
+                                   "at least one entry")
+
+            name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
+            new_exchanges.append(Exchange(site_1, site_2, offset,
+                                          exchange_matrix=matrix,
+                                          cell_offset=CellOffset.coerce(offset),
+                                          name = name))
+
+        return new_exchanges
+
+
+
+
+
+
+
 
 class HeisenbergExchange(Exchange):
     r"""Represent a Heisenberg exchange term.

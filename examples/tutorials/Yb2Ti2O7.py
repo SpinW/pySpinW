@@ -31,8 +31,20 @@ ybs = structure.sites_by_element("Yb")
 
 structure.print_summary()
 
-base_exchange = HeisenbergExchange(structure.site_by_name("Yb 3+"), structure.site_by_name("Yb 3+ [1]"), j=1)
+base_exchange = HeisenbergExchange(
+    structure.site_by_name("Yb 3+"),
+    structure.site_by_name("Yb 3+ [1]"),
+    j=1,
+    name="J")
 
+print("Base")
 print(base_exchange)
 
-base_exchange.symmetry_fill(structure)
+extra_exchanges = base_exchange.symmetry_fill(structure)
+
+print("By Symmetry")
+for exchange in extra_exchanges:
+    print(exchange)
+
+symmetry_ham = Hamiltonian(structure, [base_exchange] + extra_exchanges)
+view(symmetry_ham)
