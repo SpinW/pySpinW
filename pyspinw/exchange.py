@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pyspinw.structure import Structure
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
 from pyspinw.exchangemetadata import ExchangeMetadata
@@ -234,7 +233,7 @@ class Exchange(SPWSerialisable):
 
         return True
 
-    def obeys_symmetry(self, structure: Structure) -> bool:
+    def obeys_symmetry(self, structure: "Structure") -> bool:
         """ Check that this exchange is consistent with the symmetry group """
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
@@ -244,7 +243,7 @@ class Exchange(SPWSerialisable):
         return self._obeys_symmetry(unit_cell, identity_operations, inversion_operations)
 
     def symmetry_copy(self,
-                      structure: Structure,
+                      structure: "Structure",
                       site_1: LatticeSite,
                       site_2: LatticeSite,
                       cell_offset: CellOffsetCoercible = (0,0,0)):
@@ -286,7 +285,7 @@ class Exchange(SPWSerialisable):
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
-    def symmetry_fill(self, structure: Structure):
+    def symmetry_fill(self, structure: "Structure"):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
 
 class HeisenbergExchange(Exchange):
