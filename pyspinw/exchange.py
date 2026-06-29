@@ -271,9 +271,7 @@ class Exchange(SPWSerialisable):
                         unit_cell: UnitCell,
                         identity_operations: set[SpaceOperation],
                         inversion_operations: set[SpaceOperation]) -> bool:
-
         """ Main logic for symmetry checking """
-
         # We want the exchange matrix in lattice units TODO: Verify the details of this transform
         exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
 
@@ -345,7 +343,6 @@ class Exchange(SPWSerialisable):
 
     def symmetry_fill(self, structure: "Structure"):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
-
         # Get the symmetry related sites
         parent_1 = self.site_1.parent_site.unique_id
         parent_2 = self.site_2.parent_site.unique_id

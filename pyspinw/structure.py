@@ -223,7 +223,6 @@ class Structure(SPWSerialisable):
 
     def sites_by_name(self, name) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-
         return [site for site in self._sites if site.name.lower().startswith(name.lower()) is not None]
 
     def site_by_name(self, name: str):
@@ -296,9 +295,7 @@ class Structure(SPWSerialisable):
                    element: str | None = None,
                    parent_constraint: LatticeSite | None = None,
                    direction_filter: DirectionalityFilter | None = None):
-
         """ Get a list of nearest neighbours for a site, along with cell offsets """
-
         if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"{element} is not an element")
 

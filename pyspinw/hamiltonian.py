@@ -1026,7 +1026,6 @@ class Hamiltonian(SPWSerialisable):
 
         This might be if they're the same, or swapped.
         """
-
         by_offset = defaultdict(list)
         swapped_by_offset = defaultdict(list)
 
@@ -1049,7 +1048,6 @@ class Hamiltonian(SPWSerialisable):
 
     def complete_symmetry(self) -> "Hamiltonian":
         """ Check that the hamiltonian obeys its symmetry """
-
         failures: list[str] = []
 
         # Create mapping from sites to exchanges
