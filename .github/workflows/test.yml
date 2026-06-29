@@ -95,6 +95,3 @@ jobs:
         # `--runxfail` means 'expect xfail tests to pass' - the Rust tests
         # are set to xfail if the Rust module is not available
         python -m pytest --runxfail -m rust 
-    - name: Setup tmate
-      if: ${{ failure() }}
-      uses: mxschmitt/action-tmate@v3
