@@ -9,7 +9,6 @@ from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
-from pyspinw.symmetry.group import SpaceGroup
 from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
@@ -346,6 +345,16 @@ class Exchange(SPWSerialisable):
 
     def symmetry_fill(self, structure: "Structure"):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
+
+        # Get the symmetry related sites
+        parent_1 = self.site_1.parent_site.unique_id
+        parent_2 = self.site_2.parent_site.unique_id
+
+        site_1_related = [site for site in structure.sites if site.parent_site.unique_id == parent_1]
+        site_2_related = [site for site in structure.sites if site.parent_site.unique_id == parent_2]
+
+        print(site_1_related)
+        print(site_2_related)
 
 class HeisenbergExchange(Exchange):
     r"""Represent a Heisenberg exchange term.

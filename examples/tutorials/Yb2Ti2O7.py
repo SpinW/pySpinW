@@ -22,9 +22,17 @@ structure = Structure(sites, unit_cell, sg)
 # view(structure)
 
 ybs = structure.sites_by_element("Yb")
-exchanges = generate_exchanges(ybs, unit_cell=unit_cell, bond=1, max_distance=a)
-hamiltonian = Hamiltonian(structure, exchanges)
 
-hamiltonian.print_summary()
 
-view(hamiltonian)
+# exchanges = generate_exchanges(ybs, unit_cell=unit_cell, bond=1, max_distance=a)
+# hamiltonian = Hamiltonian(structure, exchanges)
+# hamiltonian.print_summary()
+# view(hamiltonian)
+
+structure.print_summary()
+
+base_exchange = HeisenbergExchange(structure.site_by_name("Yb 3+"), structure.site_by_name("Yb 3+ [1]"), j=1)
+
+print(base_exchange)
+
+base_exchange.symmetry_fill(structure)

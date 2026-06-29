@@ -223,10 +223,33 @@ class Structure(SPWSerialisable):
 
     def sites_by_name(self, name) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        # Escape square brackets in the regex
-        regex = name.replace("[", r"\[").replace("]", r"\]")
 
-        return [site for site in self._sites if re.match(regex, site.name) is not None]
+        return [site for site in self._sites if site.name.lower().startswith(name.lower()) is not None]
+
+    def site_by_name(self, name: str):
+        """ Get a single site by its name"""
+        found = self.sites_by_name(name)
+        if len(found) == 0:
+            raise ValueError(f"No site matching '{name}' found")
+        elif len(found) > 1:
+            # Are any an exact match
+            exact_matches = [site for site in found if site.name == name]
+
+            if len(exact_matches) == 0:
+
+                names = ", ".join([f"'{site.name}'" for site in found])
+
+                raise ValueError(f"Multiple sites close to '{name}' found, but no exact match. "
+                                 f"Close matches are {names}")
+
+            elif len(exact_matches) == 1:
+                return exact_matches[0]
+
+            else:
+                raise ValueError(f"Multiple sites exactly matching '{name}' found")
+
+        else:
+            return found[0]
 
     def sites_by_element(self, element: str | None) -> list[LatticeSite]:
         """ Get list of sites with the specified element in the metadata"""
@@ -244,21 +267,6 @@ class Structure(SPWSerialisable):
 
         return Structure(new_sites, unit_cell=self.unit_cell, spacegroup=self.spacegroup, supercell=self.supercell)
 
-    def site_by_name(self, name):
-        """ Get a single site by its name"""
-        found = self.sites_by_name(name)
-        if len(found) == 0:
-            raise ValueError(f"No site matching '{name}' found")
-        elif len(found) > 1:
-            # Are any an exact match
-            exact_matches = [site for site in found if site.name == name]
-
-            if len(exact_matches) == 1:
-                return exact_matches[0]
-
-            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
-        else:
-            return found[0]
 
     @property
     def text_summary(self) -> str:
@@ -282,21 +290,6 @@ class Structure(SPWSerialisable):
         """ Print out details of this structure """
         print(self.text_summary)
 
-    def site_by_name(self, name: str):
-        """ Get a single site by its name"""
-        found = self.sites_by_name(name)
-        if len(found) == 0:
-            raise ValueError(f"No site matching '{name}' found")
-        elif len(found) > 1:
-            # Are any an exact match
-            exact_matches = [site for site in found if site.name == name]
-
-            if len(exact_matches) == 1:
-                return exact_matches[0]
-
-            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
-        else:
-            return found[0]
 
     def neighbours(self, site: LatticeSite,
                    neighbour_distance=1,
