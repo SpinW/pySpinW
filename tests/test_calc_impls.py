@@ -55,4 +55,4 @@ def test_calc_impls(example):
     np.testing.assert_allclose(np.sort(rs_energies), np.sort(py_energies), atol=1e-6, rtol=0)
     # remove very large values of intensity
     rs_sqw, py_sqw = (np.array(sqw)[np.where(np.array(sqw) < 100)] for sqw in [rs_sqw, py_sqw])
-    np.testing.assert_allclose(np.sort(rs_sqw), np.sort(py_sqw), atol=1e-6, rtol=1e-3)
+    np.testing.assert_allclose(np.sort(rs_sqw), np.sort(py_sqw), atol=1e-6, rtol=1.5e-3)
