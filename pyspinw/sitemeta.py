@@ -15,7 +15,7 @@ def _build_regex():
     symbols_sorted = sorted(chemical_symbols[1:], key=lambda x: (-len(x), x))
 
     # Build regex
-    pattern = r"^\s*({})(?:[^a-zA-Z]?.*)?$".format("|".join(symbols_sorted))
+    pattern = r"^(?:{})".format("|".join(symbols_sorted))
     return re.compile(pattern)
 
 
