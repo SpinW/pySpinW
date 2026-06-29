@@ -1,6 +1,6 @@
 """ Description of measurements """
 
-from pathlib import Path
+from pyspinw.path import Path
 
 class Measurement:
     """ Provides the q and E parameters specific to a given measurement """
