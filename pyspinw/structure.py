@@ -5,6 +5,7 @@ import numpy as np
 from ase.data import chemical_symbols
 from numpy._typing import ArrayLike
 
+from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
@@ -281,7 +282,7 @@ class Structure(SPWSerialisable):
         """ Print out details of this structure """
         print(self.text_summary)
 
-    def site_by_name(self, name):
+    def site_by_name(self, name: str):
         """ Get a single site by its name"""
         found = self.sites_by_name(name)
         if len(found) == 0:
@@ -296,6 +297,39 @@ class Structure(SPWSerialisable):
             raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
         else:
             return found[0]
+
+    def neighbours(self, site: LatticeSite,
+                   neighbour_distance=1,
+                   element: str | None = None,
+                   parent_constraint: LatticeSite | None = None,
+                   direction_filter: DirectionalityFilter | None = None):
+
+        """ Get a list of nearest neighbours for a site, along with cell offsets """
+
+        if element is not None and element not in chemical_symbols[1:]:
+            raise ValueError(f"{element} is not an element")
+
+        # Make sure the parent constraint is the parent, not a site with a parent
+        if parent_constraint is not None:
+            parent_constraint = parent_constraint.parent_site
+
+        # Get a list of sites we want to check
+        sites_to_check = []
+        for test_site in self.sites:
+
+            # Filter out sites without the specified element
+            if element is not None and test_site.metadata.element != element:
+                continue
+
+            # Filter out sites by parent
+            if parent_constraint is not None and test_site.parent_site.unique_id != parent_constraint.unique_id:
+                continue
+
+            sites_to_check.append(test_site)
+
+
+
+
 
     @property
     def text_summary(self) -> str:
