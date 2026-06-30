@@ -191,7 +191,6 @@ def cell_shell(order: int) -> list[tuple[int, int, int]]:
     -------  -------  -------  #######
 
     """
-
     # This is basically all the integer vectors with a L_infty distance of a given integer
     # L_infty = max(x,y,z)
 

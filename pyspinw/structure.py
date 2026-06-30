@@ -324,7 +324,6 @@ class Structure(SPWSerialisable):
 
     def symmetry_related(self, site: LatticeSite) -> list[tuple[LatticeSite, set[SpaceOperation]]]:
         """ Get a list of sites related to the specified site by symmetry, including the original site"""
-
         symmetry_related = []
         for other_site in self._sites:
 

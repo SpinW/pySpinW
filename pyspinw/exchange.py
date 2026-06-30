@@ -420,6 +420,7 @@ class Exchange(SPWSerialisable):
 
     @staticmethod
     def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Convert this to a specialised exchange type """
         return exchange
 
 
