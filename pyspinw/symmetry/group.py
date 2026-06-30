@@ -149,25 +149,19 @@ class SpaceGroup(SymmetryGroup):
         for operation in self.operations:
             candidate = operation(coordinates)
 
-            # print(operation,"::", coordinates, "->", candidate, end=":")
-
             # If it's not the input, continue
-            if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
-                # print("same as input")
+            if np.allclose(candidate, coordinates, atol=tolerances.SAME_SITE_ABS_TOL):
                 continue
 
             # Is it one we've already found
             new = True
-            for coordinates in new_coordinates:
-                if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
+            for existing_coordinate in new_coordinates:
+                if np.allclose(candidate, existing_coordinate, atol=tolerances.SAME_SITE_ABS_TOL):
                     new = False
                     break
 
             if new:
-                # print("is new")
                 new_coordinates.append(candidate)
-            # else:
-            #     print("is not new")
 
         new_sites = []
         for i, coordinates in enumerate(new_coordinates):
