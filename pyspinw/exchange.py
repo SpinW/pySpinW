@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from importlib_metadata import metadata
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes

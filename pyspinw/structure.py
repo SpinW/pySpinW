@@ -13,7 +13,7 @@ from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
-from pyspinw.util import connected_components, arraylike_equality
+from pyspinw.util import connected_components, arraylike_equality, IncrementalApproximateHistogram, cell_shell
 
 
 class Structure(SPWSerialisable):
@@ -295,7 +295,8 @@ class Structure(SPWSerialisable):
                    neighbour_distance=1,
                    element: str | None = None,
                    parent_constraint: LatticeSite | None = None,
-                   direction_filter: DirectionalityFilter | None = None):
+                   direction_filter: DirectionalityFilter | None = None,
+                   max_iters=20):
         """ Get a list of nearest neighbours for a site, along with cell offsets """
         if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"{element} is not an element")
@@ -318,7 +319,9 @@ class Structure(SPWSerialisable):
 
             sites_to_check.append(test_site)
 
-            # TODO: Finish
+        # Search increasingly large zones
+
+
 
     def symmetry_related(self, site: LatticeSite) -> list[tuple[LatticeSite, set[SpaceOperation]]]:
         """ Get a list of sites related to the specified site by symmetry, including the original site"""
