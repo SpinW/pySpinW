@@ -137,3 +137,7 @@ def rotation_from_z(target_vector):
         [-x*y / (1+z), 1 - y**2 / (1+z), y],
         [-x, -y, z]
     ])
+
+def is_diagonal(m: np.ndarray):
+    """ Check whether an array is diagonal """
+    return np.all(m == np.diag(np.diagonal(m)))

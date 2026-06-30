@@ -1,7 +1,9 @@
 """Exchange terms between lattice sites."""
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
+from importlib_metadata import metadata
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.checks import check_sizes
@@ -12,8 +14,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
-from pyspinw.util import triple_product_matrix
-
+from pyspinw.util import triple_product_matrix, is_diagonal
 
 _exchange_id_counter = -1
 def _generate_unique_exchange_id():
@@ -412,12 +413,15 @@ class Exchange(SPWSerialisable):
             new_exchanges.append(Exchange(site_1, site_2, offset,
                                           exchange_matrix=matrix,
                                           cell_offset=CellOffset.coerce(offset),
-                                          name = name))
+                                          name = name,
+                                          metadata=self.metadata.copy()))
 
-        return new_exchanges
+        return [specialise_exchange(exchange) for exchange in new_exchanges]
 
 
-
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        return exchange
 
 
 
@@ -536,6 +540,22 @@ class HeisenbergExchange(Exchange):
                 j = self.j if j is None else j,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy()
                 )
+
+
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0,0] == m[1,1] and m[1,1] == m[2,2]:
+            return HeisenbergExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j=float(m[0,0]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
 
 
 
@@ -683,6 +703,24 @@ class DiagonalExchange(Exchange):
                 j_z = self.j_z if j_z is None else j_z,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
+
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m):
+            return DiagonalExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j_x=float(m[0,0]),
+                j_y=float(m[1,1]),
+                j_z=float(m[2,2]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
+
 class XYExchange(Exchange):
     r"""Represent an XY exchange term.
 
@@ -793,6 +831,22 @@ class XYExchange(Exchange):
                 name=self.name if name is None else name,
                 j=self.j if j is None else j,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
+
+
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0,0] == m[1,1] and m[2,2] == 0:
+            return XYExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j=float(m[0,0]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
 
 class XXZExchange(Exchange):
     r"""Represent an XXZ exchange term.
@@ -924,6 +978,22 @@ class XXZExchange(Exchange):
         """
         return True
 
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0,0] == m[1,1]:
+            return XXZExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j_xy=float(m[0,0]),
+                j_z=float(m[2,2]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
+
 class IsingExchange(Exchange):
     r"""Represent an Ising exchange term for the z component.
 
@@ -1034,6 +1104,21 @@ class IsingExchange(Exchange):
         An Ising exchange is always symmetric, so this always returns ``True``.
         """
         return True
+
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0, 0] == 0 and m[1, 1] == 0:
+            return IsingExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j_z=float(m[2, 2]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
 
 class DMExchange(Exchange):
     r"""Represent a Dzyaloshinskii-Moriya exchange term.
@@ -1175,7 +1260,43 @@ class DMExchange(Exchange):
         """Return whether this is a symmetric exchange."""
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
+    @staticmethod
+    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
 
-all_exchanges = [HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange]
+        if not np.all(np.diagonal(m) == 0):
+            return None
+
+        if m[0,1] != -m[1,0] or m[0,2] != -m[2,0] or m[1,2] != -m[2,1]:
+            return None
+
+        z = float(m[0,1])
+        y = -float(m[0,2])
+        x = float(m[1,2])
+
+        return DMExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                d_x=x,
+                d_y=y,
+                d_z=z,
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+
+
+all_exchanges = [HeisenbergExchange, DiagonalExchange, XXZExchange, XYExchange, IsingExchange, DMExchange]
 exchanges_lookup = {exchange.exchange_type: exchange for exchange in all_exchanges}
 lowercase_exchange_lookup = {exchange.exchange_type.lower(): exchange for exchange in all_exchanges}
+
+_specialisation_search = [HeisenbergExchange, XYExchange,  XXZExchange, IsingExchange, DiagonalExchange, DMExchange]
+
+def specialise_exchange(exchange: Exchange):
+    """ Find the narrowest exchange subclass to fit the exchange """
+    for Ex in _specialisation_search:
+        specialised = Ex.specialise(exchange)
+        if specialised is not None:
+            return specialised
+
+    return exchange
