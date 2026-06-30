@@ -77,6 +77,8 @@ class Structure(SPWSerialisable):
         for site in self._input_sites:
             site_list += self._spacegroup.implied_sites_for(site)
 
+        for site in site_list:
+            print(site)
 
         # Check for collisions, if there is an input site that
         # collides with an implied site, choose the input site
