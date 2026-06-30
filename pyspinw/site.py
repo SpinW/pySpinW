@@ -361,3 +361,23 @@ class ImpliedLatticeSite(LatticeSite):
             sz=float(coordinates[5]),
             name=name)
 
+
+    def __repr__(self):
+        m = self.base_spin
+
+        if self.name is None or self.name == "":
+            if np.sum(m**2) < 1e-9:
+                return (f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"parent={self.parent_site.name})")
+
+            else:
+                return (f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"spin={self.base_spin}, parent={self.parent_site.name})")
+        else:
+            if np.sum(m ** 2) < 1e-9:
+                return (f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"parent={self.parent_site.name})")
+
+            else:
+                return (f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"spin={self.base_spin}, parent={self.parent_site.name})")

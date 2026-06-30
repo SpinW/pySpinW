@@ -12,7 +12,7 @@ from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirecti
     BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
     TransformationSupercell, SummationSupercell, RotationSupercell

@@ -7,7 +7,7 @@ from pyspinw.interface import generate_exchanges
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector, \
     TransformationSupercell, RotationTransform
 
@@ -210,7 +210,8 @@ def test_optimise_transformation_supercell():
 
     sites = [a, x]
 
-    pv = CommensuratePropagationVector(1,1,1/3)
+    pv = CommensuratePropagationVector(1,1,1)
+    # pv = CommensuratePropagationVector(1,1,1/3)
     structure = Structure(sites, UnitCell(1,1,1),
                           supercell=TransformationSupercell([(pv, RotationTransform([1,0,0]))]))
 
@@ -222,6 +223,7 @@ def test_optimise_transformation_supercell():
 
     x_new = optimised.sites_by_name("X")[0]
 
+    print(optimised.sites_by_name("X"))
 
     base_spin_direction = x_new.base_spin / np.sqrt(np.sum(x_new.base_spin ** 2))
 

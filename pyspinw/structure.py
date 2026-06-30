@@ -3,14 +3,17 @@ import re
 
 import numpy as np
 from ase.data import chemical_symbols
+from numpy._typing import ArrayLike
 
+from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.serialisation import SPWSerialisable
-from pyspinw.site import LatticeSite
+from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
-from pyspinw.util import connected_components, arraylike_equality
+from pyspinw.util import connected_components, arraylike_equality, IncrementalApproximateHistogram, cell_shell
 
 
 class Structure(SPWSerialisable):
@@ -220,10 +223,32 @@ class Structure(SPWSerialisable):
 
     def sites_by_name(self, name) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        # Escape square brackets in the regex
-        regex = name.replace("[", r"\[").replace("]", r"\]")
+        return [site for site in self._sites if site.name.lower().startswith(name.lower())]
 
-        return [site for site in self._sites if re.match(regex, site.name) is not None]
+    def site_by_name(self, name: str):
+        """ Get a single site by its name"""
+        found = self.sites_by_name(name)
+        if len(found) == 0:
+            raise ValueError(f"No site matching '{name}' found")
+        elif len(found) > 1:
+            # Are any an exact match
+            exact_matches = [site for site in found if site.name == name]
+
+            if len(exact_matches) == 0:
+
+                names = ", ".join([f"'{site.name}'" for site in found])
+
+                raise ValueError(f"Multiple sites close to '{name}' found, but no exact match. "
+                                 f"Close matches are {names}")
+
+            elif len(exact_matches) == 1:
+                return exact_matches[0]
+
+            else:
+                raise ValueError(f"Multiple sites exactly matching '{name}' found")
+
+        else:
+            return found[0]
 
     def sites_by_element(self, element: str | None) -> list[LatticeSite]:
         """ Get list of sites with the specified element in the metadata"""
@@ -241,21 +266,6 @@ class Structure(SPWSerialisable):
 
         return Structure(new_sites, unit_cell=self.unit_cell, spacegroup=self.spacegroup, supercell=self.supercell)
 
-    def site_by_name(self, name):
-        """ Get a single site by its name"""
-        found = self.sites_by_name(name)
-        if len(found) == 0:
-            raise ValueError(f"No site matching '{name}' found")
-        elif len(found) > 1:
-            # Are any an exact match
-            exact_matches = [site for site in found if site.name == name]
-
-            if len(exact_matches) == 1:
-                return exact_matches[0]
-
-            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
-        else:
-            return found[0]
 
     @property
     def text_summary(self) -> str:
@@ -279,21 +289,49 @@ class Structure(SPWSerialisable):
         """ Print out details of this structure """
         print(self.text_summary)
 
-    def site_by_name(self, name):
-        """ Get a single site by its name"""
-        found = self.sites_by_name(name)
-        if len(found) == 0:
-            raise ValueError(f"No site matching '{name}' found")
-        elif len(found) > 1:
-            # Are any an exact match
-            exact_matches = [site for site in found if site.name == name]
 
-            if len(exact_matches) == 1:
-                return exact_matches[0]
+    def neighbours(self, site: LatticeSite,
+                   neighbour_distance=1,
+                   element: str | None = None,
+                   parent_constraint: LatticeSite | None = None,
+                   direction_filter: DirectionalityFilter | None = None,
+                   max_iters=20):
+        """ Get a list of nearest neighbours for a site, along with cell offsets """
+        if element is not None and element not in chemical_symbols[1:]:
+            raise ValueError(f"{element} is not an element")
 
-            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
-        else:
-            return found[0]
+        # Make sure the parent constraint is the parent, not a site with a parent
+        if parent_constraint is not None:
+            parent_constraint = parent_constraint.parent_site
+
+        # Get a list of sites we want to check
+        sites_to_check = []
+        for test_site in self.sites:
+
+            # Filter out sites without the specified element
+            if element is not None and test_site.metadata.element != element:
+                continue
+
+            # Filter out sites by parent
+            if parent_constraint is not None and test_site.parent_site.unique_id != parent_constraint.unique_id:
+                continue
+
+            sites_to_check.append(test_site)
+
+        # Search increasingly large zones
+
+
+
+    def symmetry_related(self, site: LatticeSite) -> list[tuple[LatticeSite, set[SpaceOperation]]]:
+        """ Get a list of sites related to the specified site by symmetry, including the original site"""
+        symmetry_related = []
+        for other_site in self._sites:
+
+            ops = self.spacegroup.operations_between_sites(site, other_site)
+            if len(ops) > 0:
+                symmetry_related.append((other_site, set(ops)))
+
+        return symmetry_related
 
     @property
     def text_summary(self) -> str:
@@ -349,3 +387,36 @@ class Structure(SPWSerialisable):
         """ Set the supercell """
         self._supercell = supercell
         self._build_sites()
+
+    def exchange_constraints(self,
+                             site_1: LatticeSite | str | ArrayLike,
+                             site_2: LatticeSite | str | ArrayLike):
+        """ Get the constraints """
+        if isinstance(site_1, str):
+            site_1 = self.site_by_name(site_1)
+
+        if isinstance(site_2, str):
+            site_2 = self.site_by_name(site_2)
+
+        if not isinstance(site_1, LatticeSite):
+            try:
+                site_1 = LatticeSite(i=float(site_1[0]),
+                                     j=float(site_1[1]),
+                                     k=float(site_1[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_1` to be a LatticeSite, vector or a name") from e
+
+        if not isinstance(site_2, LatticeSite):
+            try:
+                site_2 = LatticeSite(i=float(site_2[0]),
+                                     j=float(site_2[1]),
+                                     k=float(site_2[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_2` to be a LatticeSite, vector or a name") from e
+
+        return self.spacegroup.exchange_constraints(site_1, site_2)
+
+
+

@@ -2,7 +2,7 @@ from pyspinw.interface import spacegroup
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 
 from pyspinw.debug_plot import debug_plot
 

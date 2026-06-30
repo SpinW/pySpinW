@@ -2,7 +2,8 @@
 import logging
 from collections.abc import Callable
 import re
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import reduce
 from typing import Sequence, Union
 
 import numpy as np
@@ -25,7 +26,7 @@ from pyspinw.path import Path, Slice
 from pyspinw.polarisation import calculate_polarised_intensity
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
@@ -33,6 +34,25 @@ from pyspinw.units import IntensityUnits, intensity_units
 # pylint: disable=R0903
 
 logger = logging.Logger("pyspinw.hamiltonian")
+
+def _defaultlistdict():
+    """ Used to create defaultdicts of defaultdicts of lists """
+    return defaultdict(list)
+
+def _defaultsetdict():
+    """ Used to create defaultdicts of defaultdicts of sets """
+    return defaultdict(set)
+
+def _defaultsetdictdict():
+    """ Used to create defaultdicts of defaultdicts of defaultdict of sets """
+    return defaultdict(_defaultsetdict)
+
+def _defaultsetdictdictdict():
+    """ Used to create defaultdicts of defaultdicts of defaultdict of defaultdict of sets """
+    return defaultdict(_defaultsetdictdict)
+
+
+
 
 def uniquetol(values: ArrayLike, tol: float=1e-5):
     """ Returns floating point unique values within a given tolerance """
@@ -343,9 +363,9 @@ class Hamiltonian(SPWSerialisable):
 
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
-    def sites_by_name(self, regex) -> list[LatticeSite]:
+    def sites_by_name(self, test_string) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        return self.structure.sites_by_name(regex)
+        return self.structure.sites_by_name(test_string)
 
     def print_summary(self):
         """ Print a textual summary to stdout"""
@@ -999,6 +1019,91 @@ class Hamiltonian(SPWSerialisable):
             for anisotropy in minimiser.hamiltonian.anisotropies]
 
         return Hamiltonian(structure, exchanges, anisotropies)
+
+    @staticmethod
+    def _combine_exchanges(exchanges: list[Exchange], swapped_exchanges: list[Exchange]):
+        """ Combines exchanges together if they have the matching sites and cell offset
+
+        This might be if they're the same, or swapped.
+        """
+        by_offset = defaultdict(list)
+        swapped_by_offset = defaultdict(list)
+
+        for exchange in exchanges:
+            by_offset[exchange.cell_offset.as_tuple].append(exchange.exchange_matrix)
+            swapped_by_offset[(-exchange.cell_offset).as_tuple].append(exchange.exchange_matrix.T)
+
+        for exchange in swapped_exchanges:
+            swapped_by_offset[exchange.cell_offset.as_tuple].append(exchange.exchange_matrix)
+            by_offset[(-exchange.cell_offset).as_tuple].append(exchange.exchange_matrix.T)
+
+        combined = {offset: reduce(np.add, matrices) if matrices else np.zeros((3,3))
+                        for offset, matrices in by_offset.items()}
+
+        swapped_combined = {offset: reduce(np.add, matrices) if matrices else np.zeros((3,3))
+                                for offset, matrices in swapped_by_offset.items()}
+
+        return combined, swapped_combined
+
+
+    def complete_symmetry(self) -> "Hamiltonian":
+        """ Check that the hamiltonian obeys its symmetry """
+        failures: list[str] = []
+
+        # Create mapping from sites to exchanges
+
+        exchange_lookup = defaultdict(_defaultlistdict)
+
+        exchange_pairs: set[tuple[int, int]] = set()
+        sites_with_exchanges: set[int] = set()
+        for exchange in self.exchanges:
+            uid_1 = exchange.site_1.unique_id
+            uid_2 = exchange.site_2.unique_id
+
+            exchange_lookup[uid_1][uid_2].append(exchange)
+            exchange_lookup[uid_2][uid_1] # looks like it does nothing, but actually creates entry in defaultdict
+
+            exchange_pairs.add((uid_1, uid_2))
+            sites_with_exchanges.add(uid_1)
+            sites_with_exchanges.add(uid_2)
+
+        # Combine exchanges that are between the same sites with the same offset
+        combined_exchanges = defaultdict(dict)
+        for uid_1 in exchange_lookup:
+            for uid_2 in exchange_lookup[uid_1]:
+                direct, swapped = self._combine_exchanges(
+                    exchange_lookup[uid_1][uid_2],
+                    exchange_lookup[uid_2][uid_1])
+
+                combined_exchanges[uid_1][uid_2] = direct
+                combined_exchanges[uid_2][uid_1] = swapped
+
+        # Create sets of sites that are symmetry related to the ones we have exchanges for,
+        #  this seems to be the minimal number of sites we need to check
+        operations_between_sites = defaultdict(_defaultsetdict)
+        for exchange_site in sites_with_exchanges:
+            for test_site in self.structure.sites:
+                uid_1 = exchange_site.unique_id
+                uid_2 = test_site.unique_id
+
+                operations = self.structure.spacegroup.operations_between_sites(exchange_site, test_site)
+
+                operations_between_sites[uid_1][uid_2] = operations
+
+        # For each site pair with exchanges, check the matrices corresponding to it
+        direct_operations = defaultdict(_defaultsetdict)
+        swapped_operations = defaultdict(_defaultsetdict)
+        for pair_1_1, pair_1_2 in exchange_pairs:
+            for pair_2_1 in operations_between_sites[pair_1_1]:
+                for pair_2_2 in operations_between_sites[pair_1_2]:
+                    pass
+
+
+
+
+
+
+
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
