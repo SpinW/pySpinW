@@ -1,11 +1,13 @@
 """ Magnetic structures """
-import re
+import logging
 
 import numpy as np
 from ase.data import chemical_symbols
 from numpy._typing import ArrayLike
 
+from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchangegroup import DirectionalityFilter
+from pyspinw.lattice_distances import full_search_space
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
@@ -13,8 +15,9 @@ from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
-from pyspinw.util import connected_components, arraylike_equality, IncrementalApproximateHistogram, cell_shell
+from pyspinw.util import connected_components, arraylike_equality, IncrementalPointHistogram
 
+logger = logging.getLogger("Structure")
 
 class Structure(SPWSerialisable):
     """ Representation of the magnetic structure """
@@ -289,37 +292,122 @@ class Structure(SPWSerialisable):
         """ Print out details of this structure """
         print(self.text_summary)
 
+    def all_neighbours(self,
+                       site: LatticeSite,
+                       n=1,
+                       element: str | None = None,
+                       direction_filter: DirectionalityFilter | None = None) -> list[list[tuple[LatticeSite, CellOffset]]]:
 
-    def neighbours(self, site: LatticeSite,
-                   neighbour_distance=1,
-                   element: str | None = None,
-                   parent_constraint: LatticeSite | None = None,
-                   direction_filter: DirectionalityFilter | None = None,
-                   max_iters=20):
-        """ Get a list of nearest neighbours for a site, along with cell offsets """
+
+
+        """ Get list-of-lists containing (i<=n)-th nearest neighbours along with their cell offsets
+
+        :param n: maximum n for n-th nearest neighbour
+        :param element: Restrict search to this element
+        :param direction_filter: Filter the results using this
+
+        :returns: a list of (site, offset) pairs for each order up-to and including `neighbour`
+        """
         if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"{element} is not an element")
 
-        # Make sure the parent constraint is the parent, not a site with a parent
-        if parent_constraint is not None:
-            parent_constraint = parent_constraint.parent_site
-
         # Get a list of sites we want to check
-        sites_to_check = []
+        sites_to_check: list[LatticeSite] = []
         for test_site in self.sites:
 
             # Filter out sites without the specified element
             if element is not None and test_site.metadata.element != element:
                 continue
 
-            # Filter out sites by parent
-            if parent_constraint is not None and test_site.parent_site.unique_id != parent_constraint.unique_id:
-                continue
 
             sites_to_check.append(test_site)
 
-        # Search increasingly large zones
+        # We want the n-th nearest neighbour, but we generate offsets in terms of distance
+        #  so we need a strict bound on the distance that will cover all the points of a given order
 
+        # possibly a very loose bound for systems with lots of sites, because it is based on
+        #  having one site per unit cell
+        search_radius = (n-1) * min([self.unit_cell.a, self.unit_cell.b, self.unit_cell.b])
+
+        offsets = full_search_space(self.unit_cell._xyz, search_radius)
+
+        n_checks = offsets.shape[0]*len(sites_to_check)
+
+        if n_checks > 10_000:
+            logger.warning(f"Neighbours is not optimised for large neighbour distances."
+                           f"Finding the order-{n} neighbours entails checking {n_checks} "
+                           f"unit cells")
+
+        hist = IncrementalPointHistogram()
+
+        for test_site in sites_to_check:
+
+            lattice_vectors = test_site.ijk - site.ijk + offsets
+            xyz_vectors = self.unit_cell.lattice_units_to_cartesian(lattice_vectors)
+            distances = np.sqrt(np.sum(xyz_vectors**2, axis=1))
+
+            for i in range(len(distances)):
+                hist.add(distances[i], (test_site, xyz_vectors[i,:], offsets[i,:]))
+
+        # Should have at least `neighbour+1` groups
+        groups = hist.groups()[:n + 1]
+
+        if direction_filter is None:
+            return [[(test_site, CellOffset.coerce(offset))
+                     for test_site, _, offset in order]
+                        for order in groups]
+        else:
+            return [[(test_site, CellOffset.coerce(offset))
+                     for test_site, vector, offset in order if direction_filter.accept(vector)]
+                    for order in groups]
+
+
+
+    def neighbours(self,
+                   site: LatticeSite,
+                   n=1,
+                   element: str | None = None,
+                   direction_filter: DirectionalityFilter | None = None):
+        """ Get a list of n-th nearest neighbours, along with cell offsets
+
+        :param n: maximum n for n-th nearest neighbour
+        :param element: Restrict search to this element
+        :param direction_filter: Filter the results using this
+
+        :returns: a list of (site, offset) for n-th nearest neighbour
+        """
+        all_neighbors = self.all_neighbours(
+                site = site,
+                n=n,
+                element=element,
+                direction_filter=direction_filter)
+
+        return all_neighbors[-1]
+
+    def one_neighbour(self,
+                      site: LatticeSite,
+                      n=1,
+                      element: str | None = None,
+                      direction_filter: DirectionalityFilter | None = None):
+        """ Get one, arbitrary, n-th nearest neighbours, along with cell offsets
+
+        :param n: maximum n for n-th nearest neighbour
+        :param element: Restrict search to this element
+        :param direction_filter: Filter the results using this
+
+        :returns: a list of (site, offset) for n-th nearest neighbour
+        """
+
+        neighbors = self.neighbours(
+            site=site,
+            n=n,
+            element=element,
+            direction_filter=direction_filter)
+
+        if len(neighbors) == 0:
+            raise ValueError("No neighbours that pass the filter")
+
+        return neighbors[0]
 
 
     def symmetry_related(self, site: LatticeSite) -> list[tuple[LatticeSite, set[SpaceOperation]]]:

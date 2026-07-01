@@ -77,14 +77,24 @@ class CellOffset(SPWSerialisable):
         elif cell_offset_or_data is None:
             return CellOffset(0,0,0)
 
-        elif isinstance(cell_offset_or_data, tuple):
-            if len(cell_offset_or_data) == 3:
-                if all([isinstance(x, int) for x in cell_offset_or_data]):
-                    return CellOffset(*cell_offset_or_data)
+        elif isinstance(cell_offset_or_data, (tuple, list, np.ndarray)):
+            numpyed = np.array(cell_offset_or_data).reshape(-1)
+            if numpyed.shape == (3,):
+                intified = [int(round(x)) for x in numpyed]
+                if np.allclose(cell_offset_or_data, intified):
+                    return CellOffset(*intified)
+                else:
+                    raise ValueError(f"Could not convert {cell_offset_or_data} to cell offset, "
+                                     f"it is not approximately an integer list")
+            else:
+                raise ValueError(f"Could not convert {cell_offset_or_data} to cell offset, "
+                                     f"it cannot be interpreted as length 3")
 
-        else:
-            raise TypeError(f"Could not convert {cell_offset_or_data} to cell offset, should be "
-                            f"CellOffset, tuple[int,int,int] or None")
+
+
+        raise TypeError(f"Could not convert {cell_offset_or_data} to cell offset, should be "
+                        f"CellOffset, ArrayLike[Number,Number,Number] or None,"
+                        f"got {type(cell_offset_or_data)}")
 
     def __neg__(self):
         return CellOffset(-self.i, -self.j, -self.k)

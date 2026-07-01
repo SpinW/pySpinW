@@ -12,7 +12,7 @@ from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
 from pyspinw.exchange import HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange
 from pyspinw.hamiltonian import Hamiltonian
 
-from pyspinw.exchangegroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
+from pyspinw.exchangegroup import NoDirectionalityFilter, InPlaneFilter, InDirectionFilter, BiDirectionFilter
 
 from pyspinw.interface import (
     generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
@@ -56,6 +56,7 @@ __all__ = [
     "DMExchange",
 
     # filters
+    "NoDirectionalityFilter",
     "InPlaneFilter",
     "InDirectionFilter",
     "BiDirectionFilter",

@@ -1,7 +1,7 @@
 """Generally helpful functions that don't obviously live anywhere else in particular"""
 import functools
 from collections import defaultdict
-from typing import TypeVar
+from typing import TypeVar, Generic
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -147,10 +147,10 @@ def is_diagonal(m: np.ndarray):
 
 
 T = TypeVar("T")
-class IncrementalApproximateHistogram[T]:
+class IncrementalPointHistogram(Generic[T]):
     """ Histogramming method for finding nearest neighbour distances in lattices """
 
-    def __init__(self, tolerance=1e-9):
+    def __init__(self, tolerance=tolerances.SAME_SITE_ABS_TOL):
         self._tolerance = tolerance
         self._groups = defaultdict(list)
 
@@ -159,46 +159,21 @@ class IncrementalApproximateHistogram[T]:
         for key in self._groups:
             if abs(key - distance) < self._tolerance:
                 self._groups[key].append(entry)
+                break
 
-        self._groups[distance].append(entry)
+        else:
+            self._groups[distance].append(entry)
 
     def groups(self):
         """ Groups in order of distance"""
         ordered_keys = sorted(self._groups.keys())
-        return [self.groups[key] for key in ordered_keys]
+        return [self._groups[key] for key in ordered_keys]
+
     def group_sizes(self):
         """ Size of each group"""
         return [len(group) for group in self.groups()]
+
     def n_groups(self):
         """ Number of groups at different distances """
         return len(self._groups)
 
-
-@functools.lru_cache(maxsize=10)
-def cell_shell(order: int) -> list[tuple[int, int, int]]:
-    """ Create cell offsets for shells of unit cells
-
-    i.e.
-
-
-      (0)      (1)      (2)      (3)
-    -------  -------  -------  #######
-    -------  -------  -#####-  #-----#
-    -------  --###--  -#---#-  #-----#
-    ---#---  --#-#--  -#---#-  #-----#
-    -------  --###--  -#---#-  #-----#
-    -------  -------  -#####-  #-----#
-    -------  -------  -------  #######
-
-    """
-    # This is basically all the integer vectors with a L_infty distance of a given integer
-    # L_infty = max(x,y,z)
-
-    out = []
-    for x in range(-order, order+1):
-        for y in range(-order, order+1):
-            for z in range(-order, order+1):
-                if max([abs(x), abs(y), abs(z)]) == order:
-                    out.append((x, y, z))
-
-    return out

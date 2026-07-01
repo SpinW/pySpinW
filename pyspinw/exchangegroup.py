@@ -29,6 +29,12 @@ class DirectionalityFilter:
         """ return True if in an allowed direction"""
         raise NotImplementedError("accept() not implemented in base class")
 
+class NoDirectionalityFilter:
+    """ Direction filter that always accepts"""
+
+    def accept(self, vector: np.ndarray) -> bool:
+        return True
+
 class InDirectionFilter(DirectionalityFilter):
     """ Selects vectors in a given direction """
 
