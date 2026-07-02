@@ -501,7 +501,7 @@ class Structure(SPWSerialisable):
             except Exception as e:
                 raise TypeError("Expected `site_2` to be a LatticeSite, vector or a name") from e
 
-        return self.spacegroup.exchange_constraints(site_1, site_2)
+        return self.spacegroup.exchange_constraints(site_1, site_2, self.unit_cell)
 
 
 
