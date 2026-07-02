@@ -1046,63 +1046,15 @@ class Hamiltonian(SPWSerialisable):
         return combined, swapped_combined
 
 
-    def complete_symmetry(self) -> "Hamiltonian":
+    def symmetry_filled(self) -> "Hamiltonian":
         """ Check that the hamiltonian obeys its symmetry """
-        failures: list[str] = []
-
-        # Create mapping from sites to exchanges
-
-        exchange_lookup = defaultdict(_defaultlistdict)
-
-        exchange_pairs: set[tuple[int, int]] = set()
-        sites_with_exchanges: set[int] = set()
+        new_exchanges = []
         for exchange in self.exchanges:
-            uid_1 = exchange.site_1.unique_id
-            uid_2 = exchange.site_2.unique_id
+            new_exchanges += exchange.symmetry_fill(self.structure, include_original=True)
 
-            exchange_lookup[uid_1][uid_2].append(exchange)
-            exchange_lookup[uid_2][uid_1] # looks like it does nothing, but actually creates entry in defaultdict
+        # TODO: Do the same for anisotropies
 
-            exchange_pairs.add((uid_1, uid_2))
-            sites_with_exchanges.add(uid_1)
-            sites_with_exchanges.add(uid_2)
-
-        # Combine exchanges that are between the same sites with the same offset
-        combined_exchanges = defaultdict(dict)
-        for uid_1 in exchange_lookup:
-            for uid_2 in exchange_lookup[uid_1]:
-                direct, swapped = self._combine_exchanges(
-                    exchange_lookup[uid_1][uid_2],
-                    exchange_lookup[uid_2][uid_1])
-
-                combined_exchanges[uid_1][uid_2] = direct
-                combined_exchanges[uid_2][uid_1] = swapped
-
-        # Create sets of sites that are symmetry related to the ones we have exchanges for,
-        #  this seems to be the minimal number of sites we need to check
-        operations_between_sites = defaultdict(_defaultsetdict)
-        for exchange_site in sites_with_exchanges:
-            for test_site in self.structure.sites:
-                uid_1 = exchange_site.unique_id
-                uid_2 = test_site.unique_id
-
-                operations = self.structure.spacegroup.operations_between_sites(exchange_site, test_site)
-
-                operations_between_sites[uid_1][uid_2] = operations
-
-        # For each site pair with exchanges, check the matrices corresponding to it
-        direct_operations = defaultdict(_defaultsetdict)
-        swapped_operations = defaultdict(_defaultsetdict)
-        for pair_1_1, pair_1_2 in exchange_pairs:
-            for pair_2_1 in operations_between_sites[pair_1_1]:
-                for pair_2_2 in operations_between_sites[pair_1_2]:
-                    pass
-
-
-
-
-
-
+        return Hamiltonian(self.structure, new_exchanges, self.anisotropies)
 
 
 

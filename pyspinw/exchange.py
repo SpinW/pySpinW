@@ -320,9 +320,12 @@ class Exchange(SPWSerialisable):
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
-    def symmetry_fill(self, structure: "Structure", include_input=False):
+    def symmetry_fill(self, structure: "Structure", include_original=False):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
         # Get the symmetry related sites
+
+        if not self.obeys_symmetry(structure):
+            raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
         site_1_related = structure.symmetry_related(self.site_1)
         site_2_related = structure.symmetry_related(self.site_2)
@@ -341,11 +344,6 @@ class Exchange(SPWSerialisable):
         to_lattice = structure.unit_cell._xyz_spins_inv
 
         for site_1, site_2, operations in symmetry_related:
-            # TODO: This check is wrong, it removes too much (i.e. exchanges between the same sites, but with different
-            #  offsets
-            # Check they're not the same as this site, could instead check whether identity is in the ops
-            # if site_1.unique_id == self.site_1.unique_id and site_2.unique_id == self.site_2.unique_id:
-            #     continue
 
             # Generate new exchange
             for operation in operations:
@@ -409,7 +407,7 @@ class Exchange(SPWSerialisable):
                 del new_exchanges[j]
 
         # Remove the original input exchange if not included, it will always still be at the front
-        if not include_input:
+        if not include_original:
             new_exchanges = new_exchanges[1:]
 
         return [specialise_exchange(exchange) for exchange in new_exchanges]
