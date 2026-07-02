@@ -42,9 +42,6 @@ class CellOffset(SPWSerialisable):
         """ Vector of index (int array)"""
         return self._vector
 
-    def __repr__(self):
-        return str(self.as_tuple)
-
     def position_in_supercell(self, supercell_size: tuple[int, int, int]):
         """ Get the position within a supercell, rather than an infinite crystal (do mods)"""
         si, sj, sk = supercell_size
@@ -96,7 +93,16 @@ class CellOffset(SPWSerialisable):
                         f"CellOffset, ArrayLike[Number,Number,Number] or None,"
                         f"got {type(cell_offset_or_data)}")
 
+
+    def __repr__(self):
+        return str(self.as_tuple)
+
     def __neg__(self):
         return CellOffset(-self.i, -self.j, -self.k)
+
+    def __eq__(self, other: "CellOffsetCoercible"):
+        other_as_cell_offset = CellOffset.coerce(other)
+
+        return self.as_tuple == other_as_cell_offset.as_tuple
 
 CellOffsetCoercible = CellOffset | tuple[int, int, int] | None

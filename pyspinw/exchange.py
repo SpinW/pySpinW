@@ -125,27 +125,6 @@ class Exchange(SPWSerialisable):
         return self._exchange_matrix
 
     @property
-    def parameter_string(self) -> str:
-        """String representation of the exchange parameters."""
-        # Note that we reference the _parameter value, not the property that references it
-        substrings = []
-        for parameter in self.parameters:
-            value=self.__dict__["_" + parameter]
-            substrings.append(f"{parameter}={value:.5g}")
-
-        return ", ".join(substrings)
-
-    def __repr__(self):
-
-        direction_string = "<->" if self.is_symmetric() else "->"
-
-        return "".join([
-            self.__class__.__name__,
-            f"('{self.name}', {self.site_1.name} {direction_string} {self.site_2.name}, offset={self.cell_offset}, ",
-            self.parameter_string,
-            ")"])
-
-    @property
     def lattice_vector(self):
         """Vector from site 1 to site 2 in lattice coordinates."""
         return self.cell_offset.vector + self._site_2.ijk - self._site_1.ijk
@@ -341,7 +320,7 @@ class Exchange(SPWSerialisable):
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
-    def symmetry_fill(self, structure: "Structure"):
+    def symmetry_fill(self, structure: "Structure", include_input=False):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
         # Get the symmetry related sites
 
@@ -360,27 +339,20 @@ class Exchange(SPWSerialisable):
 
         to_cart = structure.unit_cell._xyz_spins # TODO: Check this is the right way round
         to_lattice = structure.unit_cell._xyz_spins_inv
+
         for site_1, site_2, operations in symmetry_related:
+            # TODO: This check is wrong, it removes too much (i.e. exchanges between the same sites, but with different
+            #  offsets
             # Check they're not the same as this site, could instead check whether identity is in the ops
-            if site_1.unique_id == self.site_1.unique_id and site_2.unique_id == self.site_2.unique_id:
-                continue
+            # if site_1.unique_id == self.site_1.unique_id and site_2.unique_id == self.site_2.unique_id:
+            #     continue
 
             # Generate new exchange
-            matrix = None
-            offset = None
             for operation in operations:
 
                 # Get the transformed matrix
                 op = to_cart @ operation.point_operation_matrix @ to_lattice
                 new_matrix = op @ self._exchange_matrix @ op.T
-
-                ## Validate the symmetry
-                if matrix is None:
-                    matrix = new_matrix
-                else:
-                    if not np.allclose(matrix, new_matrix):
-                        raise ValueError(f"Cannot copy {self} by symmetry with operations ({operations}), "
-                                         f"as it does not conform to symmetry requirements")
 
                 # Try to get the transformed cell offset
                 vector = self.lattice_vector
@@ -389,31 +361,56 @@ class Exchange(SPWSerialisable):
                 new_in_cell_vector = site_2.ijk - site_1.ijk
 
                 expected_cell_offset = new_vector - new_in_cell_vector
+                cell_offset = CellOffset.coerce(expected_cell_offset)
 
-                ## Check the offset is valid, and consistent
-                integered = np.round(expected_cell_offset)
-                if np.allclose(expected_cell_offset, integered):
-                    cell_offset = tuple([int(x) for x in integered])
-                    if offset is None:
-                        offset = cell_offset
-                    else:
-                        if offset != cell_offset:
-                            raise ValueError(f"Cell offsets are not consistent across operations ({operations})")
+                name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
+                new_exchanges.append(Exchange(site_1, site_2,
+                                              exchange_matrix=new_matrix,
+                                              cell_offset=cell_offset,
+                                              name = name,
+                                              metadata=self.metadata.copy()))
 
-                else:
-                    raise ValueError("Expected integer values for cell offset")
+        # Hacky way of excluding the original, add to the list at the start, then remove first
+        #  element after the duplicate removal.
+        # We also want to include self instead of any copy
+        new_exchanges = [self] + new_exchanges
+
+        # Now we want to remove copies of the same exchanges
+        for i in range(len(new_exchanges)): # Basically a while loop, but we've sure it is finite
+            if i >= len(new_exchanges):
+                break
+            to_keep: Exchange = new_exchanges[i]
+            to_remove: list[int] = []
+            for j, to_check in enumerate(new_exchanges[i+1:]):
+                # is this exchange related to the check exchange by a translation,
+                #  1) if the sites are in the same order, this can only mean they're identical,
+                #  2) if the sites are swapped, it means the vector between them is reversed
+
+                # (1)
+                if to_keep.site_1 == to_check.site_1 and to_keep.site_2 == to_check.site_2 and \
+                    to_keep.cell_offset == to_check.cell_offset:
+
+                    # print("removing", to_check, "as same as", to_keep)
+
+                    to_remove.append(j + i + 1)
 
 
-            if matrix is None or offset is None:
-                raise RuntimeError("No matrix or offset, this shouldn't happen as operation lists should have"
-                                   "at least one entry")
+                # (2)
+                if to_keep.site_1 == to_check.site_2 and to_keep.site_2 == to_check.site_1 and \
+                    np.allclose(to_keep.lattice_vector, -to_check.lattice_vector, atol=tolerances.SAME_SITE_ABS_TOL):
 
-            name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
-            new_exchanges.append(Exchange(site_1, site_2, offset,
-                                          exchange_matrix=matrix,
-                                          cell_offset=CellOffset.coerce(offset),
-                                          name = name,
-                                          metadata=self.metadata.copy()))
+                    # print("removing", to_check, "as reversed version of ", to_keep)
+
+                    to_remove.append(j + i + 1)
+
+            # Remove the ones we need to remove, as its ordered we can do
+            to_remove.reverse() # in place reverse
+            for j in to_remove:
+                del new_exchanges[j]
+
+        # Remove the original input exchange if not included, it will always still be at the front
+        if not include_input:
+            new_exchanges = new_exchanges[1:]
 
         return [specialise_exchange(exchange) for exchange in new_exchanges]
 
@@ -423,6 +420,26 @@ class Exchange(SPWSerialisable):
         """ Convert this to a specialised exchange type """
         return exchange
 
+    @property
+    def parameter_string(self) -> str:
+        """String representation of the exchange parameters."""
+        # Note that we reference the _parameter value, not the property that references it
+        substrings = []
+        for parameter in self.parameters:
+            value=self.__dict__["_" + parameter]
+            substrings.append(f"{parameter}={value:.5g}")
+
+        return ", ".join(substrings)
+
+    def __repr__(self):
+
+        direction_string = "<->" if self.is_symmetric() else "->"
+
+        return "".join([
+            self.__class__.__name__,
+            f"('{self.name}', {self.site_1.name} {direction_string} {self.site_2.name}, offset={self.cell_offset}, ",
+            self.parameter_string,
+            ")"])
 
 
 
