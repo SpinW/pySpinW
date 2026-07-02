@@ -22,7 +22,13 @@ def parse_float_entry(s: str):
 
     return float(s)
 
-def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell(), entry_index: int=0, verbose=False):
+class LoadError(Exception):
+    """ Error thrown when loading fails"""
+
+def load_cif(filename: str | pathlib.Path,
+             supercell: Supercell = TiledSupercell(),
+             entry_index: int=0,
+             verbose=False) -> Structure:
     """ Load a CIF file in as a structure """
     # Get the right bit of data
 
@@ -106,6 +112,8 @@ def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell
             sites.append(site)
 
         return Structure(sites, unit_cell = cell, spacegroup=sg, supercell=supercell)
+
+    raise LoadError("No entries in CIF file")
 
 if __name__ == "__main__":
     structure = load_cif("../tests/cif_files/1100231.cif")

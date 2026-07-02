@@ -220,9 +220,13 @@ class ExchangeMatrixConstraints:
 
                 # Should not be the first entry
                 sign = "+" if entry_value > 0 else "-"
-                value = str(entry_value)
 
-                eqn += sign + " " + sign + " " + value + chr
+                if abs((entry_value - round(entry_value))) < 1e-12:
+                    entry_value = int(round(entry_value))
+
+                value = str(abs(entry_value))
+
+                eqn += " " + sign + " " + value + chr
 
             eqn += " = 0"
             eqns.append(eqn)
