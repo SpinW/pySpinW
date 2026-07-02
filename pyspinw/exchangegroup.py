@@ -33,6 +33,7 @@ class NoDirectionalityFilter:
     """ Direction filter that always accepts"""
 
     def accept(self, vector: np.ndarray) -> bool:
+        """ return True if in an allowed direction (in this case, always)"""
         return True
 
 class InDirectionFilter(DirectionalityFilter):

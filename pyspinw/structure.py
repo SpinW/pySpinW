@@ -296,10 +296,8 @@ class Structure(SPWSerialisable):
                        site: LatticeSite,
                        n=1,
                        element: str | None = None,
-                       direction_filter: DirectionalityFilter | None = None) -> list[list[tuple[LatticeSite, CellOffset]]]:
-
-
-
+                       direction_filter: DirectionalityFilter | None = None) \
+            -> list[list[tuple[LatticeSite, CellOffset]]]:
         """ Get list-of-lists containing (i<=n)-th nearest neighbours along with their cell offsets
 
         :param n: maximum n for n-th nearest neighbour
@@ -397,7 +395,6 @@ class Structure(SPWSerialisable):
 
         :returns: a list of (site, offset) for n-th nearest neighbour
         """
-
         neighbors = self.neighbours(
             site=site,
             n=n,
