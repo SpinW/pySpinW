@@ -119,13 +119,6 @@ class SpaceGroup(SymmetryGroup):
         # This is slightly unusual, make a reference to the lattice system create_unit_cell method
         self.create_unit_cell = lattice_system.create_unit_cell
 
-    def __repr__(self):
-        """repr"""
-        if self.choice is None:
-            return f"SpaceGroup({self.number}, {self.symbol}, hall={self.hall_number})"
-        else:
-            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}], hall={self.hall_number})"
-
     def _serialisation_string(self):
         """ Name to use to refer to this group in serialisation"""
         return self.preferred_symbol
@@ -264,6 +257,22 @@ class SpaceGroup(SymmetryGroup):
 
         return check
 
+    def __repr__(self):
+        """repr"""
+        if self.choice is None:
+            return f"SpaceGroup({self.number}, {self.symbol}, hall={self.hall_number})"
+        else:
+            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}], hall={self.hall_number})"
+
+    def __contains__(self, item: SpaceOperation):
+        h = hash(item)
+        for operation in self.operations:
+            if hash(operation) == h:
+                return True
+        return False
+
+    def __iter__(self):
+        return iter(self.operations)
 
 #
 #

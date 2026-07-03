@@ -28,6 +28,7 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 from pyspinw.site import LatticeSite
 from pyspinw.structure import Structure
 from pyspinw.basis import site_rotations
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
 
@@ -1055,6 +1056,47 @@ class Hamiltonian(SPWSerialisable):
         # TODO: Do the same for anisotropies
 
         return Hamiltonian(self.structure, new_exchanges, self.anisotropies)
+
+    def check_ground_state_symmetry(self):
+        #TODO
+        pass
+
+    def enforce_ground_state_symmetry(self):
+        #TODO
+        pass
+
+    def symmetry_transformed(self, operation: SpaceOperation):
+        """ Transform the Hamiltonian using this spacegroup
+
+        If your system is physical this should not do anything to it except change the names/colors etc around.
+        Useful for checking things related to symmetry.
+        """
+
+        if operation not in self.structure.spacegroup:
+            raise ValueError(f"'{operation}' does not belong to spacegroup '{self.structure.spacegroup}'")
+
+        # Transform the sites and build a mapping for exchanges/anisotropies
+
+        site_mapping = dict()
+        new_sites = []
+        for site in self.structure.sites:
+            new_site = site.symmetry_transformed(operation)
+            site_mapping[site.unique_id] = new_site
+            new_sites.append(new_site)
+
+        # Transform the exchanges
+        exchanges = []
+        for exchange in self.exchanges:
+            site_1 = site_mapping[exchange.site_1.unique_id]
+            site_2 = site_mapping[exchange.site_2.unique_id]
+            offset = CellOffset.coerce(operation.point_operation_matrix @ exchange.cell_offset.vector)
+
+            new_exchange = Exchange(site_1, site_2, cell_offset=offset,
+                                    name=exchange.name, metadata=exchange.metadata)
+            exchanges.append()
+
+        # TODO: transform the anisotropies
+
 
 
 

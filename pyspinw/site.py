@@ -7,6 +7,7 @@ from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
     numpy_deserialise, numpy_serialise, rgb_serialise
 from pyspinw.sitemeta import SiteMetadata
+from pyspinw.symmetry.operations import SpaceOperation
 
 _unique_id_counter = -1
 def _generate_unique_id():
@@ -225,6 +226,21 @@ class LatticeSite(SPWSerialisable):
             sy=float(coordinates[4]),
             sz=float(coordinates[5]),
             name=name)
+
+    def symmetry_transformed(self, operation: SpaceOperation):
+        """ Transform site using a symmetry operation """
+        new_ijk = operation([self.ijk])
+        new_spin = operation.point_operation @ self.spin_data
+        new_g = operation.point_operation_matrix @ self._g @ operation.point_operation_matrix.T
+
+        return LatticeSite(
+            i=float(new_ijk[0]),
+            j=float(new_ijk[1]),
+            k=float(new_ijk[2]),
+            name=self.name,
+            supercell_spins=new_spin,
+            g=new_g,
+            metadata=self.metadata.copy())
 
     def __hash__(self):
         return self._unique_id
