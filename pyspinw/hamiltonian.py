@@ -407,7 +407,7 @@ class Hamiltonian(SPWSerialisable):
                               use_rotating: bool=True,
                               intensity_unit: IntensityUnits | str='cell',
                               components: str='Sperp'
-                              ):
+                              ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate the energy levels of the system for the given q-vectors.
 
         ** Does not remove nonmagnetic sites **
@@ -1077,27 +1077,43 @@ class Hamiltonian(SPWSerialisable):
 
         # Transform the sites and build a mapping for exchanges/anisotropies
 
+        xyz_transform = (self.structure.unit_cell._xyz_spins @
+                         operation.point_operation_matrix @
+                         self.structure.unit_cell._xyz_spins_inv)
+
         site_mapping = dict()
         new_sites = []
         for site in self.structure.sites:
-            new_site = site.symmetry_transformed(operation)
+            new_site = site.symmetry_transformed(operation, self.structure.unit_cell)
             site_mapping[site.unique_id] = new_site
             new_sites.append(new_site)
 
         # Transform the exchanges
-        exchanges = []
+        new_exchanges = []
         for exchange in self.exchanges:
             site_1 = site_mapping[exchange.site_1.unique_id]
             site_2 = site_mapping[exchange.site_2.unique_id]
+
             offset = CellOffset.coerce(operation.point_operation_matrix @ exchange.cell_offset.vector)
 
-            new_exchange = Exchange(site_1, site_2, cell_offset=offset,
-                                    name=exchange.name, metadata=exchange.metadata)
-            exchanges.append()
+            matrix = xyz_transform @ exchange.exchange_matrix @ xyz_transform.T
+
+            new_exchange = Exchange(site_1, site_2,
+                                    cell_offset=offset,
+                                    exchange_matrix=matrix,
+                                    name=exchange.name,
+                                    metadata=exchange.metadata)
+
+            new_exchanges.append(new_exchange)
 
         # TODO: transform the anisotropies
 
+        new_structure = Structure(new_sites,
+                                   unit_cell=self.structure.unit_cell,
+                                   spacegroup=self.structure.spacegroup,
+                                   supercell=self.structure.supercell)
 
+        return Hamiltonian(new_structure, new_exchanges) # TODO Anisotropies
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
