@@ -22,6 +22,8 @@ qs = np.concatenate((
 @pytest.mark.parametrize("cell", test_unit_cells)
 def test_hamiltonian_symmetry_operations_apply_correctly_to_asymmetric_exchange_cases(sg, cell):
 
+    """ Make an asymmetric system, then apply operations to the system and q, it should give the same spinwave result"""
+
     initial_site = LatticeSite(0.2, 0.1, 0.3, sx=0, sy=0, sz=1/2, name="S")
     structure = Structure([initial_site], unit_cell=cell, spacegroup=sg)
     other_site, offset = structure.one_neighbour(initial_site)
@@ -35,4 +37,6 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_asymmetric_exchange_
         transformed_hamiltonian = hamiltonian.symmetry_transformed(op)
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(transformed_qs, use_rotating=False)
+
+        assert np.allclose(initial_energies, compare_energies)
 
