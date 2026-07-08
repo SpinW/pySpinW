@@ -153,14 +153,20 @@ class SpaceOperation:
             translation=translation,
             name=name)
 
-    def __call__(self, points: ArrayLike) -> np.ndarray:
-        """ Apply this operation to a list of points """
+    def apply_without_mod(self, points):
+        """ Apply this operation to a list of points without moving back to the unit cell"""
         point_operation = np.array(self.point_operation, dtype=float)
         translation = np.array([float(f) for f in self.translation]).reshape(-1, 1)
 
         points = np.array(points)
 
-        new_points = (point_operation @ points.T + translation).T % 1
+        new_points = (point_operation @ points.T + translation).T
+
+        return new_points
+
+    def __call__(self, points: ArrayLike) -> np.ndarray:
+        """ Apply this operation to a list of points """
+        new_points = self.apply_without_mod(points) % 1
 
         return new_points
 

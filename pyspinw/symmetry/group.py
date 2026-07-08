@@ -11,13 +11,13 @@ from difflib import get_close_matches
 
 from numpy._typing import ArrayLike
 
+from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
 from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_formatted, preferred_names
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
-from pyspinw.symmetry.data.msg_symbols import msg_symbols
 from pyspinw.symmetry.settings import Setting
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.symmetry.supercell import Supercell
@@ -26,7 +26,6 @@ from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup,
 from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints
 
 from pyspinw.tolerances import tolerances
-
 
 class SymmetryGroup(ABC, SPWSerialisable):
     """ Base class for symmetry group and magnetic symmetry group """
@@ -182,13 +181,30 @@ class SpaceGroup(SymmetryGroup):
 
         return new_sites
 
-    def operations_between_sites(self, site_1, site_2, tolerance=1e-10):
-        """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
-        return [operation for operation in self.operations
-                if np.allclose(operation([site_1.ijk]), [site_2.ijk], atol=tolerance)]
+    def operations_between_sites(self,
+                                 site_1: "LatticeSite",
+                                 site_2: "LatticeSite",
+                                 offset: tuple[int, int, int] = (0,0,0),
+                                 tolerance=1e-10):
 
-    def operations_on_single_site_pairs(self, site_1, site_2) -> tuple[set[SpaceOperation], set[SpaceOperation]]:
+        """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
+
+        offset = CellOffset.coerce(offset)
+
+        return [operation for operation in self.operations
+                if np.allclose(operation.apply_without_mod([site_1.ijk]),
+                               [site_2.ijk + offset.vector],
+                               atol=tolerance)]
+
+    def operations_on_single_site_pairs(self,
+                                        site_1: LatticeSite,
+                                        site_2: LatticeSite,
+                                        offset: CellOffsetCoercible = (0, 0, 0)) \
+            -> tuple[set[SpaceOperation], set[SpaceOperation]]:
         """ Get operations on pairs of sites """
+
+        offset = CellOffset.coerce(offset)
+
         #
         # There are two cases here:
         #  1) where the "bond" is preserved by keeping the sites the same
@@ -198,22 +214,25 @@ class SpaceGroup(SymmetryGroup):
         # In case 2, the constraint is on J^T, as J->J^T constitutes an inversion, J = M J^T M^T
 
         # Case 1:
-        identity_operations = set(self.operations_between_sites(site_1, site_1)).intersection(
-            set(self.operations_between_sites(site_2, site_2)))
+        identity_operations = set(self.operations_between_sites(site_1, site_1, offset)).intersection(
+            set(self.operations_between_sites(site_2, site_2, offset)))
 
         # Case 2:
-        inversion_operations = set(self.operations_between_sites(site_1, site_2)).intersection(
-            set(self.operations_between_sites(site_2, site_1)))
+        inversion_operations = set(self.operations_between_sites(site_1, site_2, offset)).intersection(
+            set(self.operations_between_sites(site_2, site_1, offset)))
 
         return identity_operations, inversion_operations
 
     def operations_between_pairs(self,
                                  pair_1: tuple[LatticeSite, LatticeSite],
                                  pair_2: tuple[LatticeSite, LatticeSite],
+                                 offset: CellOffsetCoercible = (0, 0, 0),
                                  tolerance: float=1e-10) -> set[SpaceOperation]:
         """ Operations in this group that transform one ordered pair into another """
-        left_operations = self.operations_between_sites(pair_1[0], pair_2[0], tolerance=tolerance)
-        right_operations = self.operations_between_sites(pair_1[1], pair_2[1], tolerance=tolerance)
+        offset = CellOffset.coerce(offset)
+
+        left_operations = self.operations_between_sites(pair_1[0], pair_2[0], offset, tolerance=tolerance)
+        right_operations = self.operations_between_sites(pair_1[1], pair_2[1], offset, tolerance=tolerance)
 
         return set(left_operations).intersection(right_operations)
 
@@ -245,6 +264,9 @@ class SpaceGroup(SymmetryGroup):
                 raise TypeError("Expected `site_2` to be a LatticeSite or vector") from e
 
         identity_operations, inversion_operations = self.operations_on_single_site_pairs(site_1, site_2)
+
+        print(identity_operations)
+        print(inversion_operations)
 
         inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
         identity_transforms = [op.point_operation_matrix for op in identity_operations]
