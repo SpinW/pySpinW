@@ -133,6 +133,8 @@ class RenderAnisotropy(Component):
 
         translation = unit_cell.lattice_units_to_cartesian(position)
 
+        # TODO: Make a more robust way of displaying anisotropies in general
+
         rotation = np.linalg.cholesky(anisotropy.anisotropy_matrix + RenderAnisotropy._minimal_anisotropy_display)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)

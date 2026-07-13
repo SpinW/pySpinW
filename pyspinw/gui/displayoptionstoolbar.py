@@ -175,6 +175,7 @@ class DisplayOptionsToolbar(QWidget):
         self._selected_color = settings.selected_color
         self._hover_color = settings.hover_color
         self._selected_hover_color = settings.selected_hover_color
+        self._anisotropy_color = settings.anisotropy_color
 
         #
         # Show hide options
@@ -319,6 +320,7 @@ class DisplayOptionsToolbar(QWidget):
             selected_color = self._selected_color,
             hover_color = self._hover_color,
             selected_hover_color = self._selected_hover_color,
+            anisotropy_color = self._anisotropy_color
         )
 
     def on_snapshot(self):
@@ -338,6 +340,7 @@ class DisplayOptionsToolbar(QWidget):
             self._selected_color = value.selected_color
             self._hover_color = value.hover_color
             self._selected_hover_color = value.selected_hover_color
+            self._anisotropy_color = value.anisotropy_color
 
             self.displayOptionsChanged.emit()
 

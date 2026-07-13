@@ -37,7 +37,7 @@ class DisplayOptions:
     hover_color: tuple[float, float, float] = 1.0, 1.0, 1.0
     selected_hover_color: tuple[float, float, float] = 1.0, 0.8, 0.1
 
-
+    anisotropy_color: tuple[float, float, float] = 0.2, 0.5, 1.0
 
     def serialise(self) -> str:
         """ Serialise settings object to a string"""
