@@ -256,6 +256,9 @@ class DisplayOptionsToolbar(QWidget):
                                                                icon="latticeaxesorth",
                                                                value=settings.orthogonal_lattice_axes)
 
+        self.orthographic = self._add_toggle_button("Toggle Orthographic/Perspective",
+                                                    icon="perspective",
+                                                    value=settings.perspective)
 
         self.reset_view = self._toolbar_button("Reset view", icon="datum")
         self.reset_view.clicked.connect(self.on_reset_view_clicked)
@@ -308,6 +311,7 @@ class DisplayOptionsToolbar(QWidget):
             show_cartesian_axes = self.show_cartesian_axes.isChecked(),
             show_lattice_axes = self.show_lattice_axes.isChecked(),
             orthogonal_lattice_axes = self.orthogonal_lattice_axes.isChecked(),
+            perspective=self.orthographic.isChecked(),
             prettify = self.prettify.isChecked(),
             background_color = self._background_color,
             default_site_color = self._sites_color,

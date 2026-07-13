@@ -34,6 +34,7 @@ _y_axis_mat = np.array([[1, 0, 0, 0], [0, 0, 1, .5], [0, -1, 0, 0], [0, 0, 0, 1]
 _x_axis_mat = np.array([[0, 0, 1, .5], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 
 _selection_size = 0.2
+_orthographic_axes_fixed_size = 3
 
 class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
@@ -183,6 +184,8 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.camera.position = tuple(camera_world)
         self.camera.up = tuple(up_world)
         self.camera.look_at = tuple(origin_world)
+        self.camera.orthographic = not self.display_options.perspective
+        self.fixed_size = None
 
         # # Camera debug things
         #
@@ -340,6 +343,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         #
 
         if self.display_options.show_cartesian_axes:
+            self.camera.fixed_size = _orthographic_axes_fixed_size
 
             # Save state
             saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
@@ -384,6 +388,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         #
 
         if self.display_options.show_lattice_axes:
+            self.camera.fixed_size = _orthographic_axes_fixed_size
 
             # Save state
             saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
@@ -433,6 +438,8 @@ class CrystalViewerWidget(QOpenGLWidget):
         #
         # ID framebuffer
         #
+
+        self.camera.fixed_size = None
 
         self.id_framebuffer.use(
             int(self.width()*dpr),
