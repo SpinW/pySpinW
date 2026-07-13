@@ -266,7 +266,7 @@ class Exchange(SPWSerialisable):
         for operation in inversion_operations:
             if not operation.symmorphic:
                 continue
-                
+
             if not np.allclose(exchange_matrix,
                                operation.point_operation_matrix @ exchange_matrix_T @
                                operation.point_operation_matrix.T):

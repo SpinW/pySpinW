@@ -28,18 +28,21 @@ class LoadError(Exception):
 def load_cif(filename: str | pathlib.Path,
              supercell: Supercell = TiledSupercell(),
              entry_index: int=0,
-             verbose=False) -> Structure:
+             verbose=True) -> Structure:
     """ Load a CIF file in as a structure """
     # Get the right bit of data
 
     cif = ReadCif(str(filename), grammar=None, permissive=True)
 
-    names = cif.keys()
+    names = [key for key in cif.keys()]
+
+    if verbose:
+        print("All entries:", names)
 
     for i in range(entry_index, len(names)):
 
         try:
-            name = names[entry_index]
+            name = names[i]
         except IndexError:
             raise ValueError(f"Entry index out of range (file has {len(names)} entries)")
 
@@ -63,7 +66,7 @@ def load_cif(filename: str | pathlib.Path,
         else:
             if verbose:
                 print(f"Failed to find space group entry in '{name}'")
-            break
+            continue
 
         sg = spacegroup(spacegroup_name)
 

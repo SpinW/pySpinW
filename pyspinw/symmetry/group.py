@@ -449,6 +449,9 @@ class SpacegroupDatabase:
         similar = get_close_matches(name, canonical_aliases.keys(), n=3, cutoff=0.4)
 
         if similar:
+
+            #
+
             suggestion_string = ", ".join([f"'{canonical_to_formatted[s]}'" for s in similar])
             message_string = (f"Unknown space group '{name}', "
                               f"perhaps you meant {suggestion_string} or something similar.")
