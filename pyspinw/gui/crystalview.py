@@ -7,6 +7,7 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from PySide6.QtWidgets import QApplication
 
+from gui.rendering.anisotropy_shader import AnisotropyShader
 from pyspinw.gui.buffers import IntegerBuffer
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.rendermodel import RenderModel
@@ -66,6 +67,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.camera = Camera()
 
         self.object_shader: ObjectShader | None = None
+        self.anisotropy_shader: AnisotropyShader | None = None
         self.selection_shader: SelectionShader | None = None
 
         # Set up antialiasing
@@ -122,6 +124,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.object_shader = ObjectShader()
             self.selection_shader = SelectionShader()
             self.cell_shader = CellShader()
+            self.anisotropy_shader = AnisotropyShader()
 
             # shader for axes
             self.axes_shader = AxesShader()
@@ -272,6 +275,23 @@ class CrystalViewerWidget(QOpenGLWidget):
                             self.object_shader.model_matrix = site_model_matrix
                             self.object_shader.use()
                             render_object.render_triangles()
+
+
+            # Anisotropies
+            if self.display_options.show_anisotropies:
+
+                self.anisotropy_shader.camera = self.camera
+
+                for anisotropy in self.render_model.anisotropies:
+
+                    self.anisotropy_shader.object_color = 1,0,1 # TODO: Make configurable
+
+                    for model_matrix in anisotropy.model_matrices(self.display_options.prettify):
+                        anisotropy_model_matrix = model_matrix @ spin_scale_matrix
+
+                        self.anisotropy_shader.model_matrix = anisotropy_model_matrix
+                        self.anisotropy_shader.use()
+                        self.small_sphere.render_triangles()
 
             # Exchanges
             if self.display_options.show_exchanges:

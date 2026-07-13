@@ -125,10 +125,43 @@ class RenderAnisotropy(Component):
 
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
-    def __init__(self, anisotropy: Anisotropy):
+    _minimal_anisotropy_display = np.eye(3)
+
+    @staticmethod
+    def calculate_model_matrix(position, anisotropy: Anisotropy, unit_cell: UnitCell):
+        """ Gets the model matrix for the anisotropy"""
+
+        translation = unit_cell.lattice_units_to_cartesian(position)
+
+        rotation = np.linalg.cholesky(anisotropy.anisotropy_matrix + RenderAnisotropy._minimal_anisotropy_display)
+
+        model_matrix = np.zeros((4, 4), dtype=np.float32)
+        model_matrix[3,3] = 1.0
+        model_matrix[:3, :3] = rotation
+        model_matrix[:3, 3] = translation
+
+        return model_matrix
+
+
+    def __init__(self, anisotropy: Anisotropy, unit_cell: UnitCell):
 
         super().__init__(np.eye(4))
         self.anisotropy = anisotropy
+        self.site = anisotropy.site
+
+        self.pretty_render_model_matrices = [self.calculate_model_matrix(new_position, anisotropy, unit_cell)
+                                                for new_position in add_extra_edge_points(anisotropy.site.ijk)]
+
+        # Matrix to convert
+        self.model_matrix = self.calculate_model_matrix(anisotropy.site.ijk, anisotropy, unit_cell)
+
+
+    def model_matrices(self, pretty: bool) -> list[np.ndarray]:
+        """ Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries """
+        if pretty:
+            return self.pretty_render_model_matrices
+        else:
+            return [self.model_matrix]
 
 class RenderModel:
     """ Model of the hamiltonian, contains lots of derived information for rendering and text representation"""
@@ -203,7 +236,7 @@ class RenderModel:
 
         self.anisotropies = []
         for anisotropy in self.expanded.anisotropies:
-            render_anisotropy = RenderAnisotropy(anisotropy)
+            render_anisotropy = RenderAnisotropy(anisotropy, self.expanded.structure.unit_cell)
             self.anisotropies.append(render_anisotropy)
             self.render_map[render_id] = render_anisotropy
             render_id += 1
