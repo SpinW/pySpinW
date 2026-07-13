@@ -255,12 +255,18 @@ class Exchange(SPWSerialisable):
         exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
 
         for operation in identity_operations:
+            if not operation.symmorphic:
+                continue
+
             if not np.allclose(exchange_matrix,
                            operation.point_operation_matrix @ exchange_matrix @ operation.point_operation_matrix.T):
                 return False
 
         exchange_matrix_T = self._exchange_matrix.T
         for operation in inversion_operations:
+            if not operation.symmorphic:
+                continue
+                
             if not np.allclose(exchange_matrix,
                                operation.point_operation_matrix @ exchange_matrix_T @
                                operation.point_operation_matrix.T):
