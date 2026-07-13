@@ -263,14 +263,8 @@ class SpaceGroup(SymmetryGroup):
 
         identity_operations, inversion_operations = self.operations_on_single_site_pairs(site_1, site_2)
 
-        print(identity_operations)
-        print(inversion_operations)
-
         identity_operations = [op for op in identity_operations if op.symmorphic]
         inversion_operations = [op for op in inversion_operations if op.symmorphic]
-
-        print(identity_operations)
-        print(inversion_operations)
 
         inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
         identity_transforms = [op.point_operation_matrix for op in identity_operations]
