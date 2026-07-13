@@ -1057,21 +1057,12 @@ class Hamiltonian(SPWSerialisable):
 
         return Hamiltonian(self.structure, new_exchanges, self.anisotropies)
 
-    def check_ground_state_symmetry(self):
-        #TODO
-        pass
-
-    def enforce_ground_state_symmetry(self):
-        #TODO
-        pass
-
     def symmetry_transformed(self, operation: SpaceOperation):
         """ Transform the Hamiltonian using this spacegroup
 
         If your system is physical this should not do anything to it except change the names/colors etc around.
         Useful for checking things related to symmetry.
         """
-
         if operation not in self.structure.spacegroup:
             raise ValueError(f"'{operation}' does not belong to spacegroup '{self.structure.spacegroup}'")
 

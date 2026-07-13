@@ -184,9 +184,7 @@ class SpaceGroup(SymmetryGroup):
                                  site_2: "LatticeSite",
                                  offset: tuple[int, int, int] = (0,0,0),
                                  tolerance=1e-10):
-
         """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
-
         offset = CellOffset.coerce(offset)
 
         return [operation for operation in self.operations
@@ -200,7 +198,6 @@ class SpaceGroup(SymmetryGroup):
                                         offset: CellOffsetCoercible = (0, 0, 0)) \
             -> tuple[set[SpaceOperation], set[SpaceOperation]]:
         """ Get operations on pairs of sites """
-
         offset = CellOffset.coerce(offset)
 
         #

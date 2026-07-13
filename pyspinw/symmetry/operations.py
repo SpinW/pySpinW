@@ -46,6 +46,7 @@ class SpaceOperation:
 
     @property
     def symmorphic(self):
+        """ Is this operation symmorphic (i.e. has non-integer translation)"""
         return self._symmorphic
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
