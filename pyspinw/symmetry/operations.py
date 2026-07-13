@@ -19,6 +19,8 @@ class SpaceOperation:
         self.point_operation_matrix = np.array(point_operation, dtype=float)
         self.translation = translation
 
+        self._symmorphic = np.allclose(self.translation, 0.0)
+
         # Validate data in the point_operation field
         if len(point_operation) != 3:
             raise ValueError("Rotation must have 3 rows")
@@ -42,6 +44,9 @@ class SpaceOperation:
                 raise ValueError("Translation entries must take values in the half open interval [0, 1),"
                                  f" got translation of {translation}")
 
+    @property
+    def symmorphic(self):
+        return self._symmorphic
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
         """ Less than, implemented to provide a canonical ordering """

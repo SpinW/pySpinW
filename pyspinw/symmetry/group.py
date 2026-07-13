@@ -1,6 +1,4 @@
 """ Space groups and magnetic space groups"""
-import os.path
-import pickle
 from collections import defaultdict
 
 from abc import ABC, abstractmethod
@@ -192,7 +190,7 @@ class SpaceGroup(SymmetryGroup):
         offset = CellOffset.coerce(offset)
 
         return [operation for operation in self.operations
-                if np.allclose(operation.apply_without_mod([site_1.ijk]),
+                if np.allclose(operation([site_1.ijk]),
                                [site_2.ijk + offset.vector],
                                atol=tolerance)]
 
@@ -264,6 +262,12 @@ class SpaceGroup(SymmetryGroup):
                 raise TypeError("Expected `site_2` to be a LatticeSite or vector") from e
 
         identity_operations, inversion_operations = self.operations_on_single_site_pairs(site_1, site_2)
+
+        print(identity_operations)
+        print(inversion_operations)
+
+        identity_operations = [op for op in identity_operations if op.symmorphic]
+        inversion_operations = [op for op in inversion_operations if op.symmorphic]
 
         print(identity_operations)
         print(inversion_operations)

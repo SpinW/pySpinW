@@ -95,7 +95,7 @@ class ExchangeMatrixConstraints:
         self.swapped_transformations = swapped_transformations
         self.tol = tol
 
-        to_presentation_form = np.kron(ijk_to_xyz, ijk_to_xyz) @ _symantisym_matrix_inv # TODO: Verify this
+        to_presentation_form = np.kron(ijk_to_xyz, ijk_to_xyz) @ _symantisym_matrix # TODO: Verify this
 
         unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ to_presentation_form
                      for transformation in transformations]
