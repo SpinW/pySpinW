@@ -125,17 +125,41 @@ class RenderAnisotropy(Component):
 
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
-    _minimal_anisotropy_display = np.eye(3)
+    _identity = np.eye(3)
+    _max_eigen = 3
+    _min_eigen = 1.5
 
     @staticmethod
-    def calculate_model_matrix(position, anisotropy: Anisotropy, unit_cell: UnitCell):
+    def calculate_model_matrix(position,
+                               anisotropy: Anisotropy,
+                               unit_cell: UnitCell,
+                               minimum_value: float,
+                               maximum_value: float):
         """ Gets the model matrix for the anisotropy"""
 
         translation = unit_cell.lattice_units_to_cartesian(position)
 
-        # TODO: Make a more robust way of displaying anisotropies in general
+        # We want an ellipsoid such that if the eigenvectors are all zero,
+        #  then the ellipsoid is round, at the minimum size it will have a radius
+        #  of _min_eigen and maximum size, _max_eigen
+        #
+        # The zero eigenvalue radius should then be determined by calculating:
+        #  -minimum_value / (maximum_value - minimum_value)
+        # which is the fractional distance between _min_eigen and _max_eigen.
+        #
+        # We also need to scale these to the matrices
 
-        rotation = np.linalg.cholesky(anisotropy.anisotropy_matrix + RenderAnisotropy._minimal_anisotropy_display)
+        scaling = (RenderAnisotropy._max_eigen - RenderAnisotropy._min_eigen) / (maximum_value - minimum_value)
+        base_size = RenderAnisotropy._min_eigen + -minimum_value * scaling
+        base_ellipsoid = np.diag([base_size]*3)
+
+        symmetrised = 0.5*(anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+
+        # Now we need to construct the matrix for the ellipsoid
+        ellipsoid = base_ellipsoid + (scaling * symmetrised)
+
+        # Turn the quadratic coefficients into a
+        rotation = np.linalg.cholesky(ellipsoid)
 
         model_matrix = np.zeros((4, 4), dtype=np.float32)
         model_matrix[3,3] = 1.0
@@ -145,7 +169,8 @@ class RenderAnisotropy(Component):
         return model_matrix
 
 
-    def __init__(self, anisotropy: Anisotropy, unit_cell: UnitCell):
+    def __init__(self, anisotropy: Anisotropy, unit_cell: UnitCell, minimum_value, maximum_value):
+
 
         super().__init__(np.eye(4))
         self.anisotropy = anisotropy
@@ -155,7 +180,8 @@ class RenderAnisotropy(Component):
                                                 for new_position in add_extra_edge_points(anisotropy.site.ijk)]
 
         # Matrix to convert
-        self.model_matrix = self.calculate_model_matrix(anisotropy.site.ijk, anisotropy, unit_cell)
+        self.model_matrix = self.calculate_model_matrix(
+            anisotropy.site.ijk, anisotropy, unit_cell, minimum_value, maximum_value)
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
@@ -237,8 +263,27 @@ class RenderModel:
             render_id += 1
 
         self.anisotropies = []
+
+        # We want to calculate the range of eigenvalues that we have, including zero in that
+        minimum_eigenvalue = 0.0
+        maximum_eigenvalue = 0.0
         for anisotropy in self.expanded.anisotropies:
-            render_anisotropy = RenderAnisotropy(anisotropy, self.expanded.structure.unit_cell)
+            symmetrized = 0.5*(anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+            eigenvalues = np.linalg.eigvals(symmetrized)
+            smallest = np.min(eigenvalues)
+            largest = np.max(eigenvalues)
+
+            if smallest < minimum_eigenvalue:
+                minimum_eigenvalue = smallest
+
+            if largest > maximum_eigenvalue:
+                maximum_eigenvalue = largest
+
+
+
+        for anisotropy in self.expanded.anisotropies:
+            render_anisotropy = RenderAnisotropy(anisotropy, self.expanded.structure.unit_cell,
+                                                 minimum_eigenvalue, maximum_eigenvalue)
             self.anisotropies.append(render_anisotropy)
             self.render_map[render_id] = render_anisotropy
             render_id += 1

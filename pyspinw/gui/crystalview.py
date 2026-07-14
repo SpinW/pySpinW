@@ -111,7 +111,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.small_sphere = Sphere(3, 0.1)
             self.selection_small_sphere = Sphere(3, radius=0.1, padding=0.01)
-            self.anisotropy_sphere = Sphere(5, radius=0.15)
+            self.anisotropy_sphere = Sphere(5, radius=0.1)
 
             self.tube = Tube()
             self.selection_tube = Tube(padding=0.2)

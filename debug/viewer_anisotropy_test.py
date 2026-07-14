@@ -1,6 +1,6 @@
 from multiprocessing import freeze_support
 
-from pyspinw import AxisMagnitudeAnisotropy
+from pyspinw import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.gui.viewer import show_object
@@ -16,12 +16,20 @@ if __name__ == "__main__":
     unit_cell = UnitCell(1,1,1)
 
     x = LatticeSite(0, 0.5, 0.5, 0, 0, 1, name="X")
+    y = LatticeSite(0, 0, 0.5, 0, 0, 1, name="Y")
+    z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="Z")
+    w = LatticeSite(0, 0, 0, 0, 0, 1, name="W")
 
-    sites = [x]
+    sites = [x,y,z,w]
 
-    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(2, 2, 2)))
+    s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(1, 1, 1)))
 
-    anisotropies = [AxisMagnitudeAnisotropy(site=x, direction=[1,0,0], a=4)]
+    anisotropies = [
+        AxisMagnitudeAnisotropy(site=x, direction=[1,0,0], a=4),
+        AxisMagnitudeAnisotropy(site=y, direction=[1,0,0], a=-4),
+        Anisotropy(site=z, anisotropy_matrix=[[1,0,0],[-1,0,0],[0,0,0]]),
+        AxisMagnitudeAnisotropy(site=w, direction=[1,0,0], a=0),
+    ]
 
     exchanges = []
     hamiltonian = Hamiltonian(s, exchanges, anisotropies=anisotropies)
