@@ -284,8 +284,6 @@ class DisplayOptionsToolbar(QWidget):
         self.bar_layout.setSpacing(0)
 
         # TODO: Temporally disabled until implemented
-        self.show_anisotropies.setVisible(False)
-        # self.atom_or_spins.setVisible(False)
         self.scale_atoms.setVisible(False)
 
     def _on_change(self):

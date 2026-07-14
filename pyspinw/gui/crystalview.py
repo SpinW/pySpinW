@@ -323,8 +323,13 @@ class CrystalViewerWidget(QOpenGLWidget):
                 self.anisotropy_shader.camera = self.camera
                 self.anisotropy_shader.object_color = self.display_options.anisotropy_color
 
+                # As we're using the alpha channel, we need to make sure we order from back to front
+                camera_vector = np.array(self.camera.position) - np.array(self.camera.look_at)
 
-                for anisotropy in self.render_model.anisotropies:
+                sorted_anisotropies = sorted(self.render_model.anisotropies,
+                                             key=lambda aniso: np.dot(aniso.xyz, camera_vector))
+
+                for anisotropy in sorted_anisotropies:
 
                     for model_matrix in anisotropy.model_matrices(self.display_options.prettify):
                         anisotropy_model_matrix = model_matrix @ spin_scale_matrix

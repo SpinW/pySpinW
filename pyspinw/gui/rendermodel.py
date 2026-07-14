@@ -175,6 +175,7 @@ class RenderAnisotropy(Component):
         super().__init__(np.eye(4))
         self.anisotropy = anisotropy
         self.site = anisotropy.site
+        self.xyz = unit_cell.lattice_units_to_cartesian(anisotropy.site.ijk)
 
         self.pretty_render_model_matrices = [self.calculate_model_matrix(
                                                 new_position, anisotropy, unit_cell, minimum_value, maximum_value)
