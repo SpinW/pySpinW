@@ -74,7 +74,6 @@ class Camera:
 
         :return: 4x4 float32 frustum matrix
         """
-
         if self.fixed_size is None:
             height = 2.0 * self.distance * np.tan(np.radians(self.fov_deg) / 2)
         else:

@@ -136,7 +136,6 @@ class RenderAnisotropy(Component):
                                minimum_value: float,
                                maximum_value: float):
         """ Gets the model matrix for the anisotropy"""
-
         translation = unit_cell.lattice_units_to_cartesian(position)
 
         # We want an ellipsoid such that if the eigenvectors are all zero,
