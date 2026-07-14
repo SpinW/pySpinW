@@ -126,8 +126,8 @@ class RenderAnisotropy(Component):
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
     _identity = np.eye(3)
-    _max_eigen = 3
-    _min_eigen = 1.5
+    _max_eigen = 5
+    _min_eigen = 1.1
 
     @staticmethod
     def calculate_model_matrix(position,
@@ -176,7 +176,8 @@ class RenderAnisotropy(Component):
         self.anisotropy = anisotropy
         self.site = anisotropy.site
 
-        self.pretty_render_model_matrices = [self.calculate_model_matrix(new_position, anisotropy, unit_cell)
+        self.pretty_render_model_matrices = [self.calculate_model_matrix(
+                                                new_position, anisotropy, unit_cell, minimum_value, maximum_value)
                                                 for new_position in add_extra_edge_points(anisotropy.site.ijk)]
 
         # Matrix to convert
