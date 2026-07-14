@@ -213,7 +213,7 @@ class Hamiltonian(SPWSerialisable):
                 raise ValueError(f"Site 1 of {exchange} is not in the specified structure")
             if exchange.site_2.unique_id not in structure._site_lookup:
                 raise ValueError(f"Site 2 of {exchange} is not in the specified structure")
-        
+
         for anisotropy in anisotropies:
             if anisotropy.site.unique_id not in structure._site_lookup:
                 raise ValueError(f"Site for {anisotropy} is not in the specified structure")

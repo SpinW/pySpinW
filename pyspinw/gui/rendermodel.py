@@ -126,8 +126,8 @@ class RenderAnisotropy(Component):
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
     _identity = np.eye(3)
-    _max_eigen = 5
-    _min_eigen = 1.1
+    _max_eigen = 3**2
+    _min_eigen = 1.1**2
 
     @staticmethod
     def calculate_model_matrix(position,

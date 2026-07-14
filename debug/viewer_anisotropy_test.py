@@ -15,18 +15,18 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(1,1,1)
 
-    x = LatticeSite(0, 0.5, 0.5, 0, 0, 1, name="X")
-    y = LatticeSite(0, 0, 0.5, 0, 0, 1, name="Y")
-    z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="Z")
-    w = LatticeSite(0, 0, 0, 0, 0, 1, name="W")
+    x = LatticeSite(0.5, 0.75, 0.75, 0, 0, 1, name="S1")
+    y = LatticeSite(0.5, 0.25, 0.75, 0, 0, 1, name="S2")
+    z = LatticeSite(0.5, 0.75, 0.25, 0, 0, 1, name="S3")
+    w = LatticeSite(0.5, 0.25, 0.25, 0, 0, 1, name="S4")
 
     sites = [x,y,z,w]
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(1, 1, 1)))
 
     anisotropies = [
-        AxisMagnitudeAnisotropy(site=x, direction=[1,0,0], a=4),
-        AxisMagnitudeAnisotropy(site=y, direction=[1,0,0], a=-4),
+        AxisMagnitudeAnisotropy(site=x, direction=[1,0,0], a=1),
+        AxisMagnitudeAnisotropy(site=y, direction=[1,0,0], a=-1),
         Anisotropy(site=z, anisotropy_matrix=[[1,0,0],[-1,0,0],[0,0,0]]),
         AxisMagnitudeAnisotropy(site=w, direction=[1,0,0], a=0),
     ]
