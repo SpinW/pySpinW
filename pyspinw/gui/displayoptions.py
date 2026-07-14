@@ -22,6 +22,7 @@ class DisplayOptions:
 
     atom_spin_scaling: float = 0.35
     exchange_scaling: float = 0.20
+    anisotropy_scaling: float = 0.35
 
     show_cartesian_axes: bool = True
     show_lattice_axes: bool = False

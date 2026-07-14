@@ -218,6 +218,10 @@ class CrystalViewerWidget(QOpenGLWidget):
         spin_scale = 2 * self.display_options.atom_spin_scaling
         spin_scale_matrix = np.diag([spin_scale, spin_scale, spin_scale, 1])
 
+
+        anisotropy_scale = 2 * self.display_options.anisotropy_scaling
+        anisotropy_scale_matrix = np.diag([anisotropy_scale, anisotropy_scale, anisotropy_scale, 1])
+
         exchange_scale = 0.1 * self.display_options.exchange_scaling
         exchange_scaling = np.diag([exchange_scale, exchange_scale, 1, 1])
         exchange_selection_scale = ((1 + _selection_size)/1)*exchange_scale
@@ -332,7 +336,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                 for anisotropy in sorted_anisotropies:
 
                     for model_matrix in anisotropy.model_matrices(self.display_options.prettify):
-                        anisotropy_model_matrix = model_matrix @ spin_scale_matrix
+                        anisotropy_model_matrix = model_matrix @ anisotropy_scale_matrix
 
                         self.anisotropy_shader.model_matrix = anisotropy_model_matrix
                         self.anisotropy_shader.use()

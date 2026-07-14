@@ -3,7 +3,7 @@ import os
 
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QIcon, QPainter
-from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy, QSlider, QDialog
+from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QSpacerItem, QSizePolicy, QSlider, QDialog, QVBoxLayout
 
 from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.icons.iconload import load_icon
@@ -93,6 +93,7 @@ class DisplayOptionsToolbar(QWidget):
     requestSettings = Signal()
 
     def _add_slider(self,
+                    target,
                     min_value: float, max_value: float, start_value: float,
                     left_label: QWidget, right_label: QWidget, alt_text: str):
         """ Add a slider and wire it up """
@@ -101,11 +102,11 @@ class DisplayOptionsToolbar(QWidget):
             left_label, right_label, alt_text)
 
         slider.value_changed.connect(self._on_change)
-        self.bar_layout.addWidget(slider)
+        target.addWidget(slider)
 
         return slider
 
-    def _toolbar_button(self, alt_text, icon: str | None):
+    def _toolbar_button(self, target, alt_text, icon: str | None):
         """ Create a toolbar button with standardised formatting"""
         btn = QPushButton()
 
@@ -118,13 +119,13 @@ class DisplayOptionsToolbar(QWidget):
 
         btn.setToolTip(alt_text)
 
-        self.bar_layout.addWidget(btn)
+        target.addWidget(btn)
 
         return btn
 
-    def _add_toggle_button(self, alt_text: str, icon: str | None = None, value: bool = True):
+    def _add_toggle_button(self, target, alt_text: str, icon: str | None = None, value: bool = True):
         """ Add a toggle button and wire it up"""
-        btn = self._toolbar_button(alt_text, icon)
+        btn = self._toolbar_button(target, alt_text, icon)
 
         btn.setCheckable(True)
         btn.setChecked(value)
@@ -143,7 +144,38 @@ class DisplayOptionsToolbar(QWidget):
 
         self.save_config_on_exit = save_config_on_exit
 
-        self.bar_layout = QHBoxLayout()
+        #
+        # Main layout
+        #
+
+        self.main_layout = QVBoxLayout()
+        self.bar_1_layout = QHBoxLayout()
+        self.bar_2_layout = QHBoxLayout()
+
+        self.bar_1 = QWidget()
+        self.bar_2 = QWidget()
+
+        # we want to centre the second bar
+        #self.bar_2_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+        self.bar_1.setLayout(self.bar_1_layout)
+        self.bar_2.setLayout(self.bar_2_layout)
+
+        self.main_layout.addWidget(self.bar_1)
+        self.main_layout.addWidget(self.bar_2)
+
+        self.setLayout(self.main_layout)
+
+        # Scaling properties
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.bar_1_layout.setContentsMargins(0, 0, 0, 0)
+        self.bar_2_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.main_layout.setSpacing(0)
+        self.bar_1_layout.setSpacing(0)
+        self.bar_2_layout.setSpacing(0)
+
 
         #
         # Load settings
@@ -178,110 +210,148 @@ class DisplayOptionsToolbar(QWidget):
         self._anisotropy_color = settings.anisotropy_color
 
         #
+        # Top bar
+        #
+
+        #
         # Show hide options
         #
 
-        self.show_sites = self._add_toggle_button(alt_text="Show Sites",
-                                                  icon="show_moments",
-                                                  value=settings.show_sites)
 
 
-        self.show_exchanges = self._add_toggle_button(alt_text="Show Exchanges",
-                                                      icon="show_exchanges",
-                                                      value=settings.show_exchanges)
-
-        self.show_anisotropies = self._add_toggle_button(alt_text="Show Anisotropies",
-                                                         icon="anisotropies",
-                                                         value=settings.show_anisotropies)
-
-        self.show_cell = self._add_toggle_button("Show Unit Cell",
-                                                 icon="unitcell",
-                                                 value=settings.show_unit_cell)
-
-        self.show_supercell = self._add_toggle_button("Show Supercell",
-                                                      icon="supercell",
-                                                      value=settings.show_supercell)
-
-        self.prettify = self._add_toggle_button("Use cosmetic representation instead of direct input",
+        self.prettify = self._add_toggle_button(target=self.bar_1_layout,
+                                                alt_text="Use cosmetic representation instead of direct input",
                                                 icon="cosmetic",
                                                 value=settings.prettify)
 
 
-        self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
+        self.bar_1_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
 
         #
         # Various visual properties
         #
 
-        self.atom_or_spins = self._add_toggle_button("Switch between showing atoms and spins",
-                                                       icon="momentatoms",
-                                                       value=settings.show_atoms_not_spins)
+        self.atom_or_spins = self._add_toggle_button(target=self.bar_1_layout,
+                                                     alt_text="Switch between showing atoms and spins",
+                                                     icon="momentatoms",
+                                                     value=settings.show_atoms_not_spins)
 
 
+
+        self.show_nonmagnetic = self._add_toggle_button(self.bar_1_layout,
+                                                        "Show non-magnetic sites",
+                                                        icon="nonmagnetic",
+                                                        value=settings.show_nonmagnetic_atoms)
+
+        self.scale_atoms = self._add_toggle_button(self.bar_1_layout,
+                                                   "Scale atoms by atomic radii",
+                                                   icon="atomsizes",
+                                                   value=settings.use_atomic_radii)
+
+
+
+
+        self.bar_1_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
+
+        self.show_cartesian_axes = self._add_toggle_button(target=self.bar_1_layout,
+                                                           alt_text="Show Cartesian axes",
+                                                           icon="cartesianaxes",
+                                                           value=settings.show_cartesian_axes)
+
+        self.show_lattice_axes = self._add_toggle_button(target=self.bar_1_layout,
+                                                           alt_text="Show lattice aligned axes",
+                                                         icon="latticeaxes",
+                                                         value=settings.show_lattice_axes)
+
+        self.orthogonal_lattice_axes = self._add_toggle_button(target=self.bar_1_layout,
+                                                           alt_text="Show orthogonal lattice axes",
+                                                               icon="latticeaxesorth",
+                                                               value=settings.orthogonal_lattice_axes)
+
+        self.orthographic = self._add_toggle_button(target=self.bar_1_layout,
+                                                           alt_text="Toggle Orthographic/Perspective",
+                                                    icon="perspective",
+                                                    value=settings.perspective)
+
+        self.reset_view = self._toolbar_button(target=self.bar_1_layout,
+                                               alt_text="Reset view",
+                                               icon="datum")
+
+        self.reset_view.clicked.connect(self.on_reset_view_clicked)
+
+        self.bar_1_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+        self.snapshot = self._toolbar_button(target=self.bar_1_layout,
+                                             alt_text="Snapshot",
+                                             icon="camera")
+
+        self.snapshot.clicked.connect(self.on_snapshot)
+
+
+        self.snapshot = self._toolbar_button(target=self.bar_1_layout,
+                                             alt_text="Settings",
+                                             icon="settings")
+
+        self.snapshot.clicked.connect(self.on_settings)
+
+        #
+        # Lower bar
+        #
+
+
+        self.show_cell = self._add_toggle_button(target=self.bar_2_layout,
+                                                 alt_text="Show Unit Cell",
+                                                 icon="unitcell",
+                                                 value=settings.show_unit_cell)
+
+        self.show_supercell = self._add_toggle_button(target=self.bar_2_layout,
+                                                      alt_text="Show Supercell",
+                                                      icon="supercell",
+                                                      value=settings.show_supercell)
+
+        self.show_sites = self._add_toggle_button(target=self.bar_2_layout,
+                                                  alt_text="Show Sites",
+                                                  icon="show_moments",
+                                                  value=settings.show_sites)
+
+        self.show_exchanges = self._add_toggle_button(target=self.bar_2_layout,
+                                                      alt_text="Show Exchanges",
+                                                      icon="show_exchanges",
+                                                      value=settings.show_exchanges)
+
+        self.show_anisotropies = self._add_toggle_button(target=self.bar_2_layout,
+                                                         alt_text="Show Anisotropies",
+                                                         icon="anisotropies",
+                                                         value=settings.show_anisotropies)
 
 
         self.spin_scale_slider = self._add_slider(
+            self.bar_2_layout,
             0, max_size_object_scaling, settings.atom_spin_scaling,
             left_label=IconWidget("small_moments", "Smaller Sites"),
             right_label=IconWidget("big_moments", "Larger Sites"),
             alt_text="Site scale factor")
 
 
-        self.show_nonmagnetic = self._add_toggle_button("Show non-magnetic sites",
-                                                        icon="nonmagnetic",
-                                                        value=settings.show_nonmagnetic_atoms)
 
-        self.scale_atoms = self._add_toggle_button("Scale atoms by atomic radii",
-                                                   icon="atomsizes",
-                                                   value=settings.use_atomic_radii)
 
         self.exchange_scale_slider = self._add_slider(
+            self.bar_2_layout,
             0, max_size_object_scaling, settings.exchange_scaling,
             left_label=IconWidget("small_exchange", "Smaller Exchanges"),
             right_label=IconWidget("big_exchange", "Larger Exchanges"),
             alt_text="Exchange thickness")
 
 
+        self.anisotropy_scale_slider = self._add_slider(
+            self.bar_2_layout,
+            0, max_size_object_scaling, settings.anisotropy_scaling,
+            left_label=IconWidget("small_anisotropies", "Smaller Bubbles"),
+            right_label=IconWidget("big_anisotropies", "Larger Bubbles"),
+            alt_text="Anisotropy visualisation size")
 
-        self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
+        self.bar_2_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        self.show_cartesian_axes = self._add_toggle_button("Show Cartesian axes",
-                                                           icon="cartesianaxes",
-                                                           value=settings.show_cartesian_axes)
-
-        self.show_lattice_axes = self._add_toggle_button("Show lattice aligned axes",
-                                                         icon="latticeaxes",
-                                                         value=settings.show_lattice_axes)
-
-        self.orthogonal_lattice_axes = self._add_toggle_button("Show orthogonal lattice axes",
-                                                               icon="latticeaxesorth",
-                                                               value=settings.orthogonal_lattice_axes)
-
-        self.orthographic = self._add_toggle_button("Toggle Orthographic/Perspective",
-                                                    icon="perspective",
-                                                    value=settings.perspective)
-
-        self.reset_view = self._toolbar_button("Reset view", icon="datum")
-        self.reset_view.clicked.connect(self.on_reset_view_clicked)
-
-        self.bar_layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum))
-
-        self.snapshot = self._toolbar_button("Snapshot", icon="camera")
-        self.snapshot.clicked.connect(self.on_snapshot)
-
-
-        self.snapshot = self._toolbar_button("Settings", icon="settings")
-        self.snapshot.clicked.connect(self.on_settings)
-
-
-        # Pad right, and set layout
-        self.bar_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        self.setLayout(self.bar_layout)
-
-        # Scaling properties
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.bar_layout.setContentsMargins(0, 0, 0, 0)
-        self.bar_layout.setSpacing(0)
 
         # TODO: Temporally disabled until implemented
         self.scale_atoms.setVisible(False)
@@ -318,7 +388,8 @@ class DisplayOptionsToolbar(QWidget):
             selected_color = self._selected_color,
             hover_color = self._hover_color,
             selected_hover_color = self._selected_hover_color,
-            anisotropy_color = self._anisotropy_color
+            anisotropy_color = self._anisotropy_color,
+            anisotropy_scaling = self.anisotropy_scale_slider.value()
         )
 
     def on_snapshot(self):
