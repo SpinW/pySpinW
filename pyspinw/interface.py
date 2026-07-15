@@ -343,12 +343,9 @@ def spacegroup(search_string: str):
             elif len(groups) == 1:
                 return groups[0]
 
-            elif 1 < len(groups) <= 5:
-                suggestions = ", ".join([group.symbol for group in groups[:-1]]) + " and " + groups[-1].symbol
-                raise NoSuchGroup(f"Found multiple groups with these operations: {suggestions}")
-
             else:
-                raise NoSuchGroup(f"Found {len(groups)} groups matching those operations.")
+                suggestions = ", ".join([group.symbol for group in groups[:-1]]) + " and " + groups[-1].symbol
+                raise NoSuchGroup(f"Found {len(groups)} groups with these operations: {suggestions}")
 
         else:
             raise ValueError("Expected `spacegroups_by_operations` to return ExactMatch or PartialMatch")
