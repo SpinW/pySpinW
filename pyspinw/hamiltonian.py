@@ -207,6 +207,8 @@ class Hamiltonian(SPWSerialisable):
                  exchanges: list[Exchange],
                  anisotropies: list[Anisotropy] | None = None):
 
+        anisotropies = [] if anisotropies is None else anisotropies
+
         # Check that exchanges and anisotropies refer to sites in the structure
         for exchange in exchanges:
             if exchange.site_1.unique_id not in structure._site_lookup:
@@ -220,7 +222,7 @@ class Hamiltonian(SPWSerialisable):
 
         self._structure = structure
         self._exchanges = exchanges
-        self._anisotropies = [] if anisotropies is None else anisotropies
+        self._anisotropies = anisotropies
 
     @property
     def structure(self):
