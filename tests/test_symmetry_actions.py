@@ -65,7 +65,7 @@ def test_symmetry_filled_symmetric_exchange_cases(hamiltonian):
     it should give the same spinwave result"""
 
     hamiltonian = hamiltonian.symmetry_filled() # Get hamiltonian that should obey symmetry
-    
+
     initial_energies, _ = hamiltonian._energies_and_intensities(qs, use_rotating=False)
 
     for op in hamiltonian.structure.spacegroup:
