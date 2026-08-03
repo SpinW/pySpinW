@@ -258,47 +258,43 @@ class Exchange(SPWSerialisable):
 
         # print(unit_cell._xyz_inv)
         # print(unit_cell._xyz_spins_inv)
-        print("Exchange matrix in lattice")
-        print(exchange_matrix)
+        # print("Exchange matrix in lattice")
+        # print(exchange_matrix)
 
         for operation in identity_operations:
             if not operation.symmorphic:
                 continue
 
 
-            print("Operation matrix")
-            print(operation.point_operation_matrix)
-            print("Inverse operation matrix")
-            print(operation.inverse_point_operation_matrix)
+            # print("Operation matrix")
+            # print(operation.point_operation_matrix)
+            # print("Inverse operation matrix")
+            # print(operation.inverse_point_operation_matrix)
 
             transformed = operation.point_operation_matrix @ exchange_matrix @ operation.inverse_point_operation_matrix
 
             if not np.allclose(exchange_matrix, transformed):
 
-                print(f"Failed on operation {operation}")
+                # print(f"Failed on operation {operation}")
                 return False
 
         exchange_matrix_T = self._exchange_matrix.T
         for operation in inversion_operations:
             if not operation.symmorphic:
                 continue
-
-            print("Operation matrix")
-            print(operation.point_operation_matrix)
-            print("Inverse operation matrix")
-            print(operation.inverse_point_operation_matrix)
+            #
+            # print("Operation matrix")
+            # print(operation.point_operation_matrix)
+            # print("Inverse operation matrix")
+            # print(operation.inverse_point_operation_matrix)
 
             transformed = operation.point_operation_matrix @ exchange_matrix @ operation.inverse_point_operation_matrix
 
-            print("Transformed")
-            print(transformed)
+            # print("Transformed")
+            # print(transformed)
             if not np.allclose(exchange_matrix_T, transformed):
-            #
-            # if not np.allclose(exchange_matrix,
-            #                    operation.point_operation_matrix @ exchange_matrix_T @
-            #                    operation.point_operation_matrix.T):
 
-                print(f"Failed on operation {operation}")
+                # print(f"Failed on operation {operation}")
 
                 return False
 

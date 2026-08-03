@@ -3,9 +3,9 @@ import numpy as np
 from pyspinw import *
 import pytest
 
-from symmetry.symmetry_test_cases import case_1
+from symmetry.symmetry_test_cases import case_1, case_2
 
-cases = [case_1()]
+cases = [case_1(), case_2()]
 
 q_points = np.concatenate((
         np.linspace(-0.8, -0.2, 4),
@@ -53,6 +53,8 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_c
         transformed_hamiltonian = hamiltonian.symmetry_transformed(op)
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(transformed_qs, use_rotating=False)
+
+        print(transformed_hamiltonian, )
 
         assert np.allclose(initial_energies, compare_energies)
 
