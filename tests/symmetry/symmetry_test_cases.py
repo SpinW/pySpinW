@@ -28,25 +28,29 @@ def case_1():
 def case_2():
     """ Test case, rhombic unit cell """
 
-    sg = spacegroup("p4mm")
+    sg = spacegroup("p6mm")
 
-    s = LatticeSite(0.25, 0.25, 0.25, 0, 0, 1, name="X")
+    a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
+    b = LatticeSite(0.5, 0, 0, 0, 0, 1, name="b")
+    c = LatticeSite(0, 0.5, 0, 0, 0, 1, name="c")
 
-    structure = Structure([s], unit_cell=UnitCell(1, 1, 1), spacegroup=sg)
+    structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
 
-    s1 = structure.site_by_name("X")
-    s2 = structure.site_by_name("X [3]")
 
-    ex1 = HeisenbergExchange(s1, s2, cell_offset=(0, 0, 0), j=-1)
-    ex2 = HeisenbergExchange(s1, s2, cell_offset=(0, -1, 0), j=-1)
+    exchanges = [
+        HeisenbergExchange(a, b, cell_offset=(0, 0, 0), j=-1),
+        HeisenbergExchange(b, c, cell_offset=(0, 0, 0), j=-1),
+        HeisenbergExchange(c, a, cell_offset=(0, 0, 0), j=-1),
+    ]
 
-    hamiltonian = Hamiltonian(structure, [ex1, ex2])
+    hamiltonian = Hamiltonian(structure, exchanges)
 
     return hamiltonian
 
 
 if __name__ == "__main__":
-    for case in [case_1, case_2]:
+    for case in [case_2]:
+    # for case in [case_1, case_2]:
 
         h = case()
 

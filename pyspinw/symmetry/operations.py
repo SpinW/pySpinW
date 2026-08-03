@@ -17,6 +17,7 @@ class SpaceOperation:
 
         self.point_operation = point_operation
         self.point_operation_matrix = np.array(point_operation, dtype=float)
+        self.inverse_point_operation_matrix = np.linalg.inv(self.point_operation_matrix)
         self.translation = translation
 
         self._symmorphic = np.allclose(self.translation, 0.0)

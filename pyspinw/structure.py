@@ -475,7 +475,8 @@ class Structure(SPWSerialisable):
 
     def exchange_constraints(self,
                              site_1: LatticeSite | str | ArrayLike,
-                             site_2: LatticeSite | str | ArrayLike):
+                             site_2: LatticeSite | str | ArrayLike,
+                             do_print=True):
         """ Get the constraints """
         if isinstance(site_1, str):
             site_1 = self.site_by_name(site_1)
@@ -501,7 +502,7 @@ class Structure(SPWSerialisable):
             except Exception as e:
                 raise TypeError("Expected `site_2` to be a LatticeSite, vector or a name") from e
 
-        return self.spacegroup.exchange_constraints(site_1, site_2, self.unit_cell)
+        return self.spacegroup.exchange_constraints(site_1, site_2, self.unit_cell, do_print=do_print)
 
 
 
