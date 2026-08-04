@@ -56,9 +56,14 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_c
 
         print(transformed_hamiltonian, )
 
-        assert np.allclose(initial_energies, compare_energies)
+        close = np.allclose(initial_energies, compare_energies)
 
+        assert close, f"Failed on operation {op}"
 
+def test_g_transform():
+    """ Check that the g-tensor transforms correctly"""
+
+    # TODO
 
 @pytest.mark.parametrize("hamiltonian", cases)
 def test_symmetry_filled_symmetric_exchange_cases(hamiltonian):
@@ -75,5 +80,7 @@ def test_symmetry_filled_symmetric_exchange_cases(hamiltonian):
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(qs, use_rotating=False)
 
-        assert np.allclose(initial_energies, compare_energies)
+        close = np.allclose(initial_energies, compare_energies)
+
+        assert close, f"Failed on operation {op}"
 

@@ -231,7 +231,7 @@ class LatticeSite(SPWSerialisable):
         """ Transform site using a symmetry operation """
         new_ijk = operation(self.ijk.reshape(1, 3)).reshape(-1)
         new_spin = (unit_cell._xyz_spins @ operation.point_operation @ unit_cell._xyz_spins_inv @ self.spin_data.T).T
-        new_g = operation.point_operation_matrix @ self._g @ operation.point_operation_matrix.T
+        new_g = operation.point_operation_matrix @ self._g @ operation.inverse_point_operation_matrix
 
         return LatticeSite(
             i=float(new_ijk[0]),
