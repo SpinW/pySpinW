@@ -133,14 +133,11 @@ class RenderAnisotropy(Component):
                                unit_cell: UnitCell,
                                scale: float):
         """ Gets the model matrix for the anisotropy (see dev docs 'anisotropy_representions')"""
-
         symmetrised = 0.5 * (anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
 
         min_eig = np.min(np.linalg.eigvals(symmetrised))
 
         ellipsoid = (RenderAnisotropy._epsilon * np.eye(3)) - (min_eig * np.eye(3) - symmetrised)/scale
-
-        print(ellipsoid)
 
         # Turn the quadratic coefficients into a transformation
         translation = unit_cell.lattice_units_to_cartesian(position)
