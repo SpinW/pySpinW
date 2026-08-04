@@ -219,7 +219,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         spin_scale_matrix = np.diag([spin_scale, spin_scale, spin_scale, 1])
 
 
-        anisotropy_scale = 2 * self.display_options.anisotropy_scaling
+        anisotropy_scale = 3 * self.display_options.anisotropy_scaling
         anisotropy_scale_matrix = np.diag([anisotropy_scale, anisotropy_scale, anisotropy_scale, 1])
 
         exchange_scale = 0.1 * self.display_options.exchange_scaling
