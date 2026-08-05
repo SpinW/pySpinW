@@ -48,7 +48,7 @@ def test_C4_site_rotation(unit_cell: UnitCell, n_rotations: int):
     point_in_off_boundary = LatticeSite(*expected_off_boundary_points[0], 1, 0, 0)
     point_round_off_boundary = LatticeSite(*expected_off_boundary_points[0], 0, 1, 0)
     point_up_off_boundary = LatticeSite(*expected_off_boundary_points[0], 0, 0, 1)
-    
+
     point_in_on_boundary = LatticeSite(*expected_on_boundary_points[0], 1, 0, 0)
     point_round_on_boundary = LatticeSite(*expected_on_boundary_points[0], 0, 1, 0)
     point_up_on_boundary = LatticeSite(*expected_on_boundary_points[0], 0, 0, 1)

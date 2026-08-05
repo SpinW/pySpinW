@@ -34,12 +34,12 @@ expected_round_spins = [
 ]
 expected_up_spins = [(0,0,1)]*5
 
-@pytest.mark.parametrize("n_rotations", range(5))
+@pytest.mark.parametrize("n_rotations", range(7))
 @pytest.mark.parametrize("unit_cell", [
-    UnitCell(1,1,1),
-    UnitCell(2,3,4)])
-def test_C4_site_rotation(unit_cell: UnitCell, n_rotations: int):
-    """ Test that 4-fold rotation about the centre of the cell applies correctly
+    UnitCell(1,1,1, gamma=120),
+    UnitCell(2,2,6, gamma=120)])
+def test_C6_site_rotation(unit_cell: UnitCell, n_rotations: int):
+    """ Test that 3-fold rotation about the centre of the cell applies correctly
 
     The direction of spins on the boundary is complicated,
     because some directions of spin are inconsistent with C4 symmetry

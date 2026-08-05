@@ -48,6 +48,7 @@ class Structure(SPWSerialisable):
                              f"({supercell.n_components()}-by-3), "
                              "bad sites are: " + ", ".join([site.name for site in bad_sites]))
 
+
     def full_structure_site_list(self):
         """ All the sites in the structure"""
         all_sites = []
