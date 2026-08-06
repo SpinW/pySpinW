@@ -230,16 +230,25 @@ class LatticeSite(SPWSerialisable):
     def symmetry_transformed(self, operation: SpaceOperation, unit_cell: "UnitCell"):
         """ Transform site using a symmetry operation """
         new_ijk = operation(self.ijk.reshape(1, 3)).reshape(-1)
+
+        # Transform spin, make sure it has same magnitude
+        # TODO: Add method to SpaceOperation that preserves spin vector length
+        spin_mag = np.sqrt(np.sum(self.spin_data**2, axis=1)).reshape(-1, 1)
+
         new_spin = (unit_cell._xyz_spins @ operation.point_operation @ unit_cell._xyz_spins_inv @ self.spin_data.T).T
+        new_spin_mag = np.sqrt(np.sum(new_spin ** 2, axis=1)).reshape(-1, 1)
+
+        new_spin *= spin_mag / new_spin_mag
+
         new_g = operation.point_operation_matrix @ self._g @ operation.inverse_point_operation_matrix
 
         return LatticeSite(
             i=float(new_ijk[0]),
             j=float(new_ijk[1]),
             k=float(new_ijk[2]),
-            name=self.name,
             supercell_spins=new_spin,
             g=new_g,
+            name=self.name,
             metadata=self.metadata.copy())
 
     def __hash__(self):
