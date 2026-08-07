@@ -481,7 +481,7 @@ lattice_systems: list[LatticeSystem] = [
 
 # For looking things up by name or letter
 lattice_system_name_lookup = {lattice.name: lattice for lattice in lattice_systems}
-lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_systems}
+lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_systems if len(lattice.letter) < 2}
 
 def find_unit_cell_type(unit_cell: UnitCell) -> list[LatticeSystem]:
     """ Find the lattice system for a unit cell, it should be a length zero or one list, but it might not be """

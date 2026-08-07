@@ -29,11 +29,13 @@ class Structure(SPWSerialisable):
                  supercell: Supercell | None = None,
                  skip_checks: bool = False):
 
+        spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
+
         self._input_sites = sites
         self._input_uid_to_site = {site.unique_id: site for site in sites}
         self._unit_cell = unit_cell
 
-        self._spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
+        self._spacegroup = spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
@@ -54,7 +56,8 @@ class Structure(SPWSerialisable):
             # check that the unit cell is consistent with the spacegroup
 
             if spacegroup.lattice_system.constrain(unit_cell) != unit_cell:
-                raise ValueError(f"{unit_cell} is not compatible with spacegroup {spacegroup}")
+                raise ValueError(f"{unit_cell} is not compatible with spacegroup {spacegroup}, "
+                                 f"requires lattice type {spacegroup.lattice_system.name}")
 
             # Check that the unit cell fulfils all the constraints of the unit cell
             violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
