@@ -183,10 +183,10 @@ class Triclinic(LatticeSystem):
         return cell
 
 
-class Monoclinic(LatticeSystem):
+class MonoclinicB(LatticeSystem):
     """ Monoclinic lattice system """
 
-    name = "Monoclinic"
+    name = "MonoclinicB"
     letter = "m"
 
     positive_constraints = {
@@ -218,6 +218,75 @@ class Monoclinic(LatticeSystem):
 
         return cell
 
+class MonoclinicA(LatticeSystem):
+    """ Monoclinic lattice system """
+
+    name = "MonoclinicA"
+    letter = "ma"
+
+    positive_constraints = {
+        "beta": 90,
+        "gamma": 90
+    }
+
+    negative_constraints = {
+        "a ≠ b": lambda cell: cell.a != cell.b,
+        "b ≠ c": lambda cell: cell.b != cell.c,
+        "c ≠ a": lambda cell: cell.c != cell.a,
+        "α ≠ 90°": lambda cell: cell.beta != 90
+    }
+
+    @property
+    def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
+        return FreeParameters(beta=False, gamma=False)
+
+    @property
+    def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
+        return BravaisOptions(base_centered=True)
+
+    def create_unit_cell(self, a: float, b: float, c: float, alpha: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, b, c, alpha, 90, 90)
+        self.validate(cell)
+
+        return cell
+
+class MonoclinicC(LatticeSystem):
+    """ Monoclinic lattice system """
+
+    name = "MonoclinicC"
+    letter = "mc"
+
+    positive_constraints = {
+        "alpha": 90,
+        "beta": 90
+    }
+
+    negative_constraints = {
+        "a ≠ b": lambda cell: cell.a != cell.b,
+        "b ≠ c": lambda cell: cell.b != cell.c,
+        "c ≠ a": lambda cell: cell.c != cell.a,
+        "γ ≠ 90°": lambda cell: cell.beta != 90
+    }
+
+    @property
+    def free_parameters(self) -> FreeParameters:
+        """ List the parameters that should be available to edit"""
+        return FreeParameters(alpha=False, beta=False)
+
+    @property
+    def bravais_options(self) -> BravaisOptions:
+        """ Bravais lattices consistent with this kind of cell"""
+        return BravaisOptions(base_centered=True)
+
+    def create_unit_cell(self, a: float, b: float, c: float, gamma: float):
+        """ Create a unit cell for this lattice """
+        cell = UnitCell(a, b, c, 90, 90, gamma)
+        self.validate(cell)
+
+        return cell
 
 
 
@@ -401,7 +470,9 @@ class Cubic(LatticeSystem):
 # All the possible systems
 lattice_systems: list[LatticeSystem] = [
     Triclinic(),
-    Monoclinic(),
+    MonoclinicA(),
+    MonoclinicB(),
+    MonoclinicC(),
     Orthorhombic(),
     Tetragonal(),
     Rhombohedral(),

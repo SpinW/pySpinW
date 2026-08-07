@@ -379,7 +379,16 @@ class SpacegroupDatabase:
                 lattice_system = lattice_system_name_lookup["Rhombohedral"]
                 bravais_lattice = "hR"
             else:
-                lattice_system = lattice_system_letter_lookup[first_letter]
+                if first_letter == "m":
+                    if choice.startswith("a") or choice.startswith("-a"):
+                        lattice_system = lattice_system_name_lookup["MonoclinicA"]
+                    elif choice.startswith("c") or choice.startswith("-c"):
+                        lattice_system = lattice_system_name_lookup["MonoclinicC"]
+                    else:
+                        lattice_system = lattice_system_name_lookup["MonoclinicB"]
+
+                else:
+                    lattice_system = lattice_system_letter_lookup[first_letter]
 
             group = SpaceGroup(
                 hall_number=hall_number,

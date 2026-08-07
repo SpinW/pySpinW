@@ -16,7 +16,7 @@ def labeller(sg: SpaceGroup):
 @pytest.mark.parametrize("cell", [
     UnitCell(1,1,1),
     UnitCell(3,4,5, 57, 59, 110)],ids=["Symmetric Cell", "Asymmetric Cell"])
-def test_action_of_spacegroup_on_spins(sg: SpaceGroup, cell: UnitCell):
+def test_space_operations_on_spins_preserves_length(sg: SpaceGroup, cell: UnitCell):
     """ Checks that the spacegroup acting on spins is"""
     test_cell = sg.lattice_system.constrain(cell)
 
