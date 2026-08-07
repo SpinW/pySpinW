@@ -25,8 +25,9 @@ class Structure(SPWSerialisable):
     def __init__(self,
                  sites: list[LatticeSite],
                  unit_cell: UnitCell,
-                 spacegroup: SymmetryGroup | None = None,
-                 supercell: Supercell | None = None):
+                 spacegroup: SpaceGroup | None = None,
+                 supercell: Supercell | None = None,
+                 skip_checks: bool = False):
 
         self._input_sites = sites
         self._input_uid_to_site = {site.unique_id: site for site in sites}
@@ -37,16 +38,30 @@ class Structure(SPWSerialisable):
 
         self._sites: list[LatticeSite] = self._extended_sites()
 
-        # Check that supercell components match site dimensions
-        bad_sites = []
-        for site in self.sites:
-            if site.n_components() != self._supercell.n_components():
-                bad_sites.append(site)
+        if not skip_checks:
 
-        if bad_sites:
-            raise ValueError("Expected the shape of site spin data to match what the supercell requires "
-                             f"({supercell.n_components()}-by-3), "
-                             "bad sites are: " + ", ".join([site.name for site in bad_sites]))
+            # Check that supercell components match site dimensions
+            bad_sites = []
+            for site in self.sites:
+                if site.n_components() != self._supercell.n_components():
+                    bad_sites.append(site)
+
+            if bad_sites:
+                raise ValueError("Expected the shape of site spin data to match what the supercell requires "
+                                 f"({supercell.n_components()}-by-3), "
+                                 "bad sites are: " + ", ".join([site.name for site in bad_sites]))
+
+            # check that the unit cell is consistent with the spacegroup
+
+            if spacegroup.lattice_system.constrain(unit_cell) != unit_cell:
+                raise ValueError(f"{unit_cell} is not compatible with spacegroup {spacegroup}")
+
+            # Check that the unit cell fulfils all the constraints of the unit cell
+            violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
+            if violations:
+                logger.warning(f"{unit_cell} violates the conditions {violations} for {spacegroup.lattice_system}"
+                               f" used by {spacegroup}")
+
 
 
     def full_structure_site_list(self):
