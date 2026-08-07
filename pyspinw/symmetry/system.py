@@ -86,8 +86,7 @@ class LatticeSystem(ABC):
             key: value if isinstance(value, (int,float)) else value(unit_cell)
                 for key, value in self.positive_constraints.items()
             }
-
-        return unit_cell.updated(*evaluated)
+        return unit_cell.updated(**evaluated)
 
     @property
     @abstractmethod

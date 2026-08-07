@@ -2,6 +2,7 @@
 from collections import defaultdict
 
 from abc import ABC, abstractmethod
+from typing import Iterator
 
 import numpy as np
 import spglib
@@ -288,7 +289,7 @@ class SpaceGroup(SymmetryGroup):
                 return True
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[SpaceOperation]:
         return iter(self.operations)
 
 #

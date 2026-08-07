@@ -171,6 +171,14 @@ class SpaceOperation:
 
         return new_points
 
+    def point_operation_in_cartesian(self, cell: "UnitCell"):
+        """ Get the point group in cartesian coordinates"""
+        return cell._xyz.T @ self.point_operation @ cell._xyz_inv.T
+
+    def point_operation_for_spins(self, cell: "UnitCell"):
+        """ Get the point group that operates on spins in cartesian """
+        return cell._xyz.T @ self.point_operation @ cell._xyz_inv.T
+
     def __call__(self, points: ArrayLike) -> np.ndarray:
         """ Apply this operation to a list of points """
         new_points = self.apply_without_mod(points) % 1
