@@ -363,7 +363,7 @@ class Exchange(SPWSerialisable):
         site_2_related = structure.symmetry_related(self.site_2)
 
         # Go through all possible pairs, and see if they have any symmetry operations relating them
-        symmetry_related = []
+        symmetry_related: list[tuple[LatticeSite, LatticeSite, list[SpaceOperation]]] = []
         for site_1, site_1_ops in site_1_related:
             for site_2, site_2_ops in site_2_related:
                 shared_ops = site_1_ops.intersection(site_2_ops)
@@ -371,9 +371,9 @@ class Exchange(SPWSerialisable):
                     symmetry_related.append((site_1, site_2, shared_ops))
 
         new_exchanges = []
-
-        to_cart = structure.unit_cell._xyz_spins # TODO: Check this is the right way round
-        to_lattice = structure.unit_cell._xyz_spins_inv
+        #
+        # to_cart = structure.unit_cell._xyz_spins # TODO: Check this is the right way round
+        # to_lattice = structure.unit_cell._xyz_spins_inv
 
         for site_1, site_2, operations in symmetry_related:
 
@@ -381,7 +381,7 @@ class Exchange(SPWSerialisable):
             for operation in operations:
 
                 # Get the transformed matrix
-                op = to_cart @ operation.point_operation_matrix @ to_lattice
+                op = operation.point_operation_in_cartesian(structure.unit_cell)
                 new_matrix = op @ self._exchange_matrix @ op.T
 
                 # Try to get the transformed cell offset

@@ -6,7 +6,7 @@ import pytest
 from symmetry.symmetry_test_cases import case_1, case_2
 
 cases = [case_1(),
-         #case_2() # Disable for now TODO: Make this work!!!!!
+         case_2() # Disable for now TODO: Make this work!!!!!
          ]
 
 q_points = np.concatenate((
@@ -51,21 +51,18 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_c
     initial_energies, _ = hamiltonian._energies_and_intensities(qs, use_rotating=False)
 
     for op in hamiltonian.structure.spacegroup:
-        transformed_qs = (op.point_operation_matrix @ qs.T).T
+        transform = op.point_operation_in_cartesian(hamiltonian.structure.unit_cell)
+        transformed_qs = (transform @ qs.T).T
         transformed_hamiltonian = hamiltonian.symmetry_transformed(op)
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(transformed_qs, use_rotating=False)
 
-        print(transformed_hamiltonian, )
+        transformed_hamiltonian.print_summary()
 
         close = np.allclose(initial_energies, compare_energies)
 
         assert close, f"Failed on operation {op}"
 
-def test_g_transform():
-    """ Check that the g-tensor transforms correctly"""
-
-    # TODO
 
 @pytest.mark.parametrize("hamiltonian", cases)
 def test_symmetry_filled_symmetric_exchange_cases(hamiltonian):

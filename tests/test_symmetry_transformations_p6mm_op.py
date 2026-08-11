@@ -4,7 +4,7 @@ from pyspinw import *
 from pyspinw.basis import angle_axis_rotation_matrix
 from pyspinw.symmetry.operations import SpaceOperation
 
-s2 = np.sqrt(0.5)
+s3 = np.sqrt(3/4)
 
 expected_off_boundary_points = [
     (0.25, 0.5, 0.5),
@@ -20,14 +20,14 @@ expected_on_boundary_points = [
 ]
 expected_in_spins = [
     (1, 0, 0),
-    (0, 1, 0),
-    (-s2, -s2, 0),
+    (-0.5, s3, 0),
+    (-0.5, -s3, 0),
     (1, 0, 0),
 ]
 expected_round_spins = [
     (0, 1, 0),
-    (-s2, -s2, 0),
-    (1, 0, 0),
+    (-s3, -0.5, 0),
+    (s3, -0.5, 0),
     (0, 1, 0)
 ]
 expected_up_spins = [(0,0,1)]*5

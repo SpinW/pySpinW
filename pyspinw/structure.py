@@ -460,7 +460,7 @@ class Structure(SPWSerialisable):
         print(self.text_summary)
 
     @property
-    def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:
+    def spacegroup(self) -> SpaceGroup:
         """ Get the spacegroup"""
         return self._spacegroup
 
