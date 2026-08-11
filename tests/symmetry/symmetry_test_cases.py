@@ -38,9 +38,9 @@ def case_2():
 
 
     exchanges = [
-        HeisenbergExchange(a, b, cell_offset=(0, 0, 0), j=-1),
-        HeisenbergExchange(b, c, cell_offset=(0, 0, 0), j=-1),
-        HeisenbergExchange(c, a, cell_offset=(0, 0, 0), j=-1),
+        HeisenbergExchange(a, b, cell_offset=(0, 0, 0), j=-1, name="ab"),
+        HeisenbergExchange(b, c, cell_offset=(0, 0, 0), j=-1, name="bc"),
+        HeisenbergExchange(c, a, cell_offset=(0, 0, 0), j=-1, name="ca"),
     ]
 
     hamiltonian = Hamiltonian(structure, exchanges)

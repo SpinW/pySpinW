@@ -1,6 +1,6 @@
 import numpy as np
 
-from pyspinw import *
+
 import pytest
 
 from symmetry.symmetry_test_cases import case_1, case_2
@@ -47,17 +47,14 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_c
 
     """ Make an asymmetric system, then apply operations to the system and q, it should give the same spinwave result"""
 
-
     initial_energies, _ = hamiltonian._energies_and_intensities(qs, use_rotating=False)
 
     for op in hamiltonian.structure.spacegroup:
         transform = op.point_operation_in_cartesian(hamiltonian.structure.unit_cell)
-        transformed_qs = (transform @ qs.T).T
+        transformed_qs = (transform.T @ qs.T).T
         transformed_hamiltonian = hamiltonian.symmetry_transformed(op)
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(transformed_qs, use_rotating=False)
-
-        transformed_hamiltonian.print_summary()
 
         close = np.allclose(initial_energies, compare_energies)
 

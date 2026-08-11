@@ -1068,9 +1068,7 @@ class Hamiltonian(SPWSerialisable):
 
         # Transform the sites and build a mapping for exchanges/anisotropies
 
-        xyz_transform = (self.structure.unit_cell._xyz_spins @
-                         operation.point_operation_matrix @
-                         self.structure.unit_cell._xyz_spins_inv)
+        xyz_transform = operation.point_operation_in_cartesian(self.structure.unit_cell)
 
         site_mapping = dict()
         new_sites = []
