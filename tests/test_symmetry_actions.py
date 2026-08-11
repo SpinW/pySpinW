@@ -3,11 +3,8 @@ import numpy as np
 
 import pytest
 
-from symmetry.symmetry_test_cases import case_1, case_2
-
-cases = [case_1(),
-         case_2() # Disable for now TODO: Make this work!!!!!
-         ]
+from pyspinw import HeisenbergExchange
+from symmetry.symmetry_test_cases import heisenberg_case_1, heisenberg_case_2, heisenberg_cases
 
 q_points = np.concatenate((
         np.linspace(-0.8, -0.2, 4),
@@ -21,11 +18,11 @@ qs = np.concatenate((
     qz.reshape(-1, 1)), axis=1)
 
 
-@pytest.mark.parametrize("hamiltonian", cases)
+@pytest.mark.parametrize("hamiltonian", heisenberg_cases)
 def test_tests_for_symmetry_filled_symmetric_exchange_cases(hamiltonian):
     """ This makes sure the tests we have should fail if things are wrong.
-    Make an asymmetric system, fill it, then apply operations to the system *but not to q*,
-    it should give the same spinwave result"""
+    Make an asymmetric system, then apply operations to the system *but not to q*,
+    it should give different spinwave results"""
 
     initial_energies, _ = hamiltonian._energies_and_intensities(qs, use_rotating=False)
 
@@ -36,13 +33,19 @@ def test_tests_for_symmetry_filled_symmetric_exchange_cases(hamiltonian):
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(qs, use_rotating=False)
 
+        transformed_hamiltonian.print_summary()
+        for exchange in transformed_hamiltonian.exchanges:
+            print(exchange.exchange_matrix)
+
+        print(np.max(np.abs(compare_energies - initial_energies)))
+
         all_not_failing = all_not_failing and np.allclose(initial_energies, compare_energies)
 
     assert not all_not_failing, "A good test Hamiltonian should not be symmetry invariant"
 
 
 
-@pytest.mark.parametrize("hamiltonian", cases)
+@pytest.mark.parametrize("hamiltonian", heisenberg_cases)
 def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_cases(hamiltonian):
 
     """ Make an asymmetric system, then apply operations to the system and q, it should give the same spinwave result"""
@@ -61,11 +64,13 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_c
         assert close, f"Failed on operation {op}"
 
 
-@pytest.mark.parametrize("hamiltonian", cases)
+@pytest.mark.parametrize("hamiltonian", heisenberg_cases)
 def test_symmetry_filled_symmetric_exchange_cases(hamiltonian):
 
-    """ Make an asymmetric system, fill it, then apply operations to the system *but not to q*,
+    """ Make an asymmetric system, fill it by symmetry, then apply operations to the system *but not to q*,
     it should give the same spinwave result"""
+
+
 
     hamiltonian = hamiltonian.symmetry_filled() # Get hamiltonian that should obey symmetry
 
@@ -79,4 +84,18 @@ def test_symmetry_filled_symmetric_exchange_cases(hamiltonian):
         close = np.allclose(initial_energies, compare_energies)
 
         assert close, f"Failed on operation {op}"
+
+
+@pytest.mark.parametrize("hamiltonian", heisenberg_cases)
+def test_fill_symmetry_makes_heisenbergs_from_heisenbergs(hamiltonian):
+
+    """ Do symmetry fill on an asymmetric system with Heisenberg exchanges, the result should be Heisenbergs too """
+
+    filled = hamiltonian.symmetry_filled()
+
+    for exchange in filled.exchanges:
+        assert isinstance(exchange, HeisenbergExchange), ("Heisenberg exchanges should transform to Heisenberg "
+                                                          f"exchanges, but got {exchange}")
+
+
 

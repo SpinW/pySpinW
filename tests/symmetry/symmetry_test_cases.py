@@ -6,7 +6,7 @@ from pyspinw import HeisenbergExchange
 # symmetries = '-x, y, z; x, -y, z; y, x, z'
 # sg = spacegroup(symmetries)
 
-def case_1():
+def heisenberg_case_1():
     """ Test case, cubic unit cell """
 
     sg = spacegroup("p4mm")
@@ -25,14 +25,14 @@ def case_1():
 
     return hamiltonian
 
-def case_2():
+def heisenberg_case_2():
     """ Test case, rhombic unit cell """
 
     sg = spacegroup("p6mm")
 
     a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
-    b = LatticeSite(0.5, 0, 0, 0, 0, 1, name="b")
-    c = LatticeSite(0, 0.5, 0, 0, 0, 1, name="c")
+    b = LatticeSite(0.5, 0, 0, 0, 1, 0, name="b")
+    c = LatticeSite(0, 0.5, 0, 1, 0, 0, name="c")
 
     structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
 
@@ -48,8 +48,13 @@ def case_2():
     return hamiltonian
 
 
+heisenberg_cases = [
+    heisenberg_case_1(),
+    heisenberg_case_2(),
+]
+
 if __name__ == "__main__":
-    for case in [case_2]:
+    for case in [heisenberg_case_2]:
     # for case in [case_1, case_2]:
 
         h = case()
