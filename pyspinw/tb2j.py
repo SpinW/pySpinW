@@ -3,6 +3,11 @@ import pickle
 import numpy as np
 import ase
 import re
+from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.site import LatticeSite
+from pyspinw.exchange import Exchange, HeisenbergExchange
+from pyspinw.structures import Structure
+from pyspinw.hamiltonian import Hamiltonian
 
 CELL_EXPR = ''.join([r'Cell \(Angstrom\):\s*'] + [r'([\-\d\.]*)\s*']*9)
 ATOMS_EXPR = ''.join([r'^(\w*)\s*'] + [r'([\-\d\.]*)\s*']*7)
@@ -43,22 +48,21 @@ class TB2J_Input():
         self.atoms, syms, pos, magmoms = [], [], [], []
         for at in atoms_re:
             if at.group(5):
-                magmoms.append(list(map(float, at.groups()[5:8])) if at.group(8) else float(at.group(5)))
+                magmoms.append(list(map(float, at.groups()[6:9])) if at.group(8) else float(at.group(6)))
                 self.atoms.append(at.group(1))
                 syms.append(re.match(r'([A-Za-z]{1,2})', at.group(1)).group(1))
                 pos.append(tuple(map(float, at.groups()[1:4])))
         self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
         exch_txt = self.data.split('Exchange:')[1]
-        j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[6]), list(map(float, v[7:10]))] for v in re.findall(JPOS_EXPR, exch_txt)]
-        j_iso = np.array(list(map(float, re.findall(JISO_EXPR, exch_txt, re.MULTILINE))))
-        j_dmi = np.array([list(map(float, v)) for v in re.findall(JDMI_EXPR, exch_txt, re.MULTILINE)])
-        j_ani = np.array([np.array(list(map(float, v))).reshape(3,3) for v in re.findall(JANI_EXPR, exch_txt, re.MULTILINE)])
+        self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[6]), list(map(float, v[7:10]))] for v in re.findall(JPOS_EXPR, exch_txt)]
+        self.j_iso = np.array(list(map(float, re.findall(JISO_EXPR, exch_txt, re.MULTILINE))))
+        self.j_dmi = np.array([list(map(float, v)) for v in re.findall(JDMI_EXPR, exch_txt, re.MULTILINE)])
+        self.j_ani = np.array([np.array(list(map(float, v))).reshape(3,3) for v in re.findall(JANI_EXPR, exch_txt, re.MULTILINE)])
         if len(np.shape(magmoms)) > 1:
             self.noncolinear = True
-            if j_iso.shape[0] != j_dmi.shape[0] or j_iso.shape[0] != j_ani.shape[0]:
+            if self.j_iso.shape[0] != self.j_dmi.shape[0] or self.j_iso.shape[0] != self.j_ani.shape[0]:
                 raise RuntimeError("Inconsistent number of exchanges")
-        assert len(j_pos) == len(j_iso), "Inconsistent number of exchanges"
-        self.exchanges = {'j_pos':j_pos, 'j_iso':j_iso, 'j_dmi':j_dmi, 'j_ani':j_ani}
+        assert len(self.j_pos) == len(self.j_iso), "Inconsistent number of exchanges"
 
     def _parse_pickle(self, data):
         self.type, self.data = ('pickle', data)
@@ -70,12 +74,11 @@ class TB2J_Input():
         d_exch, d_dist = (self.data[k] for k in ['exchange_Jdict', 'distance_dict'])
         ord_k = [k for k, v in d_dist.items() if k in d_exch]
         ord_k = [ord_k[i] for i in np.argsort([v[1] for k, v in d_dist.items() if k in d_exch])]
-        j_pos = [[self.atoms[k[1]], self.atoms[k[2]], k[0], 1000*d_exch[k], d_dist[k][0], d_dist[k][1]] for k in ord_k]
-        j_iso, j_dmi, j_ani = ([1000*d_exch[k] for k in ord_k], [], [])
+        self.j_pos = [[self.atoms[k[1]], self.atoms[k[2]], k[0], 1000*d_exch[k], d_dist[k][0], d_dist[k][1]] for k in ord_k]
+        self.j_iso, self.j_dmi, self.j_ani = ([1000*d_exch[k] for k in ord_k], [], [])
         if self.noncolinear:
-            j_dmi = [1000*self.data['dmi_ddict'][k] for k in ord_k]
-            j_ani = [1000*self.data['Jani_dict'][k] for k in ord_k]
-        self.exchanges = {'j_pos':j_pos, 'j_iso':j_iso, 'j_dmi':j_dmi, 'j_ani':j_ani}
+            self.j_dmi = [1000*self.data['dmi_ddict'][k] for k in ord_k]
+            self.j_ani = [1000*self.data['Jani_dict'][k] for k in ord_k]
 
     @classmethod
     def from_exchange_out(cls, filename):
@@ -96,8 +99,27 @@ class TB2J_Input():
 
     def to_hamiltonian(self):
         """ Create a SpinW Hamiltonian object from the TB2J inputs """
-        pass
+        unitcell = UnitCell(*tuple(self.struct.get_cell().cellpar()))
+        pos, moms = (self.struct.arrays[k] for k in ['positions', 'initial_magmoms'])
+        if self.noncolinear:
+            sites = {n:LatticeSite(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
+            exchanges = []
+            for p, j, ani, dm in zip(self.j_pos, self.j_iso, self.j_ani, self.j_dmi):
+                exchanges.append(Exchange(sites[p[0]], sites[p[1]], p[2], np.eye(3) * j + ani))
+        else:
+            sites = {n:LatticeSite(p[0], p[1], p[2], 0, 0, m, name=n) for p, m, n in zip(pos, moms, self.atoms)}
+            exchanges = [HeisenbergExchange(sites[p[0]], sites[p[1]], j, p[2]) for p, j in zip(self.j_pos, self.j_iso)]
+        return Hamiltonian(Structure([sites[k] for k in self.atoms], unitcell), exchanges)
+
 
 if __name__ == '__main__':
     import sys
     sp = TB2J_Input(sys.argv[1])
+    hamiltonian = sp.to_hamiltonian()
+    hamiltonian.print_summary()
+    from pyspinw.path import Path
+    path = Path([[0,0,1], [0.5,0.5,1], [0.5,0.5,0.5], [1,1,0.5], [1,1,0]])
+    import matplotlib.pyplot as plt
+    fig = hamiltonian.spaghetti_plot(path, show=False, use_rotating=False)
+    plt.show()
+
