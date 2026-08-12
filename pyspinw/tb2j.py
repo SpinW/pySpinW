@@ -54,10 +54,11 @@ class TB2J_Input():
                 pos.append(tuple(map(float, at.groups()[1:4])))
         self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
         exch_txt = self.data.split('Exchange:')[1]
-        self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[6]), list(map(float, v[7:10]))] for v in re.findall(JPOS_EXPR, exch_txt)]
+        self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[5]), list(map(float, v[6:9]))] for v in re.findall(JPOS_EXPR, exch_txt)]
         self.j_iso = np.array(list(map(float, re.findall(JISO_EXPR, exch_txt, re.MULTILINE))))
         self.j_dmi = np.array([list(map(float, v)) for v in re.findall(JDMI_EXPR, exch_txt, re.MULTILINE)])
         self.j_ani = np.array([np.array(list(map(float, v))).reshape(3,3) for v in re.findall(JANI_EXPR, exch_txt, re.MULTILINE)])
+        self.noncolinear = False
         if len(np.shape(magmoms)) > 1:
             self.noncolinear = True
             if self.j_iso.shape[0] != self.j_dmi.shape[0] or self.j_iso.shape[0] != self.j_ani.shape[0]:
@@ -100,16 +101,27 @@ class TB2J_Input():
     def to_hamiltonian(self):
         """ Create a SpinW Hamiltonian object from the TB2J inputs """
         unitcell = UnitCell(*tuple(self.struct.get_cell().cellpar()))
-        pos, moms = (self.struct.arrays[k] for k in ['positions', 'initial_magmoms'])
+        # ASE and TB2J uses moments in uB; SpinW wants it as spin length S where mu = g*S
+        pos, moms = self.struct.get_scaled_positions(), self.struct.get_initial_magnetic_moments() / 2
+        vec = unitcell.cartesian_to_lattice_units(np.array([p[4] for p in self.j_pos]))
+        idx = {n:i for i, n in enumerate(self.atoms)}
+        ijvec = [tuple(map(int, np.floor((pos[idx[p[0]]] + dv)+0.01))) for p, dv in zip(self.j_pos, vec)]
+        mm = [np.linalg.norm(m) for m in moms]
+        # TB2J uses the convention that spins a normalised so a TB2J exchange = J*SiSJ - need scale this out
+        # TB2J also follows the opposite sign convention to SpinW so we have a negative here
+        jf = {f'{self.atoms[i1]}{self.atoms[i2]}':-mm[i1]*mm[i2] for i1 in range(3) for i2 in range(3)}
+        def _DM(dv):
+            return np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
         if self.noncolinear:
-            sites = {n:LatticeSite(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
+            s = {n:LatticeSite(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
             exchanges = []
-            for p, j, ani, dm in zip(self.j_pos, self.j_iso, self.j_ani, self.j_dmi):
-                exchanges.append(Exchange(sites[p[0]], sites[p[1]], p[2], np.eye(3) * j + ani))
+            for p, j, ani, dm, v in zip(self.j_pos, self.j_iso, self.j_ani, self.j_dmi, ijvec):
+                exchanges.append(Exchange(s[p[0]], s[p[1]], v, (np.eye(3) * j + ani + _DM(dm)) / jf[f'{p[0]}{p[1]}']))
         else:
-            sites = {n:LatticeSite(p[0], p[1], p[2], 0, 0, m, name=n) for p, m, n in zip(pos, moms, self.atoms)}
-            exchanges = [HeisenbergExchange(sites[p[0]], sites[p[1]], j, p[2]) for p, j in zip(self.j_pos, self.j_iso)]
-        return Hamiltonian(Structure([sites[k] for k in self.atoms], unitcell), exchanges)
+            s = {n:LatticeSite(p[0], p[1], p[2], 0, 0, m, name=n) for p, m, n in zip(pos, moms, self.atoms)}
+            exchanges = [HeisenbergExchange(s[p[0]], s[p[1]], j / jf[f'{p[0]}{p[1]}'], v)
+                         for p, j, v in zip(self.j_pos, self.j_iso, ijvec) if abs(j) > 0.1]
+        return Hamiltonian(Structure([s[k] for k in self.atoms], unitcell), exchanges)
 
 
 if __name__ == '__main__':
