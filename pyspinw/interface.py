@@ -18,6 +18,7 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
     TransformationSupercell, SummationSupercell, RotationSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
+from pyspinw.tb2j import TB2J_Input
 
 try:
     from pyspinw.gui.viewer import show_object
@@ -506,3 +507,6 @@ def matrix_anisotropies(
 def view(hamiltonian: Hamiltonian):
     """ Show the current Hamiltonian in the viewer"""
     show_object(hamiltonian)
+
+def load_tb2j(inputfile):
+    return TB2J_Input(inputfile).to_hamiltonian()
