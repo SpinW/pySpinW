@@ -509,4 +509,5 @@ def view(hamiltonian: Hamiltonian):
     show_object(hamiltonian)
 
 def load_tb2j(inputfile):
+    """ Loads a TB2J output file and converts to a SpinW Hamiltonian object """
     return TB2J_Input(inputfile).to_hamiltonian()

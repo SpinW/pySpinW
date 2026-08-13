@@ -39,11 +39,12 @@ class _coupling:
 
 
 class TB2J_Input:
+    """ Handles input from TB2J and conversion to Hamiltonian object """
 
     def __init__(self, filename=None):
         if filename is not None:
-            self.file = filename
-            if filename.endswith('pickle'):
+            self.file = str(filename)
+            if self.file.endswith('pickle'):
                 with open(filename, 'rb') as f:
                     self._parse_pickle(pickle.load(f))
             else:
@@ -66,10 +67,12 @@ class TB2J_Input:
                 pos.append(tuple(map(float, at.groups()[1:4])))
         self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
         exch_txt = self.data.split('Exchange:')[1]
-        self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[5]), list(map(float, v[6:9]))] for v in re.findall(JPOS_EXPR, exch_txt)]
+        self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[5]), list(map(float, v[6:9]))]
+                      for v in re.findall(JPOS_EXPR, exch_txt)]
         self.j_iso = np.array(list(map(float, re.findall(JISO_EXPR, exch_txt, re.MULTILINE))))
         self.j_dmi = np.array([list(map(float, v)) for v in re.findall(JDMI_EXPR, exch_txt, re.MULTILINE)])
-        self.j_ani = np.array([np.array(list(map(float, v))).reshape(3,3) for v in re.findall(JANI_EXPR, exch_txt, re.MULTILINE)])
+        self.j_ani = np.array([np.array(list(map(float, v))).reshape(3,3)
+                               for v in re.findall(JANI_EXPR, exch_txt, re.MULTILINE)])
         self.noncolinear = False
         if len(np.shape(magmoms)) > 1:
             self.noncolinear = True
@@ -87,7 +90,8 @@ class TB2J_Input:
         d_exch, d_dist = (self.data[k] for k in ['exchange_Jdict', 'distance_dict'])
         ord_k = [k for k, v in d_dist.items() if k in d_exch]
         ord_k = [ord_k[i] for i in np.argsort([v[1] for k, v in d_dist.items() if k in d_exch])]
-        self.j_pos = [[self.atoms[k[1]], self.atoms[k[2]], k[0], 1000*d_exch[k], d_dist[k][0], d_dist[k][1]] for k in ord_k]
+        self.j_pos = [[self.atoms[k[1]], self.atoms[k[2]], k[0], 1000*d_exch[k], d_dist[k][0], d_dist[k][1]]
+                      for k in ord_k]
         self.j_iso, self.j_dmi, self.j_ani = ([1000*d_exch[k] for k in ord_k], [], [])
         if self.noncolinear:
             self.j_dmi = [1000*self.data['dmi_ddict'][k] for k in ord_k]
@@ -128,7 +132,8 @@ class TB2J_Input:
         mm = [np.linalg.norm(m) for m in moms]
         jf = {f'{self.atoms[i1]}{self.atoms[i2]}':-mm[i1]*mm[i2] for i1 in range(3) for i2 in range(3)}
         # Now construct the Hamiltonian
-        _DM = lambda dv: np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
+        def _DM(dv):
+            return np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
         exchanges = []
         if self.noncolinear:
             s = {n:LatticeSite(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
