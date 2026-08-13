@@ -9,6 +9,8 @@ from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.structures import Structure
 from pyspinw.hamiltonian import Hamiltonian
 
+EXCH_TOL = 0.1    # Tolerance below which exchange values are considered zero
+
 CELL_EXPR = ''.join([r'Cell \(Angstrom\):\s*'] + [r'([\-\d\.]*)\s*']*9)
 ATOMS_EXPR = ''.join([r'^(\w*)\s*'] + [r'([\-\d\.]*)\s*']*7)
 JPOS_EXPR = r'----\s*\n\s*([A-Za-z0-9]*)\s*([A-Za-z0-9]*)\s*\(\s*([\-\d]*),\s*([\-\d]*),\s*([\-\d]*)\)' \
@@ -26,7 +28,17 @@ class _sym_index:
         self.syms[sym] = (self.syms[sym] + 1) if sym in self.syms else 1
         return sym + str(self.syms[sym])
 
-class TB2J_Input():
+
+class _coupling:
+    def __init__(self, s1, s2, icv):
+        self.s1, self.s2, self.icv = s1, s2, np.array(icv)
+    def __eq__(self, other):
+        return self.s1 == other.s1 and self.s2 == other.s2 and np.sum(np.abs(self.icv - other.icv)) < 1e-8
+    def __neg__(self):
+        return _coupling(self.s2, self.s1, -self.icv)
+
+
+class TB2J_Input:
 
     def __init__(self, filename=None):
         if filename is not None:
@@ -103,24 +115,35 @@ class TB2J_Input():
         unitcell = UnitCell(*tuple(self.struct.get_cell().cellpar()))
         # ASE and TB2J uses moments in uB; SpinW wants it as spin length S where mu = g*S
         pos, moms = self.struct.get_scaled_positions(), self.struct.get_initial_magnetic_moments() / 2
+        # Calculates the inter-cell vector from the inter-site vector given by TB2J
         vec = unitcell.cartesian_to_lattice_units(np.array([p[4] for p in self.j_pos]))
         idx = {n:i for i, n in enumerate(self.atoms)}
         ijvec = [tuple(map(int, np.floor((pos[idx[p[0]]] + dv)+0.01))) for p, dv in zip(self.j_pos, vec)]
-        mm = [np.linalg.norm(m) for m in moms]
+        # TB2J lists every pair i->j and j->i whereas SpinW implicitly calculates the reversed j->i
+        # so we need to remove these otherwise it will be double counted
+        couplings = [_coupling(p[0], p[1], ijv) for p, ijv in zip(self.j_pos, ijvec)]
+        idx = [i1 for i1, c1 in enumerate(couplings) for i2, c2 in enumerate(couplings[i1+1:]) if c1 == -c2]
+        print(idx)
         # TB2J uses the convention that spins a normalised so a TB2J exchange = J*SiSJ - need scale this out
         # TB2J also follows the opposite sign convention to SpinW so we have a negative here
+        mm = [np.linalg.norm(m) for m in moms]
         jf = {f'{self.atoms[i1]}{self.atoms[i2]}':-mm[i1]*mm[i2] for i1 in range(3) for i2 in range(3)}
-        def _DM(dv):
-            return np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
+        # Now construct the Hamiltonian
+        _DM = lambda dv: np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
+        exchanges = []
         if self.noncolinear:
             s = {n:LatticeSite(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
-            exchanges = []
-            for p, j, ani, dm, v in zip(self.j_pos, self.j_iso, self.j_ani, self.j_dmi, ijvec):
-                exchanges.append(Exchange(s[p[0]], s[p[1]], v, (np.eye(3) * j + ani + _DM(dm)) / jf[f'{p[0]}{p[1]}']))
+            for i in idx:
+                p, j, ani, dm, v = self.j_pos[i], self.j_iso[i], self.j_ani[i], self.j_dmi[i], ijvec[i]
+                exch_mat = np.eye(3) * j + ani + _DM(dm)
+                if np.linalg.norm(exch_mat) > EXCH_TOL:
+                    exchanges.append(Exchange(s[p[0]], s[p[1]], v, exch_mat / jf[f'{p[0]}{p[1]}']))
         else:
             s = {n:LatticeSite(p[0], p[1], p[2], 0, 0, m, name=n) for p, m, n in zip(pos, moms, self.atoms)}
-            exchanges = [HeisenbergExchange(s[p[0]], s[p[1]], j / jf[f'{p[0]}{p[1]}'], v)
-                         for p, j, v in zip(self.j_pos, self.j_iso, ijvec) if abs(j) > 0.1]
+            for i in idx:
+                p, j, v = self.j_pos[i], self.j_iso[i], ijvec[i]
+                if abs(j) > EXCH_TOL:
+                    exchanges.append(HeisenbergExchange(s[p[0]], s[p[1]], j / jf[f'{p[0]}{p[1]}'], v))
         return Hamiltonian(Structure([s[k] for k in self.atoms], unitcell), exchanges)
 
 
