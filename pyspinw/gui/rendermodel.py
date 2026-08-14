@@ -133,7 +133,7 @@ class RenderAnisotropy(Component):
                                unit_cell: UnitCell,
                                scale: float):
         """ Gets the model matrix for the anisotropy (see dev docs 'anisotropy_representions')"""
-        symmetrised = 0.5 * (anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+        symmetrised = -0.5 * (anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
 
         min_eig = np.min(np.linalg.eigvals(symmetrised))
 
