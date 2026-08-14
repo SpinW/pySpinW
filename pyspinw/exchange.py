@@ -168,6 +168,15 @@ class Exchange(SPWSerialisable):
             "metadata": self.metadata._serialise(context)
         }
 
+    def to_general(self):
+        """ Convert to most general Exchange class """
+        return Exchange(name=self.name,
+                        site_1=self.site_1,
+                        site_2=self.site_2,
+                        cell_offset=self.cell_offset,
+                        exchange_matrix=self.exchange_matrix,
+                        metadata=self.metadata)
+
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
     def updated(self,
                 site_1 :LatticeSite | None = None,
@@ -352,12 +361,17 @@ class Exchange(SPWSerialisable):
         else:
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
 
-    def symmetry_fill(self, structure: "Structure", include_original=False):
+    def symmetry_fill(self,
+                      structure: "Structure",
+                      include_original=False,
+                      specialisation_rounding_exponent: int | None = tolerances.EXCHANGE_SPECIALISE_ROUNDING_EXPONENT):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
         # Get the symmetry related sites
 
         if not self.obeys_symmetry(structure):
             raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
+
+        unit_cell: UnitCell = structure.unit_cell
 
         site_1_related = structure.symmetry_related(self.site_1)
         site_2_related = structure.symmetry_related(self.site_2)
@@ -381,17 +395,25 @@ class Exchange(SPWSerialisable):
             for operation in operations:
 
                 # Get the transformed matrix
-                op = operation.point_operation_in_cartesian(structure.unit_cell)
+                op = operation.point_operation_in_cartesian(unit_cell)
                 new_matrix = op @ self._exchange_matrix @ op.T
 
                 # Try to get the transformed cell offset
-                vector = self.lattice_vector
-                new_vector = operation.point_operation_matrix @ vector
 
-                new_in_cell_vector = site_2.ijk - site_1.ijk
+                # vector = self.lattice_vector
+                # new_vector = operation.point_operation_matrix @ vector
+                #
+                # new_in_cell_vector = site_2.ijk - site_1.ijk
+                #
+                # expected_cell_offset = new_vector - new_in_cell_vector
+                # cell_offset = CellOffset.coerce(expected_cell_offset)
 
-                expected_cell_offset = new_vector - new_in_cell_vector
-                cell_offset = CellOffset.coerce(expected_cell_offset)
+                # Get the cell offset by using the transformation in cartesian coordinates
+                cartesian_vector = op @ self.lattice_vector
+                site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
+                cell_offset_in_cartesian = cartesian_vector - site_difference
+                cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
+                cell_offset = CellOffset.coerce(cell_offset_vector)
 
                 name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
                 new_exchanges.append(Exchange(site_1, site_2,
@@ -442,8 +464,8 @@ class Exchange(SPWSerialisable):
         if not include_original:
             new_exchanges = new_exchanges[1:]
 
-        return [specialise_exchange(exchange) for exchange in new_exchanges]
-
+        return [specialise_exchange(exchange, rounding_exponent=specialisation_rounding_exponent)
+                for exchange in new_exchanges]
 
     @staticmethod
     def specialise(exchange: "Exchange") -> Optional["Exchange"]:
@@ -1339,11 +1361,47 @@ lowercase_exchange_lookup = {exchange.exchange_type.lower(): exchange for exchan
 
 _specialisation_search = [HeisenbergExchange, XYExchange,  XXZExchange, IsingExchange, DiagonalExchange, DMExchange]
 
-def specialise_exchange(exchange: Exchange):
+def specialise_exchange(exchange: Exchange, rounding_exponent: int | None = None):
     """ Find the narrowest exchange subclass to fit the exchange """
+
+    # We need to run this on rounded matrices to deal with numerical inaccuracies
+    # We could make specialisation method deal with this individually,
+    # but we can also just give the rounded matrix to the function.
+    #
+    # Ideally, we don't round, so if something specialises without rounding, we just
+    # return that, we can check this by doing both the unrounded and rounded version
+    # and returning the unrounded on if it has the same class as the rounded one
+    #
+    # If we don't allow rounding, i.e. rounding exponent = None, then we can just do
+    # one half of this and return the result
+
+    unrounded_specialised = exchange
+
+
     for Ex in _specialisation_search:
         specialised = Ex.specialise(exchange)
         if specialised is not None:
-            return specialised
+            unrounded_specialised = specialised
+            break
 
-    return exchange
+    # Return case for no rounding
+    if rounding_exponent is None:
+        return unrounded_specialised
+
+    # Get the rounded version
+    rounded_exchange = exchange.to_general().updated(
+        exchange_matrix=np.round(exchange.exchange_matrix, decimals=rounding_exponent))
+
+    rounded_specialised = rounded_exchange
+
+    for Ex in _specialisation_search:
+        specialised = Ex.specialise(rounded_exchange)
+        if specialised is not None:
+            rounded_specialised = specialised
+            break
+
+    # Return the unrounded one if the classes are the same, otherwise, return the rounded one
+    if rounded_specialised.__class__ == unrounded_specialised.__class__:
+        return unrounded_specialised
+    else:
+        return rounded_specialised

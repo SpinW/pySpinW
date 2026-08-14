@@ -7,8 +7,8 @@ from pyspinw import HeisenbergExchange
 from symmetry.symmetry_test_cases import heisenberg_case_1, heisenberg_case_2, heisenberg_cases
 
 q_points = np.concatenate((
-        np.linspace(-0.8, -0.2, 4),
-        np.linspace(0.2, 0.8, 4)))
+        np.linspace(-0.9, -0.1, 9),
+        np.linspace(0.1, 0.9, 9)))
 
 qx, qy, qz = np.meshgrid(q_points, q_points, q_points)
 
@@ -37,7 +37,7 @@ def test_tests_for_symmetry_filled_symmetric_exchange_cases(hamiltonian):
         for exchange in transformed_hamiltonian.exchanges:
             print(exchange.exchange_matrix)
 
-        print(np.max(np.abs(compare_energies - initial_energies)))
+        print(np.max(np.abs(np.array(compare_energies) - initial_energies)))
 
         all_not_failing = all_not_failing and np.allclose(initial_energies, compare_energies)
 
@@ -54,14 +54,23 @@ def test_hamiltonian_symmetry_operations_apply_correctly_to_symmetric_exchange_c
 
     for op in hamiltonian.structure.spacegroup:
         transform = op.point_operation_in_cartesian(hamiltonian.structure.unit_cell)
-        transformed_qs = (transform.T @ qs.T).T
+        transformed_qs = (transform @ qs.T).T
         transformed_hamiltonian = hamiltonian.symmetry_transformed(op)
 
         compare_energies, _ = transformed_hamiltonian._energies_and_intensities(transformed_qs, use_rotating=False)
 
-        close = np.allclose(initial_energies, compare_energies)
 
-        assert close, f"Failed on operation {op}"
+        # import matplotlib.pyplot as plt
+        # plt.plot(np.arange(len(qs)), initial_energies, color='k')
+        # plt.plot(np.arange(len(qs)), compare_energies, color='r')
+        # plt.show()
+
+
+        max_difference = np.max(np.abs(np.array(initial_energies) - compare_energies))
+
+        close = max_difference < 1e-12
+
+        assert close, f"Failed on operation {op}, max difference {max_difference}"
 
 
 @pytest.mark.parametrize("hamiltonian", heisenberg_cases)
@@ -95,7 +104,8 @@ def test_fill_symmetry_makes_heisenbergs_from_heisenbergs(hamiltonian):
 
     for exchange in filled.exchanges:
         assert isinstance(exchange, HeisenbergExchange), ("Heisenberg exchanges should transform to Heisenberg "
-                                                          f"exchanges, but got {exchange}")
+                                                          f"exchanges, but got {exchange} (exchange matrix is"
+                                                          f"{exchange.exchange_matrix})")
 
 
 

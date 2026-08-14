@@ -21,6 +21,7 @@ def heisenberg_case_1():
     ex1 = HeisenbergExchange(s1, s2, cell_offset=(0,0,0), j=-1)
     ex2 = HeisenbergExchange(s1, s2, cell_offset=(0,-1,0), j=-1)
 
+
     hamiltonian = Hamiltonian(structure, [ex1, ex2])
 
     return hamiltonian
@@ -31,16 +32,20 @@ def heisenberg_case_2():
     sg = spacegroup("p6mm")
 
     a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
-    b = LatticeSite(0.5, 0, 0, 0, 1, 0, name="b")
-    c = LatticeSite(0, 0.5, 0, 1, 0, 0, name="c")
+    b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")
+    c = LatticeSite(0, 0.2, 0, 0, 0, 1, name="c")
 
     structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
 
 
     exchanges = [
         HeisenbergExchange(a, b, cell_offset=(0, 0, 0), j=-1, name="ab"),
+        HeisenbergExchange(a, b, cell_offset=(0, -1, 0), j=-1, name="ab"),
         HeisenbergExchange(b, c, cell_offset=(0, 0, 0), j=-1, name="bc"),
-        HeisenbergExchange(c, a, cell_offset=(0, 0, 0), j=-1, name="ca"),
+        HeisenbergExchange(b, c, cell_offset=(1, 0, 0), j=-1, name="bc"),
+        HeisenbergExchange(c, a, cell_offset=(0, 1, 0), j=-1, name="ca"),
+        HeisenbergExchange(c, a, cell_offset=(0, 0, 1), j=-1, name="ca"),
+
     ]
 
     hamiltonian = Hamiltonian(structure, exchanges)
@@ -54,8 +59,7 @@ heisenberg_cases = [
 ]
 
 if __name__ == "__main__":
-    for case in [heisenberg_case_2]:
-    # for case in [case_1, case_2]:
+    for case in [heisenberg_case_1, heisenberg_case_2]:
 
         h = case()
 
