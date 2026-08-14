@@ -7,6 +7,7 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL import *
 from PySide6.QtWidgets import QApplication
 
+from pyspinw.gui.rendering.anisotropy_shader import AnisotropyShader
 from pyspinw.gui.buffers import IntegerBuffer
 from pyspinw.gui.camera import Camera
 from pyspinw.gui.rendermodel import RenderModel
@@ -34,6 +35,7 @@ _y_axis_mat = np.array([[1, 0, 0, 0], [0, 0, 1, .5], [0, -1, 0, 0], [0, 0, 0, 1]
 _x_axis_mat = np.array([[0, 0, 1, .5], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 
 _selection_size = 0.2
+_orthographic_axes_fixed_size = 3
 
 class CrystalViewerWidget(QOpenGLWidget):
     """ Qt widget to show magnetic crystal structures """
@@ -65,6 +67,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.camera = Camera()
 
         self.object_shader: ObjectShader | None = None
+        self.anisotropy_shader: AnisotropyShader | None = None
         self.selection_shader: SelectionShader | None = None
 
         # Set up antialiasing
@@ -108,6 +111,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.small_sphere = Sphere(3, 0.1)
             self.selection_small_sphere = Sphere(3, radius=0.1, padding=0.01)
+            self.anisotropy_sphere = Sphere(5, radius=0.1)
 
             self.tube = Tube()
             self.selection_tube = Tube(padding=0.2)
@@ -121,6 +125,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.object_shader = ObjectShader()
             self.selection_shader = SelectionShader()
             self.cell_shader = CellShader()
+            self.anisotropy_shader = AnisotropyShader()
 
             # shader for axes
             self.axes_shader = AxesShader()
@@ -183,6 +188,8 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.camera.position = tuple(camera_world)
         self.camera.up = tuple(up_world)
         self.camera.look_at = tuple(origin_world)
+        self.camera.orthographic = not self.display_options.perspective
+        self.fixed_size = None
 
         # # Camera debug things
         #
@@ -210,6 +217,10 @@ class CrystalViewerWidget(QOpenGLWidget):
 
         spin_scale = 2 * self.display_options.atom_spin_scaling
         spin_scale_matrix = np.diag([spin_scale, spin_scale, spin_scale, 1])
+
+
+        anisotropy_scale = 3 * self.display_options.anisotropy_scaling
+        anisotropy_scale_matrix = np.diag([anisotropy_scale, anisotropy_scale, anisotropy_scale, 1])
 
         exchange_scale = 0.1 * self.display_options.exchange_scaling
         exchange_scaling = np.diag([exchange_scale, exchange_scale, 1, 1])
@@ -270,6 +281,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                             self.object_shader.use()
                             render_object.render_triangles()
 
+
             # Exchanges
             if self.display_options.show_exchanges:
 
@@ -304,6 +316,31 @@ class CrystalViewerWidget(QOpenGLWidget):
                         self.object_shader.model_matrix = exchange_model_matrix
                         self.object_shader.use()
                         self.tube.render_triangles()
+
+            # Anisotropies
+
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+            if self.display_options.show_anisotropies:
+
+                self.anisotropy_shader.camera = self.camera
+                self.anisotropy_shader.object_color = self.display_options.anisotropy_color
+
+                # As we're using the alpha channel, we need to make sure we order from back to front
+                camera_vector = np.array(self.camera.position) - np.array(self.camera.look_at)
+
+                sorted_anisotropies = sorted(self.render_model.anisotropies,
+                                             key=lambda aniso: np.dot(aniso.xyz, camera_vector))
+
+                for anisotropy in sorted_anisotropies:
+
+                    for model_matrix in anisotropy.model_matrices(self.display_options.prettify):
+                        anisotropy_model_matrix = model_matrix @ anisotropy_scale_matrix
+
+                        self.anisotropy_shader.model_matrix = anisotropy_model_matrix
+                        self.anisotropy_shader.use()
+                        self.anisotropy_sphere.render_triangles()
 
 
 
@@ -340,6 +377,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         #
 
         if self.display_options.show_cartesian_axes:
+            self.camera.fixed_size = _orthographic_axes_fixed_size
 
             # Save state
             saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
@@ -384,6 +422,7 @@ class CrystalViewerWidget(QOpenGLWidget):
         #
 
         if self.display_options.show_lattice_axes:
+            self.camera.fixed_size = _orthographic_axes_fixed_size
 
             # Save state
             saved_depth_test = glIsEnabled(GL_DEPTH_TEST)
@@ -433,6 +472,8 @@ class CrystalViewerWidget(QOpenGLWidget):
         #
         # ID framebuffer
         #
+
+        self.camera.fixed_size = None
 
         self.id_framebuffer.use(
             int(self.width()*dpr),

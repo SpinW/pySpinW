@@ -22,10 +22,13 @@ class DisplayOptions:
 
     atom_spin_scaling: float = 0.35
     exchange_scaling: float = 0.20
+    anisotropy_scaling: float = 0.35
 
     show_cartesian_axes: bool = True
     show_lattice_axes: bool = False
     orthogonal_lattice_axes: bool = False
+
+    perspective: bool = True
 
     background_color: tuple[float, float, float] = 0.05, 0.05, 0.08
     default_exchange_color: tuple[float, float, float] = 0.2, 0.4, 0.8
@@ -34,6 +37,8 @@ class DisplayOptions:
     selected_color: tuple[float, float, float] = 1.0, 0.6, 0.1
     hover_color: tuple[float, float, float] = 1.0, 1.0, 1.0
     selected_hover_color: tuple[float, float, float] = 1.0, 0.8, 0.1
+
+    anisotropy_color: tuple[float, float, float] = 0.2, 0.5, 1.0
 
     def serialise(self) -> str:
         """ Serialise settings object to a string"""

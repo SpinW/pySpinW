@@ -42,7 +42,7 @@ class Anisotropy(SPWSerialisable):
     #: Names of scalar fields that can be varied by parameter definitions.
     scalar_parameters = []
 
-    @check_sizes(anisotropy_matrix=(3, 3))
+    @check_sizes(anisotropy_matrix=(3, 3), force_numpy=True)
     def __init__(self, site: LatticeSite, anisotropy_matrix: ArrayLike):
         self._site = site
         self._anisotropy_matrix = np.array(anisotropy_matrix)

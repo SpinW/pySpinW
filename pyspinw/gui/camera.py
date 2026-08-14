@@ -12,7 +12,8 @@ class Camera:
         up: tuple[float, float, float] = (0,0,1),
         fov_deg: float = 50.0,
         horizontal_pixels: int = 800,
-        vertical_pixels: int = 600):
+        vertical_pixels: int = 600,
+        orthographic=True):
 
         self.position = position
         self.look_at = look_at
@@ -20,14 +21,34 @@ class Camera:
         self.fov_deg = fov_deg
         self.horizontal_pixels = horizontal_pixels
         self.vertical_pixels = vertical_pixels
+        self.orthographic = orthographic
+        self.fixed_size: float | None = None
 
     @property
     def aspect_ratio(self) -> float:
-        """ Aspect ration of this camera """
+        """ Aspect ratio of this camera """
         return self.horizontal_pixels / self.vertical_pixels
 
+    @property
+    def distance(self) -> float:
+        """ Distance from camera to view origin """
+        return float(np.sqrt(np.sum((np.array(self.position) - np.array(self.look_at))**2)))
+
+    def projection_matrix(self, near: float = 0.01, far: float = 100):
+        """ Get the projection matrix (orthographic/perspective based on options)
+
+        :param near: near clipping plane distance
+        :param far: far clipping plane distance
+
+        :return: 4x4 float32 frustum matrix
+        """
+        if self.orthographic:
+            return self.orthographic_matrix(near, far)
+        else:
+            return self.perspective_matrix(near, far)
+
     def perspective_matrix(self, near: float = 0.01, far: float = 100):
-        """ Get the perspective/projection matrix for GL
+        """ Get the perspective projection matrix for GL
 
         :param near: near clipping plane distance
         :param far: far clipping plane distance
@@ -44,6 +65,28 @@ class Camera:
         m[3, 2] = -1
 
         return m
+
+    def orthographic_matrix(self, near: float = 0.01, far: float = 100):
+        """ Get the orthographic projection matrix for GL
+
+        :param near: near clipping plane distance
+        :param far: far clipping plane distance
+
+        :return: 4x4 float32 frustum matrix
+        """
+        if self.fixed_size is None:
+            height = 2.0 * self.distance * np.tan(np.radians(self.fov_deg) / 2)
+        else:
+            height = self.fixed_size
+
+        width = height * self.aspect_ratio
+
+        return np.array([
+            [2/width, 0, 0, 0],
+            [0, 2/height, 0, 0],
+            [0, 0, 2/(near-far), (near+far)/(near-far)],
+            [0, 0, 0, 1]
+        ], dtype=np.float32)
 
     def view_matrix(self):
         """Transform from world position to camera relative """
