@@ -39,6 +39,7 @@ class Structure(SPWSerialisable):
         self._supercell = TiledSupercell() if supercell is None else supercell
 
         self._sites: list[LatticeSite] = self._extended_sites()
+        self._site_lookup = {site.unique_id: site for site in self._sites} # Cache a map
 
         if not skip_checks:
 

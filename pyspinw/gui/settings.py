@@ -47,6 +47,12 @@ class SettingsDialog(QDialog):
         inner_layout.addWidget(QRightLabel("Selected Hover Color"), 5, 0)
         inner_layout.addWidget(self._selected_hover, 5, 1)
 
+        # Anisotropy colours
+
+        self._anisotropies = QColorPatch(*current_options.anisotropy_color, parent=self)
+        inner_layout.addWidget(QRightLabel("Anisotropies"), 6, 0)
+        inner_layout.addWidget(self._anisotropies, 6, 1)
+
         # Add inner widget
         layout.addWidget(inner_widget)
 
@@ -70,7 +76,8 @@ class SettingsDialog(QDialog):
             default_site_color = self._sites.rgb,
             selected_color = self._selected.rgb,
             hover_color = self._hover.rgb,
-            selected_hover_color = self._selected_hover.rgb)
+            selected_hover_color = self._selected_hover.rgb,
+            anisotropy_color=self._anisotropies.rgb)
 
 
 if __name__ == "__main__":

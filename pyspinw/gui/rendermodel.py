@@ -125,10 +125,55 @@ class RenderAnisotropy(Component):
 
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
-    def __init__(self, anisotropy: Anisotropy):
+    _epsilon = 0.02
+
+    @staticmethod
+    def calculate_model_matrix(position,
+                               anisotropy: Anisotropy,
+                               unit_cell: UnitCell,
+                               scale: float):
+        """ Gets the model matrix for the anisotropy (see dev docs 'anisotropy_representions')"""
+        symmetrised = -0.5 * (anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+
+        min_eig = np.min(np.linalg.eigvals(symmetrised))
+
+        ellipsoid = (RenderAnisotropy._epsilon * np.eye(3)) - (min_eig * np.eye(3) - symmetrised)/scale
+
+        # Turn the quadratic coefficients into a transformation
+        translation = unit_cell.lattice_units_to_cartesian(position)
+        rotation = np.linalg.cholesky(ellipsoid)
+
+        model_matrix = np.zeros((4, 4), dtype=np.float32)
+        model_matrix[3,3] = 1.0
+        model_matrix[:3, :3] = rotation
+        model_matrix[:3, 3] = translation
+
+        return model_matrix
+
+
+    def __init__(self, anisotropy: Anisotropy, unit_cell: UnitCell, scale: float):
+
 
         super().__init__(np.eye(4))
         self.anisotropy = anisotropy
+        self.site = anisotropy.site
+        self.xyz = unit_cell.lattice_units_to_cartesian(anisotropy.site.ijk)
+
+        self.pretty_render_model_matrices = [self.calculate_model_matrix(
+                                                new_position, anisotropy, unit_cell, scale)
+                                                for new_position in add_extra_edge_points(anisotropy.site.ijk)]
+
+        # Matrix to convert
+        self.model_matrix = self.calculate_model_matrix(
+            anisotropy.site.ijk, anisotropy, unit_cell, scale)
+
+
+    def model_matrices(self, pretty: bool) -> list[np.ndarray]:
+        """ Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries """
+        if pretty:
+            return self.pretty_render_model_matrices
+        else:
+            return [self.model_matrix]
 
 class RenderModel:
     """ Model of the hamiltonian, contains lots of derived information for rendering and text representation"""
@@ -202,8 +247,24 @@ class RenderModel:
             render_id += 1
 
         self.anisotropies = []
+
+        # We want to calculate the range of eigenvalues that we have, including zero in that
+        scale = 0.0
         for anisotropy in self.expanded.anisotropies:
-            render_anisotropy = RenderAnisotropy(anisotropy)
+            symmetrized = 0.5*(anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+            eigenvalues = np.linalg.eigvals(symmetrized)
+            smallest = np.min(eigenvalues)
+            largest = np.max(eigenvalues)
+
+            new_scale = largest - smallest
+
+            if scale < new_scale:
+                scale = new_scale
+
+
+
+        for anisotropy in self.expanded.anisotropies:
+            render_anisotropy = RenderAnisotropy(anisotropy, self.expanded.structure.unit_cell, scale)
             self.anisotropies.append(render_anisotropy)
             self.render_map[render_id] = render_anisotropy
             render_id += 1
