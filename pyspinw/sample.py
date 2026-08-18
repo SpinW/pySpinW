@@ -406,9 +406,6 @@ class ParameterizedPowderSpectrum:
                  find_ground_state_with: dict | None=None,
                  ignore_imaginary: bool = False):
 
-        self._powder = Powder
-        self._parameters = parameters
-
         self._path = path
         self._n_samples = n_samples
         self._method = method

@@ -34,6 +34,8 @@ class Anisotropy(SPWSerialisable):
         Lattice site to which the anisotropy term applies.
     anisotropy_matrix
         3x3 matrix defining the anisotropy contribution for the site.
+    name
+        Optional name
     """
 
     #: Type name used when serialising anisotropy terms to SPW data.
@@ -43,10 +45,11 @@ class Anisotropy(SPWSerialisable):
     scalar_parameters = []
 
     @check_sizes(anisotropy_matrix=(3, 3), force_numpy=True)
-    def __init__(self, site: LatticeSite, anisotropy_matrix: ArrayLike):
+    def __init__(self, site: LatticeSite, anisotropy_matrix: ArrayLike, name: str = ""):
         self._site = site
         self._anisotropy_matrix = np.array(anisotropy_matrix)
         self._unique_id = _generate_unique_anisotropy_id()
+        self._name = name
 
     @property
     def unique_id(self):
@@ -67,13 +70,15 @@ class Anisotropy(SPWSerialisable):
             return self._anisotropy_matrix
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
-        return {"site": self._site._serialise(context), "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix)}
+        return {"site": self._site._serialise(context),
+                "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix),
+                "name": self._name}
 
     @staticmethod
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         site = LatticeSite._deserialise(json["site"], context)
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
-        return Anisotropy(site, anisotropy_matrix)
+        return Anisotropy(site, anisotropy_matrix, json["name"])
 
     @property
     def parameter_string(self):
@@ -81,10 +86,15 @@ class Anisotropy(SPWSerialisable):
         m = self.anisotropy_matrix.reshape(-1)
         return f"[[{m[0]}, {m[1]}, {m[2]}], [{m[3]}, {m[4]}, {m[5]}], [{m[6]}, {m[7]}, {m[8]}]]"
 
-    def __repr__(self):
-        return f"Anisotropy({self.site.name}, {self.parameter_string})"
+    @property
+    def name(self):
+        """Name of this anisotropy"""
+        return self._name
 
-    def updated(self, site: LatticeSite | None = None, anisotropy_matrix: ArrayLike | None = None):
+    def __repr__(self):
+        return f"{self.__class__.__name__}('{self.name}', {self.site.name}, {self.parameter_string})"
+
+    def updated(self, site: LatticeSite | None = None, anisotropy_matrix: ArrayLike | None = None, name: str = ""):
         """Return a copy of this anisotropy term with variables replaced.
 
         Parameters
@@ -93,10 +103,13 @@ class Anisotropy(SPWSerialisable):
             Replacement lattice site. If omitted, the current site is reused.
         anisotropy_matrix
             Replacement anisotropy matrix. If omitted, the current matrix is reused.
+        name
+            Optional name. If omitted, current name is reused.
         """
         return Anisotropy(
             site=self.site if site is None else site,
             anisotropy_matrix=self.anisotropy_matrix if anisotropy_matrix is None else np.array(anisotropy_matrix),
+            name=self.name if name is None else name,
         )
 
 
@@ -111,13 +124,19 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         Anisotropy constant.
     direction
         Principal anisotropy direction. The vector is normalized before use.
+    name
+        Optional name.
     """
 
     #: Names of scalar fields that can be varied by parameter definitions.
     scalar_parameters = ["a"]
 
     @check_sizes(direction=(3,), force_numpy=True)
-    def __init__(self, site: LatticeSite, a: float, direction: ArrayLike = np.array([0, 0, 1])):
+    def __init__(self,
+                 site: LatticeSite,
+                 a: float,
+                 direction: ArrayLike = np.array([0, 0, 1]),
+                 name: str = ""):
         direction = np.array(direction)
         mag = np.sqrt(np.sum(direction**2))
 
@@ -128,7 +147,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
         anisotropy_matrix = a * direction.reshape(3, 1) * direction.reshape(1, 3)
 
-        super().__init__(site, anisotropy_matrix)
+        super().__init__(site, anisotropy_matrix, name)
         self._a = a
 
     @property
@@ -151,14 +170,12 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         """A string representation of the parameters."""
         return f"a={self.constant}, axis={self.direction}"
 
-    def __repr__(self):
-        return f"Anisotropy({self.site.name}, {self.parameter_string})"
-
     def _serialise(self, context: SPWSerialisationContext):
         return {
             "site": self._site._serialise(context),
             "direction": numpy_serialise(self._direction),
             "a": float(self._a),
+            "name": self._name,
         }
 
     @staticmethod
@@ -167,9 +184,13 @@ class AxisMagnitudeAnisotropy(Anisotropy):
             LatticeSite._deserialise(json["site"], context),
             json["a"],
             numpy_deserialise(json["direction"]),
+            json["name"],
         )
 
-    def updated(self, site: LatticeSite | None = None, a: float | None = None, direction: ArrayLike | None = None):
+    def updated(self, site: LatticeSite | None = None,
+                a: float | None = None,
+                direction: ArrayLike | None = None,
+                name: str | None = None):
         """Return a copy of this anisotropy term with variables replaced.
 
         Parameters
@@ -180,9 +201,12 @@ class AxisMagnitudeAnisotropy(Anisotropy):
             Replacement anisotropy constant. If omitted, the current constant is reused.
         direction
             Replacement principal anisotropy direction. If omitted, the current direction is reused.
+        name
+            Optional name. If omitted, current name is reused.
         """
         return AxisMagnitudeAnisotropy(
             site=self.site if site is None else site,
             a=self.a if a is None else a,
             direction=self.direction if direction is None else np.array(direction),
+            name=self.name if name is None else name,
         )
