@@ -469,6 +469,10 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
         else:
             used_parameters[parameter] = default
 
+    # Adds extra parameters
+    if color is not None:
+        used_parameters['color'] = color
+
     group = ExchangeGroup(
         name = "<unnamed group>",
         bond = bond,
