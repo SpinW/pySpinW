@@ -554,7 +554,7 @@ class Powder(Sample1D):
                       energy_stddev: float | None = None,
                       random_seed: int | None = None,
                       scaling_method: ScalingMethod | str = 'linear',
-                      show_plot: bool = True,
+                      show: bool = True,
                       new_figure: bool = True,
                       use_rust: bool = True):
         """ Show the powder spectrum """
@@ -580,17 +580,19 @@ class Powder(Sample1D):
         import matplotlib.pyplot as plt
 
         if new_figure:
-            plt.figure("Powder Spectrum")
+            fig, ax = plt.subplots(num="Powder Spectrum")
+        else:
+            fig, ax = plt.gcf(), plt.gca()
 
-        ax = plt.gca()
-
-        plt.imshow(data.T[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
-        plt.xlabel(r"$|q| (\AA^{-1})$")
-        plt.ylabel("Energy (meV)")
+        ax.imshow(data.T[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
+        ax.set_xlabel(r"$|q| (\AA^{-1})$")
+        ax.set_ylabel("Energy (meV)")
         ax.set_aspect(0.2)
 
-        if show_plot:
+        if show:
             plt.show()
+        else:
+            return fig
 
 
 
