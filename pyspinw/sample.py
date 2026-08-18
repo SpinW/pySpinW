@@ -470,7 +470,7 @@ class Powder(Sample1D):
 
         intensities = np.real(np.array(intensities))
         if ignore_imaginary:
-            i_imag = np.where(np.abs(np.imag(energies)) > tolerances.IMAG_MODE_TOL)[0]
+            i_imag = np.where(np.abs(np.imag(energies)) > tolerances.IMAG_MODE_TOL)
             intensities[i_imag] = 0
         energies = np.real(np.array(energies))
 
@@ -551,7 +551,7 @@ class Powder(Sample1D):
                         ignore_imaginary=ignore_imaginary)
 
     def show_spectrum(self,
-                      path: Path1D | EmpiricalPath1D | ArrayLike,
+                      path: Path1D | EmpiricalPath1D | ArrayLike | tuple,
                       n_samples: int = 100,
                       method: SphericalPointGeneratorType | str = "fibonacci",
                       min_energy: float | None = None,
@@ -563,14 +563,19 @@ class Powder(Sample1D):
                       show: bool = True,
                       new_figure: bool = True,
                       use_rust: bool = True,
+                      data: ArrayLike | None = None,
                       ignore_imaginary: bool = False):
         """ Show the powder spectrum """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
-        q, e, data = self.spectrum(path, n_samples, method,
-                                   min_energy, max_energy, n_energy_bins, energy_stddev,
-                                   random_seed, use_rust, ignore_imaginary)
+        if data is None or min_energy is None or max_energy is None:
+            q, e, data = self.spectrum(path, n_samples, method,
+                                       min_energy, max_energy, n_energy_bins, energy_stddev,
+                                       random_seed, use_rust, ignore_imaginary)
+        else:
+            n_energy_bins = n_samples // 4 if n_energy_bins is None else n_energy_bins
+            q, e = path.q_values(), np.linspace(min_energy, max_energy, n_energy_bins + 1)
 
         if isinstance(scaling_method, str):
             scaling_method = ScalingMethod(scaling_method)
