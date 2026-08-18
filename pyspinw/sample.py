@@ -403,7 +403,8 @@ class ParameterizedPowderSpectrum:
                  energy_stddev: float | None = None,
                  random_seed: int | None = None,
                  use_rust: bool = True,
-                 find_ground_state_with: dict | None=None):
+                 find_ground_state_with: dict | None=None,
+                 ignore_imaginary: bool = False):
 
         self._powder = Powder
         self._parameters = parameters
@@ -418,6 +419,7 @@ class ParameterizedPowderSpectrum:
         self._random_seed = random_seed
         self._use_rust = use_rust
         self._find_ground_state_with = find_ground_state_with
+        self._ignore_imaginary = ignore_imaginary
 
         self.parameterised_hamiltonian = powder.hamiltonian.parameterize(
                                 *parameters,
@@ -435,7 +437,8 @@ class ParameterizedPowderSpectrum:
             n_energy_bins=self._n_energy_bins,
             energy_stddev=self._energy_stddev,
             random_seed=self._random_seed,
-            use_rust=self._use_rust)[2]
+            use_rust=self._use_rust,
+            ignore_imaginary=self._ignore_imaginary)[2]
 
 
 class Powder(Sample1D):
@@ -454,7 +457,8 @@ class Powder(Sample1D):
                  n_energy_bins: int | None = None,
                  energy_stddev: float | None = None,
                  random_seed: int | None = None,
-                 use_rust: bool = True):
+                 use_rust: bool = True,
+                 ignore_imaginary: bool = False):
         """ Get the powder spectrum """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
@@ -467,8 +471,11 @@ class Powder(Sample1D):
 
         energies, intensities = self.hamiltonian._energies_and_intensities(points, use_rust=use_rust)
 
-        energies = np.real(np.array(energies))
         intensities = np.real(np.array(intensities))
+        if ignore_imaginary:
+            i_imag = np.where(np.abs(np.imag(energies)) > tolerances.IMAG_MODE_TOL)[0]
+            intensities[i_imag] = 0
+        energies = np.real(np.array(energies))
 
         positive_energies = energies > 0
 
@@ -528,7 +535,8 @@ class Powder(Sample1D):
             energy_stddev: float | None = None,
             random_seed: int | None = None,
             use_rust: bool = True,
-            find_ground_state_with: dict | None = None):
+            find_ground_state_with: dict | None = None,
+            ignore_imaginary: bool = False):
         """ Get the powder spectrum as a function of parameters """
         return ParameterizedPowderSpectrum(
                         self,
@@ -542,7 +550,8 @@ class Powder(Sample1D):
                         energy_stddev=energy_stddev,
                         random_seed=random_seed,
                         use_rust=use_rust,
-                        find_ground_state_with=find_ground_state_with)
+                        find_ground_state_with=find_ground_state_with,
+                        ignore_imaginary=ignore_imaginary)
 
     def show_spectrum(self,
                       path: Path1D | EmpiricalPath1D | ArrayLike,
@@ -556,14 +565,15 @@ class Powder(Sample1D):
                       scaling_method: ScalingMethod | str = 'linear',
                       show: bool = True,
                       new_figure: bool = True,
-                      use_rust: bool = True):
+                      use_rust: bool = True,
+                      ignore_imaginary: bool = False):
         """ Show the powder spectrum """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
         q, e, data = self.spectrum(path, n_samples, method,
                                    min_energy, max_energy, n_energy_bins, energy_stddev,
-                                   random_seed, use_rust)
+                                   random_seed, use_rust, ignore_imaginary)
 
         if isinstance(scaling_method, str):
             scaling_method = ScalingMethod(scaling_method)
