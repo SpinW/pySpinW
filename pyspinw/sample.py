@@ -591,7 +591,10 @@ class Powder(Sample1D):
         import matplotlib.pyplot as plt
 
         if new_figure:
-            fig, ax = plt.subplots(num="Powder Spectrum")
+            if plt.fignum_exists("Powder Spectrum"):
+                fig, ax = plt.subplots()
+            else:
+                fig, ax = plt.subplots(num="Powder Spectrum")
         else:
             fig, ax = plt.gcf(), plt.gca()
 
