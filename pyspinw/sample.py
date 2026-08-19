@@ -517,7 +517,7 @@ class Powder(Sample1D):
                     binned += (intensity_value * normalisation_factor) * gaussian
 
 
-            output[i, :] = binned
+            output[i, :] = binned / chunk_size
 
         return path.q_values(), energy_bin_centres, output
 
@@ -574,8 +574,7 @@ class Powder(Sample1D):
                                        min_energy, max_energy, n_energy_bins, energy_stddev,
                                        random_seed, use_rust, ignore_imaginary)
         else:
-            n_energy_bins = n_samples // 4 if n_energy_bins is None else n_energy_bins
-            q, e = path.q_values(), np.linspace(min_energy, max_energy, n_energy_bins + 1)
+            q, e = path.q_values(), np.linspace(min_energy, max_energy, data.shape[1])
 
         if isinstance(scaling_method, str):
             scaling_method = ScalingMethod(scaling_method)
@@ -596,7 +595,7 @@ class Powder(Sample1D):
         else:
             fig, ax = plt.gcf(), plt.gca()
 
-        ax.imshow(data.T[::-1, :], extent=(q[0], q[-1], e[0], e[-1]))
+        ax.pcolormesh(q, e, data.T, shading='nearest')
         ax.set_xlabel(r"$|q| (\AA^{-1})$")
         ax.set_ylabel("Energy (meV)")
         ax.set_aspect(0.2)
