@@ -438,6 +438,20 @@ class ParameterizedPowderSpectrum:
             ignore_imaginary=self._ignore_imaginary)[2]
 
 
+def _sanitize(arr, clip_pct=99.9, nonneg=True):
+    """Clip outliers and ensure non-negative values"""
+    a = np.asarray(arr, dtype=np.float64)
+    finite = np.isfinite(a)
+    if not finite.all():
+        a = np.where(finite, a, 0.0)
+    if nonneg:
+        a = np.maximum(a, 0.0)
+    hi = np.percentile(a, clip_pct)
+    if hi > 0:
+        a = np.clip(a, None, hi)
+    return a
+
+
 class Powder(Sample1D):
     """Sample is a powder"""
 
@@ -455,15 +469,36 @@ class Powder(Sample1D):
                  energy_stddev: float | None = None,
                  random_seed: int | None = None,
                  use_rust: bool = True,
-                 ignore_imaginary: bool = False):
+                 ignore_imaginary: bool = False,
+                 use_neural: bool = False):
         """ Get the powder spectrum """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
         generator = point_generator(method)(n_samples, seed = random_seed)
 
+        if use_neural:
+            try:
+                import onnxruntime as ort
+                import scipy.ndimage
+            except ModuleNotFoundError:
+                use_neural = False
+            else:
+                from os.path import dirname, join
+                netdir = join(dirname(__file__), 'neuralnets')
+                ort_session = ort.InferenceSession(join(netdir, 'unet.onnx'))
+                metadata = np.load(join(netdir, 'unet_metadata.npy'), allow_pickle=True)
+                in_sz, out_sz, npts, sy_offset, sy_scale, sx_min, sx_max = tuple(metadata)
+
         chunk_size = generator.actual_n_points
         qs = path.q_values()
+        if use_neural:
+            if len(qs) < out_sz[0]:
+                use_neural = False
+                print('Not enough |Q| point to be worth running inference')
+            else:
+                qs = np.linspace(np.min(qs), np.max(qs), in_sz[0])
+                orig_n_energy_bins, n_energy_bins = n_energy_bins, in_sz[1]
         points = np.concatenate([generator.points*q for q in qs], axis=0)
 
         energies, intensities = self.hamiltonian._energies_and_intensities(points, use_rust=use_rust)
@@ -486,7 +521,7 @@ class Powder(Sample1D):
         energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
 
         # Output map
-        output = np.zeros((path.n_points, n_energy_bins))
+        output = np.zeros((len(qs), n_energy_bins))
 
         if energy_stddev is not None:
             # Gausian scaling
@@ -495,7 +530,7 @@ class Powder(Sample1D):
             normalisation_factor = 1.0 / np.sqrt(2*np.pi*(energy_stddev**2))
 
         # at each q, bin the energies with weights of the intensities, but ignore the negative ones
-        for i, q in enumerate(path.q_values()):
+        for i, q in enumerate(qs):
 
             # Get the part of the data that's relevant
             energy = energies[i*chunk_size:(i+1)*chunk_size]
@@ -519,7 +554,23 @@ class Powder(Sample1D):
 
             output[i, :] = binned / chunk_size
 
-        return path.q_values(), energy_bin_centres, output
+        if use_neural:
+            print('Running neural network inference')
+            zc = np.log1p(_sanitize(output, clip_pct=99.9, nonneg=True)).reshape(1, -1)
+            # Normalize to [0,1] using training stats
+            zc_scaled = (zc - sx_min) / (sx_max - sx_min + 1e-12)
+            x = zc_scaled.reshape(1, 1, in_sz[0], in_sz[1])
+            base = scipy.ndimage.zoom(np.squeeze(x), (out_sz[0] / in_sz[0], out_sz[1] / in_sz[1]), order=1)
+            res = ort_session.run(None, {'x':x.astype(np.float32)})
+            y_scaled = (base + np.squeeze(res).astype(np.float64)).clip(0.0, 1.0)
+            y_unscaled = (y_scaled.reshape(1, -1) - sy_offset) / sy_scale
+            y_pred = np.expm1(y_unscaled).reshape(*out_sz)
+            energy_bin_edges = np.linspace(min_energy, max_energy, orig_n_energy_bins + 1)
+            energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
+            qs = path.q_values()
+            output = scipy.ndimage.zoom(y_pred, (len(qs) / out_sz[0], orig_n_energy_bins / out_sz[1]), order=1)
+
+        return qs, energy_bin_centres, output
 
     def parameterized_spectrum(self,
             parameters: Sequence[ParametrizationType],
@@ -564,7 +615,8 @@ class Powder(Sample1D):
                       new_figure: bool = True,
                       use_rust: bool = True,
                       data: ArrayLike | None = None,
-                      ignore_imaginary: bool = False):
+                      ignore_imaginary: bool = False,
+                      use_neural: bool = False):
         """ Show the powder spectrum """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
@@ -572,7 +624,7 @@ class Powder(Sample1D):
         if data is None or min_energy is None or max_energy is None:
             q, e, data = self.spectrum(path, n_samples, method,
                                        min_energy, max_energy, n_energy_bins, energy_stddev,
-                                       random_seed, use_rust, ignore_imaginary)
+                                       random_seed, use_rust, ignore_imaginary, use_neural)
         else:
             q, e = path.q_values(), np.linspace(min_energy, max_energy, data.shape[1])
 
