@@ -369,7 +369,7 @@ class Exchange(SPWSerialisable):
         # Get the symmetry related sites
 
         if not self.obeys_symmetry(structure):
-            raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
+            raise ValueError(f"{self} does not obey symmetry constraints of {structure.spacegroup}, cannot use symmetry to copy")
 
         unit_cell: UnitCell = structure.unit_cell
 
@@ -400,20 +400,20 @@ class Exchange(SPWSerialisable):
 
                 # Try to get the transformed cell offset
 
-                # vector = self.lattice_vector
-                # new_vector = operation.point_operation_matrix @ vector
-                #
-                # new_in_cell_vector = site_2.ijk - site_1.ijk
-                #
-                # expected_cell_offset = new_vector - new_in_cell_vector
-                # cell_offset = CellOffset.coerce(expected_cell_offset)
+                vector = self.lattice_vector
+                new_vector = operation.point_operation_matrix @ vector
 
-                # Get the cell offset by using the transformation in cartesian coordinates
-                cartesian_vector = op @ self.lattice_vector
-                site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
-                cell_offset_in_cartesian = cartesian_vector - site_difference
-                cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
-                cell_offset = CellOffset.coerce(cell_offset_vector)
+                new_in_cell_vector = site_2.ijk - site_1.ijk
+
+                expected_cell_offset = new_vector - new_in_cell_vector
+                cell_offset = CellOffset.coerce(expected_cell_offset)
+
+                # # Get the cell offset by using the transformation in cartesian coordinates
+                # cartesian_vector = op @ self.lattice_vector
+                # site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
+                # cell_offset_in_cartesian = cartesian_vector - site_difference
+                # cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
+                # cell_offset = CellOffset.coerce(cell_offset_vector)
 
                 name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
                 new_exchanges.append(Exchange(site_1, site_2,
@@ -661,6 +661,7 @@ class DiagonalExchange(Exchange):
         Metadata attached to the exchange term.
     """
 
+    exchange_type = "Diagonal"
     parameters = ["j_x", "j_y", "j_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "J"

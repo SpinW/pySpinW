@@ -1100,20 +1100,20 @@ class Hamiltonian(SPWSerialisable):
             new_matrix = xyz_transform @ exchange.exchange_matrix @ xyz_transform.T
 
             # Try to get the transformed cell offset
-            # vector = exchange.lattice_vector
-            # new_vector = operation.point_operation_matrix @ vector
-            #
-            # new_in_cell_vector = site_2.ijk - site_1.ijk
-            #
-            # expected_cell_offset = new_vector - new_in_cell_vector
-            # new_offset = CellOffset.coerce(expected_cell_offset)
+            vector = exchange.lattice_vector
+            new_vector = operation.point_operation_matrix @ vector
 
-            # Get the cell offset by using the transformation in cartesian coordinates
-            cartesian_vector = xyz_transform @ exchange.lattice_vector
-            site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
-            cell_offset_in_cartesian = cartesian_vector - site_difference
-            cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
-            new_offset = CellOffset.coerce(cell_offset_vector)
+            new_in_cell_vector = site_2.ijk - site_1.ijk
+
+            expected_cell_offset = new_vector - new_in_cell_vector
+            new_offset = CellOffset.coerce(expected_cell_offset)
+
+            # # Get the cell offset by using the transformation in cartesian coordinates
+            # cartesian_vector = xyz_transform @ exchange.lattice_vector
+            # site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
+            # cell_offset_in_cartesian = cartesian_vector - site_difference
+            # cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
+            # new_offset = CellOffset.coerce(cell_offset_vector)
 
             new_exchange = Exchange(site_1, site_2,
                                     cell_offset=new_offset,
