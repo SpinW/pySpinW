@@ -5,9 +5,18 @@ from fractions import Fraction
 import numpy as np
 from numpy.typing import ArrayLike
 
+from pyspinw.symmetry.symbolic import evaluate as evaluate_text
+
 PointOperationType = tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]]
 TranslationType = tuple[Fraction, Fraction, Fraction]
 
+# Used for parsing text
+_parsing_zero = {"x": 0, "y": 0, "z": 0}
+_parsing_variables = {
+    "x": np.array([1,0,0], dtype=float),
+    "y": np.array([0,1,0], dtype=float),
+    "z": np.array([0,0,1], dtype=float),
+}
 
 class SpaceOperation:
     """ Spacegroup Operation """
@@ -17,7 +26,12 @@ class SpaceOperation:
 
         self.point_operation = point_operation
         self.point_operation_matrix = np.array(point_operation, dtype=float)
-        self.inverse_point_operation_matrix = np.linalg.inv(self.point_operation_matrix)
+
+        try:
+            self.inverse_point_operation_matrix = np.linalg.inv(self.point_operation_matrix)
+        except np.linalg.LinAlgError as e:
+            raise ValueError(f"Point operation matrix should be invertible, got: {point_operation}") from e
+
         self.translation = translation
 
         self._symmorphic = np.allclose(self.translation, 0.0)
@@ -69,7 +83,7 @@ class SpaceOperation:
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray) -> \
                     tuple[PointOperationType, TranslationType]:
         """ Method that converts numpy float data into ints/fractions """
-        point_operation = tuple(tuple(int(point_operation[i,j]) for i in range(3)) for j in range(3))
+        point_operation = tuple(tuple(int(round(point_operation[i,j])) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(float(translation[i])).limit_denominator() for i in range(3))
 
         return point_operation, translation
@@ -105,6 +119,23 @@ class SpaceOperation:
             strings.append(string)
 
         return ", ".join(strings)
+
+    @staticmethod
+    def from_text(operation_string: str):
+        """ Parse a string form of an expression, e.g. 'x,x-y,z+1/2' """
+
+        parts = [part.strip() for part in operation_string.split(",")]
+        if len(parts) != 3:
+            raise ValueError(f"Expected three comma separated values, e.g. 'x,y,z', got {operation_string}")
+
+        translation = np.array([evaluate_text(part, _parsing_zero) for part in parts])
+
+        matrix_components = np.array([evaluate_text(part, _parsing_variables) for part in parts])
+        matrix_components -= translation.reshape(-1, 1)
+        matrix_components = matrix_components.T
+
+        return SpaceOperation.from_numpy(matrix_components, translation, operation_string)
+
 
     def __repr__(self):
         return self.text_form
