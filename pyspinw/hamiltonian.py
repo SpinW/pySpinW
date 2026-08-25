@@ -1196,7 +1196,7 @@ class HamiltonianParameterization:
                 new_anisotropies[anisotropy_index] = new_anisotropies[anisotropy_index].updated(**{attribute: value})
 
         # Return new hamiltonian, optimise ground state if needed
-        new_hamiltonian = Hamiltonian(self._hamiltonian.structure, new_exchanges, self._hamiltonian.anisotropies)
+        new_hamiltonian = Hamiltonian(self._hamiltonian.structure, new_exchanges, new_anisotropies)
         if self._find_ground_state:
             return new_hamiltonian.ground_state(**self._ground_state_parameters)
         else:
