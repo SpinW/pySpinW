@@ -353,10 +353,15 @@ class Hamiltonian(SPWSerialisable):
             sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
             spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
-            supercell=TiledSupercell(scaling=(1, 1, 1))
+            supercell=TiledSupercell(scaling=(1, 1, 1)),
+            show_unit_cell_warning=False,
         )
 
-        return (Hamiltonian(structure=structure, exchanges=new_exchanges, anisotropies=new_anisotropies),
+        return (Hamiltonian(
+                    structure=structure,
+                    exchanges=new_exchanges,
+                    anisotropies=new_anisotropies,
+                    ),
                 site_mapping, exchange_mapping, anisotropy_mapping)
 
     def expanded(self):

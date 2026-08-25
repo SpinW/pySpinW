@@ -71,17 +71,25 @@ class PopString:
         else:
             return ""
 
+class SimpleExchangeMatrixConstraints:
+    def __init__(self,
+                 transformations: list[np.ndarray],
+                 swapped_transformations: list[np.ndarray],
+                 tol=1e-12):
+
+        pass
+
 class ExchangeMatrixConstraints:
     """ Object representing the constraints on the exchange matrix based on symmetry transformations """
 
     def __init__(self,
                  transformations: list[np.ndarray],
                  swapped_transformations: list[np.ndarray] | None = None,
-                 ijk_to_xyz: np.ndarray | None = None,
+                 # ijk_to_xyz: np.ndarray | None = None,
                  tol=1e-12):
-
-        if ijk_to_xyz is None:
-            ijk_to_xyz = np.eye(3)
+        #
+        # if ijk_to_xyz is None:
+        #     ijk_to_xyz = np.eye(3)
 
         swapped_transformations = [] if swapped_transformations is None else swapped_transformations
 
@@ -95,7 +103,7 @@ class ExchangeMatrixConstraints:
         self.swapped_transformations = swapped_transformations
         self.tol = tol
 
-        to_presentation_form = np.kron(ijk_to_xyz, ijk_to_xyz) @ _symantisym_matrix # TODO: Verify this
+        to_presentation_form = _symantisym_matrix_inv # TODO: Verify this
 
         unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ to_presentation_form
                      for transformation in transformations]

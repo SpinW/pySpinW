@@ -27,7 +27,8 @@ class Structure(SPWSerialisable):
                  unit_cell: UnitCell,
                  spacegroup: SpaceGroup | None = None,
                  supercell: Supercell | None = None,
-                 skip_checks: bool = False):
+                 skip_checks: bool = False,
+                 show_unit_cell_warning: bool=True):
 
         spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
 
@@ -61,10 +62,11 @@ class Structure(SPWSerialisable):
                                  f"requires lattice type {spacegroup.lattice_system.name}")
 
             # Check that the unit cell fulfils all the constraints of the unit cell
-            violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
-            if violations:
-                logger.warning(f"{unit_cell} violates the conditions {violations} for {spacegroup.lattice_system}"
-                               f" used by {spacegroup}")
+            if show_unit_cell_warning:
+                violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
+                if violations:
+                    logger.warning(f"{unit_cell} violates the conditions {violations} for {spacegroup.lattice_system}"
+                                   f" used by {spacegroup}")
 
 
 
@@ -203,6 +205,14 @@ class Structure(SPWSerialisable):
                 mapping[(site._unique_id, offset.as_tuple)] = new_site
 
         return big_cell, mapping
+
+    def site_pairs(self):
+        """ Generator for pairs of sites"""
+        for index_1, site_1 in enumerate(self.sites):
+            for index_2, site_2 in enumerate(self.sites):
+                if index_1 == index_2:
+                    continue
+                yield site_1, site_2
 
     def expand(self):
         """ Expand supercell into a single, bigger cell """

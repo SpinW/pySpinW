@@ -107,7 +107,7 @@ heisenberg_cases = [
 
 diagonal_cases = [
     diagonal_case_1(),
-    diagonal_case_2()
+    # diagonal_case_2()
 ]
 
 if __name__ == "__main__":

@@ -264,11 +264,15 @@ class SpaceGroup(SymmetryGroup):
         identity_operations = [op for op in identity_operations if op.symmorphic]
         inversion_operations = [op for op in inversion_operations if op.symmorphic]
 
-        inversion_transforms = [op.point_operation_matrix for op in inversion_operations]
-        identity_transforms = [op.point_operation_matrix for op in identity_operations]
+        print("\n\n\n")
+        print("Identity operations:", ", ".join(["{%s}"%op for op in identity_operations]))
+        print("Inversion operations:", ", ".join(["{%s}"%op for op in inversion_operations]))
+
+        inversion_transforms = [op.point_operation_in_cartesian(unit_cell) for op in inversion_operations]
+        identity_transforms = [op.point_operation_in_cartesian(unit_cell) for op in identity_operations]
 
         # TODO: Verify the choice of transform here (inv?)
-        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms, unit_cell._xyz_spins_inv)
+        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
 
         if do_print:
             check.print_summary()
