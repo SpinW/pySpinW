@@ -271,7 +271,6 @@ class SpaceGroup(SymmetryGroup):
         inversion_transforms = [op.point_operation_in_cartesian(unit_cell) for op in inversion_operations]
         identity_transforms = [op.point_operation_in_cartesian(unit_cell) for op in identity_operations]
 
-        # TODO: Verify the choice of transform here (inv?)
         check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
 
         if do_print:
