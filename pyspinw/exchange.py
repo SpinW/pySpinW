@@ -369,7 +369,8 @@ class Exchange(SPWSerialisable):
         # Get the symmetry related sites
 
         if not self.obeys_symmetry(structure):
-            raise ValueError(f"{self} does not obey symmetry constraints of {structure.spacegroup}, cannot use symmetry to copy")
+            raise ValueError(f"{self} does not obey symmetry constraints of {structure.spacegroup}, "
+                             f"cannot use symmetry to copy")
 
         unit_cell: UnitCell = structure.unit_cell
 
@@ -1364,7 +1365,6 @@ _specialisation_search = [HeisenbergExchange, XYExchange,  XXZExchange, IsingExc
 
 def specialise_exchange(exchange: Exchange, rounding_exponent: int | None = None):
     """ Find the narrowest exchange subclass to fit the exchange """
-
     # We need to run this on rounded matrices to deal with numerical inaccuracies
     # We could make specialisation method deal with this individually,
     # but we can also just give the rounded matrix to the function.

@@ -12,6 +12,12 @@ OPS = {
 }
 
 def evaluate(expression, variables):
+    """ Numerical evaluation of algebraic expression written as a string
+
+    :param expression: String form expression, e.g. x+y
+    :param variables: dictionary of string/value pairs e.g. {"x": 1, "y": 2}
+
+    """
     tree = ast.parse(expression, mode="eval")
 
     def eval_node(node):

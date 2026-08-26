@@ -123,7 +123,6 @@ class SpaceOperation:
     @staticmethod
     def from_text(operation_string: str):
         """ Parse a string form of an expression, e.g. 'x,x-y,z+1/2' """
-
         parts = [part.strip() for part in operation_string.split(",")]
         if len(parts) != 3:
             raise ValueError(f"Expected three comma separated values, e.g. 'x,y,z', got {operation_string}")

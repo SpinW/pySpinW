@@ -264,9 +264,10 @@ class SpaceGroup(SymmetryGroup):
         identity_operations = [op for op in identity_operations if op.symmorphic]
         inversion_operations = [op for op in inversion_operations if op.symmorphic]
 
-        print("\n\n\n")
-        print("Identity operations:", ", ".join(["{%s}"%op for op in identity_operations]))
-        print("Inversion operations:", ", ".join(["{%s}"%op for op in inversion_operations]))
+        # # For debugging
+        # print("\n\n\n")
+        # print("Identity operations:", ", ".join(["{%s}"%op for op in identity_operations]))
+        # print("Inversion operations:", ", ".join(["{%s}"%op for op in inversion_operations]))
 
         inversion_transforms = [op.point_operation_in_cartesian(unit_cell) for op in inversion_operations]
         identity_transforms = [op.point_operation_in_cartesian(unit_cell) for op in identity_operations]

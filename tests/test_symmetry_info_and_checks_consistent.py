@@ -13,8 +13,12 @@ test_list = [(structure, site_1, site_2)
                 for site_1, site_2 in structure.site_pairs()]
 
 rng = np.random.default_rng(667)
-@pytest.mark.parametrize("structure, site_1, site_2", test_list)
-def test_symmetry_info_and_checks_consistent_positive_results(structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
+
+print(test_list)
+@pytest.mark.parametrize("structure, site_1, site_2", test_list,
+                         ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
+def test_symmetry_info_and_checks_consistent_positive_results(
+        structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
     """ Generate random values that satisfy the constraints, and check that the check method thinks they're good"""
 
     exchange_constraints = structure.exchange_constraints(site_1, site_2, do_print=False)
@@ -79,3 +83,142 @@ def test_symmetry_info_and_checks_consistent_positive_results(structure: Structu
                                                              f"{full_exchange.exchange_matrix}")
 
 
+@pytest.mark.parametrize("structure, site_1, site_2", test_list,
+                         ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
+def test_symmetry_info_and_checks_consistent_negative_results_zeros(
+        structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
+    """ Generate random values that don't satisfy the constraints by having non-zero values where there should be zeros
+
+    Check that the check is false!
+    """
+
+    exchange_constraints = structure.exchange_constraints(site_1, site_2, do_print=False)
+
+    matrix_values, constraints = exchange_constraints._matrix_form_strings()
+    matrix_values = [s.strip() for s in matrix_values]
+
+    # We can't break zero cases unless there are zero entries
+    if not np.any([value == '0' for value in matrix_values]):
+        return
+
+    for i in range(5):
+        # Try five random sets
+
+        zeros = np.where([value == '0' for value in matrix_values])[0]
+        index = zeros[rng.integers(len(zeros))]
+
+        tampered_matrix_values = matrix_values.copy()
+        tampered_matrix_values[int(index)] = "REPLACE" # This should be replaced by a number
+
+        lookup = {}
+        value_list = []
+        for base_string in tampered_matrix_values:
+            # Zeros should become zeros
+            if base_string == '0':
+                value_list.append(0.0)
+                continue
+
+            # remove any leading - for testing
+            if base_string.startswith("-"):
+                string = base_string[1:]
+            else:
+                string = base_string
+
+            if string in lookup:
+                value = lookup[string]
+            else:
+                value = 2*rng.random() - 1
+                lookup[string] = value
+
+            if base_string.startswith("-"):
+                value *= -1
+
+            value_list.append(value)
+
+        # Create exchange matching the values
+        l = value_list
+        x = l[6]
+        y = l[7]
+        z = l[8]
+        exchange_matrix = np.array([
+            [l[0], l[1] + z, l[2] - y],
+            [l[1]-z, l[3], l[4] + x],
+            [l[2]+y, l[4]-x, l[5]]])
+        exchange = Exchange(site_1, site_2, exchange_matrix=exchange_matrix, cell_offset=(0,0,0))
+
+        # Check that they are considered wrong
+
+        assert not exchange.obeys_symmetry(structure), (f"Exchange should fail check,"
+                                                              f" matrix is {exchange_matrix}")
+
+
+
+@pytest.mark.parametrize("structure, site_1, site_2", test_list,
+                         ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
+def test_symmetry_info_and_checks_consistent_negative_results_break_equality(
+        structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
+    """ Generate random values that don't satisfy the constraints by having different values where they should be same
+
+    Check that the check is false!
+    """
+
+    exchange_constraints = structure.exchange_constraints(site_1, site_2, do_print=False)
+
+    matrix_values, constraints = exchange_constraints._matrix_form_strings()
+    matrix_values = [s.strip() for s in matrix_values]
+
+    # We need to have at least two entries that are the same for this to work
+    if not np.any([value == '0' for value in matrix_values]):
+        return
+
+    for i in range(5):
+        # Try five random sets
+
+        zeros = np.where([value == '0' for value in matrix_values])[0]
+        index = zeros[rng.integers(len(zeros))]
+
+        tampered_matrix_values = matrix_values.copy()
+        tampered_matrix_values[int(index)] = "REPLACE" # This should be replaced by a number
+
+
+
+        lookup = {}
+        value_list = []
+        for base_string in tampered_matrix_values:
+            # Zeros should become zeros
+            if base_string == '0':
+                value_list.append(0.0)
+                continue
+
+            # remove any leading - for testing
+            if base_string.startswith("-"):
+                string = base_string[1:]
+            else:
+                string = base_string
+
+            if string in lookup:
+                value = lookup[string]
+            else:
+                value = 2*rng.random() - 1
+                lookup[string] = value
+
+            if base_string.startswith("-"):
+                value *= -1
+
+            value_list.append(value)
+
+        # Create exchange matching the values
+        l = value_list
+        x = l[6]
+        y = l[7]
+        z = l[8]
+        exchange_matrix = np.array([
+            [l[0], l[1] + z, l[2] - y],
+            [l[1]-z, l[3], l[4] + x],
+            [l[2]+y, l[4]-x, l[5]]])
+        exchange = Exchange(site_1, site_2, exchange_matrix=exchange_matrix, cell_offset=(0,0,0))
+
+        # Check that they are considered wrong
+
+        assert not exchange.obeys_symmetry(structure), (f"Exchange should fail check,"
+                                                              f" matrix is {exchange_matrix}")
