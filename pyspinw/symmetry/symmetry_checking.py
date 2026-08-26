@@ -95,12 +95,10 @@ class ExchangeMatrixConstraints:
         self.swapped_transformations = swapped_transformations
         self.tol = tol
 
-        to_presentation_form = _symantisym_matrix # TODO: Verify this
-
-        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ to_presentation_form
+        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ _symantisym_matrix
                      for transformation in transformations]
 
-        swapped = [(np.kron(transformation, transformation) + _transpose_matrix) @ to_presentation_form
+        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ _symantisym_matrix
                    for transformation in swapped_transformations]
 
         matrix = np.vstack(unswapped + swapped)

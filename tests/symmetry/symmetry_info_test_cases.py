@@ -30,6 +30,8 @@ def case_1() -> Structure:
 
     return Structure(sites, unit_cell=unit_cell, spacegroup=sg)
 
+cases = [case_1()]
+
 
 if __name__ == "__main__":
     s = case_1()
