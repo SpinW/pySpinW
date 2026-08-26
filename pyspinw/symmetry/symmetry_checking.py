@@ -103,18 +103,21 @@ class ExchangeMatrixConstraints:
         self.swapped_transformations = swapped_transformations
         self.tol = tol
 
-        to_presentation_form = _symantisym_matrix_inv # TODO: Verify this
+        to_presentation_form = _symantisym_matrix # TODO: Verify this
 
         unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ to_presentation_form
                      for transformation in transformations]
 
-        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ to_presentation_form
+        swapped = [(np.kron(transformation, transformation) + _transpose_matrix) @ to_presentation_form
                    for transformation in swapped_transformations]
 
         matrix = np.vstack(unswapped + swapped)
 
         reduced = rref(matrix)
 
+        # print("Equations")
+        # print(matrix)
+        # print("Reduced")
         # print(reduced)
 
         # The reduced form should be interpretable as a list of constraints on the matrix
@@ -249,15 +252,15 @@ class ExchangeMatrixConstraints:
             symmetric_output = (
                 f"Symmetry allowed symmetric matrices are of the form:\n\n"
                 f"  \u23A1{m[0]} {m[1]} {m[2]} \u23A4\n"
-                f"  \u23A2{m[1]} {m[4]} {m[3]} \u23A5\n"
-                f"  \u23A3{m[2]} {m[3]} {m[5]} \u23A6"
+                f"  \u23A2{m[1]} {m[3]} {m[4]} \u23A5\n"
+                f"  \u23A3{m[2]} {m[4]} {m[5]} \u23A6"
             )
         else:
             symmetric_output = (
                 f"Symmetry allowed symmetric matrices are of the form:\n\n"
                 f"  /{m[0]} {m[1]} {m[2]} \\\n"
-                f"  |{m[1]} {m[4]} {m[3]} |\n"
-                f"  \\{m[2]} {m[3]} {m[5]} //"
+                f"  |{m[1]} {m[3]} {m[4]} |\n"
+                f"  \\{m[2]} {m[4]} {m[5]} //"
             )
 
         antisymmetric_output = ("Symmetry allowed antisymmetric exchanges have DM vectors of the form:\n\n"
