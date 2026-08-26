@@ -71,14 +71,6 @@ class PopString:
         else:
             return ""
 
-class SimpleExchangeMatrixConstraints:
-    def __init__(self,
-                 transformations: list[np.ndarray],
-                 swapped_transformations: list[np.ndarray],
-                 tol=1e-12):
-
-        pass
-
 class ExchangeMatrixConstraints:
     """ Object representing the constraints on the exchange matrix based on symmetry transformations """
 
