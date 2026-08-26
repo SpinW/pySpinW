@@ -80,7 +80,7 @@ class Anisotropy(SPWSerialisable):
             transform = operation.point_operation_in_cartesian(unit_cell)
             transformed = transform @ m @ transform.T
 
-            if not np.isclose(transformed, m):
+            if not np.allclose(transformed, m):
                 return False
 
         return True

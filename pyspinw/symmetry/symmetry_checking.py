@@ -138,7 +138,7 @@ class MatrixConstraints:
 
     def _matrix_form_strings(self) -> tuple[list[str], list[str]]:
         """ Gets the strings used to build matrices and constraint equations"""
-        strings = [" 0" for _ in range(9)]
+        strings = [" 0" for _ in range(self.n)]
         characters = PopString("abcdefghi")
         for i, is_free in enumerate(self.free):
             if is_free:

@@ -266,3 +266,22 @@ $\text{vec}A = \left(\begin{array}{c} a \\ b \\ c \\ b \\ d \\ e \\ c \\ e \\ f 
 \cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
 \cdot & \cdot & \cdot & \cdot & \cdot & 1 \\
 \end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f  \end{array}\right)$
+
+## Further analysis of allowed anisotropies
+
+As anisotropies are often specified by an axis and magnitude, it would be nice to interpret the
+allowed anisotropies in this way.
+
+We can characterise the matrix by the type of eigenvalues it has. 
+
+Of the six degrees of freedom that anisotropy terms are sensitive to, one makes a constant contribution to the energy.
+This is to say, that physically, matrices of the form
+
+$A = A_0 + kI$
+
+where $A_0$ is a symmetric matrix, $k$ is a scalar, and $I$ is the identity, 
+are physically equivalent for the purposes of spinwave calculations,
+as 
+$SAS^T = SA_0S + k |S|^2$
+in which $k|S|^2$ is a constant. 
+

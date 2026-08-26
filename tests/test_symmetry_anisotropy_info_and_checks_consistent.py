@@ -17,7 +17,7 @@ rng = np.random.default_rng(667)
 
 @pytest.mark.parametrize("structure, site_1, site_2", test_list,
                          ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
-def test_symmetry_info_and_checks_consistent_positive_results(
+def test_exchange_info_and_checks_consistent_positive_results(
         structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
     """ Generate random values that satisfy the constraints, and check that the check method thinks they're good"""
 
@@ -85,7 +85,7 @@ def test_symmetry_info_and_checks_consistent_positive_results(
 
 @pytest.mark.parametrize("structure, site_1, site_2", test_list,
                          ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
-def test_symmetry_info_and_checks_consistent_negative_results_zeros(
+def test_exchange_info_and_checks_consistent_negative_results_zeros(
         structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
     """ Generate random values that don't satisfy the constraints by having non-zero values where there should be zeros
 
@@ -155,7 +155,7 @@ def test_symmetry_info_and_checks_consistent_negative_results_zeros(
 
 @pytest.mark.parametrize("structure, site_1, site_2", test_list,
                          ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
-def test_symmetry_info_and_checks_consistent_negative_results_break_equality(
+def test_exchange_info_and_checks_consistent_negative_results_break_equality(
         structure: Structure, site_1: LatticeSite, site_2: LatticeSite):
     """ Generate random values that don't satisfy the constraints by having different values where they should be same
 
