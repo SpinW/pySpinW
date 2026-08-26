@@ -1,4 +1,5 @@
 """ Checks for the consistency of ExchangeMatrixConstraints with the checks for specific numerical matrices"""
+from collections import defaultdict
 
 import pytest
 
@@ -168,17 +169,29 @@ def test_symmetry_info_and_checks_consistent_negative_results_break_equality(
     matrix_values = [s.strip() for s in matrix_values]
 
     # We need to have at least two entries that are the same for this to work
-    if not np.any([value == '0' for value in matrix_values]):
+    lookup = defaultdict(list)
+    for index, value in enumerate(matrix_values):
+        unnegative = value[1:] if value.startswith("-") else value
+        lookup[unnegative].append(index)
+
+    if not np.any([len(x) > 1 for x in lookup.values()]):
         return
+
+    # Find potential places to make a replacement
+    potential_replacements = [index
+                              for indices in lookup.values()
+                              for index in indices
+                              if len(indices) > 1]
+
 
     for i in range(5):
         # Try five random sets
 
-        zeros = np.where([value == '0' for value in matrix_values])[0]
-        index = zeros[rng.integers(len(zeros))]
+
+        index = potential_replacements[rng.integers(len(potential_replacements))]
 
         tampered_matrix_values = matrix_values.copy()
-        tampered_matrix_values[int(index)] = "REPLACE" # This should be replaced by a number
+        tampered_matrix_values[index] = "REPLACE" # This should be replaced by a number
 
 
 
