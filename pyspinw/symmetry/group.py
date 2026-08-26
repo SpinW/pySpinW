@@ -22,7 +22,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, \
     lattice_system_name_lookup
-from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints
+from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints, AnisotropyMatrixConstraints
 
 from pyspinw.tolerances import tolerances
 
@@ -184,7 +184,7 @@ class SpaceGroup(SymmetryGroup):
                                  site_1: "LatticeSite",
                                  site_2: "LatticeSite",
                                  offset: tuple[int, int, int] = (0,0,0),
-                                 tolerance=1e-10):
+                                 tolerance=1e-10) -> list[SpaceOperation]:
         """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
         offset = CellOffset.coerce(offset)
 
@@ -273,6 +273,36 @@ class SpaceGroup(SymmetryGroup):
         identity_transforms = [op.point_operation_in_cartesian(unit_cell) for op in identity_operations]
 
         check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
+
+        if do_print:
+            check.print_summary()
+
+        return check
+
+    def anisotropy_constraints(self,
+            site: LatticeSite | ArrayLike,
+            unit_cell: UnitCell,
+            do_print: bool = True) -> AnisotropyMatrixConstraints:
+
+        if not isinstance(site, LatticeSite):
+            try:
+                site = LatticeSite(i=float(site[0]),
+                                   j=float(site[1]),
+                                   k=float(site[2]),
+                                   name="tmp_site")
+            except Exception as e:
+                raise TypeError("Expected `site_1` to be a LatticeSite or vector") from e
+
+        operations = self.operations_between_sites(site, site)
+        operations = [op for op in operations if op.symmorphic]
+
+        # For debugging
+        print("\n\n\n")
+        print("Operations:", ", ".join(["{%s}"%op for op in operations]))
+
+        transforms = [op.point_operation_in_cartesian(unit_cell) for op in operations]
+
+        check = AnisotropyMatrixConstraints(transforms)
 
         if do_print:
             check.print_summary()

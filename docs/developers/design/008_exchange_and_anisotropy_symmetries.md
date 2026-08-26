@@ -232,3 +232,37 @@ same exchange matrix.
 Then, as the operations on the exchange matrix compose in the same way as the groups themselves,
 and as $(gh^{-1}) h$ and $g$ are identical, 
 $h$ and $g$ should also result in the same thing when applied to a symmetry constrained exchange matrix.
+
+# Anisotropies
+
+The symmetry analysis of anisotropy matrices proceeds in a very similar way, the main differences are:
+1) the spins are the same on both sides of the multiplication, i.e. we have $S_iAS_i^T$ and consequentially
+2) there are only six relevant degrees of freedom in the anisotropy matrix
+
+The latter adds some complications when it comes to deciding how to report the constraints, because
+anisotropy matrices in general might have 9 entries. We make the decision to report the constraints on
+a symmetric matrix.
+
+Like before, we have a quadratic constraint on a 3x3 matrix:
+
+$M A M^T = A $
+
+which we can vectorise to give
+$(M \otimes M - I) \;\text{vec}A = 0$
+
+where $\text{vec}A$ is the vectorised version of $A$.
+
+But we only have 6 degrees of freedom, to get this we can use a truncated version of the matrix $V$ above,
+which we can produce by truncating the matrix in $V$ above, i.e.
+
+$\text{vec}A = \left(\begin{array}{c} a \\ b \\ c \\ b \\ d \\ e \\ c \\ e \\ f  \end{array}\right) = \left(\begin{array}{ccccccccc}
+1 & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & 1 & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & 1 & \cdot & \cdot & \cdot \\
+\cdot & 1 & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & 1 & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
+\cdot & \cdot & 1 & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & 1 \\
+\end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f  \end{array}\right)$

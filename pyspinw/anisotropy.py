@@ -3,6 +3,8 @@
 import numpy as np
 from numpy._typing import ArrayLike
 
+from pyspinw import UnitCell
+from pyspinw.structure import Structure
 from pyspinw.checks import check_sizes
 from pyspinw.serialisation import (
     SPWSerialisationContext,
@@ -12,6 +14,7 @@ from pyspinw.serialisation import (
     SPWDeserialisationContext,
 )
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.tolerances import tolerances
 
 
@@ -66,6 +69,34 @@ class Anisotropy(SPWSerialisable):
         else:
             return self._anisotropy_matrix
 
+    def _obeys_symmetry(self, unit_cell: UnitCell, operations: list[SpaceOperation]):
+        """ Main part of the check for whether the anisotropy matrix obeys symmetry """
+
+        # We only care if it gives the same quadratic expression for the energy, not if the actual matrices
+        # are the same, so, look at the symmetrised version (also multiples by 2, but that doesn't matter)
+        m = self.anisotropy_matrix + self.anisotropy_matrix.T
+
+        for operation in operations:
+            transform = operation.point_operation_in_cartesian(unit_cell)
+            transformed = transform @ m @ transform.T
+
+            if not np.isclose(transformed, m):
+                return False
+
+        return True
+
+    def obeys_symmetry(self, structure: Structure):
+        """Check that this anisotropy is consistent with the symmetry group"""
+
+        spacegroup = structure.spacegroup
+        unit_cell = structure.unit_cell
+
+        # Checking is easier than finding the list of symmetry groups
+        operations = spacegroup.operations_between_sites(self._site, self._site)
+        operations = [operation for operation in operations if operation.symmorphic] # TODO - does this matter?
+
+        return self._obeys_symmetry(unit_cell, operations)
+
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"site": self._site._serialise(context), "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix)}
 
@@ -98,6 +129,8 @@ class Anisotropy(SPWSerialisable):
             site=self.site if site is None else site,
             anisotropy_matrix=self.anisotropy_matrix if anisotropy_matrix is None else np.array(anisotropy_matrix),
         )
+
+
 
 
 class AxisMagnitudeAnisotropy(Anisotropy):

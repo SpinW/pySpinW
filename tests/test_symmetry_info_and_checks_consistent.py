@@ -15,7 +15,6 @@ test_list = [(structure, site_1, site_2)
 
 rng = np.random.default_rng(667)
 
-print(test_list)
 @pytest.mark.parametrize("structure, site_1, site_2", test_list,
                          ids=[f"{x[1].name} -> {x[2].name}" for x in test_list])
 def test_symmetry_info_and_checks_consistent_positive_results(

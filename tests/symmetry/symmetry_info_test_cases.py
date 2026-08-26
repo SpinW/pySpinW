@@ -36,6 +36,9 @@ cases = [case_1()]
 if __name__ == "__main__":
     s = case_1()
     # view(s)
+    #
+    # for site_1, site_2 in s.site_pairs():
+    #     s.exchange_constraints(site_1, site_2)
 
-    for site_1, site_2 in s.site_pairs():
-        s.exchange_constraints(site_1, site_2)
+    for site in s.sites:
+        s.anisotropy_constraints(site)

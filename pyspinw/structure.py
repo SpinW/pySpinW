@@ -507,7 +507,7 @@ class Structure(SPWSerialisable):
                              site_1: LatticeSite | str | ArrayLike,
                              site_2: LatticeSite | str | ArrayLike,
                              do_print=True):
-        """ Get the constraints """
+        """ Get the constraints for the exchange matrix between two sites """
         if isinstance(site_1, str):
             site_1 = self.site_by_name(site_1)
 
@@ -534,5 +534,24 @@ class Structure(SPWSerialisable):
 
         return self.spacegroup.exchange_constraints(site_1, site_2, self.unit_cell, do_print=do_print)
 
+
+    def anisotropy_constraints(self,
+                               site: LatticeSite | str | ArrayLike,
+                               do_print=True):
+        """ Get the constraints on anisotropies for a given site """
+
+        if isinstance(site, str):
+            site_1 = self.site_by_name(site)
+
+        if not isinstance(site, LatticeSite):
+            try:
+                site_1 = LatticeSite(i=float(site_1[0]),
+                                     j=float(site_1[1]),
+                                     k=float(site_1[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site` to be a LatticeSite, vector or a name") from e
+
+        return self.spacegroup.anisotropy_constraints(site, self.unit_cell, do_print=do_print)
 
 

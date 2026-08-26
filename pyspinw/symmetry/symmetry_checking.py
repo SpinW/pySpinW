@@ -54,6 +54,8 @@ _symantisym_matrix = np.array([
     [0, 0, 0, 0, 0, 1,  0,  0,  0]
 ], dtype=float)
 
+_sym_matrix = _symantisym_matrix[:,:6]
+
 _symantisym_matrix_inv = np.linalg.inv(_symantisym_matrix)
 
 class PopString:
@@ -71,94 +73,68 @@ class PopString:
         else:
             return ""
 
-class ExchangeMatrixConstraints:
-    """ Object representing the constraints on the exchange matrix based on symmetry transformations """
+def free_and_zero(reduced: np.ndarray, tol: float):
+    """ Calculates which variables are free and which are zero according to the equation `reduced = 0`
 
-    def __init__(self,
-                 transformations: list[np.ndarray],
-                 swapped_transformations: list[np.ndarray] | None = None,
-                 # ijk_to_xyz: np.ndarray | None = None,
-                 tol=1e-12):
-        #
-        # if ijk_to_xyz is None:
-        #     ijk_to_xyz = np.eye(3)
+    Also creates a list of constraints
+    """
 
-        swapped_transformations = [] if swapped_transformations is None else swapped_transformations
+    # The reduced form should be interpretable as a list of constraints on the matrix
+    # It will not have non-zero entries in unless the row directly above has entries in the same column or to
+    # the left, or, in other words, if a row has entries starting at position i, then the next row will have
+    # entries starting at position i or greater
+    #
+    # We can scan the rows,
+    #   there will be at most 9 non-zero of them
+    #   each will be an equation for one of the entries, and that will be the leftmost
+    #   * if a column is "skipped" (i.e. no row starting with it) then it is completely free
+    #   * if it has a single non-zero entry, then that entry must be zero
+    #   * otherwise, the row will define a relationship between entries that must be obeyed
 
-        if not isinstance(transformations, list):
-            raise TypeError("Expected transformations to be a list")
+    size = reduced.shape[1]
 
-        if not isinstance(swapped_transformations, list):
-            raise TypeError("Expected swapped_transformations to be a list")
+    free = np.ones((size,), dtype=bool)  # Assume free by default
+    zero = np.zeros((size,), dtype=bool)  # ... and nonzero
+    constraints = []
 
-        self.transformations = transformations
-        self.swapped_transformations = swapped_transformations
-        self.tol = tol
+    for row in range(size):
+        # Which entries in this row are zeros?
+        non_zeros = np.abs(reduced[row, :]) > tol
+        zeros = ~non_zeros
 
-        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ _symantisym_matrix
-                     for transformation in transformations]
+        if np.all(zeros):
+            # The row is all zeros, do nothing
+            continue
 
-        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ _symantisym_matrix
-                   for transformation in swapped_transformations]
+        # Get first non-zero entry
+        col = np.argmax(non_zeros)
 
-        matrix = np.vstack(unswapped + swapped)
+        # check remaining entries to the right
+        if np.all(zeros[col + 1:]):
+            # If it's a single entry, then we have the form x_i=0, and we set to zero
+            zero[col] = True
+            free[col] = False
+        else:
+            # Otherwise, we have a more complex constraint, and it counts as non-free
+            constraints.append(reduced[row, :])
+            free[non_zeros] = False
 
-        reduced = rref(matrix)
+    # None of the constraints should contain zero or free entries
+    for constraint in constraints:
+        nonzero = np.abs(constraint) > tol
+        assert np.all(~zero[nonzero])
+        assert np.all(~free[nonzero]), (constraint, free)
 
-        # print("Equations")
-        # print(matrix)
-        # print("Reduced")
-        # print(reduced)
+    return free, zero, constraints
 
-        # The reduced form should be interpretable as a list of constraints on the matrix
-        # It will not have non-zero entries in unless the row directly above has entries in the same column or to
-        # the left, or, in other words, if a row has entries starting at position i, then the next row will have
-        # entries starting at position i or greater
-        #
-        # We can scan the rows,
-        #   there will be at most 9 non-zero of them
-        #   each will be an equation for one of the entries, and that will be the leftmost
-        #   * if a column is "skipped" (i.e. no row starting with it) then it is completely free
-        #   * if it has a single non-zero entry, then that entry must be zero
-        #   * otherwise, the row will define a relationship between entries that must be obeyed
+class MatrixConstraints:
+    """ Base class for constraint data"""
 
-        self.free = np.ones((9,), dtype=bool)   # Assume free by default
-        self.zero = np.zeros((9, ), dtype=bool) # ... and nonzero
-        self.constraints = []
-
-        for row in range(9):
-            # Which entries in this row are zeros?
-            non_zeros = np.abs(reduced[row, :]) > tol
-            zeros = ~non_zeros
-
-            if np.all(zeros):
-                # The row is all zeros, do nothing
-                continue
-
-            # Get first non-zero entry
-            col = np.argmax(non_zeros)
-
-            # check remaining entries to the right
-            if np.all(zeros[col+1:]):
-                # If it's a single entry, then we have the form x_i=0, and we set to zero
-                self.zero[col] = True
-                self.free[col] = False
-            else:
-                # Otherwise, we have a more complex constraint, and it counts as non-free
-                self.constraints.append(reduced[row, :])
-                self.free[non_zeros] = False
-
-        # None of the constraints should contain zero or free entries
-        for constraint in self.constraints:
-            nonzero = np.abs(constraint) > tol
-            assert np.all(~self.zero[nonzero])
-            assert np.all(~self.free[nonzero]), (constraint, self.free)
-
-        # print("Free:", self.free)
-        # print("Zero:", self.zero)
-        # print("Constraints:")
-        # for constraint in self.constraints:
-        #     print(constraint)
+    def __init__(self, n: int):
+        self.free = None
+        self.zero = None
+        self.constraints = None
+        self.n = n
 
     def _matrix_form_strings(self) -> tuple[list[str], list[str]]:
         """ Gets the strings used to build matrices and constraint equations"""
@@ -235,6 +211,53 @@ class ExchangeMatrixConstraints:
         return strings, eqns
 
     def text_summary(self, simplify_output=True, unicode=True):
+        return ""
+
+    def print_summary(self, simplify_output=True, unicode=True):
+        """ Print out a summary of the exchange properties """
+        print(self.text_summary(simplify_output, unicode))
+
+    def __repr__(self):
+        return self.text_summary()
+
+
+
+
+class ExchangeMatrixConstraints(MatrixConstraints):
+    """ Object representing the constraints on the exchange matrix based on symmetry transformations """
+
+    def __init__(self,
+                 transformations: list[np.ndarray],
+                 swapped_transformations: list[np.ndarray] | None = None,
+                 tol=1e-12):
+
+        super().__init__(9)
+
+        swapped_transformations = [] if swapped_transformations is None else swapped_transformations
+
+        if not isinstance(transformations, list):
+            raise TypeError("Expected transformations to be a list")
+
+        if not isinstance(swapped_transformations, list):
+            raise TypeError("Expected swapped_transformations to be a list")
+
+        self.transformations = transformations
+        self.swapped_transformations = swapped_transformations
+        self.tol = tol
+
+        unswapped = [(np.kron(transformation, transformation) - np.eye(9)) @ _symantisym_matrix
+                     for transformation in transformations]
+
+        swapped = [(np.kron(transformation, transformation) - _transpose_matrix) @ _symantisym_matrix
+                   for transformation in swapped_transformations]
+
+        matrix = np.vstack(unswapped + swapped)
+
+        reduced = rref(matrix)
+
+        self.free, self.zero, self.constraints = free_and_zero(reduced, tol)
+
+    def text_summary(self, simplify_output=True, unicode=True):
         """ Textual summary of symmetry allowed exchange properties"""
         m, equations = self._matrix_form_strings()
 
@@ -250,7 +273,7 @@ class ExchangeMatrixConstraints:
                 f"Symmetry allowed symmetric matrices are of the form:\n\n"
                 f"  /{m[0]} {m[1]} {m[2]} \\\n"
                 f"  |{m[1]} {m[3]} {m[4]} |\n"
-                f"  \\{m[2]} {m[4]} {m[5]} //"
+                f"  \\{m[2]} {m[4]} {m[5]} /"
             )
 
         antisymmetric_output = ("Symmetry allowed antisymmetric exchanges have DM vectors of the form:\n\n"
@@ -280,53 +303,69 @@ class ExchangeMatrixConstraints:
 
         return "\n\n".join([symmetric_output, antisymmetric_output] + constraints)
 
-    def print_summary(self, simplify_output=True, unicode=True):
-        """ Print out a summary of the exchange properties """
-        print(self.text_summary(simplify_output, unicode))
 
-    def __repr__(self):
-        return self.text_summary()
+class AnisotropyMatrixConstraints(MatrixConstraints):
+    """ Object representing the constraints on anisotropy matrices based on symmetry transformations """
+    def __init__(self,
+                 transformations: list[np.ndarray],
+                 tol=1e-12):
+
+        super().__init__(6)
+
+        if not isinstance(transformations, list):
+            raise TypeError(f"Expected transformations to be of type list, got {type(transformations)}")
+
+        self.transformations = transformations
+        self.tol = tol
+
+        equations = [(np.kron(transformation, transformation) - np.eye(9)) @ _sym_matrix
+                     for transformation in transformations]
+
+        matrix = np.vstack(equations)
+
+        reduced = rref(matrix)
+
+        # print(reduced)
+
+        self.free, self.zero, self.constraints = free_and_zero(reduced, tol)
+
+
+    def text_summary(self, simplify_output=True, unicode=True):
+        """ Textual summary of symmetry allowed exchange properties"""
+        m, equations = self._matrix_form_strings()
+
+        if unicode:
+            main_output = (
+                f"Symmetry allowed anisotropy matrices are equivalent to those of the form:\n\n"
+                f"  \u23A1{m[0]} {m[1]} {m[2]} \u23A4\n"
+                f"  \u23A2{m[1]} {m[3]} {m[4]} \u23A5\n"
+                f"  \u23A3{m[2]} {m[4]} {m[5]} \u23A6"
+            )
+        else:
+            main_output = (
+                f"Symmetry allowed anisotropy matrices are equivalent to those of the form:\n\n"
+                f"  /{m[0]} {m[1]} {m[2]} \\\n"
+                f"  |{m[1]} {m[3]} {m[4]} |\n"
+                f"  \\{m[2]} {m[4]} {m[5]} /"
+            )
+
+
+        if simplify_output:
+            if np.all(self.zero):
+                main_output = "No anisotropy allowed"
+
+            if np.all(self.free):
+                main_output = "Any anisotropy allowed"
+
+        if len(equations) > 0:
+            constraints = ["\n".join(["Constraints are:\n"] + ["  " + eqn for eqn in equations])]
+        else:
+            constraints = []
+
+
+        return "\n\n".join([main_output] + constraints)
+
 
 if __name__ == "__main__":
-    p0 = np.eye(3)
-    p1 = np.array([
-        [1,0,0],
-        [0,0,1],
-        [0,1,0]])
-    pr1 = np.array([
-        [0,0,0],
-        [0,1,0],
-        [0,0,1]])
-    pr2 = np.array([
-        [0,0,0],
-        [0,0,1],
-        [0,1,0]
-    ])
-
-    s2 = np.sqrt(1 / 2)
-
-    pr3 = np.array([
-        [0,0,0],
-        [0, s2, s2],
-        [0, -s2, s2]
-    ])
-
-    s43 = np.sqrt(4/3)
-    pr4 = np.array([
-        [0,   0,   0],
-        [0, 0.5, s43],
-        [0,-s43, 0.5]
-    ])
-
-    ExchangeMatrixConstraints([p0]).print_summary()
-    ExchangeMatrixConstraints([p1]).print_summary()
-
-    ExchangeMatrixConstraints([p0, p1]).print_summary()
-
-    ExchangeMatrixConstraints([p0, pr1]).print_summary()
-
-    ExchangeMatrixConstraints([pr1, pr2]).print_summary()
-
-    ExchangeMatrixConstraints([pr3]).print_summary()
-    ExchangeMatrixConstraints([pr4]).print_summary()
+    pass
 

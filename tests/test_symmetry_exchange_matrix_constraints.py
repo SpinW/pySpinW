@@ -6,7 +6,7 @@ from pyspinw import *
 
 from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints
 
-from symmetry.exchange_matrix_contraints_object_cases import ops, sym, asym, string_to_ops
+from symmetry.exchange_and_anisotropy_matrix_constraints_object_cases import ops, sym, asym, string_to_ops
 
 cell = UnitCell(1,1,1)
 
