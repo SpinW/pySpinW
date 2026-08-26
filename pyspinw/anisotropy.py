@@ -71,7 +71,6 @@ class Anisotropy(SPWSerialisable):
 
     def _obeys_symmetry(self, unit_cell: UnitCell, operations: list[SpaceOperation]):
         """ Main part of the check for whether the anisotropy matrix obeys symmetry """
-
         # We only care if it gives the same quadratic expression for the energy, not if the actual matrices
         # are the same, so, look at the symmetrised version (also multiples by 2, but that doesn't matter)
         m = self.anisotropy_matrix + self.anisotropy_matrix.T
@@ -87,7 +86,6 @@ class Anisotropy(SPWSerialisable):
 
     def obeys_symmetry(self, structure: Structure):
         """Check that this anisotropy is consistent with the symmetry group"""
-
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
 

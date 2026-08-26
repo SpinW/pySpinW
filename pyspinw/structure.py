@@ -539,7 +539,6 @@ class Structure(SPWSerialisable):
                                site: LatticeSite | str | ArrayLike,
                                do_print=True):
         """ Get the constraints on anisotropies for a given site """
-
         if isinstance(site, str):
             site_1 = self.site_by_name(site)
 

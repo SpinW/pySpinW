@@ -283,7 +283,7 @@ class SpaceGroup(SymmetryGroup):
             site: LatticeSite | ArrayLike,
             unit_cell: UnitCell,
             do_print: bool = True) -> AnisotropyMatrixConstraints:
-
+        """ Get the details of the allowed anisotropy matrices"""
         if not isinstance(site, LatticeSite):
             try:
                 site = LatticeSite(i=float(site[0]),

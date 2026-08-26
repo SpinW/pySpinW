@@ -78,7 +78,6 @@ def free_and_zero(reduced: np.ndarray, tol: float):
 
     Also creates a list of constraints
     """
-
     # The reduced form should be interpretable as a list of constraints on the matrix
     # It will not have non-zero entries in unless the row directly above has entries in the same column or to
     # the left, or, in other words, if a row has entries starting at position i, then the next row will have
@@ -211,6 +210,7 @@ class MatrixConstraints:
         return strings, eqns
 
     def text_summary(self, simplify_output=True, unicode=True):
+        """ Summary of matrix constraints as a string (empty in base class)"""
         return ""
 
     def print_summary(self, simplify_output=True, unicode=True):
@@ -306,6 +306,7 @@ class ExchangeMatrixConstraints(MatrixConstraints):
 
 class AnisotropyMatrixConstraints(MatrixConstraints):
     """ Object representing the constraints on anisotropy matrices based on symmetry transformations """
+
     def __init__(self,
                  transformations: list[np.ndarray],
                  tol=1e-12):
