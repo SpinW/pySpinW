@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from pyspinw.util import rotation_matrix
+
 
 def rref(A, tol=1e-12):
     """ Reduced row echelon form - not in scipy or numpy"""
@@ -368,5 +370,9 @@ class AnisotropyMatrixConstraints(MatrixConstraints):
 
 
 if __name__ == "__main__":
-    pass
+    transformation = rotation_matrix(2*np.pi/3, (0,1,0))
+
+    AnisotropyMatrixConstraints([transformation]).print_summary()
+
+
 
