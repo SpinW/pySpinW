@@ -172,7 +172,6 @@ def test_anisotropy_info_and_checks_consistent_negative_results_break_equality(
         tampered_matrix_values[index] = "REPLACE" # This should be replaced by a number
 
 
-
         lookup = {}
         value_list = []
         for base_string in tampered_matrix_values:

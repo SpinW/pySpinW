@@ -168,7 +168,7 @@ class Exchange(SPWSerialisable):
             "metadata": self.metadata._serialise(context)
         }
 
-    def to_general(self):
+    def generalise(self):
         """ Convert to most general Exchange class """
         return Exchange(name=self.name,
                         site_1=self.site_1,
@@ -176,6 +176,9 @@ class Exchange(SPWSerialisable):
                         cell_offset=self.cell_offset,
                         exchange_matrix=self.exchange_matrix,
                         metadata=self.metadata)
+
+    def specialise(self):
+        return specialise_exchange(self)
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
     def updated(self,
@@ -364,7 +367,7 @@ class Exchange(SPWSerialisable):
     def symmetry_fill(self,
                       structure: "Structure",
                       include_original=False,
-                      specialisation_rounding_exponent: int | None = tolerances.EXCHANGE_SPECIALISE_ROUNDING_EXPONENT):
+                      specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT):
         """ Make multiple copies of this exchange so that symmetry is satisfied """
         # Get the symmetry related sites
 
@@ -469,7 +472,7 @@ class Exchange(SPWSerialisable):
                 for exchange in new_exchanges]
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Convert this to a specialised exchange type """
         return exchange
 
@@ -613,7 +616,7 @@ class HeisenbergExchange(Exchange):
 
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Create a specialised version of this exchange """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0,0] == m[1,1] and m[1,1] == m[2,2]:
@@ -776,7 +779,7 @@ class DiagonalExchange(Exchange):
 
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Create a specialised version of this exchange """
         m = exchange.exchange_matrix
         if is_diagonal(m):
@@ -905,7 +908,7 @@ class XYExchange(Exchange):
 
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Create a specialised version of this exchange """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0,0] == m[1,1] and m[2,2] == 0:
@@ -1050,7 +1053,7 @@ class XXZExchange(Exchange):
         return True
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Create a specialised version of this exchange """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0,0] == m[1,1]:
@@ -1177,7 +1180,7 @@ class IsingExchange(Exchange):
         return True
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Create a specialised version of this exchange """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0, 0] == 0 and m[1, 1] == 0:
@@ -1332,7 +1335,7 @@ class DMExchange(Exchange):
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
     @staticmethod
-    def specialise(exchange: "Exchange") -> Optional["Exchange"]:
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
         """ Create a specialised version of this exchange """
         m = exchange.exchange_matrix
 
@@ -1380,7 +1383,7 @@ def specialise_exchange(exchange: Exchange, rounding_exponent: int | None = None
 
 
     for Ex in _specialisation_search:
-        specialised = Ex.specialise(exchange)
+        specialised = Ex._specialise(exchange)
         if specialised is not None:
             unrounded_specialised = specialised
             break
@@ -1390,13 +1393,13 @@ def specialise_exchange(exchange: Exchange, rounding_exponent: int | None = None
         return unrounded_specialised
 
     # Get the rounded version
-    rounded_exchange = exchange.to_general().updated(
+    rounded_exchange = exchange.generalise().updated(
         exchange_matrix=np.round(exchange.exchange_matrix, decimals=rounding_exponent))
 
     rounded_specialised = rounded_exchange
 
     for Ex in _specialisation_search:
-        specialised = Ex.specialise(rounded_exchange)
+        specialised = Ex._specialise(rounded_exchange)
         if specialised is not None:
             rounded_specialised = specialised
             break
