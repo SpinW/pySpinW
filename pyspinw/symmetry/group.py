@@ -296,9 +296,9 @@ class SpaceGroup(SymmetryGroup):
         operations = self.operations_between_sites(site, site)
         operations = [op for op in operations if op.symmorphic]
 
-        # For debugging
-        print("\n\n\n")
-        print("Operations:", ", ".join(["{%s}"%op for op in operations]))
+        # # For debugging
+        # print("\n\n\n")
+        # print("Operations:", ", ".join(["{%s}"%op for op in operations]))
 
         transforms = [op.point_operation_in_cartesian(unit_cell) for op in operations]
 

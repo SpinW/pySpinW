@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyspinw import HeisenbergExchange
-from symmetry.symmetry_test_cases import heisenberg_cases, diagonal_cases
+from symmetry.exchange_test_cases import heisenberg_cases, diagonal_cases
 
 q_points = np.concatenate((
         np.linspace(-0.9, -0.1, 9),

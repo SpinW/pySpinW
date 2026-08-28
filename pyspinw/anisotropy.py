@@ -157,7 +157,7 @@ class Anisotropy(SPWSerialisable):
                 op = operation.point_operation_in_cartesian(unit_cell)
                 new_matrix = op @ self._anisotropy_matrix @ op.T
 
-                name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
+                # name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
                 new_anisotropies.append(Anisotropy(site,
                                               anisotropy_matrix=new_matrix,
                                               #name = name

@@ -540,13 +540,13 @@ class Structure(SPWSerialisable):
                                do_print=True):
         """ Get the constraints on anisotropies for a given site """
         if isinstance(site, str):
-            site_1 = self.site_by_name(site)
+            site = self.site_by_name(site)
 
         if not isinstance(site, LatticeSite):
             try:
-                site_1 = LatticeSite(i=float(site_1[0]),
-                                     j=float(site_1[1]),
-                                     k=float(site_1[2]),
+                site = LatticeSite(i=float(site[0]),
+                                     j=float(site[1]),
+                                     k=float(site[2]),
                                      name="tmp_site_1")
             except Exception as e:
                 raise TypeError("Expected `site` to be a LatticeSite, vector or a name") from e

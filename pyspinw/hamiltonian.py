@@ -1071,9 +1071,11 @@ class Hamiltonian(SPWSerialisable):
         for exchange in self.exchanges:
             new_exchanges += exchange.symmetry_fill(self.structure, include_original=True)
 
-        # TODO: Do the same for anisotropies
+        new_anisotropies = []
+        for anisotropy in self.anisotropies:
+            new_anisotropies += anisotropy.symmetry_fill(self.structure, include_original=True)
 
-        return Hamiltonian(self.structure, new_exchanges, self.anisotropies)
+        return Hamiltonian(self.structure, new_exchanges, new_anisotropies)
 
     def symmetry_transformed(self, operation: SpaceOperation):
         """ Transform the Hamiltonian using this spacegroup
