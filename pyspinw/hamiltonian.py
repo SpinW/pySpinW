@@ -1126,18 +1126,28 @@ class Hamiltonian(SPWSerialisable):
                                     cell_offset=new_offset,
                                     exchange_matrix=new_matrix,
                                     name=exchange.name,
-                                    metadata=exchange.metadata)
+                                    metadata=exchange.metadata).specialise()
 
             new_exchanges.append(new_exchange)
 
-        # TODO: transform the anisotropies
+        # Anisotropies
+        new_anisotropies = []
+        for anisotropy in self.anisotropies:
+            new_site = site_mapping[anisotropy.site.unique_id]
 
+            new_matrix = xyz_transform @ anisotropy.anisotropy_matrix @ xyz_transform.T
+
+            new_anisotropy = Anisotropy(site=new_site, anisotropy_matrix=new_matrix)
+
+            new_anisotropies.append(new_anisotropy)
+
+        # Structure
         new_structure = Structure(new_sites,
                                    unit_cell=self.structure.unit_cell,
                                    spacegroup=self.structure.spacegroup,
                                    supercell=self.structure.supercell)
 
-        return Hamiltonian(new_structure, new_exchanges) # TODO Anisotropies
+        return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
