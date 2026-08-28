@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 from pyspinw import AxisMagnitudeAnisotropy, LatticeSite
-from pyspinw.anisotropy import specialise_anisotropy
+from pyspinw.anisotropy import specialise_anisotropy, Anisotropy
 
 n=10
 filters = [
@@ -51,4 +51,21 @@ def test_axis_magnitude_specialisation_recovers(filter):
         assert np.allclose(original.a, rebuilt.a), "Recovered `a` constant should be the same as the original."
 
 
+matrices = [
+    np.diag([1,-1,-1]),
+    np.diag([1,1,-1]),
+    np.diag([1,1,1]) - 2,
+]
+@pytest.mark.parametrize("matrix", matrices)
+def test_general_matrix_does_not_specialise(matrix):
+    """ Check that axis-magnitude anisotropies """
+
+    site = LatticeSite(0,0,0)
+
+    original = Anisotropy(site=site, anisotropy_matrix=matrix)
+
+    rebuilt = specialise_anisotropy(original.generalise())
+
+    assert not isinstance(rebuilt, AxisMagnitudeAnisotropy), ("Anisotropy should not be converted to "
+                                                              "AxisMagnitudeAnisotropy.")
 
