@@ -335,7 +335,6 @@ class AxisMagnitudeAnisotropy(Anisotropy):
     @staticmethod
     def _specialise(anisotropy: "Anisotropy", tol=1e-14) -> "Anisotropy | None":
         """ Try to get an anisotropy of this class """
-
         # If it is already this form, return it
         if isinstance(anisotropy, AxisMagnitudeAnisotropy):
             return anisotropy
@@ -419,7 +418,6 @@ _specialisation_search = [AxisMagnitudeAnisotropy, Anisotropy]
 
 def specialise_anisotropy(anisotropy: Anisotropy) -> Anisotropy:
     """ Find the narrowest anisotropy subclass to fit the exchange """
-
     for An in _specialisation_search:
         specialised = An._specialise(anisotropy)
         if specialised is not None:

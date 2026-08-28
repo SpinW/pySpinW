@@ -178,6 +178,7 @@ class Exchange(SPWSerialisable):
                         metadata=self.metadata)
 
     def specialise(self):
+        """ Get the most specific exchange class available that fits this exchange """
         return specialise_exchange(self)
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
