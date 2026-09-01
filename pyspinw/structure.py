@@ -352,7 +352,7 @@ class Structure(SPWSerialisable):
 
         # We want the n-th nearest neighbour, but we generate offsets in terms of distance
         #  so we need a strict bound on the distance that will cover all the points of a given order
-
+        
         # possibly a very loose bound for systems with lots of sites, because it is based on
         #  having one site per unit cell
         search_radius = (n-1) * min([self.unit_cell.a, self.unit_cell.b, self.unit_cell.b])

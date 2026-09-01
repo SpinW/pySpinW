@@ -1,0 +1,353 @@
+Class: LatticeSite                                System building
+  Method: from_coordinates                        
+  Method: n_components                            
+  Method: serialise                               
+  Method: symmetry_transformed                    
+  Property: base_spin                             
+  Property: g                                     
+  Property: i                                     
+  Property: ijk                                   
+  Property: j                                     
+  Property: k                                     
+  Property: name                                  
+  Property: parent_site                           
+  Property: spin                                  System building (with .metadata)
+  Property: spin_data                             
+  Property: unique_id                             
+  Property: values                                
+Class: Anisotropy                                 System building
+  Method: generalise                              
+  Method: obeys_symmetry                          Symmetry
+  Method: serialise                               Load/Save
+  Method: specialise                              
+  Method: symmetry_copy                           Symmetry
+  Method: symmetry_fill                           Symmetry
+  Method: updated                                 System Building
+  Property: anisotropy_matrix                     
+  Property: parameter_string                      
+  Property: site                                  
+  Property: unique_id                             
+Class: AxisMagnitudeAnisotropy                    as Anisotropy
+  Method: generalise                              
+  Method: obeys_symmetry
+  Method: serialise                               
+  Method: specialise                              
+  Method: symmetry_copy                           
+  Method: symmetry_fill                           
+  Method: updated                                 
+  Property: a                                     
+  Property: anisotropy_matrix                     
+  Property: constant                              
+  Property: direction                             
+  Property: parameter_string                      
+  Property: site                                  
+  Property: unique_id                             
+Class: HeisenbergExchange                         System Building
+  Method: distance                                
+  Method: generalise                              
+  Method: is_symmetric                            
+  Method: obeys_symmetry                          Symmetry
+  Method: serialise                               Load/Save
+  Method: specialise                              
+  Method: symmetry_copy                           Symmetry
+  Method: symmetry_fill                           Symmetry
+  Method: updated                                 System building
+  Method: vector                                  
+  Property: cell_offset                           
+  Property: exchange_matrix                       
+  Property: j                                     
+  Property: lattice_vector                        
+  Property: name                                  
+  Property: parameter_string                      
+  Property: site_1                                
+  Property: site_2                                
+  Property: unique_id                             
+Class: DiagonalExchange                           
+  Method: distance                                
+  Method: generalise                              
+  Method: is_symmetric                            
+  Method: obeys_symmetry                          
+  Method: serialise                               
+  Method: specialise                              
+  Method: symmetry_copy                           
+  Method: symmetry_fill                           
+  Method: updated                                 
+  Method: vector                                  
+  Property: cell_offset                           
+  Property: exchange_matrix                       
+  Property: j_x                                   
+  Property: j_y                                   
+  Property: j_z                                   
+  Property: lattice_vector                        
+  Property: name                                  
+  Property: parameter_string                      
+  Property: site_1                                
+  Property: site_2                                
+  Property: unique_id                             
+Class: XYExchange                                 
+  Method: distance                                
+  Method: generalise                              
+  Method: is_symmetric                            
+  Method: obeys_symmetry                          
+  Method: serialise                               
+  Method: specialise                              
+  Method: symmetry_copy                           
+  Method: symmetry_fill                           
+  Method: updated                                 
+  Method: vector                                  
+  Property: cell_offset                           
+  Property: exchange_matrix                       
+  Property: j                                     
+  Property: lattice_vector                        
+  Property: name                                  
+  Property: parameter_string                      
+  Property: site_1                                
+  Property: site_2                                
+  Property: unique_id                             
+Class: IsingExchange                              
+  Method: distance                                
+  Method: generalise                              
+  Method: is_symmetric                            
+  Method: obeys_symmetry                          
+  Method: serialise                               
+  Method: specialise                              
+  Method: symmetry_copy                           
+  Method: symmetry_fill                           
+  Method: updated                                 
+  Method: vector                                  
+  Property: cell_offset                           
+  Property: exchange_matrix                       
+  Property: j_z                                   
+  Property: lattice_vector                        
+  Property: name                                  
+  Property: parameter_string                      
+  Property: site_1                                
+  Property: site_2                                
+  Property: unique_id                             
+Class: DMExchange                                 
+  Method: distance                                
+  Method: generalise                              
+  Method: is_symmetric                            
+  Method: obeys_symmetry                          
+  Method: serialise                               
+  Method: specialise                              
+  Method: symmetry_copy                           
+  Method: symmetry_fill                           
+  Method: updated                                 
+  Method: vector                                  
+  Property: cell_offset                           
+  Property: d_x                                   
+  Property: d_y                                   
+  Property: d_z                                   
+  Property: exchange_matrix                       
+  Property: lattice_vector                        
+  Property: name                                  
+  Property: parameter_string                      
+  Property: site_1                                
+  Property: site_2                                
+  Property: unique_id                             
+Class: NoDirectionalityFilter                     System Building
+  Method: accept                                  
+Class: InPlaneFilter                              
+  Method: accept                                  
+Class: InDirectionFilter                          
+  Method: accept                                  
+Class: BiDirectionFilter                          
+  Method: accept                                  
+Function: load_cif                                
+Class: Structure                                  
+  Method: all_neighbours                          System building
+  Method: anisotropy_constraints                  Symmetry
+  Method: exchange_constraints                    Symmetry
+  Method: expand                                  System building
+  Method: full_structure_site_list                
+  Method: matplotlib_site_data                    Plotting
+  Method: neighbours                              System building
+  Method: one_neighbour                           System building
+  Method: print_summary                           System building
+  Method: serialise                               Load/Save
+  Method: site_by_name                            System building
+  Method: site_pairs
+  Method: sites_by_element                        System building
+  Method: sites_by_name                           System building
+  Method: symmetry_related                        Symmetry
+  Method: without_elements                        System building
+  Method: without_nonmagnetic                     System building
+  Property: sites                                 
+  Property: spacegroup                            
+  Property: supercell                             
+  Property: text_summary                          
+  Property: unit_cell                             
+Class: Hamiltonian                                
+  Method: energies_and_intensities                Analysis
+  Method: energy_plot                             Plotting
+  Method: exchanges_by_name                       System building
+  Method: expanded                                System building
+  Method: ground_state                            Analysis
+  Method: intensity_map                           Plotting
+  Method: parameterize                            Analysis
+  Method: print_summary                           System building
+  Method: serialise                               
+  Method: sites_by_name                           System building
+  Method: sorted_positive_energies                Analysis
+  Method: spaghetti_plot                          Plotting
+  Method: spaghetti_plot_dual                     Plotting
+  Method: spinwave_calculation                    Analysis
+  Method: symmetry_filled                         Symmetry
+  Method: symmetry_transformed                    Symmetry
+  Method: without_nonmagnetic                     System building
+  Property: anisotropies                          
+  Property: exchanges                             
+  Property: structure                             
+  Property: text_summary                          
+Class: UnitCell                                   
+  Method: cartesian_to_lattice_units              
+  Method: lattice_units_to_cartesian              
+  Method: serialise                               
+  Method: spin_cartesian_to_lattice_units         
+  Method: spin_lattice_units_to_cartesian         
+  Method: updated                                 System building
+  Property: centre                                
+  Property: main_diagonal_length                  
+  Property: text_summary                          
+Class: CoordsUnits                                Plotting/Analysis
+Class: IntensityUnits                             Plotting/Analysis
+Function: propagation_vectors                     
+Function: rotation_supercell                      
+Function: helical_supercell                       
+Function: summation_supercell                     
+Function: spacegroup                              
+Function: filter                                  System building
+Function: generate_exchanges                      System building
+Function: axis_anisotropies                       System building
+Function: matrix_anisotropies                     System building
+Function: generate_sites                          System building
+Function: generate_exchanges                      System building
+Function: generate_structure                      System building
+Function: generate_helical_structure              System building
+Class: SummationSupercell                         System building
+  Method: cell_position_and_spin                  
+  Method: cell_size                               
+  Method: cells                                   
+  Method: fractional_in_supercell                 
+  Method: n_cells                                 
+  Method: n_components                            
+  Method: serialise                               
+  Method: spin                                    
+  Method: spin_calculation                        
+  Method: spin_derivative                         
+  Method: summation_form                          
+  Method: supercell_position_and_spin             
+  Method: text_data                               
+  Method: wrap_sum                                
+  Property: scaling                               
+Class: RotationSupercell                          System building
+  Method: approximant                             
+  Method: cell_position_and_spin                  
+  Method: cell_size                               
+  Method: cells                                   
+  Method: fractional_in_supercell                 
+  Method: n_components                            
+  Method: serialise                               
+  Method: spin                                    
+  Method: spin_calculation                        
+  Method: summation_form                          
+  Method: supercell_position_and_spin             
+  Method: text_data                               
+  Method: wrap_sum                                
+  Property: scaling                               
+Class: TransformationSupercell                    System building
+  Method: cell_position_and_spin                  
+  Method: cell_size                               
+  Method: cells                                   
+  Method: fractional_in_supercell                 
+  Method: n_cells                                 
+  Method: n_components                            
+  Method: serialise                               
+  Method: spin                                    
+  Method: spin_calculation                        
+  Method: spin_derivative                         
+  Method: summation_form                          
+  Method: supercell_position_and_spin             
+  Method: text_data                               
+  Method: wrap_sum                                
+  Property: scaling                               
+Class: RotationTransform                          System building
+  Method: apply                                   
+  Method: serialise                               
+Class: TiledSupercell                             System building
+  Method: cell_position_and_spin                  
+  Method: cell_size                               
+  Method: cells                                   
+  Method: fractional_in_supercell                 
+  Method: n_cells                                 
+  Method: n_components                            
+  Method: serialise                               
+  Method: spin                                    
+  Method: spin_calculation                        
+  Method: spin_derivative                         
+  Method: summation_form                          
+  Method: supercell_position_and_spin             
+  Method: text_data                               
+  Method: wrap_sum                                
+  Property: scaling                               
+Class: PropagationVector                          System building
+  Method: corrected_phase_position                
+  Method: dot                                     
+  Method: serialise                               
+  Method: uncorrected_phase_position              
+  Property: vector                                
+Class: CommensuratePropagationVector              System building
+  Method: corrected_phase_position                
+  Method: dot                                     
+  Method: serialise                               
+  Method: uncorrected_phase_position              
+  Property: vector                                
+Class: SingleCrystal                              Analysis
+  Method: energies                                
+  Method: energies_and_intensities                
+  Method: intensity_map                           
+  Method: spaghetti_plot                          
+Class: Multidomain                                Analysis
+  Method: energies                                
+  Method: energies_and_intensities                
+  Method: intensity_map                           
+  Method: spaghetti_plot                          
+Class: CrystalDomain                              Analysis
+Class: Twin                                       Analysis
+  Method: energies                                
+  Method: energies_and_intensities                
+  Method: intensity_map                           
+  Method: spaghetti_plot                          
+Class: Powder                                     Analysis
+  Method: parameterized_spectrum                  
+  Method: show_spectrum                           
+  Method: spectrum                                
+Class: ScalingMethod                              Analysis
+Class: SphericalPointGeneratorType                Analysis
+Class: Path                                       Plotting/Analysis
+  Method: format_plot                             
+  Method: q_points                                
+  Method: x_tick_labels                           
+  Method: x_ticks                                 
+  Method: x_values                                
+Class: Path1D                                     Plotting/Analysis
+  Method: q_values                                
+Class: Slice                                      Plotting/Analysis
+  Method: extent                                  
+  Method: format_plot                             
+  Method: grid_shape                              
+  Method: q_points                                
+  Method: x_tick_labels                           
+  Method: x_ticks                                 
+  Method: y_tick_labels                           
+  Method: y_ticks                                 
+Function: set_up_windows_python_parallelisation   [Remove?]
+Function: view                                    Viewing
+Function: snapshot                                
+Class: DisplayOptions                             Viewing
+  Method: deserialise                             
+  Method: serialise                               
+Function: demos                                   
+Function: demo_viewer                             
+Function: demo_chains                             
