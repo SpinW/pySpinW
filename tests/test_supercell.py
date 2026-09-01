@@ -4,7 +4,7 @@ import pytest
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TransformationSupercell, CommensuratePropagationVector, RotationTransform, \
     TiledSupercell, SummationSupercell, RotationSupercell
 

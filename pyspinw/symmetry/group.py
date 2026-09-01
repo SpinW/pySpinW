@@ -1,30 +1,30 @@
 """ Space groups and magnetic space groups"""
-import os.path
-import pickle
 from collections import defaultdict
-from enum import Enum
-from typing import Callable
 
 from abc import ABC, abstractmethod
+from typing import Iterator
 
 import numpy as np
 import spglib
 from difflib import get_close_matches
 
+from numpy._typing import ArrayLike
+
+from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
 from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_formatted, preferred_names
 
 from pyspinw.symmetry.operations import MagneticOperation, SpaceOperation
-from pyspinw.symmetry.data.msg_symbols import msg_symbols
 from pyspinw.symmetry.settings import Setting
+from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.symmetry.supercell import Supercell
-from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, Rhombohedral, \
+from pyspinw.symmetry.system import LatticeSystem, lattice_system_letter_lookup, \
     lattice_system_name_lookup
+from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints, AnisotropyMatrixConstraints
 
 from pyspinw.tolerances import tolerances
-
 
 class SymmetryGroup(ABC, SPWSerialisable):
     """ Base class for symmetry group and magnetic symmetry group """
@@ -117,13 +117,6 @@ class SpaceGroup(SymmetryGroup):
         # This is slightly unusual, make a reference to the lattice system create_unit_cell method
         self.create_unit_cell = lattice_system.create_unit_cell
 
-    def __repr__(self):
-        """repr"""
-        if self.choice is None:
-            return f"SpaceGroup({self.number}, {self.symbol}, hall={self.hall_number})"
-        else:
-            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}], hall={self.hall_number})"
-
     def _serialisation_string(self):
         """ Name to use to refer to this group in serialisation"""
         return self.preferred_symbol
@@ -186,6 +179,152 @@ class SpaceGroup(SymmetryGroup):
             new_sites.append(new_site)
 
         return new_sites
+
+    def operations_between_sites(self,
+                                 site_1: "LatticeSite",
+                                 site_2: "LatticeSite",
+                                 offset: tuple[int, int, int] = (0,0,0),
+                                 tolerance=1e-10) -> list[SpaceOperation]:
+        """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
+        offset = CellOffset.coerce(offset)
+
+        return [operation for operation in self.operations
+                if np.allclose(operation([site_1.ijk]),
+                               [site_2.ijk + offset.vector],
+                               atol=tolerance)]
+
+    def operations_on_single_site_pairs(self,
+                                        site_1: LatticeSite,
+                                        site_2: LatticeSite,
+                                        offset: CellOffsetCoercible = (0, 0, 0)) \
+            -> tuple[set[SpaceOperation], set[SpaceOperation]]:
+        """ Get operations on pairs of sites """
+        offset = CellOffset.coerce(offset)
+
+        #
+        # There are two cases here:
+        #  1) where the "bond" is preserved by keeping the sites the same
+        #  2) where it is preserved but with exchanging the sites
+        #
+        # In case 1, the constraint is on J, in the form J = M J M^T
+        # In case 2, the constraint is on J^T, as J->J^T constitutes an inversion, J = M J^T M^T
+
+        # Case 1:
+        identity_operations = set(self.operations_between_sites(site_1, site_1, offset)).intersection(
+            set(self.operations_between_sites(site_2, site_2, offset)))
+
+        # Case 2:
+        inversion_operations = set(self.operations_between_sites(site_1, site_2, offset)).intersection(
+            set(self.operations_between_sites(site_2, site_1, offset)))
+
+        return identity_operations, inversion_operations
+
+    def operations_between_pairs(self,
+                                 pair_1: tuple[LatticeSite, LatticeSite],
+                                 pair_2: tuple[LatticeSite, LatticeSite],
+                                 offset: CellOffsetCoercible = (0, 0, 0),
+                                 tolerance: float=1e-10) -> set[SpaceOperation]:
+        """ Operations in this group that transform one ordered pair into another """
+        offset = CellOffset.coerce(offset)
+
+        left_operations = self.operations_between_sites(pair_1[0], pair_2[0], offset, tolerance=tolerance)
+        right_operations = self.operations_between_sites(pair_1[1], pair_2[1], offset, tolerance=tolerance)
+
+        return set(left_operations).intersection(right_operations)
+
+
+
+
+    def exchange_constraints(self,
+                             site_1: LatticeSite | ArrayLike,
+                             site_2: LatticeSite | ArrayLike,
+                             unit_cell: UnitCell,
+                             do_print: bool = True) -> ExchangeMatrixConstraints:
+        """ Get the details of the allowed exchange matrices"""
+        if not isinstance(site_1, LatticeSite):
+            try:
+                site_1 = LatticeSite(i=float(site_1[0]),
+                                     j=float(site_1[1]),
+                                     k=float(site_1[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_1` to be a LatticeSite or vector") from e
+
+        if not isinstance(site_2, LatticeSite):
+            try:
+                site_2 = LatticeSite(i=float(site_2[0]),
+                                     j=float(site_2[1]),
+                                     k=float(site_2[2]),
+                                     name="tmp_site_1")
+            except Exception as e:
+                raise TypeError("Expected `site_2` to be a LatticeSite or vector") from e
+
+        identity_operations, inversion_operations = self.operations_on_single_site_pairs(site_1, site_2)
+
+        identity_operations = [op for op in identity_operations if op.symmorphic]
+        inversion_operations = [op for op in inversion_operations if op.symmorphic]
+
+        # # For debugging
+        # print("\n\n\n")
+        # print("Identity operations:", ", ".join(["{%s}"%op for op in identity_operations]))
+        # print("Inversion operations:", ", ".join(["{%s}"%op for op in inversion_operations]))
+
+        inversion_transforms = [op.point_operation_in_cartesian(unit_cell) for op in inversion_operations]
+        identity_transforms = [op.point_operation_in_cartesian(unit_cell) for op in identity_operations]
+
+        check = ExchangeMatrixConstraints(identity_transforms, inversion_transforms)
+
+        if do_print:
+            check.print_summary()
+
+        return check
+
+    def anisotropy_constraints(self,
+            site: LatticeSite | ArrayLike,
+            unit_cell: UnitCell,
+            do_print: bool = True) -> AnisotropyMatrixConstraints:
+        """ Get the details of the allowed anisotropy matrices"""
+        if not isinstance(site, LatticeSite):
+            try:
+                site = LatticeSite(i=float(site[0]),
+                                   j=float(site[1]),
+                                   k=float(site[2]),
+                                   name="tmp_site")
+            except Exception as e:
+                raise TypeError("Expected `site_1` to be a LatticeSite or vector") from e
+
+        operations = self.operations_between_sites(site, site)
+        operations = [op for op in operations if op.symmorphic]
+
+        # # For debugging
+        # print("\n\n\n")
+        # print("Operations:", ", ".join(["{%s}"%op for op in operations]))
+
+        transforms = [op.point_operation_in_cartesian(unit_cell) for op in operations]
+
+        check = AnisotropyMatrixConstraints(transforms)
+
+        if do_print:
+            check.print_summary()
+
+        return check
+
+    def __repr__(self):
+        """repr"""
+        if self.choice is None:
+            return f"SpaceGroup({self.number}, {self.symbol}, hall={self.hall_number})"
+        else:
+            return f"SpaceGroup({self.number}, {self.symbol} [{self.choice}], hall={self.hall_number})"
+
+    def __contains__(self, item: SpaceOperation):
+        h = hash(item)
+        for operation in self.operations:
+            if hash(operation) == h:
+                return True
+        return False
+
+    def __iter__(self) -> Iterator[SpaceOperation]:
+        return iter(self.operations)
 
 #
 #
@@ -274,7 +413,16 @@ class SpacegroupDatabase:
                 lattice_system = lattice_system_name_lookup["Rhombohedral"]
                 bravais_lattice = "hR"
             else:
-                lattice_system = lattice_system_letter_lookup[first_letter]
+                if first_letter == "m":
+                    if choice.startswith("a") or choice.startswith("-a"):
+                        lattice_system = lattice_system_name_lookup["MonoclinicA"]
+                    elif choice.startswith("c") or choice.startswith("-c"):
+                        lattice_system = lattice_system_name_lookup["MonoclinicC"]
+                    else:
+                        lattice_system = lattice_system_name_lookup["MonoclinicB"]
+
+                else:
+                    lattice_system = lattice_system_letter_lookup[first_letter]
 
             group = SpaceGroup(
                 hall_number=hall_number,
@@ -342,6 +490,9 @@ class SpacegroupDatabase:
         similar = get_close_matches(name, canonical_aliases.keys(), n=3, cutoff=0.4)
 
         if similar:
+
+            #
+
             suggestion_string = ", ".join([f"'{canonical_to_formatted[s]}'" for s in similar])
             message_string = (f"Unknown space group '{name}', "
                               f"perhaps you meant {suggestion_string} or something similar.")

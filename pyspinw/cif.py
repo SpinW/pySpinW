@@ -22,18 +22,27 @@ def parse_float_entry(s: str):
 
     return float(s)
 
-def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell(), entry_index: int=0, verbose=False):
+class LoadError(Exception):
+    """ Error thrown when loading fails"""
+
+def load_cif(filename: str | pathlib.Path,
+             supercell: Supercell = TiledSupercell(),
+             entry_index: int=0,
+             verbose=True) -> Structure:
     """ Load a CIF file in as a structure """
     # Get the right bit of data
 
     cif = ReadCif(str(filename), grammar=None, permissive=True)
 
-    names = cif.keys()
+    names = [key for key in cif.keys()]
+
+    if verbose:
+        print("All entries:", names)
 
     for i in range(entry_index, len(names)):
 
         try:
-            name = names[entry_index]
+            name = names[i]
         except IndexError:
             raise ValueError(f"Entry index out of range (file has {len(names)} entries)")
 
@@ -57,7 +66,7 @@ def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell
         else:
             if verbose:
                 print(f"Failed to find space group entry in '{name}'")
-            break
+            continue
 
         sg = spacegroup(spacegroup_name)
 
@@ -106,6 +115,8 @@ def load_cif(filename: str | pathlib.Path, supercell: Supercell = TiledSupercell
             sites.append(site)
 
         return Structure(sites, unit_cell = cell, spacegroup=sg, supercell=supercell)
+
+    raise LoadError("No entries in CIF file")
 
 if __name__ == "__main__":
     structure = load_cif("../tests/cif_files/1100231.cif")

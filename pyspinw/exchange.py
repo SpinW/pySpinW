@@ -1,5 +1,6 @@
 """Exchange terms between lattice sites."""
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 
@@ -9,9 +10,10 @@ from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
-from pyspinw.util import triple_product_matrix
+from pyspinw.util import triple_product_matrix, is_diagonal
 
 _exchange_id_counter = -1
 def _generate_unique_exchange_id():
@@ -123,27 +125,6 @@ class Exchange(SPWSerialisable):
         return self._exchange_matrix
 
     @property
-    def parameter_string(self) -> str:
-        """String representation of the exchange parameters."""
-        # Note that we reference the _parameter value, not the property that references it
-        substrings = []
-        for parameter in self.parameters:
-            value=self.__dict__["_" + parameter]
-            substrings.append(f"{parameter}={value:.5g}")
-
-        return ", ".join(substrings)
-
-    def __repr__(self):
-
-        direction_string = "<->" if self.is_symmetric() else "->"
-
-        return "".join([
-            self.__class__.__name__,
-            f"('{self.name}', {self.site_1.name} {direction_string} {self.site_2.name}, offset={self.cell_offset}, ",
-            self.parameter_string,
-            ")"])
-
-    @property
     def lattice_vector(self):
         """Vector from site 1 to site 2 in lattice coordinates."""
         return self.cell_offset.vector + self._site_2.ijk - self._site_1.ijk
@@ -186,6 +167,19 @@ class Exchange(SPWSerialisable):
             "cell_offset": self._cell_offset._serialise(context),
             "metadata": self.metadata._serialise(context)
         }
+
+    def generalise(self):
+        """ Convert to most general Exchange class """
+        return Exchange(name=self.name,
+                        site_1=self.site_1,
+                        site_2=self.site_2,
+                        cell_offset=self.cell_offset,
+                        exchange_matrix=self.exchange_matrix,
+                        metadata=self.metadata)
+
+    def specialise(self):
+        """ Get the most specific exchange class available that fits this exchange """
+        return specialise_exchange(self)
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
     def updated(self,
@@ -264,6 +258,247 @@ class Exchange(SPWSerialisable):
     def is_symmetric(self):
         """Return whether this is a symmetric exchange."""
         return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
+
+    def _obeys_symmetry(self,
+                        unit_cell: UnitCell,
+                        identity_operations: set[SpaceOperation],
+                        inversion_operations: set[SpaceOperation]) -> bool:
+        """ Main logic for symmetry checking """
+        # We want the exchange matrix in lattice units TODO: Verify the details of this transform
+        exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
+        # exchange_matrix = unit_cell._xyz_spins_inv @ self._exchange_matrix @ unit_cell._xyz_spins_inv.T
+        # exchange_matrix = self._exchange_matrix
+
+        # print(unit_cell._xyz_inv)
+        # print(unit_cell._xyz_spins_inv)
+        # print("Exchange matrix in lattice")
+        # print(exchange_matrix)
+
+        for operation in identity_operations:
+            if not operation.symmorphic:
+                continue
+
+
+            # print("Operation matrix")
+            # print(operation.point_operation_matrix)
+            # print("Inverse operation matrix")
+            # print(operation.inverse_point_operation_matrix)
+
+            transformed = operation.point_operation_matrix @ exchange_matrix @ operation.inverse_point_operation_matrix
+
+            if not np.allclose(exchange_matrix, transformed):
+
+                # print(f"Failed on operation {operation}")
+                return False
+
+        exchange_matrix_T = self._exchange_matrix.T
+        for operation in inversion_operations:
+            if not operation.symmorphic:
+                continue
+            #
+            # print("Operation matrix")
+            # print(operation.point_operation_matrix)
+            # print("Inverse operation matrix")
+            # print(operation.inverse_point_operation_matrix)
+
+            transformed = operation.point_operation_matrix @ exchange_matrix @ operation.inverse_point_operation_matrix
+
+            # print("Transformed")
+            # print(transformed)
+            if not np.allclose(exchange_matrix_T, transformed):
+
+                # print(f"Failed on operation {operation}")
+
+                return False
+
+        return True
+
+    def obeys_symmetry(self, structure: "Structure") -> bool:
+        """ Check that this exchange is consistent with the symmetry group """
+        spacegroup = structure.spacegroup
+        unit_cell = structure.unit_cell
+
+        # Checking is easier than finding the list of symmetry groups
+        identity_operations, inversion_operations = spacegroup.operations_on_single_site_pairs(self.site_1, self.site_2)
+        return self._obeys_symmetry(unit_cell, identity_operations, inversion_operations)
+
+    def symmetry_copy(self,
+                      structure: "Structure",
+                      site_1: LatticeSite,
+                      site_2: LatticeSite,
+                      cell_offset: CellOffsetCoercible = (0,0,0)):
+        """ Copy this exchange using symmetry operations """
+        # We want to copy the exchange under symmetry operations
+        # There might be more than one symmetry operation that maps the pair of sites
+        #  however, the effect on the exchange should be the same for all these operations,
+        #  this means we can just pick an arbitrary one.
+        # If this turns out not to be the case, then exchange itself does not need to obey the
+        # symmetry constraints
+
+        spacegroup = structure.spacegroup
+        unit_cell = structure.unit_cell
+
+        if self.obeys_symmetry(spacegroup):
+            # find the operations that map the pairs
+
+            pair_operations = spacegroup.operations_between_pairs(
+                (self.site_1, self.site_2),
+                (site_1, site_2))
+
+            if len(pair_operations) == 0:
+                raise ValueError("New points are not related to the original by symmetry")
+
+            # Pick one element for the transformation
+            op = next(iter(pair_operations))
+            transform = op.point_operation_matrix
+
+            # Apply after transforming to xyz space TODO: Verify, could require inverses/transforms
+            exchange_matrix_ijk = unit_cell._xyz_spins @ self.exchange_matrix @ unit_cell._xyz_spins.T
+            new_exchange_matrix_ijk = transform @ exchange_matrix_ijk @ transform.T
+            new_exchange_matrix = unit_cell._xyz_spins_inv @ new_exchange_matrix_ijk @ unit_cell._xyz_spins_inv.T
+
+            return Exchange(site_1, site_2,
+                            exchange_matrix=new_exchange_matrix,
+                            name=f"{self.name} [{op.text_form}]",
+                            cell_offset=CellOffset.coerce(cell_offset))
+
+        else:
+            raise ValueError("Exchange does not obey symmetry constraints, cannot use symmetry to copy")
+
+    def symmetry_fill(self,
+                      structure: "Structure",
+                      include_original=False,
+                      specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT):
+        """ Make multiple copies of this exchange so that symmetry is satisfied """
+        # Get the symmetry related sites
+
+        if not self.obeys_symmetry(structure):
+            raise ValueError(f"{self} does not obey symmetry constraints of {structure.spacegroup}, "
+                             f"cannot use symmetry to copy")
+
+        unit_cell: UnitCell = structure.unit_cell
+
+        site_1_related = structure.symmetry_related(self.site_1)
+        site_2_related = structure.symmetry_related(self.site_2)
+
+        # Go through all possible pairs, and see if they have any symmetry operations relating them
+        symmetry_related: list[tuple[LatticeSite, LatticeSite, list[SpaceOperation]]] = []
+        for site_1, site_1_ops in site_1_related:
+            for site_2, site_2_ops in site_2_related:
+                shared_ops = site_1_ops.intersection(site_2_ops)
+                if len(shared_ops) > 0:
+                    symmetry_related.append((site_1, site_2, shared_ops))
+
+        new_exchanges = []
+        #
+        # to_cart = structure.unit_cell._xyz_spins # TODO: Check this is the right way round
+        # to_lattice = structure.unit_cell._xyz_spins_inv
+
+        for site_1, site_2, operations in symmetry_related:
+
+            # Generate new exchange
+            for operation in operations:
+
+                # Get the transformed matrix
+                op = operation.point_operation_in_cartesian(unit_cell)
+                new_matrix = op @ self._exchange_matrix @ op.T
+
+                # Try to get the transformed cell offset
+
+                vector = self.lattice_vector
+                new_vector = operation.point_operation_matrix @ vector
+
+                new_in_cell_vector = site_2.ijk - site_1.ijk
+
+                expected_cell_offset = new_vector - new_in_cell_vector
+                cell_offset = CellOffset.coerce(expected_cell_offset)
+
+                # # Get the cell offset by using the transformation in cartesian coordinates
+                # cartesian_vector = op @ self.lattice_vector
+                # site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
+                # cell_offset_in_cartesian = cartesian_vector - site_difference
+                # cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
+                # cell_offset = CellOffset.coerce(cell_offset_vector)
+
+                name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
+                new_exchanges.append(Exchange(site_1, site_2,
+                                              exchange_matrix=new_matrix,
+                                              cell_offset=cell_offset,
+                                              name = name,
+                                              metadata=self.metadata.copy()))
+
+        # Hacky way of excluding the original, add to the list at the start, then remove first
+        #  element after the duplicate removal.
+        # We also want to include self instead of any copy
+        new_exchanges = [self] + new_exchanges
+
+        # Now we want to remove copies of the same exchanges
+        for i in range(len(new_exchanges)): # Basically a while loop, but we've sure it is finite
+            if i >= len(new_exchanges):
+                break
+            to_keep: Exchange = new_exchanges[i]
+            to_remove: list[int] = []
+            for j, to_check in enumerate(new_exchanges[i+1:]):
+                # is this exchange related to the check exchange by a translation,
+                #  1) if the sites are in the same order, this can only mean they're identical,
+                #  2) if the sites are swapped, it means the vector between them is reversed
+
+                # (1)
+                if to_keep.site_1 == to_check.site_1 and to_keep.site_2 == to_check.site_2 and \
+                    to_keep.cell_offset == to_check.cell_offset:
+
+                    # print("removing", to_check, "as same as", to_keep)
+
+                    to_remove.append(j + i + 1)
+
+
+                # (2)
+                if to_keep.site_1 == to_check.site_2 and to_keep.site_2 == to_check.site_1 and \
+                    np.allclose(to_keep.lattice_vector, -to_check.lattice_vector, atol=tolerances.SAME_SITE_ABS_TOL):
+
+                    # print("removing", to_check, "as reversed version of ", to_keep)
+
+                    to_remove.append(j + i + 1)
+
+            # Remove the ones we need to remove, as its ordered we can do
+            to_remove.reverse() # in place reverse
+            for j in to_remove:
+                del new_exchanges[j]
+
+        # Remove the original input exchange if not included, it will always still be at the front
+        if not include_original:
+            new_exchanges = new_exchanges[1:]
+
+        return [specialise_exchange(exchange, rounding_exponent=specialisation_rounding_exponent)
+                for exchange in new_exchanges]
+
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Convert this to a specialised exchange type """
+        return exchange
+
+    @property
+    def parameter_string(self) -> str:
+        """String representation of the exchange parameters."""
+        # Note that we reference the _parameter value, not the property that references it
+        substrings = []
+        for parameter in self.parameters:
+            value=self.__dict__["_" + parameter]
+            substrings.append(f"{parameter}={value:.5g}")
+
+        return ", ".join(substrings)
+
+    def __repr__(self):
+
+        direction_string = "<->" if self.is_symmetric() else "->"
+
+        return "".join([
+            self.__class__.__name__,
+            f"('{self.name}', {self.site_1.name} {direction_string} {self.site_2.name}, offset={self.cell_offset}, ",
+            self.parameter_string,
+            ")"])
+
+
 
 
 class HeisenbergExchange(Exchange):
@@ -381,6 +616,22 @@ class HeisenbergExchange(Exchange):
                 )
 
 
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0,0] == m[1,1] and m[1,1] == m[2,2]:
+            return HeisenbergExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j=float(m[0,0]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
+
+
 
 
 class DiagonalExchange(Exchange):
@@ -415,6 +666,7 @@ class DiagonalExchange(Exchange):
         Metadata attached to the exchange term.
     """
 
+    exchange_type = "Diagonal"
     parameters = ["j_x", "j_y", "j_z"]
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "J"
@@ -526,6 +778,24 @@ class DiagonalExchange(Exchange):
                 j_z = self.j_z if j_z is None else j_z,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
 
+
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m):
+            return DiagonalExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j_x=float(m[0,0]),
+                j_y=float(m[1,1]),
+                j_z=float(m[2,2]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
+
 class XYExchange(Exchange):
     r"""Represent an XY exchange term.
 
@@ -636,6 +906,22 @@ class XYExchange(Exchange):
                 name=self.name if name is None else name,
                 j=self.j if j is None else j,
                 metadata=self.metadata.copy() if metadata is None else metadata.copy())
+
+
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0,0] == m[1,1] and m[2,2] == 0:
+            return XYExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j=float(m[0,0]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
 
 class XXZExchange(Exchange):
     r"""Represent an XXZ exchange term.
@@ -767,6 +1053,22 @@ class XXZExchange(Exchange):
         """
         return True
 
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0,0] == m[1,1]:
+            return XXZExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j_xy=float(m[0,0]),
+                j_z=float(m[2,2]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
+
 class IsingExchange(Exchange):
     r"""Represent an Ising exchange term for the z component.
 
@@ -877,6 +1179,21 @@ class IsingExchange(Exchange):
         An Ising exchange is always symmetric, so this always returns ``True``.
         """
         return True
+
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
+        if is_diagonal(m) and m[0, 0] == 0 and m[1, 1] == 0:
+            return IsingExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                j_z=float(m[2, 2]),
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+        else:
+            return None
 
 class DMExchange(Exchange):
     r"""Represent a Dzyaloshinskii-Moriya exchange term.
@@ -1018,7 +1335,78 @@ class DMExchange(Exchange):
         """Return whether this is a symmetric exchange."""
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
+    @staticmethod
+    def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
+        """ Create a specialised version of this exchange """
+        m = exchange.exchange_matrix
 
-all_exchanges = [HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange]
+        if not np.all(np.diagonal(m) == 0):
+            return None
+
+        if m[0,1] != -m[1,0] or m[0,2] != -m[2,0] or m[1,2] != -m[2,1]:
+            return None
+
+        z = float(m[0,1])
+        y = -float(m[0,2])
+        x = float(m[1,2])
+
+        return DMExchange(
+                site_1=exchange.site_1,
+                site_2=exchange.site_2,
+                cell_offset=exchange.cell_offset,
+                d_x=x,
+                d_y=y,
+                d_z=z,
+                name=exchange.name,
+                metadata=exchange.metadata.copy())
+
+
+all_exchanges = [HeisenbergExchange, DiagonalExchange, XXZExchange, XYExchange, IsingExchange, DMExchange]
 exchanges_lookup = {exchange.exchange_type: exchange for exchange in all_exchanges}
 lowercase_exchange_lookup = {exchange.exchange_type.lower(): exchange for exchange in all_exchanges}
+
+_specialisation_search = [HeisenbergExchange, XYExchange,  XXZExchange, IsingExchange, DiagonalExchange, DMExchange]
+
+def specialise_exchange(exchange: Exchange, rounding_exponent: int | None = None):
+    """ Find the narrowest exchange subclass to fit the exchange """
+    # We need to run this on rounded matrices to deal with numerical inaccuracies
+    # We could make specialisation method deal with this individually,
+    # but we can also just give the rounded matrix to the function.
+    #
+    # Ideally, we don't round, so if something specialises without rounding, we just
+    # return that, we can check this by doing both the unrounded and rounded version
+    # and returning the unrounded on if it has the same class as the rounded one
+    #
+    # If we don't allow rounding, i.e. rounding exponent = None, then we can just do
+    # one half of this and return the result
+
+    unrounded_specialised = exchange
+
+
+    for Ex in _specialisation_search:
+        specialised = Ex._specialise(exchange)
+        if specialised is not None:
+            unrounded_specialised = specialised
+            break
+
+    # Return case for no rounding
+    if rounding_exponent is None:
+        return unrounded_specialised
+
+    # Get the rounded version
+    rounded_exchange = exchange.generalise().updated(
+        exchange_matrix=np.round(exchange.exchange_matrix, decimals=rounding_exponent))
+
+    rounded_specialised = rounded_exchange
+
+    for Ex in _specialisation_search:
+        specialised = Ex._specialise(rounded_exchange)
+        if specialised is not None:
+            rounded_specialised = specialised
+            break
+
+    # Return the unrounded one if the classes are the same, otherwise, return the rounded one
+    if rounded_specialised.__class__ == unrounded_specialised.__class__:
+        return unrounded_specialised
+    else:
+        return rounded_specialised

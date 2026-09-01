@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from pyspinw.exchange import Exchange
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 
 
 def debug_plot(structure: Structure, couplings: list[Exchange], show=True):

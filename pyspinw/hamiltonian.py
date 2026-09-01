@@ -2,7 +2,8 @@
 import logging
 from collections.abc import Callable
 import re
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import reduce
 from typing import Sequence, Union
 
 import numpy as np
@@ -25,14 +26,34 @@ from pyspinw.path import Path, Slice
 from pyspinw.polarisation import calculate_polarised_intensity
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.basis import site_rotations
+from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
 
 # pylint: disable=R0903
 
 logger = logging.Logger("pyspinw.hamiltonian")
+
+def _defaultlistdict():
+    """ Used to create defaultdicts of defaultdicts of lists """
+    return defaultdict(list)
+
+def _defaultsetdict():
+    """ Used to create defaultdicts of defaultdicts of sets """
+    return defaultdict(set)
+
+def _defaultsetdictdict():
+    """ Used to create defaultdicts of defaultdicts of defaultdict of sets """
+    return defaultdict(_defaultsetdict)
+
+def _defaultsetdictdictdict():
+    """ Used to create defaultdicts of defaultdicts of defaultdict of defaultdict of sets """
+    return defaultdict(_defaultsetdictdict)
+
+
+
 
 def uniquetol(values: ArrayLike, tol: float=1e-5):
     """ Returns floating point unique values within a given tolerance """
@@ -335,10 +356,15 @@ class Hamiltonian(SPWSerialisable):
             sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
             spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
-            supercell=TiledSupercell(scaling=(1, 1, 1))
+            supercell=TiledSupercell(scaling=(1, 1, 1)),
+            show_unit_cell_warning=False,
         )
 
-        return (Hamiltonian(structure=structure, exchanges=new_exchanges, anisotropies=new_anisotropies),
+        return (Hamiltonian(
+                    structure=structure,
+                    exchanges=new_exchanges,
+                    anisotropies=new_anisotropies,
+                    ),
                 site_mapping, exchange_mapping, anisotropy_mapping)
 
     def expanded(self):
@@ -359,9 +385,9 @@ class Hamiltonian(SPWSerialisable):
 
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
-    def sites_by_name(self, regex) -> list[LatticeSite]:
+    def sites_by_name(self, test_string) -> list[LatticeSite]:
         """ Get sites where name matches regex"""
-        return self.structure.sites_by_name(regex)
+        return self.structure.sites_by_name(test_string)
 
     def print_summary(self):
         """ Print a textual summary to stdout"""
@@ -402,7 +428,7 @@ class Hamiltonian(SPWSerialisable):
                               use_rotating: bool=True,
                               intensity_unit: IntensityUnits | str='cell',
                               components: str='Sperp'
-                              ):
+                              ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate the energy levels of the system for the given q-vectors.
 
         ** Does not remove nonmagnetic sites **
@@ -1015,6 +1041,116 @@ class Hamiltonian(SPWSerialisable):
             for anisotropy in minimiser.hamiltonian.anisotropies]
 
         return Hamiltonian(structure, exchanges, anisotropies)
+
+    @staticmethod
+    def _combine_exchanges(exchanges: list[Exchange], swapped_exchanges: list[Exchange]):
+        """ Combines exchanges together if they have the matching sites and cell offset
+
+        This might be if they're the same, or swapped.
+        """
+        by_offset = defaultdict(list)
+        swapped_by_offset = defaultdict(list)
+
+        for exchange in exchanges:
+            by_offset[exchange.cell_offset.as_tuple].append(exchange.exchange_matrix)
+            swapped_by_offset[(-exchange.cell_offset).as_tuple].append(exchange.exchange_matrix.T)
+
+        for exchange in swapped_exchanges:
+            swapped_by_offset[exchange.cell_offset.as_tuple].append(exchange.exchange_matrix)
+            by_offset[(-exchange.cell_offset).as_tuple].append(exchange.exchange_matrix.T)
+
+        combined = {offset: reduce(np.add, matrices) if matrices else np.zeros((3,3))
+                        for offset, matrices in by_offset.items()}
+
+        swapped_combined = {offset: reduce(np.add, matrices) if matrices else np.zeros((3,3))
+                                for offset, matrices in swapped_by_offset.items()}
+
+        return combined, swapped_combined
+
+
+    def symmetry_filled(self) -> "Hamiltonian":
+        """ Check that the hamiltonian obeys its symmetry """
+        new_exchanges = []
+        for exchange in self.exchanges:
+            new_exchanges += exchange.symmetry_fill(self.structure, include_original=True)
+
+        new_anisotropies = []
+        for anisotropy in self.anisotropies:
+            new_anisotropies += anisotropy.symmetry_fill(self.structure, include_original=True)
+
+        return Hamiltonian(self.structure, new_exchanges, new_anisotropies)
+
+    def symmetry_transformed(self, operation: SpaceOperation):
+        """ Transform the Hamiltonian using this spacegroup
+
+        If your system is physical this should not do anything to it except change the names/colors etc around.
+        Useful for checking things related to symmetry.
+        """
+        if operation not in self.structure.spacegroup:
+            raise ValueError(f"'{operation}' does not belong to spacegroup '{self.structure.spacegroup}'")
+
+        # Transform the sites and build a mapping for exchanges/anisotropies
+        unit_cell = self.structure.unit_cell
+
+        xyz_transform = operation.point_operation_in_cartesian(unit_cell)
+
+        site_mapping = dict()
+        new_sites = []
+        for site in self.structure.sites:
+            new_site = site.symmetry_transformed(operation, unit_cell)
+            site_mapping[site.unique_id] = new_site
+            new_sites.append(new_site)
+
+        # Transform the exchanges
+        new_exchanges = []
+        for exchange in self.exchanges:
+            site_1 = site_mapping[exchange.site_1.unique_id]
+            site_2 = site_mapping[exchange.site_2.unique_id]
+
+            new_matrix = xyz_transform @ exchange.exchange_matrix @ xyz_transform.T
+
+            # Try to get the transformed cell offset
+            vector = exchange.lattice_vector
+            new_vector = operation.point_operation_matrix @ vector
+
+            new_in_cell_vector = site_2.ijk - site_1.ijk
+
+            expected_cell_offset = new_vector - new_in_cell_vector
+            new_offset = CellOffset.coerce(expected_cell_offset)
+
+            # # Get the cell offset by using the transformation in cartesian coordinates
+            # cartesian_vector = xyz_transform @ exchange.lattice_vector
+            # site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
+            # cell_offset_in_cartesian = cartesian_vector - site_difference
+            # cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
+            # new_offset = CellOffset.coerce(cell_offset_vector)
+
+            new_exchange = Exchange(site_1, site_2,
+                                    cell_offset=new_offset,
+                                    exchange_matrix=new_matrix,
+                                    name=exchange.name,
+                                    metadata=exchange.metadata).specialise()
+
+            new_exchanges.append(new_exchange)
+
+        # Anisotropies
+        new_anisotropies = []
+        for anisotropy in self.anisotropies:
+            new_site = site_mapping[anisotropy.site.unique_id]
+
+            new_matrix = xyz_transform @ anisotropy.anisotropy_matrix @ xyz_transform.T
+
+            new_anisotropy = Anisotropy(site=new_site, anisotropy_matrix=new_matrix)
+
+            new_anisotropies.append(new_anisotropy)
+
+        # Structure
+        new_structure = Structure(new_sites,
+                                   unit_cell=self.structure.unit_cell,
+                                   spacegroup=self.structure.spacegroup,
+                                   supercell=self.structure.supercell)
+
+        return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
