@@ -187,7 +187,7 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
     for target, parameter in parameter_data:
         if isinstance(target, str):
 
-            exchanges = hamiltonian.exchanges_by_name(target)
+            exchanges = hamiltonian.exchanges_by_name(target) + hamiltonian.anisotropies_by_name(target)
 
             if len(exchanges) == 0:
                 raise ValueError(f"Could not find exchanges that match {target}")
@@ -259,11 +259,14 @@ class Hamiltonian(SPWSerialisable):
         """ Get list of exchanges whose names match the regex """
         return [exchange for exchange in self.exchanges if re.match(regex, exchange.name) is not None]
 
-
     @property
     def anisotropies(self):
         """ Get the anisotropies """
         return self._anisotropies
+
+    def anisotropies_by_name(self, regex):
+        """ Get list of anisotropies whose names match the regex """
+        return [anisotropy for anisotropy in self.anisotropies if re.match(regex, anisotropy.name) is not None]
 
     @property
     def text_summary(self) -> str:

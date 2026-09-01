@@ -14,6 +14,6 @@ class Tolerances:
     IS_ZERO_TOL = 1e-10
     BOND_TOL = 1e-6        # Distance tolerance to consider same bond
     SPECIALISE_ROUNDING_EXPONENT = 14
-
+    IMAG_MODE_TOL = 1e-2   # Value of imaginary energy (meV) below which to ignore
 
 tolerances = Tolerances()
