@@ -30,6 +30,9 @@ from pyspinw.basis import site_rotations
 from pyspinw.symmetry.supercell import TiledSupercell, RotationSupercell
 from pyspinw.units import IntensityUnits, intensity_units
 
+
+
+
 # pylint: disable=R0903
 
 logger = logging.Logger("pyspinw.hamiltonian")
@@ -642,46 +645,6 @@ class Hamiltonian(SPWSerialisable):
 
         return energies, intensities, sab, wavefunctions, scaling, rlu_to_cart
 
-    def spaghetti_plot_dual(self,
-                            path: Path,
-                            field: ArrayLike | None = None,
-                            show: bool=True,
-                            new_figure: bool=True,
-                            use_rust: bool=True,
-                            use_rotating: bool=True,
-                            intensity_unit: IntensityUnits | str = 'cell',
-                            scale: str='linear',
-                            components: str='Sperp'):
-        """ Create a spaghetti diagram with energy top and intensity bottom """
-        if new_figure:
-            fig, axs = plt.subplots(2, 1)
-        else:
-            fig = plt.gcf()
-            axs = fig.get_axes()
-            for ii in range(len(axs), 2):
-                axs.append(fig.add_subplot(2,1,ii+1))
-
-        x_values = path.x_values()
-        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                     intensity_unit, components))
-        n_mode = energy.shape[1]
-        for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
-            axs[0].plot(x_values, np.real(series[0]), 'k')
-            axs[1].plot(x_values, np.real(series[1]), 'k')
-            if (np.imag(series[0]) > 0.01).any():
-                axs[0].plot(x_values, np.imag(series[0]), 'or')
-        if 'log' in scale:
-            axs[1].set_yscale('log')
-        axs[0].set_ylabel('Magnon Energy (meV)')
-        axs[1].set_ylabel('Magnon Intensity')
-
-        path.format_plot(axs[0])
-        path.format_plot(axs[1])
-
-        if show:
-            plt.show()
-        else:
-            return fig
 
     def spaghetti_plot(self,
                        path: Path,
@@ -697,158 +660,281 @@ class Hamiltonian(SPWSerialisable):
                        intensity_unit: IntensityUnits | str = 'cell',
                        scale: str='linear',
                        components: str='Sperp'):
-        """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
-        if new_figure:
-            fig, ax = plt.subplots()
-        else:
-            fig = plt.gcf()
-            ax = fig.get_axes()[0]
 
-        x_values = path.x_values()
-        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
-                                                                     intensity_unit, components))
-        intensity[np.where(np.isnan(intensity))] = 0
-        energy[np.where(np.isnan(energy))] = 0
-        if evect is None:
-            emax = max(0.0001, np.nanmax(np.real(energy)))
-            denom = 10**np.floor(np.log10(emax))
-            evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
-        if dE is None:
-            dE = np.mean(np.diff(evect)) * 2.35
-        spec = egrid(energy, intensity, evect, dE)
-        if vmax is None:
-            try:
-                vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
-            except ValueError:
-                vmax = 1 # ??????
-
-        if dE != 0:
-            mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
-            fig.colorbar(mesh, ax=ax)
-
-        ax.plot(x_values, np.real(energy), 'k')
-        if (np.imag(energy) > 0.01).any():
-            ax.plot(x_values, np.imag(energy), 'or')
-        ax.set_ylim(0, np.max(evect))
-        path.format_plot(ax)
-        ax.set_ylabel('Magnon Energy (meV)')
-
-        if show:
-            plt.show()
-        else:
-            return fig
-
-    def intensity_map(self,
-                            q_slice: Slice,
-                            vmin: float = 0,
-                            vmax: float | None = None,
-                            field: ArrayLike | None = None,
-                            show: bool = True,
-                            new_figure: bool = True,
-                            use_rust: bool = True,
-                            use_rotating: bool = True,
-                            intensity_unit: IntensityUnits | str = 'cell',
-                            cmap: str = "magma_r",
-                            origin: str = "lower"):
-        """Plot a reciprocal space map with intensity integrated over energy.
-
-        Parameters
-        ----------
-        q_slice : Slice
-            2D slice object defining the grid of q-points. Energy bounds e_min
-            and e_max (in meV) are taken from this object.
-        vmin, vmax :
-            Color scale limits
-        field:
-            external field
-        show :
-            Whether to display the plot
-        new_figure :
-            Whether to create a new figure
-        use_rust, use_rotating, intensity_unit :
-            Same as energies_and_intensities
-        cmap :
-            Matplotlib colormap name
-        origin :
-            'lower' or 'upper' for matplotlib imshow origin
-        """
-        if new_figure:
-            fig, ax = plt.subplots()
-        else:
-            fig = plt.gcf()
-            ax = fig.get_axes()[0]
-
-        # Get energy bounds from the Slice object
-        e_min = q_slice.e_min
-        e_max = q_slice.e_max
-
-        # Step 1: Calculate all energies and intensities at each q-point
-        energies, intensities = self._energies_and_intensities(
-            q_slice.q_points(),
-            field=field,
-            use_rust=use_rust,
-            use_rotating=use_rotating,
-            intensity_unit=intensity_unit
-        )
-
-        # Step 2: Convert to numpy arrays and nan is counted as 0
-        energies = np.array(energies)
-        intensities = np.array(intensities)
-
-        energies = np.nan_to_num(energies, nan=0.0)
-        intensities = np.nan_to_num(intensities, nan=0.0)
-
-
-        # Step 3: Energy integration - mask and sum
-        mask = energies > 0  # Only positive energy modes
-        if e_min is not None:
-            mask &= energies >= e_min
-        if e_max is not None:
-            mask &= energies <= e_max
-
-        # Sum over all modes within the energy window
-        integrated = np.sum(intensities * mask, axis=1)  # shape = (n_q,)
-
-        # Step 4: Reshape back to 2D grid
-        # meshgrid(indexing="xy") lays out data as (n_b, n_a) in memory
-        # imshow expects shape (rows, cols) = (n_b, n_a) where rows = vertical/axis_2
-        grid_data = integrated.reshape(q_slice.n_b, q_slice.n_a)
-
-        # Step 5: Auto-scale color limits if not provided
-        if vmax is None:
-            vmax = np.nanmax(grid_data)
-
-        # Step 6: Plot heatmap
-        im = ax.imshow(
-            grid_data,
-            extent=q_slice.extent(),
-            origin=origin,
+        from pyspinw.sample import SingleCrystal
+        return SingleCrystal(self).spaghetti_plot(
+            path=path,
+            evect=evect,
+            dE=dE,
             vmin=vmin,
             vmax=vmax,
+            field=field,
+            show=show,
+            new_figure=new_figure,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit,
+            scale=scale,
+            components=components)
+
+    def spaghetti_plot_dual(self,
+                            path: Path,
+                            field: ArrayLike | None = None,
+                            show: bool=True,
+                            new_figure: bool=True,
+                            use_rust: bool=True,
+                            use_rotating: bool=True,
+                            intensity_unit: IntensityUnits | str = 'cell',
+                            scale: str='linear',
+                            components: str='Sperp'):
+
+        from pyspinw.sample import SingleCrystal
+        return SingleCrystal(self).spaghetti_plot_dual(
+            path=path,
+            field=field,
+            show=show,
+            new_figure=new_figure,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit,
+            scale=scale,
+            components=components)
+
+    def intensity_map(self,
+                      q_slice: Slice,
+                      vmin: float = 0,
+                      vmax: float | None = None,
+                      field: ArrayLike | None = None,
+                      show: bool = True,
+                      new_figure: bool = True,
+                      use_rust: bool = True,
+                      use_rotating: bool = True,
+                      intensity_unit: IntensityUnits | str = 'cell',
+                      cmap: str = "magma_r",
+                      origin: str = "lower"):
+
+        from pyspinw.sample import SingleCrystal
+        return SingleCrystal(self).intensity_map(
+            q_slice=q_slice,
+            vmin=vmin,
+            vmax=vmax,
+            field=field,
+            show=show,
+            new_figure=new_figure,
+            use_rust=use_rust,
+            use_rotating=use_rotating,
+            intensity_unit=intensity_unit,
             cmap=cmap,
-            aspect="auto"
+            origin=origin
         )
 
-        # Step 7: Add colorbar and labels
-        fig.colorbar(im, ax=ax, label="Intensity")
-        q_slice.format_plot(ax)
-
-        # Add title showing energy window
-        if e_min is not None and e_max is not None:
-            ax.set_title(f"Reciprocal Space Map (E = {e_min:.0f}-{e_max:.0f} meV)")
-        elif e_min is not None:
-            ax.set_title(f"Reciprocal Space Map (E > {e_min:.0f} meV)")
-        elif e_max is not None:
-            ax.set_title(f"Reciprocal Space Map (E < {e_max:.0f} meV)")
-        else:
-            ax.set_title("Reciprocal Space Map (all energies)")
-
-        fig.tight_layout()
-
-        if show:
-            plt.show()
-        else:
-            return fig
+    # def spaghetti_plot_dual(self,
+    #                         path: Path,
+    #                         field: ArrayLike | None = None,
+    #                         show: bool=True,
+    #                         new_figure: bool=True,
+    #                         use_rust: bool=True,
+    #                         use_rotating: bool=True,
+    #                         intensity_unit: IntensityUnits | str = 'cell',
+    #                         scale: str='linear',
+    #                         components: str='Sperp'):
+    #     """ Create a spaghetti diagram with energy top and intensity bottom """
+    #     if new_figure:
+    #         fig, axs = plt.subplots(2, 1)
+    #     else:
+    #         fig = plt.gcf()
+    #         axs = fig.get_axes()
+    #         for ii in range(len(axs), 2):
+    #             axs.append(fig.add_subplot(2,1,ii+1))
+    #
+    #     x_values = path.x_values()
+    #     energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+    #                                                                  intensity_unit, components))
+    #     n_mode = energy.shape[1]
+    #     for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
+    #         axs[0].plot(x_values, np.real(series[0]), 'k')
+    #         axs[1].plot(x_values, np.real(series[1]), 'k')
+    #         if (np.imag(series[0]) > 0.01).any():
+    #             axs[0].plot(x_values, np.imag(series[0]), 'or')
+    #     if 'log' in scale:
+    #         axs[1].set_yscale('log')
+    #     axs[0].set_ylabel('Magnon Energy (meV)')
+    #     axs[1].set_ylabel('Magnon Intensity')
+    #
+    #     path.format_plot(axs[0])
+    #     path.format_plot(axs[1])
+    #
+    #     if show:
+    #         plt.show()
+    #     else:
+    #         return fig
+    #
+    # def spaghetti_plot(self,
+    #                    path: Path,
+    #                    evect: ArrayLike | None = None,
+    #                    dE: float | Callable | None = None,
+    #                    vmin: float=0,
+    #                    vmax: float | None = None,
+    #                    field: ArrayLike | None = None,
+    #                    show: bool=True,
+    #                    new_figure: bool=True,
+    #                    use_rust: bool=True,
+    #                    use_rotating: bool=True,
+    #                    intensity_unit: IntensityUnits | str = 'cell',
+    #                    scale: str='linear',
+    #                    components: str='Sperp'):
+    #     """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
+    #     if new_figure:
+    #         fig, ax = plt.subplots()
+    #     else:
+    #         fig = plt.gcf()
+    #         ax = fig.get_axes()[0]
+    #
+    #     x_values = path.x_values()
+    #     energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+    #                                                                  intensity_unit, components))
+    #     intensity[np.where(np.isnan(intensity))] = 0
+    #     energy[np.where(np.isnan(energy))] = 0
+    #     if evect is None:
+    #         emax = max(0.0001, np.nanmax(np.real(energy)))
+    #         denom = 10**np.floor(np.log10(emax))
+    #         evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
+    #     if dE is None:
+    #         dE = np.mean(np.diff(evect)) * 2.35
+    #     spec = egrid(energy, intensity, evect, dE)
+    #     if vmax is None:
+    #         try:
+    #             vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
+    #         except ValueError:
+    #             vmax = 1 # ??????
+    #
+    #     if dE != 0:
+    #         mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
+    #         fig.colorbar(mesh, ax=ax)
+    #
+    #     ax.plot(x_values, np.real(energy), 'k')
+    #     if (np.imag(energy) > 0.01).any():
+    #         ax.plot(x_values, np.imag(energy), 'or')
+    #     ax.set_ylim(0, np.max(evect))
+    #     path.format_plot(ax)
+    #     ax.set_ylabel('Magnon Energy (meV)')
+    #
+    #     if show:
+    #         plt.show()
+    #     else:
+    #         return fig
+    #
+    # def intensity_map(self,
+    #                         q_slice: Slice,
+    #                         vmin: float = 0,
+    #                         vmax: float | None = None,
+    #                         field: ArrayLike | None = None,
+    #                         show: bool = True,
+    #                         new_figure: bool = True,
+    #                         use_rust: bool = True,
+    #                         use_rotating: bool = True,
+    #                         intensity_unit: IntensityUnits | str = 'cell',
+    #                         cmap: str = "magma_r",
+    #                         origin: str = "lower"):
+    #     """Plot a reciprocal space map with intensity integrated over energy.
+    #
+    #     Parameters
+    #     ----------
+    #     q_slice : Slice
+    #         2D slice object defining the grid of q-points. Energy bounds e_min
+    #         and e_max (in meV) are taken from this object.
+    #     vmin, vmax :
+    #         Color scale limits
+    #     field:
+    #         external field
+    #     show :
+    #         Whether to display the plot
+    #     new_figure :
+    #         Whether to create a new figure
+    #     use_rust, use_rotating, intensity_unit :
+    #         Same as energies_and_intensities
+    #     cmap :
+    #         Matplotlib colormap name
+    #     origin :
+    #         'lower' or 'upper' for matplotlib imshow origin
+    #     """
+    #     if new_figure:
+    #         fig, ax = plt.subplots()
+    #     else:
+    #         fig = plt.gcf()
+    #         ax = fig.get_axes()[0]
+    #
+    #     # Get energy bounds from the Slice object
+    #     e_min = q_slice.e_min
+    #     e_max = q_slice.e_max
+    #
+    #     # Step 1: Calculate all energies and intensities at each q-point
+    #     energies, intensities = self._energies_and_intensities(
+    #         q_slice.q_points(),
+    #         field=field,
+    #         use_rust=use_rust,
+    #         use_rotating=use_rotating,
+    #         intensity_unit=intensity_unit
+    #     )
+    #
+    #     # Step 2: Convert to numpy arrays and nan is counted as 0
+    #     energies = np.array(energies)
+    #     intensities = np.array(intensities)
+    #
+    #     energies = np.nan_to_num(energies, nan=0.0)
+    #     intensities = np.nan_to_num(intensities, nan=0.0)
+    #
+    #
+    #     # Step 3: Energy integration - mask and sum
+    #     mask = energies > 0  # Only positive energy modes
+    #     if e_min is not None:
+    #         mask &= energies >= e_min
+    #     if e_max is not None:
+    #         mask &= energies <= e_max
+    #
+    #     # Sum over all modes within the energy window
+    #     integrated = np.sum(intensities * mask, axis=1)  # shape = (n_q,)
+    #
+    #     # Step 4: Reshape back to 2D grid
+    #     # meshgrid(indexing="xy") lays out data as (n_b, n_a) in memory
+    #     # imshow expects shape (rows, cols) = (n_b, n_a) where rows = vertical/axis_2
+    #     grid_data = integrated.reshape(q_slice.n_b, q_slice.n_a)
+    #
+    #     # Step 5: Auto-scale color limits if not provided
+    #     if vmax is None:
+    #         vmax = np.nanmax(grid_data)
+    #
+    #     # Step 6: Plot heatmap
+    #     im = ax.imshow(
+    #         grid_data,
+    #         extent=q_slice.extent(),
+    #         origin=origin,
+    #         vmin=vmin,
+    #         vmax=vmax,
+    #         cmap=cmap,
+    #         aspect="auto"
+    #     )
+    #
+    #     # Step 7: Add colorbar and labels
+    #     fig.colorbar(im, ax=ax, label="Intensity")
+    #     q_slice.format_plot(ax)
+    #
+    #     # Add title showing energy window
+    #     if e_min is not None and e_max is not None:
+    #         ax.set_title(f"Reciprocal Space Map (E = {e_min:.0f}-{e_max:.0f} meV)")
+    #     elif e_min is not None:
+    #         ax.set_title(f"Reciprocal Space Map (E > {e_min:.0f} meV)")
+    #     elif e_max is not None:
+    #         ax.set_title(f"Reciprocal Space Map (E < {e_max:.0f} meV)")
+    #     else:
+    #         ax.set_title("Reciprocal Space Map (all energies)")
+    #
+    #     fig.tight_layout()
+    #
+    #     if show:
+    #         plt.show()
+    #     else:
+    #         return fig
 
     def parameterize(self,
                      *parameters: ParametrizationType,

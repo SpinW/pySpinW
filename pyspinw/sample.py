@@ -41,7 +41,8 @@ class Sample3D(Sample):
                                  field: ArrayLike | None = None,
                                  use_rust: bool = True,
                                  use_rotating: bool=True,
-                                 intensity_unit: IntensityUnits | str='cell',):
+                                 intensity_unit: IntensityUnits | str='cell',
+                                 components: str = 'Sperp'):
         """ Abstract method to get the energies and intensities """
 
     @check_sizes(field=(3,), allow_nones=True)
@@ -79,7 +80,9 @@ class Sample3D(Sample):
                        use_rust: bool=True,
                        use_rotating: bool=True,
                        intensity_unit: IntensityUnits | str = 'cell',
-                       scale: str='linear'):
+                       scale: str='linear',
+                       components: str='Sperp'):
+
         """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
         if new_figure:
             fig, ax = plt.subplots()
@@ -88,21 +91,22 @@ class Sample3D(Sample):
             ax = fig.get_axes()[0]
 
         x_values = path.x_values()
-        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field,
-                                                                    use_rust, use_rotating, intensity_unit))
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                     intensity_unit, components))
+        intensity[np.where(np.isnan(intensity))] = 0
+        energy[np.where(np.isnan(energy))] = 0
         if evect is None:
-            emax = np.max([0.001, np.nanmax(np.real(energy))])
+            emax = max(0.0001, np.nanmax(np.real(energy)))
             denom = 10**np.floor(np.log10(emax))
             evect = np.linspace(0, np.ceil(emax / denom) * denom, 100)
         if dE is None:
             dE = np.mean(np.diff(evect)) * 2.35
         spec = egrid(energy, intensity, evect, dE)
-
         if vmax is None:
             try:
                 vmax = np.nanmax(spec[:, np.where(evect > max(np.max(evect)/10, 0.1))]) / 10.
             except ValueError:
-                vmax = 1.0
+                vmax = 1 # ??????
 
         if dE != 0:
             mesh = ax.pcolormesh(x_values, evect, spec.T, vmin=vmin, vmax=vmax, cmap="magma_r")
@@ -119,6 +123,49 @@ class Sample3D(Sample):
             plt.show()
         else:
             return fig
+
+
+    def spaghetti_plot_dual(self,
+                            path: Path,
+                            field: ArrayLike | None = None,
+                            show: bool=True,
+                            new_figure: bool=True,
+                            use_rust: bool=True,
+                            use_rotating: bool=True,
+                            intensity_unit: IntensityUnits | str = 'cell',
+                            scale: str='linear',
+                            components: str='Sperp'):
+        """ Create a spaghetti diagram with energy top and intensity bottom """
+        if new_figure:
+            fig, axs = plt.subplots(2, 1)
+        else:
+            fig = plt.gcf()
+            axs = fig.get_axes()
+            for ii in range(len(axs), 2):
+                axs.append(fig.add_subplot(2,1,ii+1))
+
+        x_values = path.x_values()
+        energy, intensity = omegasum(*self._energies_and_intensities(path.q_points(), field, use_rust, use_rotating,
+                                                                     intensity_unit, components))
+        n_mode = energy.shape[1]
+        for series in zip(*([v[:, n_mode - i - 1] for i in range(n_mode)] for v in (energy, intensity))):
+            axs[0].plot(x_values, np.real(series[0]), 'k')
+            axs[1].plot(x_values, np.real(series[1]), 'k')
+            if (np.imag(series[0]) > 0.01).any():
+                axs[0].plot(x_values, np.imag(series[0]), 'or')
+        if 'log' in scale:
+            axs[1].set_yscale('log')
+        axs[0].set_ylabel('Magnon Energy (meV)')
+        axs[1].set_ylabel('Magnon Intensity')
+
+        path.format_plot(axs[0])
+        path.format_plot(axs[1])
+
+        if show:
+            plt.show()
+        else:
+            return fig
+
 
     def intensity_map(self,
                             q_slice: Slice,
