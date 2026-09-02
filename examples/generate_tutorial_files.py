@@ -100,7 +100,7 @@ for md_file in os.listdir(input_dir):
 
                             # Write to files
                             if len(lines) > 0:
-                                md_file.write("```python\n")
+                                md_file.write("\n```python\n")
 
                                 for line in lines:
                                     artifacts_file.write(line)

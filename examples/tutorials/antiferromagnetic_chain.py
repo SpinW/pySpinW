@@ -37,9 +37,11 @@ view(hamiltonian)
 ## image: structure.png
 ## snapshot(hamiltonian, filename="structure.png")
 
-# Now we can plot, first  we
+# Now we can plot a spaghetti diagram, first we generate a path though the lattice
+# from $q=0$ to $1$ reciprocal lattice unit in $x$.
 path = Path([[0,0,0], [1,0,0]])
 
+# Show a plot
 ## skip: 1
 hamiltonian.spaghetti_plot(path, scale='log')
 

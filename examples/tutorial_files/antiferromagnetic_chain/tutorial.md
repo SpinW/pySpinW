@@ -52,7 +52,7 @@ Exchanges:
 ![]( structure.png
 )
 
- Now we can plot, first  we
+ Now we can plot, first we
 ```python
 path = Path([[0,0,0], [1,0,0]])
 ```
