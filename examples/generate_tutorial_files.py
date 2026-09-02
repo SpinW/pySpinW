@@ -132,6 +132,7 @@ for md_file in os.listdir(input_dir):
                                     if line.startswith("title"): # Write the title to the .md and start reading in
                                         parts = line.split(":")
                                         md_file.write("# " + parts[1])
+                                        md_file.write(f"\n[Source]({base_name}.py)\n\n")
                                         started = True
 
                                     elif line.startswith("subtitle"): # Write a subtitle to the .md
@@ -180,6 +181,17 @@ for md_file in os.listdir(input_dir):
     if not started:
         print("WARNING: '## title:' was not found, output never started")
 
+
+    # Make a file without the order two comments
+    with open(output_target_dir / f"{base_name}.py", 'w') as file:
+        for level, block in blocks:
+            if level == 0:
+                for line in block:
+                    file.write(line)
+            if level == 1:
+                for line in block:
+                    file.write("#" + line)
+
     # Execute the artefact files, generating images etc, and insert any data from stdout that needs to be done
     old_dir = os.getcwd()
     os.chdir(output_target_dir)
@@ -219,5 +231,6 @@ for md_file in os.listdir(input_dir):
                 md_file.write("```\n\n")
             else:
                 md_file.write(line)
+
 
     break

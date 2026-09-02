@@ -1,5 +1,8 @@
 #  Antiferromagnetic chain with rotating-frame calculation
 
+[Source](antiferromagnetic_chain.py)
+
+
 _This tutorial mirrors MATLAB spinW Tutorial 2_
 
  Import pyspinw
