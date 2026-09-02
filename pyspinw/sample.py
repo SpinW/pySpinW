@@ -61,12 +61,12 @@ class Sample3D(Sample):
                                  use_rotating: bool = True,
                                  intensity_unit: IntensityUnits | str = 'cell'):
         """ Get energy and intensity data"""
-        return self._energies_and_intensities(
-            path.q_points(),
-            field=field,
-            use_rust=use_rust,
-            use_rotating=use_rotating,
-            intensity_unit=intensity_unit)
+        # return self._energies_and_intensities(
+        #     path.q_points(),
+        #     field=field,
+        #     use_rust=use_rust,
+        #     use_rotating=use_rotating,
+        #     intensity_unit=intensity_unit)
 
     def spaghetti_plot(self,
                        path: Path,
