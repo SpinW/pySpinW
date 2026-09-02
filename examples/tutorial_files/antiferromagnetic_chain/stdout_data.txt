@@ -1,0 +1,12 @@
+#####:0
+Unit Cell: (3, 8, 8), alpha=90, beta=90, gamma=90
+Spacegroup: P1
+Supercell: Rotation
+  size = (1, 1, 1)
+  PropagationVector(0.5, 0, 0)
+  Perpendicular=[0, 0, 1]
+Sites:
+  Site(MCu1, 0, 0, 0, spin=[0. 1. 0.])
+Exchanges:
+  HeisenbergExchange('J1:MCu1-MCu1', MCu1 <-> MCu1, offset=(1, 0, 0), j=1)
+######:0
