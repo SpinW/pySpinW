@@ -63,6 +63,14 @@ class Viewer(QWidget):
 
         super().__init__(parent)
 
+        # Some parameter checking
+        if len(copies) != 3 and not all(isinstance(x, int) for x in copies):
+            raise ValueError("Expected `copies` to be a triple of ints")
+
+        if len(rotation_supercell_expansion_max) != 3 and \
+                not all(isinstance(x, int) for x in rotation_supercell_expansion_max):
+            raise ValueError("Expected `rotation_supercell_expansion_max` to be a triple of ints")
+
         # Deal with added scaling, and rotation supercells
         if isinstance(hamiltonian.structure.supercell, RotationSupercell):
             pass
