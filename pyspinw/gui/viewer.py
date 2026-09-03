@@ -12,7 +12,7 @@ from PySide6.QtCore import Qt, QDir
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication, QFileDialog, QMessageBox
 from numpy._typing import ArrayLike
 
-from pyspinw import Structure
+from pyspinw import Structure, RotationSupercell
 from pyspinw.gui.crystalview import CrystalViewerWidget
 from pyspinw.gui.icons.iconload import png_icon
 from pyspinw.gui.rendermodel import RenderModel
@@ -21,6 +21,7 @@ from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.util import rotation_matrix, rotation_from_z
+from symmetry.supercell import CommensurateSupercell
 
 # Force desktop OpenGL before any Qt import (critical on macOS)
 os.environ.setdefault("QT_OPENGL", "desktop")
@@ -56,9 +57,24 @@ class Viewer(QWidget):
                  initial_distance: float | None = None,
                  display_options: DisplayOptions | None = None,
                  save_config_on_exit: bool = True,
+                 copies: tuple[int, int, int] = (1, 1, 1),
+                 rotation_supercell_expansion_max: tuple[int, int, int] = (10, 10, 10),
                  parent=None):
 
         super().__init__(parent)
+
+        # Deal with added scaling, and rotation supercells
+        if isinstance(hamiltonian.structure.supercell, RotationSupercell):
+            pass
+
+        if isinstance(hamiltonian.structure.supercell, CommensurateSupercell):
+            # Change the scaling on the supercell
+            new_scaling = tuple(x*y for x, y in zip(copies, hamiltonian.structure.supercell.scaling))
+
+            hamiltonian = hamiltonian.updated(
+                structure = hamiltonian.structure.updated(
+                    supercell = hamiltonian.structure.supercell.rescale(new_scaling)
+                ))
 
         self.save_config_on_exit = save_config_on_exit
 

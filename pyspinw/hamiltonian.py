@@ -1016,6 +1016,16 @@ class Hamiltonian(SPWSerialisable):
 
         return Hamiltonian(structure, exchanges, anisotropies)
 
+    def updated(self,
+                structure: Structure | None = None,
+                exchanges: list[Exchange] | None = None,
+                anisotropies: list[Anisotropy] | None = None):
+        """ Create a new Hamiltonian, but with some fields replaced (those not None) """
+
+        return Hamiltonian(
+            self.structure if structure is None else structure,
+            self.exchanges if exchanges is None else exchanges,
+            self.anisotropies if anisotropies is None else anisotropies)
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),

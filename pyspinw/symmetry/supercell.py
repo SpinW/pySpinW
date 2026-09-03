@@ -337,6 +337,11 @@ class CommensurateSupercell(Supercell):
         self._propagation_vectors = propagation_vectors
         super().__init__(scaling)
 
+    @abstractmethod
+    def rescale(self, new_scaling: tuple[int, int, int]):
+        """ Create a new supercell, but with different scaling """
+
+
 
     def cell_size(self) -> tuple[int, int, int] | None:
         """ Get the smallest possible supercell"""
@@ -371,6 +376,7 @@ class TiledSupercell(CommensurateSupercell):
     supercell_name = "tiled"
 
 
+
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
         """ Get the spin for a given cell, and the specified spin data """
         return spin_data[0, :]
@@ -378,6 +384,10 @@ class TiledSupercell(CommensurateSupercell):
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
         return self._scaling
+
+    def rescale(self, new_scaling: tuple[int, int, int]):
+        """ Create a copy of this supercell, but with different scaling """
+        return TiledSupercell(new_scaling)
 
     def summation_form(self) -> "Supercell":
         """ Get this supercell in summation form """
@@ -414,13 +424,19 @@ class TransformationSupercell(CommensurateSupercell):
                  transforms: list[tuple[CommensuratePropagationVector, SupercellTransformation | None]],
                  scaling=(1, 1, 1)):
 
-        # TODO: Provide a nicer interface for this maybe
+        self._input_transforms = transforms
+
         self._transforms = [(vector, IdentityTransform() if transform is None else transform)
                             for vector, transform in transforms]
 
         propagation_vectors = [vector for vector, _ in transforms]
 
         super().__init__(propagation_vectors, scaling)
+
+
+    def rescale(self, new_scaling: tuple[int, int, int]):
+        """ Create a copy of this supercell, but with different scaling """
+        return TransformationSupercell(self._input_transforms, new_scaling)
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
         """ Calculate the spin based on the spin data for a given site """
@@ -485,6 +501,12 @@ class SummationSupercell(CommensurateSupercell):
                  scaling: tuple[int, int, int] | None = None):
 
         super().__init__(propagation_vectors, scaling)
+
+
+    def rescale(self, new_scaling: tuple[int, int, int]):
+        """ Create a copy of this supercell, but with different scaling """
+        return SummationSupercell(self._propagation_vectors, new_scaling)
+
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
         """ Calculate spin at a given cell offset"""
