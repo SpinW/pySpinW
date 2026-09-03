@@ -10,6 +10,7 @@ from pyspinw.gui.edge_cases import add_extra_edge_lines, add_extra_edge_points
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.supercell import CommensurateSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.util import rotation_from_z
 
@@ -178,7 +179,21 @@ class RenderAnisotropy(Component):
 class RenderModel:
     """ Model of the hamiltonian, contains lots of derived information for rendering and text representation"""
 
-    def __init__(self, hamiltonian: Hamiltonian):
+    def __init__(self,
+                 hamiltonian: Hamiltonian,
+                 copies: tuple[int, int, int] = (1,1,1),
+                 rotation_supercell_expansion_max=(10,10,10)):
+
+
+        # Deal with added scaling, and rotation supercells
+        if isinstance(hamiltonian.structure.supercell, CommensurateSupercell):
+            # Change the scaling on the supercell
+            new_scaling = tuple(x*y for x, y in zip(copies, hamiltonian.structure.supercell.scaling))
+
+            hamiltonian = hamiltonian.updated(
+                structure = hamiltonian.structure.updated(
+                    supercell = hamiltonian.structure.supercell.rescale(new_scaling)
+                ))
 
         self.hamiltonian = hamiltonian
 
