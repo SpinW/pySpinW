@@ -35,7 +35,8 @@ hamiltonian.print_summary()
 view(hamiltonian)
 
 ## image: structure.png
-## snapshot(hamiltonian, filename="structure.png")
+## snapshot(hamiltonian, filename="structure.png", view_point=(-5,-5,-10),
+##          display_options=DisplayOptions(perspective=False, atom_spin_scaling=0.5))
 
 # Now we can plot a spaghetti diagram, first we generate a path though the lattice
 # from $q=0$ to $1$ reciprocal lattice unit in $x$.

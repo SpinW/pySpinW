@@ -214,7 +214,7 @@ def get_app():
 
 def snapshot(object: Hamiltonian | Structure,
              filename: str | None = None,
-             view_point: ArrayLike = (0,0,10.0),
+             view_point: ArrayLike = (-5.0, -5.0, -10.0),
              display_options: DisplayOptions | None = None):
     """ Make (and display) an image of a structure/hamiltonian
 
