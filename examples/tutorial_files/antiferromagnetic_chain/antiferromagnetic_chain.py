@@ -2,8 +2,6 @@
 
 Reproduces Tutorial 2: https://spinw.org/tutorials/02tutorial
 """
-## title: Antiferromagnetic chain with rotating-frame calculation
-## reproduces: 2
 
 # Import pyspinw
 from pyspinw import *
@@ -26,26 +24,16 @@ exchanges = generate_exchanges(sites=structure,
 hamiltonian = Hamiltonian(structure, exchanges)
 
 # You can get a summary of the Hamiltonian using `print_summary` (also works on `Structure`)
-## capture-stdout
 hamiltonian.print_summary()
-## capture-end
 
 # View it using view
-## skip
 view(hamiltonian)
 
-## image: structure.png
-## snapshot(hamiltonian, filename="structure.png", view_point=(-5,-5,-10),
-##          display_options=DisplayOptions(perspective=False, atom_spin_scaling=0.5))
 
 # Now we can plot a spaghetti diagram, first we generate a path though the lattice
 # from $q=0$ to $1$ reciprocal lattice unit in $x$.
 path = Path([[0,0,0], [1,0,0]])
 
 # Show a plot
-## skip: 1
 hamiltonian.spaghetti_plot(path, scale='log')
 
-## image: spaghetti_plot.png
-## fig = hamiltonian.spaghetti_plot(path, scale='log', show=False)
-## fig.savefig("spaghetti_plot.png")
