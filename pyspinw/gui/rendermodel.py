@@ -347,5 +347,6 @@ class RenderModel:
             self.unit_cell_axes_transforms.append(rotation_matrix @ translation_matrix)
 
     def cells(self):
+        """ Generator for cell offsets for each of the displayed cells"""
         return cell_offset_generator(*self.expansion_size)
 

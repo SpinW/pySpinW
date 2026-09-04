@@ -244,7 +244,6 @@ class Supercell(ABC, SPWSerialisable):
 
     def cells(self):
         """ Iterator for cells in supercell """
-
         a, b, c = self.cell_size()
         for cell_offset in cell_offset_generator(a,b,c):
             yield cell_offset

@@ -322,9 +322,7 @@ class Structure(SPWSerialisable):
                 unit_cell: UnitCell | None = None,
                 spacegroup: SymmetryGroup | None = None,
                 supercell: Supercell | None = None):
-
         """ Make a copy of this structure, but with selected (not None) fields replaced"""
-
         return Structure(
             self._input_sites if sites is None else sites,
             self._unit_cell if unit_cell is None else unit_cell,

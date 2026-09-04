@@ -277,7 +277,6 @@ class Hamiltonian(SPWSerialisable):
                 dict[tuple[int, tuple[int, int, int]], LatticeSite],
                 list[int],
                 list[int]]:
-
         """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians
 
         This should only be used internally, and its not very user friendly
@@ -353,7 +352,6 @@ class Hamiltonian(SPWSerialisable):
 
     def expanded(self, supercell_size: tuple[int, int, int] | None = None):
         """ Expand the supercell structure into a single cell structure """
-
         if supercell_size is not None:
             if not isinstance(supercell_size, tuple):
                 raise TypeError("supercell_size should be a tuple")
@@ -1048,7 +1046,6 @@ class Hamiltonian(SPWSerialisable):
                 exchanges: list[Exchange] | None = None,
                 anisotropies: list[Anisotropy] | None = None):
         """ Create a new Hamiltonian, but with some fields replaced (those not None) """
-
         return Hamiltonian(
             self.structure if structure is None else structure,
             self.exchanges if exchanges is None else exchanges,

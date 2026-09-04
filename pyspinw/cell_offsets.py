@@ -94,7 +94,6 @@ CellOffsetCoercible = CellOffset | tuple[int, int, int] | None
 
 def cell_offset_generator(a, b, c):
     """ Iterator for cells in supercell """
-
     for i in range(a):
         for j in range(b):
             for k in range(c):
