@@ -4,6 +4,7 @@ import re
 import numpy as np
 from ase.data import chemical_symbols
 
+from pyspinw.cell_offsets import cell_offset_generator
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
@@ -149,21 +150,30 @@ class Structure(SPWSerialisable):
 
         return unique_sites
 
-    def _expansion_site_mapping(self):
+    def _expansion_site_mapping(self, supercell_size: tuple[int, int, int] | None = None):
         """ Expand supercell into a single, bigger cell """
         # Calculate new cell
-        scale = self.supercell.cell_size()
+        if supercell_size is None:
+            scale = self.supercell.cell_size()
+        else:
+            scale = supercell_size
 
         big_cell = self.unit_cell.updated(
             a=self.unit_cell.a * scale[0],
             b=self.unit_cell.b * scale[1],
             c=self.unit_cell.c * scale[2])
 
+        scaling = np.array(scale, dtype=float)
+
         # Create a mapping between sites and offsets to the new sites
         mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
-        for index, offset in enumerate(self.supercell.cells()):
+        for index, offset in enumerate(cell_offset_generator(*scale)):
             for site in self.sites:
-                position = self.supercell.fractional_in_supercell(site.ijk, offset)
+
+                position = offset.vector + np.array(site.ijk, dtype=float)
+                position /= scaling
+
+
                 spin = self.supercell.spin(site, cell_offset=offset)
 
                 new_site = LatticeSite(
@@ -280,54 +290,10 @@ class Structure(SPWSerialisable):
         """ Print out details of this structure """
         print(self.text_summary)
 
-    def site_by_name(self, name):
-        """ Get a single site by its name"""
-        found = self.sites_by_name(name)
-        if len(found) == 0:
-            raise ValueError(f"No site matching '{name}' found")
-        elif len(found) > 1:
-            # Are any an exact match
-            exact_matches = [site for site in found if site.name == name]
-
-            if len(exact_matches) == 1:
-                return exact_matches[0]
-
-            raise ValueError(f"Multiple sites matching '{name}' found (multiple or no exact matches)")
-        else:
-            return found[0]
-
-    @property
-    def text_summary(self) -> str:
-        """ Textual details of this structure """
-        lines = []
-        lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
-        lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
-        supercell_text_data = self.supercell.text_data()
-        lines.append(f"Supercell: {supercell_text_data[0]}")
-        lines += ["  " + s for s in supercell_text_data[1:]]
-        lines.append("Sites:")
-        for site in self._sites:
-
-            is_not_input_chr = "" if site.unique_id in self._input_uid_to_site else "* "
-
-            lines.append(f"  {is_not_input_chr}{site}")
-
-        return "\n".join(lines)
-
-    def print_summary(self):
-        """ Print out details of this structure """
-        print(self.text_summary)
-
     @property
     def spacegroup(self) -> SpaceGroup | MagneticSpaceGroup:
         """ Get the spacegroup"""
         return self._spacegroup
-
-    # @spacegroup.setter
-    # def spacegroup(self, spacegroup: SpaceGroup | MagneticSpaceGroup):
-    #     """ Set the spacegroup"""
-    #     self._spacegroup = spacegroup
-    #     self._build_sites()
 
     @property
     def unit_cell(self) -> UnitCell:
@@ -350,3 +316,15 @@ class Structure(SPWSerialisable):
         """ Set the supercell """
         self._supercell = supercell
         self._build_sites()
+
+    def updated(self,
+                sites: list[LatticeSite] | None = None,
+                unit_cell: UnitCell | None = None,
+                spacegroup: SymmetryGroup | None = None,
+                supercell: Supercell | None = None):
+        """ Make a copy of this structure, but with selected (not None) fields replaced"""
+        return Structure(
+            self._input_sites if sites is None else sites,
+            self._unit_cell if unit_cell is None else unit_cell,
+            self._spacegroup if spacegroup is None else spacegroup,
+            self._supercell if supercell is None else supercell)
