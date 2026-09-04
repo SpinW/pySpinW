@@ -16,7 +16,7 @@ site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0, name="origin")
 
 supercell = RotationSupercell(
     np.array([0,1,0]),
-    np.array([0,0,np.sqrt(1/10)]))
+    np.array([0,0,1/3]))
 
 s = Structure([site], unit_cell=unit_cell, supercell=supercell)
 

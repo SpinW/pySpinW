@@ -11,7 +11,7 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, \
     serialise_fraction_or_builtin, deserialise_fraction_or_builtin, SPWDeserialisationContext, expects_keys, \
     SPWSerialisationError, numpy_serialise, numpy_deserialise
 from pyspinw.site import LatticeSite
-from pyspinw.cell_offsets import CellOffset
+from pyspinw.cell_offsets import CellOffset, cell_offset_generator
 from pyspinw.util import rotation_matrix
 
 
@@ -244,11 +244,10 @@ class Supercell(ABC, SPWSerialisable):
 
     def cells(self):
         """ Iterator for cells in supercell """
+
         a, b, c = self.cell_size()
-        for i in range(a):
-            for j in range(b):
-                for k in range(c):
-                    yield CellOffset(i,j,k)
+        for cell_offset in cell_offset_generator(a,b,c):
+            yield cell_offset
 
     def wrap_sum(self, offset_1: CellOffset, *other_offsets: CellOffset):
         """ Calculate the sum of cell offsets, wrapped to the supercell, x,y,z % cell_dim"""

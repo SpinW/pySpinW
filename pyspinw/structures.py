@@ -4,6 +4,7 @@ import re
 import numpy as np
 from ase.data import chemical_symbols
 
+from pyspinw.cell_offsets import cell_offset_generator
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
@@ -149,21 +150,30 @@ class Structure(SPWSerialisable):
 
         return unique_sites
 
-    def _expansion_site_mapping(self):
+    def _expansion_site_mapping(self, supercell_size: tuple[int, int, int] | None = None):
         """ Expand supercell into a single, bigger cell """
         # Calculate new cell
-        scale = self.supercell.cell_size()
+        if supercell_size is None:
+            scale = self.supercell.cell_size()
+        else:
+            scale = supercell_size
 
         big_cell = self.unit_cell.updated(
             a=self.unit_cell.a * scale[0],
             b=self.unit_cell.b * scale[1],
             c=self.unit_cell.c * scale[2])
 
+        scaling = np.array(scale, dtype=float)
+
         # Create a mapping between sites and offsets to the new sites
         mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
-        for index, offset in enumerate(self.supercell.cells()):
+        for index, offset in enumerate(cell_offset_generator(*scale)):
             for site in self.sites:
-                position = self.supercell.fractional_in_supercell(site.ijk, offset)
+
+                position = offset.vector + np.array(site.ijk, dtype=float)
+                position /= scaling
+
+
                 spin = self.supercell.spin(site, cell_offset=offset)
 
                 new_site = LatticeSite(
