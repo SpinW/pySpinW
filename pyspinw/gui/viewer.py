@@ -9,7 +9,7 @@ from PySide6.QtGui import QSurfaceFormat
 from imageio import imwrite
 
 from PySide6.QtCore import Qt, QDir
-from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QTextEdit, QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication, QFileDialog, QMessageBox
 from numpy._typing import ArrayLike
 
 from pyspinw import Structure
@@ -20,7 +20,7 @@ from pyspinw.gui.displayoptionstoolbar import DisplayOptionsToolbar
 from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.textdisplay import TextDisplay
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.util import rotation_matrix, rotation_from_z
+from pyspinw.util import rotation_from_z
 
 # Force desktop OpenGL before any Qt import (critical on macOS)
 os.environ.setdefault("QT_OPENGL", "desktop")
@@ -56,9 +56,21 @@ class Viewer(QWidget):
                  initial_distance: float | None = None,
                  display_options: DisplayOptions | None = None,
                  save_config_on_exit: bool = True,
+                 copies: tuple[int, int, int] = (1, 1, 1),
+                 rotation_supercell_expansion_max: tuple[int, int, int] = (10, 10, 10),
+                 propagation_vector_commensurability_tolerance=1e-4,
                  parent=None):
 
         super().__init__(parent)
+
+        # Some parameter checking
+        if len(copies) != 3 and not all(isinstance(x, int) for x in copies):
+            raise ValueError("Expected `copies` to be a triple of ints")
+
+        if len(rotation_supercell_expansion_max) != 3 and \
+                not all(isinstance(x, int) for x in rotation_supercell_expansion_max):
+            raise ValueError("Expected `rotation_supercell_expansion_max` to be a triple of ints")
+
 
         self.save_config_on_exit = save_config_on_exit
 
@@ -78,7 +90,8 @@ class Viewer(QWidget):
 
         self._unique_id = _generate_unique_id()
 
-        render_model = RenderModel(hamiltonian)
+        render_model = RenderModel(hamiltonian, copies, rotation_supercell_expansion_max,
+                                   propagation_vector_commensurability_tolerance)
 
         layout = QVBoxLayout()
 
@@ -215,7 +228,10 @@ def get_app():
 def snapshot(object: Hamiltonian | Structure,
              filename: str | None = None,
              view_point: ArrayLike = (0,0,10.0),
-             display_options: DisplayOptions | None = None):
+             display_options: DisplayOptions | None = None,
+             copies: tuple[int,int,int]=(1,1,1),
+             rotation_supercell_expansion_max: tuple[int,int,int]=(10,10,10),
+             propagation_vector_commensurability_tolerance=1e-4):
     """ Make (and display) an image of a structure/hamiltonian
 
     If filename is not a string, it will create a matplotlib plot window
@@ -252,8 +268,11 @@ def snapshot(object: Hamiltonian | Structure,
     # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
     # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
-    viewer = Viewer(object, rotation, distance, display_options, save_config_on_exit=False)
-    viewer.setWindowTitle("Hamiltonian Viewer")
+    viewer = Viewer(object, rotation, distance, display_options,
+                    save_config_on_exit=False, copies=copies,
+                    rotation_supercell_expansion_max=rotation_supercell_expansion_max,
+                    propagation_vector_commensurability_tolerance=propagation_vector_commensurability_tolerance)
+
     viewer.resize(800, 600)
 
     viewer.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
@@ -288,7 +307,11 @@ def snapshot(object: Hamiltonian | Structure,
         imwrite(filename, data)
 
 
-def show_object(object: Hamiltonian | Structure, block=True):
+def show_object(object: Hamiltonian | Structure,
+                block=True,
+                copies: tuple[int,int,int]=(1,1,1),
+                rotation_supercell_expansion_max: tuple[int,int,int]=(10,10,10),
+                propagation_vector_commensurability_tolerance=1e-4):
     """ Show a Hamiltonian or structure in the viewer"""
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
@@ -309,7 +332,9 @@ def show_object(object: Hamiltonian | Structure, block=True):
     # app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
     # app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
-    viewer = Viewer(object)
+    viewer = Viewer(object, copies=copies,
+                    rotation_supercell_expansion_max=rotation_supercell_expansion_max,
+                    propagation_vector_commensurability_tolerance=propagation_vector_commensurability_tolerance)
     viewer.setWindowTitle("Hamiltonian Viewer")
     viewer.resize(800, 600)
     viewer.show()
