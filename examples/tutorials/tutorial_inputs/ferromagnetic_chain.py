@@ -1,5 +1,14 @@
 """ Ferromagnetic chain example """
 
+## title: Ferromagnetic Chain
+## reproduces: 1
+
+## subtitle: Introduction
+# A ferromagnetic chain is the simplest system that we can simulate with pySpinW
+
+## subtitle: A basic calculation using
+# Import the main pySpinW module, doing this will give access to the majority of pySpinW methods and classes
+# that are needed for most tasks.
 from pyspinw import *
 
 unit_cell = UnitCell(1,1,1)
