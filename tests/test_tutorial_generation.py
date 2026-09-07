@@ -6,7 +6,6 @@ check for output values or graphs
 
 import os
 import runpy
-import pytest
 
 
 def test_tutorial_docs_build(monkeypatch):
@@ -14,7 +13,7 @@ def test_tutorial_docs_build(monkeypatch):
     path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials')
     monkeypatch.chdir(path)
     monkeypatch.syspath_prepend(path)
-    
+
     runpy.run_path(
         os.path.join(
             os.path.dirname(__file__),
