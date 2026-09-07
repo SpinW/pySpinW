@@ -11,7 +11,7 @@ import os
 import importlib
 import builtins
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorial_inputs'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials', 'tutorial_inputs'))
 
 @patch('matplotlib.pyplot.show', MagicMock())
 @patch('pyspinw.view', MagicMock())
