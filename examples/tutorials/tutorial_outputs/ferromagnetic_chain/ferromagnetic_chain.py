@@ -29,7 +29,7 @@ only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
 structure = Structure([only_site], unit_cell=unit_cell)
 
 # We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
-view(structure)
+view(structure, copies=(5,1,1))
 
 # We now come to defining the exchanges, which we will need as a list.
 # There are various exchange classes that we can use.
@@ -67,9 +67,12 @@ hamiltonian = Hamiltonian(structure, exchanges)
 # We can now see the exchanges in the viewer by viewing the hamiltonian object
 view(hamiltonian, copies=(5,1,1))
 
+
+# We'll now plot the magnon spectrum of this chain.
+#
 # To make a spaghetti plot we need to define a path though reciprocal space,
 # which we define here in lattice coordinates.
-# We look at the $x$ direction (in the same direction as the exchanges).
+# We look at the $x$ direction (in the same direction as the exchanges) and go between 0 and 1 reciprocal lattice units.
 path = Path([[0,0,0], [1,0,0]])
 
 hamiltonian.spaghetti_plot(path, dE=0.4)

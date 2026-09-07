@@ -36,7 +36,7 @@ structure = Structure([only_site], unit_cell=unit_cell)
 
 # We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
 ## skip
-view(structure)
+view(structure, copies=(5,1,1))
 ## image: ferromagnet_structure.png
 ## snapshot(structure, "ferromagnet_structure.png", view_point=(0,-6,-1), copies=(5,1,1))
 

@@ -37,6 +37,7 @@ hamiltonian = Hamiltonian(structure, exchanges)
 
 snapshot(hamiltonian, "ferromagnet_hamiltonian.png", view_point=(0,-6,-1), copies=(5,1,1))
 
+
 path = Path([[0,0,0], [1,0,0]])
 
 fig = hamiltonian.spaghetti_plot(path, dE=0.4, show=False)

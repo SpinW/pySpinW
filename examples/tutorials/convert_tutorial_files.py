@@ -8,6 +8,8 @@ from pathlib import Path
 import runpy
 import sys
 
+from jupyter_files import JupyterFile
+
 tutorial_input_dir = Path("tutorial_inputs")
 tutorial_output_dir = Path("tutorial_outputs")
 
@@ -48,6 +50,7 @@ def run(files):
             base_name = md_file.split(".")[0]
 
             print(base_name)
+
 
             output_target_dir = tutorial_output_dir / base_name
 
@@ -92,6 +95,9 @@ def run(files):
             skip_lines = 0
             stdout_capture_index = 0
             stderr_capture_index = 0
+
+            jupyter = JupyterFile()
+
             with open(output_target_dir / "tutorial.md", 'w') as md_file:
                 with open(output_target_dir / "artifacts.py", 'w') as artifacts_file:
                     artifacts_file.write("import sys\n"
@@ -128,6 +134,8 @@ def run(files):
                                     for line in artefact_lines:
                                         artifacts_file.write(line)
 
+                                    jupyter.add_code(md_lines)
+
                                 else:
                                     pass #print(f"'{block}' comes before title tag, skipping")
 
@@ -137,6 +145,8 @@ def run(files):
                                 if started:
                                     for line in block[skip_lines:]:
                                         md_file.write(line)
+
+                                    jupyter.add_text(block[skip_lines:])
                                 else:
                                     pass # print(f"'{block}' comes before title tag, skipping")
                                 skip_lines = 0
@@ -151,13 +161,20 @@ def run(files):
 
                                             if line.startswith("title"): # Write the title to the .md and start reading in
                                                 parts = line.split(":")
+
+                                                jupyter.add_text("# " + parts[1])
+
                                                 md_file.write("# " + parts[1])
                                                 md_file.write(f"\n[Source]({base_name}.py)\n\n")
+
                                                 started = True
 
                                             elif line.startswith("subtitle"): # Write a subtitle to the .md
                                                 parts = line.split(":")
-                                                md_file.write("# " + parts[1])
+
+                                                jupyter.add_text("## " + parts[1])
+
+                                                md_file.write("## " + parts[1])
 
                                             elif line.startswith("image"): # Put an image tag in .md, and code in the python
                                                 parts = line.split(":")
@@ -218,6 +235,9 @@ def run(files):
 
             if not started:
                 print("WARNING: '## title:' was not found, output never started")
+
+            # Save the jupyter file
+            jupyter.write_notebook(output_target_dir / f"{base_name}.ipynb")
 
 
             # Make a file without the order two comments

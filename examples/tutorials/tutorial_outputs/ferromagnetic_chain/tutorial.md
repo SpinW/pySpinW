@@ -5,10 +5,10 @@
 
 _This tutorial mirrors MATLAB spinW Tutorial 1_
 
-#  Introduction
+##  Introduction
  A ferromagnetic chain is the simplest system that we can simulate with pySpinW, and it makes a good introduction
  to setting up a calculation.
-#  A basic calculation
+##  A basic calculation
  Import the main pySpinW module, doing this will give access to the majority of pySpinW methods and classes
  that are needed for most tasks.
 
@@ -47,7 +47,7 @@ structure = Structure([only_site], unit_cell=unit_cell)
  We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
 
 ```python
-view(structure)
+view(structure, copies=(5,1,1))
 ```
 
 ![]( ferromagnet_structure.png
@@ -98,9 +98,12 @@ view(hamiltonian, copies=(5,1,1))
 ![]( ferromagnet_hamiltonian.png
 )
 
+##  Plotting
+ We'll now plot the magnon spectrum of this chain.
+
  To make a spaghetti plot we need to define a path though reciprocal space,
  which we define here in lattice coordinates.
- We look at the $x$ direction (in the same direction as the exchanges).
+ We look at the $x$ direction (in the same direction as the exchanges) and go between 0 and 1 reciprocal lattice units.
 
 ```python
 path = Path([[0,0,0], [1,0,0]])
