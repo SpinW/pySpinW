@@ -1,6 +1,6 @@
 #  Ferromagnetic Chain
 
-[Source](ferromagnetic_chain.py)
+Source: [python (.py)](ferromagnetic_chain.py) | [jupyter (.ipynb)](ferromagnetic_chain.ipynb) 
 
 
 _This tutorial mirrors MATLAB spinW Tutorial 1_

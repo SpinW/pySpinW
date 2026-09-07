@@ -165,7 +165,10 @@ def run(files):
                                                 jupyter.add_text("# " + parts[1])
 
                                                 md_file.write("# " + parts[1])
-                                                md_file.write(f"\n[Source]({base_name}.py)\n\n")
+                                                md_file.write(
+                                                    f"\nSource: "
+                                                    f"[python (.py)]({base_name}.py) | "
+                                                    f"[jupyter (.ipynb)]({base_name}.ipynb) \n\n")
 
                                                 started = True
 
