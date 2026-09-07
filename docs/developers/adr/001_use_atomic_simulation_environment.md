@@ -20,7 +20,7 @@ We will use the [Atomic Simulation Environment](https://wiki.fysik.dtu.dk/ase/) 
 
 ## Status
 
-Proposed
+**Rejected:** The ASE library can't handle moments in the way we need it to  
 
 
 ## Consequences

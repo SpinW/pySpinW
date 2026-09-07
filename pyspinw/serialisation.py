@@ -1,6 +1,6 @@
 """ Serialisation mixin
 
-See design document 004 for details.
+See notes document 004 for details.
 
 """
 import inspect
@@ -96,7 +96,7 @@ class SPWSerialisationContextGroup:
 
 
 class SPWSerialisationContext:
-    """ Context object (see design document 004) for serialisation """
+    """ Context object (see notes document 004) for serialisation """
 
     def __init__(self):
         self.sites = SPWSerialisationContextGroup("sites")
@@ -159,7 +159,7 @@ class SPWDeserialisationContexGroup:
         self.objects[id] = instance
 
 class SPWDeserialisationContext:
-    """ Context object (see design document 004) for deserialisation """
+    """ Context object (see notes document 004) for deserialisation """
 
     @expects_keys("sites", parameter_index=1)
     def __init__(self, context_data: dict):
