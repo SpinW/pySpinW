@@ -42,11 +42,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
+      # Skip the tutorial generation on windows, doesn't matter as long as something will run it
     - name: Run tests with pyTest (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         python -m pytest --ignore=tests/test_tutorial_generation.py
-
+      # Need to make sure at least something runs the tutorial generation though, seems its mac
     - name: Run tests with pyTest (MacOS)
       if: matrix.os == 'macos-latest'
       env:
