@@ -11,4 +11,4 @@ with open(tutorial_output_dir / "index.md", 'w') as file:
 
     for index, (filename, text) in enumerate(zip(filenames, text)):
 
-        file.write(f" - [Tutorial {index+1}]({filename[:-3]}/tutorial) {text}")
+        file.write(f" - [Tutorial {index+1}]({filename[:-3]}/tutorial.md) {text}")
