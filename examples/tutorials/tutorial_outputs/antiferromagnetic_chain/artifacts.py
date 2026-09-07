@@ -1,8 +1,11 @@
 import sys
 import io
 old_stdout = sys.stdout
-buffer = io.StringIO()
-sys.stdout = buffer
+old_stderr = sys.stderr
+stdout_buffer = io.StringIO()
+stderr_buffer = io.StringIO()
+sys.stdout = stdout_buffer
+sys.stderr = stderr_buffer
 from pyspinw import *
 unit_cell = UnitCell(3, 8, 8)
 structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
@@ -12,15 +15,21 @@ exchanges = generate_exchanges(sites=structure,
                                exchange_type=HeisenbergExchange,
                                j=1)
 hamiltonian = Hamiltonian(structure, exchanges)
-print("#####:0")
+print("#####:1")
 hamiltonian.print_summary()
-print("######:0")
+print("######:1")
 snapshot(hamiltonian, filename="structure.png", view_point=(-5,-5,-10),
          display_options=DisplayOptions(perspective=False, atom_spin_scaling=0.5))
 path = Path([[0,0,0], [1,0,0]])
 fig = hamiltonian.spaghetti_plot(path, scale='log', show=False)
 fig.savefig("spaghetti_plot.png")
+
 with open("stdout_data.txt", "w") as file:
-    file.write(buffer.getvalue())
+    file.write(stdout_buffer.getvalue())
 sys.stdout = old_stdout
+
+
+with open("stderr_data.txt", "w") as file:
+    file.write(stderr_buffer.getvalue())
+sys.stderr = old_stderr
 

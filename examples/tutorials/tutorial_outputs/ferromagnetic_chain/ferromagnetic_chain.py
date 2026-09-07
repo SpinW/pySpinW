@@ -1,13 +1,9 @@
 """ Ferromagnetic chain example """
 
-## title: Ferromagnetic Chain
-## reproduces: 1
 
-## subtitle: Introduction
 # A ferromagnetic chain is the simplest system that we can simulate with pySpinW, and it makes a good introduction
 # to setting up a calculation.
 
-## subtitle: A basic calculation
 # Import the main pySpinW module, doing this will give access to the majority of pySpinW methods and classes
 # that are needed for most tasks.
 from pyspinw import *
@@ -30,15 +26,10 @@ only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
 # Note that in this example, we will see a warning about the choice of unit cell.
 # This is because we have chosen a 1x1x1 unit cell, which results in more symmetries than P1 specifies.
 # It is not of any consequence.
-## capture-stderr
 s = Structure([only_site], unit_cell=unit_cell)
-## end-capture-stderr
 
 # We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
-## skip
 view(s)
-## image: ferromagnet_structure.png
-## snapshot(s, "ferromagnet_structure.png") #, copies=(5,1,1))
 
 # We now come to defining the exchanges, which we will need as a list.
 # There are various exchange classes that we can use.
@@ -74,18 +65,11 @@ exchanges = generate_exchanges(sites=[only_site],
 hamiltonian = Hamiltonian(s, exchanges)
 
 # We can now see the exchanges in the viewer
-## skip
 view(s)
-## image: ferromagnet_structure.png
-## snapshot(s, "ferromagnet_structure.png", ) #, copies=(5,1,1))
 
 # To make a spaghetti plot we need to define a path though reciprocal space,
 # which we define here in lattice coordinates.
 # We look at the $x$ direction (in the same direction as the exchanges).
 path = Path([[0,0,0], [1,0,0]])
 
-## skip
 hamiltonian.spaghetti_plot(path, dE=0.4)
-## image: spaghetti_plot.png
-## fig = hamiltonian.spaghetti_plot(path, dE=0.4, show=False)
-## fig.savefig("spaghetti_plot.png")

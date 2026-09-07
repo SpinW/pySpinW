@@ -28,7 +28,7 @@ hamiltonian = Hamiltonian(structure, exchanges)
 # You can get a summary of the Hamiltonian using `print_summary` (also works on `Structure`)
 ## capture-stdout
 hamiltonian.print_summary()
-## capture-end
+## end-capture-stdout
 
 # View it using view
 ## skip

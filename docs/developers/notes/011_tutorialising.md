@@ -24,4 +24,6 @@ The `title` command is unique as it is required, and its location specifies the 
  - `## image: FILENAME` insert an image at this location, if there are more `## ` lines after, they will be executed
   when building the documents and can be used to create files, e.g. `## plt.savefig(FILENAME)`
  - `## capture-stdout` starts capturing data sent to stdout, it will be inserted as verbatim text when the capture ends
- - `## capture-end` ends the capture
+ - `## end-capture-stdout` ends the capture
+ - `## capture-stderr` starts capturing data sent to stderr, it will be inserted as verbatim text when the capture ends
+ - `## end-capture-stderr` ends the capture
