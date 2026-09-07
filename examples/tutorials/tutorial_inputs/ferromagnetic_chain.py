@@ -79,9 +79,13 @@ view(hamiltonian, copies=(5,1,1))
 ## image: ferromagnet_hamiltonian.png
 ## snapshot(hamiltonian, "ferromagnet_hamiltonian.png", view_point=(0,-6,-1), copies=(5,1,1))
 
+## subtitle: Plotting
+
+# We'll now plot the magnon spectrum of this chain.
+#
 # To make a spaghetti plot we need to define a path though reciprocal space,
 # which we define here in lattice coordinates.
-# We look at the $x$ direction (in the same direction as the exchanges).
+# We look at the $x$ direction (in the same direction as the exchanges) and go between 0 and 1 reciprocal lattice units.
 path = Path([[0,0,0], [1,0,0]])
 
 ## skip

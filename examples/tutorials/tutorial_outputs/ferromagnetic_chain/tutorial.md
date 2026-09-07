@@ -46,6 +46,10 @@ structure = Structure([only_site], unit_cell=unit_cell)
 
  We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
 
+```python
+view(structure)
+```
+
 ![]( ferromagnet_structure.png
 )
 
@@ -87,6 +91,10 @@ hamiltonian = Hamiltonian(structure, exchanges)
 ```
  We can now see the exchanges in the viewer by viewing the hamiltonian object
 
+```python
+view(hamiltonian, copies=(5,1,1))
+```
+
 ![]( ferromagnet_hamiltonian.png
 )
 
@@ -96,6 +104,10 @@ hamiltonian = Hamiltonian(structure, exchanges)
 
 ```python
 path = Path([[0,0,0], [1,0,0]])
+```
+
+```python
+hamiltonian.spaghetti_plot(path, dE=0.4)
 ```
 
 ![]( spaghetti_plot.png

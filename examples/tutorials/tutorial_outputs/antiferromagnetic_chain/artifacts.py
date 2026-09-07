@@ -6,21 +6,33 @@ stdout_buffer = io.StringIO()
 stderr_buffer = io.StringIO()
 sys.stdout = stdout_buffer
 sys.stderr = stderr_buffer
+
 from pyspinw import *
+
 unit_cell = UnitCell(3, 8, 8)
+
 structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
                                    perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
+
+
 exchanges = generate_exchanges(sites=structure,
                                max_distance=3.1,
                                exchange_type=HeisenbergExchange,
                                j=1)
+
 hamiltonian = Hamiltonian(structure, exchanges)
+
 print("#####:1")
 hamiltonian.print_summary()
 print("######:1")
+
+
 snapshot(hamiltonian, filename="structure.png", view_point=(-5,-5,-10),
          display_options=DisplayOptions(perspective=False, atom_spin_scaling=0.5))
+
 path = Path([[0,0,0], [1,0,0]])
+
+
 fig = hamiltonian.spaghetti_plot(path, scale='log', show=False)
 fig.savefig("spaghetti_plot.png")
 

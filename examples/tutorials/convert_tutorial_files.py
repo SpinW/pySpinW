@@ -109,21 +109,24 @@ def run(files):
 
                             case 0: # It's code
                                 if started:
-                                    # Skip any skipped lines
-                                    lines = block[skip_lines:]
+                                    # Clear any blank lines from md
+                                    md_lines = [line for line in block if line.strip() != ""]
 
-                                    # Clear any blank lines
-                                    lines = [line for line in lines if line.strip() != ""]
-
-                                    # Write to files
-                                    if len(lines) > 0:
+                                    # Write to .md
+                                    if len(md_lines) > 0:
                                         md_file.write("\n```python\n")
 
-                                        for line in lines:
-                                            artifacts_file.write(line)
+                                        for line in md_lines:
                                             md_file.write(line)
 
                                         md_file.write("```\n")
+
+                                    # Skip any skipped lines, only for artefacts
+                                    artefact_lines = block[skip_lines:]
+
+                                    # Write to artefacts file
+                                    for line in artefact_lines:
+                                        artifacts_file.write(line)
 
                                 else:
                                     pass #print(f"'{block}' comes before title tag, skipping")

@@ -55,6 +55,10 @@ Exchanges:
 
  View it using view
 
+```python
+view(hamiltonian)
+```
+
 ![]( structure.png
 )
 
@@ -65,6 +69,10 @@ Exchanges:
 path = Path([[0,0,0], [1,0,0]])
 ```
  Show a plot
+
+```python
+hamiltonian.spaghetti_plot(path, scale='log')
+```
 
 ![]( spaghetti_plot.png
 )
