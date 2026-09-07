@@ -38,7 +38,7 @@ only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
  It is not of any consequence.
 
 ```python
-s = Structure([only_site], unit_cell=unit_cell)
+structure = Structure([only_site], unit_cell=unit_cell)
 ```
 
 ```text
@@ -83,11 +83,11 @@ exchanges = generate_exchanges(sites=[only_site],
  and a list of exchanges. It is also possible to specify single ion anisotropies here.
 
 ```python
-hamiltonian = Hamiltonian(s, exchanges)
+hamiltonian = Hamiltonian(structure, exchanges)
 ```
- We can now see the exchanges in the viewer
+ We can now see the exchanges in the viewer by viewing the hamiltonian object
 
-![]( ferromagnet_structure.png
+![]( ferromagnet_hamiltonian.png
 )
 
  To make a spaghetti plot we need to define a path though reciprocal space,

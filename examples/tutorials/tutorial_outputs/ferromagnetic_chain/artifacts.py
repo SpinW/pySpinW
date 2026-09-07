@@ -10,9 +10,9 @@ from pyspinw import *
 unit_cell = UnitCell(1,1,1)
 only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
 print("#####:1", file=sys.stderr)
-s = Structure([only_site], unit_cell=unit_cell)
+structure = Structure([only_site], unit_cell=unit_cell)
 print("######:1", file=sys.stderr)
-snapshot(s, "ferromagnet_structure.png") #, copies=(5,1,1))
+snapshot(structure, "ferromagnet_structure.png", view_point=(0,-6,-1), copies=(5,1,1))
 exchanges = [HeisenbergExchange(only_site, only_site, cell_offset=(1,0,0), j=-1)]
 exchanges = generate_exchanges(sites=[only_site],
                                unit_cell=unit_cell,
@@ -20,8 +20,8 @@ exchanges = generate_exchanges(sites=[only_site],
                                exchange_type=HeisenbergExchange,
                                j=-1,
                                direction_filter=filter([1,0,0]))
-hamiltonian = Hamiltonian(s, exchanges)
-snapshot(s, "ferromagnet_structure.png") #, copies=(5,1,1))
+hamiltonian = Hamiltonian(structure, exchanges)
+snapshot(hamiltonian, "ferromagnet_hamiltonian.png", view_point=(0,-6,-1), copies=(5,1,1))
 path = Path([[0,0,0], [1,0,0]])
 fig = hamiltonian.spaghetti_plot(path, dE=0.4, show=False)
 fig.savefig("spaghetti_plot.png")

@@ -1,14 +1,11 @@
-from convert_tutorial_files import tutorial_input_dir, run as convert
+from convert_tutorial_files import run as convert, tutorial_output_dir
+from tutorial_list import filenames, text
 
-filenames = []
-text = []
-with open("tutorial_list.txt", 'r') as file:
-    for line in file:
-        parts = line.split(" ", maxsplit=1)
-        filenames.append(parts[0]+".py")
-        if len(parts) > 1:
-            text.append(parts[1])
-        else:
-            text.append([])
+with open(tutorial_output_dir / "index.md", 'w') as file:
+    file.write("# Tutorials\n\n")
+
+    for index, (filename, text) in enumerate(zip(filenames, text)):
+
+        file.write(f" - [Tutorial {index+1}]({filename}/tutorial) {text}")
 
 convert(filenames)

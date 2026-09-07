@@ -31,14 +31,14 @@ only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
 # This is because we have chosen a 1x1x1 unit cell, which results in more symmetries than P1 specifies.
 # It is not of any consequence.
 ## capture-stderr
-s = Structure([only_site], unit_cell=unit_cell)
+structure = Structure([only_site], unit_cell=unit_cell)
 ## end-capture-stderr
 
 # We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
 ## skip
-view(s)
+view(structure)
 ## image: ferromagnet_structure.png
-## snapshot(s, "ferromagnet_structure.png") #, copies=(5,1,1))
+## snapshot(structure, "ferromagnet_structure.png", view_point=(0,-6,-1), copies=(5,1,1))
 
 # We now come to defining the exchanges, which we will need as a list.
 # There are various exchange classes that we can use.
@@ -71,13 +71,13 @@ exchanges = generate_exchanges(sites=[only_site],
 # Next we construct the `Hamiltonian` object, this contains the magnetic structure (`Structure`)
 # and a list of exchanges. It is also possible to specify single ion anisotropies here.
 
-hamiltonian = Hamiltonian(s, exchanges)
+hamiltonian = Hamiltonian(structure, exchanges)
 
-# We can now see the exchanges in the viewer
+# We can now see the exchanges in the viewer by viewing the hamiltonian object
 ## skip
-view(s)
-## image: ferromagnet_structure.png
-## snapshot(s, "ferromagnet_structure.png", ) #, copies=(5,1,1))
+view(hamiltonian, copies=(5,1,1))
+## image: ferromagnet_hamiltonian.png
+## snapshot(hamiltonian, "ferromagnet_hamiltonian.png", view_point=(0,-6,-1), copies=(5,1,1))
 
 # To make a spaghetti plot we need to define a path though reciprocal space,
 # which we define here in lattice coordinates.
