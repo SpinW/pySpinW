@@ -285,7 +285,6 @@ class Hamiltonian(SPWSerialisable):
         The exchange mapping is a len(new exchanges) list of indices for the original exchanges
         The anisotropy mapping is a len(new anisotropies) list of indices for the original anisotropies
         """
-
         bigger_cell, site_mapping = self.structure._expansion_site_mapping(supercell_size)
 
         new_exchanges = []

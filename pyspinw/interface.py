@@ -267,7 +267,6 @@ def rotation_supercell(
     :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
-
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
     vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
 

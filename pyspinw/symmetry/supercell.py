@@ -429,7 +429,6 @@ class TransformationSupercell(CommensurateSupercell):
 
     def rescale(self, new_scaling: tuple[int, int, int]):
         """ Create a copy of this supercell, but with different scaling """
-
         return TransformationSupercell(self._input_transforms, new_scaling)
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
