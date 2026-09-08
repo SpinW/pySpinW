@@ -34,8 +34,38 @@ class JupyterFile:
         if isinstance(lines, str):
             lines = [lines]
 
-        lines = [line.rstrip() for line in lines if line.strip() != ""]
+        # Remove front and back empty lines
+        lines = [line.rstrip() for line in lines]
 
+        ## Remove from front
+        new_lines = []
+        keep = False
+        for line in lines:
+            if line.strip() != "":
+                keep = True
+
+            if keep:
+                new_lines.append(line)
+
+        lines = new_lines
+
+        ## Remover from back
+        lines.reverse()
+
+        new_lines = []
+        keep = False
+        for line in lines:
+            if line.strip() != "":
+                keep = True
+
+            if keep:
+                new_lines.append(line)
+
+        lines = new_lines
+
+        lines.reverse()
+
+        # Don't make a cell if it is empty
         if not lines:
             return
 
@@ -45,7 +75,7 @@ class JupyterFile:
                 "execution_count": None,
                 "metadata": {},
                 "outputs": [],
-                "source": lines
+                "source": "\n".join(lines)
             })
 
     def add_output_image_to_last(self, image_file):

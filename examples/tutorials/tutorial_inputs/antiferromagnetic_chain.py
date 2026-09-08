@@ -65,7 +65,7 @@ two_site_hamiltonian.spaghetti_plot(path)
 ## fig = two_site_hamiltonian.spaghetti_plot(path, show=False)
 ## fig.savefig("two_site_dispersion.png")
 
-## One spin per unit cell (normal frame)
+## subtitle: One spin per unit cell (normal frame)
 
 # We'll now do calculations on the same system, but using a magnetic cell that is different from the unit cell.
 # We call magnetic cells supercells, and there are different options for this. First we'll look at the case
@@ -99,8 +99,8 @@ path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=one_spin_unit_cell
 ## skip
 hamiltonian.spaghetti_plot(path)
 ## image: one_site_dispersion_1.png
-## fig = hamiltonian.spaghetti_plot(path)
-## fig.imsave("one_site_dispersion_1.png")
+## fig = hamiltonian.spaghetti_plot(path, show=False)
+## fig.savefig("one_site_dispersion_1.png")
 
 # We can view this too
 ## skip
@@ -109,7 +109,7 @@ view(structure)
 
 
 # The following generates a 2x1x1 supercell in which the spins alternate in y (period 2 rotation around z)
-structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
+structure = generate_helical_structure(one_spin_unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
                                    perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
 

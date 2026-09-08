@@ -17,7 +17,7 @@ _This tutorial mirrors MATLAB spinW Tutorial 2_
 ```python
 from pyspinw import *
 ```
-##  Two spin unit cells
+##  Two spins per unit cell
  We create a magnetic structure with a 2x1x1 unit cell and two atoms - at 0.5 and 1.5 angstroms in $x$,
  facing in different directions in $z$.
 
@@ -27,15 +27,6 @@ two_site_site_1 = LatticeSite(0.25, 0.5, 0.5, sz=1, name="a")
 two_site_site_2 = LatticeSite(0.75, 0.5, 0.5, sz=-1, name="b")
 two_site_structure = Structure([two_site_site_1, two_site_site_2], two_site_unit_cell)
 ```
- View it
-
-```python
-view(two_site_structure)
-```
-
-![]( two_site_structure.png
-)
-
  Like in the previous example, there are different ways we can set up the exchanges, if we do it explicitly we
  have
 
@@ -72,6 +63,15 @@ HeisenbergExchange('J1:a-b', a <-> b, offset=(0, 0, 0), j=1)
 ```python
 two_site_hamiltonian = Hamiltonian(two_site_structure, two_site_exchanges)
 ```
+ View it
+
+```python
+view(two_site_hamiltonian)
+```
+
+![]( two_site_hamiltonian.png
+)
+
  And plot the dispersion, here we specify the path in angstroms to make it comparable with different unit cells.
 
 ```python
@@ -85,14 +85,62 @@ two_site_hamiltonian.spaghetti_plot(path)
 ![]( two_site_dispersion.png
 )
 
+##  One spin per unit cell (normal frame)
+ We'll now do calculations on the same system, but using a magnetic cell that is different from the unit cell.
+ We call magnetic cells supercells, and there are different options for this. First we'll look at the case
+ which simply creates a 2x1x1 system explicitly during the calculation. There are a few options for this,
+ we will use a `TransformationSupercell`. This applies transformations to the original spin based on the relative
+ positions of the cells. We will tell it to use a rotation around the $b$ axis ($y$), with a 2 cell
+ propagation vector in the $a$ axis ($x$), i.e. (1/2,0,0).
 
 ```python
-unit_cell = UnitCell(1,1,1)
+one_spin_unit_cell = UnitCell(1,1,1)
+one_spin_site = LatticeSite(0.5, 0.5, 0.5, sz=1, name="S")
+supercell = rotation_supercell(directions=[(0.5, 0, 0)], axes=[(0, 1, 0)])
+structure = Structure([one_spin_site], one_spin_unit_cell, supercell=supercell)
 ```
+ We only need to specify one exchange in this case, as it is implicit in the supercell description that
+  exchanges are the same in each repetition. Again, $j=1$ for an antiferromagnet.
+
+```python
+one_site_exchange = HeisenbergExchange(one_spin_site, one_spin_site, cell_offset=(1,0,0), j=1)
+hamiltonian = Hamiltonian(structure, [one_site_exchange])
+hamiltonian.print_summary()
+```
+ View it
+
+```python
+view(hamiltonian)
+```
+
+![]( one_site_hamiltonian.png
+)
+
+
+```python
+path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=one_spin_unit_cell)
+```
+
+```python
+hamiltonian.spaghetti_plot(path)
+```
+
+![]( one_site_dispersion_1.png
+)
+
+ We can view this too
+
+```python
+view(structure)
+```
+
+![]( first_one_spin_structure
+)
+
  The following generates a 2x1x1 supercell in which the spins alternate in y (period 2 rotation around z)
 
 ```python
-structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
+structure = generate_helical_structure(one_spin_unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
                                    perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 ```
  Generate Heisenberg exchanges based on distance, this will only be in x because of the shape of the unit cell

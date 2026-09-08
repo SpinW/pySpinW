@@ -2,6 +2,15 @@
 HeisenbergExchange('J1:a-b', a <-> b, offset=(-1, 0, 0), j=1)
 HeisenbergExchange('J1:a-b', a <-> b, offset=(0, 0, 0), j=1)
 ######:1
+Unit Cell: (1, 1, 1), alpha=90, beta=90, gamma=90
+Spacegroup: P1
+Supercell: Transformation
+  size = (2, 1, 1)
+  CommensuratePropagationVector(1/2, 1, 1), <pyspinw.symmetry.supercell.RotationTransform object at 0x0000013D1BB15EE0>
+Sites:
+  Site(S, 0.5, 0.5, 0.5, spin=[0. 0. 1.])
+Exchanges:
+  HeisenbergExchange('', S <-> S, offset=(1, 0, 0), j=1)
 #####:2
 Unit Cell: (1, 1, 1), alpha=90, beta=90, gamma=90
 Spacegroup: P1
