@@ -54,6 +54,11 @@ path = Path([(0, 0, 0), (1, 0, 0)], convert_to_lattice_units_with=two_site_unit_
 two_site_hamiltonian.spaghetti_plot(path)
 
 
+
+
+
+
+
 # We'll now do calculations on the same system, but using a magnetic cell that is different from the unit cell.
 # We call magnetic cells supercells, and there are different options for this. First we'll look at the case
 # which simply creates a 2x1x1 system explicitly during the calculation. There are a few options for this,
@@ -61,33 +66,40 @@ two_site_hamiltonian.spaghetti_plot(path)
 # positions of the cells. We will tell it to use a rotation around the $b$ axis ($y$), with a 2 cell
 # propagation vector in the $a$ axis ($x$), i.e. (1/2,0,0).
 
-one_spin_unit_cell = UnitCell(1,1,1)
-one_spin_site = LatticeSite(0.5, 0.5, 0.5, sz=1, name="S")
+unit_cell = UnitCell(1,1,1)
+site = LatticeSite(0.5, 0.5, 0.5, sz=1, name="S")
 
 supercell = rotation_supercell(directions=[(0.5, 0, 0)], axes=[(0, 1, 0)])
 
-structure = Structure([one_spin_site], one_spin_unit_cell, supercell=supercell)
+structure = Structure([site], unit_cell, supercell=supercell)
 
 # We only need to specify one exchange in this case, as it is implicit in the supercell description that
 #  exchanges are the same in each repetition. Again, $j=1$ for an antiferromagnet.
 
-one_site_exchange = HeisenbergExchange(one_spin_site, one_spin_site, cell_offset=(1,0,0), j=1)
+one_site_exchange = HeisenbergExchange(site, site, cell_offset=(1,0,0), j=1)
 hamiltonian = Hamiltonian(structure, [one_site_exchange])
-
-hamiltonian.print_summary()
 
 # View it
 view(hamiltonian)
 
-path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=one_spin_unit_cell)
+# The dispersion looks the same, only we are going from zero to one reciprocal lattice units in this case,
+#  rather than zero to two, as we have two unit cells for the same physical system, rather than one.
+
+path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=unit_cell)
 hamiltonian.spaghetti_plot(path)
 
-# We can view this too
-view(structure)
 
+
+
+
+
+
+
+# We can view this too, it looks identical
+view(hamiltonian)
 
 # The following generates a 2x1x1 supercell in which the spins alternate in y (period 2 rotation around z)
-structure = generate_helical_structure(one_spin_unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
+structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
                                    perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
 

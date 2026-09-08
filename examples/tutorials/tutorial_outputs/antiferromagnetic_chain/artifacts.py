@@ -43,28 +43,39 @@ fig.savefig("two_site_dispersion.png")
 
 
 
-one_spin_unit_cell = UnitCell(1,1,1)
-one_spin_site = LatticeSite(0.5, 0.5, 0.5, sz=1, name="S")
+
+
+
+
+
+unit_cell = UnitCell(1,1,1)
+site = LatticeSite(0.5, 0.5, 0.5, sz=1, name="S")
 
 supercell = rotation_supercell(directions=[(0.5, 0, 0)], axes=[(0, 1, 0)])
 
-structure = Structure([one_spin_site], one_spin_unit_cell, supercell=supercell)
+structure = Structure([site], unit_cell, supercell=supercell)
 
 
-one_site_exchange = HeisenbergExchange(one_spin_site, one_spin_site, cell_offset=(1,0,0), j=1)
+one_site_exchange = HeisenbergExchange(site, site, cell_offset=(1,0,0), j=1)
 hamiltonian = Hamiltonian(structure, [one_site_exchange])
 
-hamiltonian.print_summary()
+snapshot(hamiltonian, "one_spin_hamiltonian_1.png", view_point=(0,-5,-0.5))
 
-snapshot(two_site_structure, "one_site_hamiltonian.png", view_point=(0,-5,-0.5))
 
-path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=one_spin_unit_cell)
+path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=unit_cell)
 fig = hamiltonian.spaghetti_plot(path, show=False)
-fig.savefig("one_site_dispersion_1.png")
+fig.savefig("one_spin_dispersion_1.png")
 
 
 
-structure = generate_helical_structure(one_spin_unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
+
+
+
+
+
+snapshot(two_site_structure, "one_spin_hamiltonian_2.png", view_point=(0,-5,-0.5))
+
+structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
                                    perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
 
 
