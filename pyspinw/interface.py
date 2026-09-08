@@ -241,6 +241,8 @@ def propagation_vectors(
 
         out.append(pv)
 
+    return out
+
 @check_sizes(perpendicular=(3,), propagation=(3,))
 def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
     """ Generate a helical supercell
@@ -251,7 +253,7 @@ def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
     """
     return RotationSupercell(perpendicular=perpendicular, propagation_vector=propagation)
 
-@check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
+@check_sizes(directions=("n", 3), phases=("n",), axes=("n", 3), force_numpy=True, allow_nones=True)
 def rotation_supercell(
         directions: ArrayLike,
         axes: ArrayLike,
@@ -265,7 +267,6 @@ def rotation_supercell(
     :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
-    # Check that the axes match up
 
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
     vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
