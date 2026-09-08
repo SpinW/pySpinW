@@ -354,11 +354,6 @@ class CommensurateSupercell(Supercell):
         a, b, c = self.cell_size()
         return a*b*c
 
-    @property
-    def scaling(self):
-        """ The scaling triplet for this supercell """
-        return self.cell_size()
-
     @abstractmethod
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ The derivative of the calculated spin with respect to the specified component of supercell_spins"""
@@ -434,6 +429,7 @@ class TransformationSupercell(CommensurateSupercell):
 
     def rescale(self, new_scaling: tuple[int, int, int]):
         """ Create a copy of this supercell, but with different scaling """
+
         return TransformationSupercell(self._input_transforms, new_scaling)
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
@@ -481,7 +477,7 @@ class TransformationSupercell(CommensurateSupercell):
     def text_data(self) -> list[str]:
         """ Lines of text describing this supercell """
         output = super().text_data()
-        for pv, transform in zip(self._propagation_vectors, self._transforms):
+        for pv, transform in self._transforms:
             output.append(f"{pv}, {transform}")
         return output
 
