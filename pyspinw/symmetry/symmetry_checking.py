@@ -60,21 +60,6 @@ _sym_matrix = _symantisym_matrix[:,:6]
 
 _symantisym_matrix_inv = np.linalg.inv(_symantisym_matrix)
 
-class PopString:
-    """ Helper class for assigning letters """
-
-    def __init__(self, characters: str):
-        self.characters = characters
-
-    def pop(self) -> str:
-        """ Pop the first character """
-        if len(self.characters) > 0:
-            x = self.characters[0]
-            self.characters = self.characters[1:]
-            return x
-        else:
-            return ""
-
 def free_and_zero(reduced: np.ndarray, tol: float):
     """ Calculates which variables are free and which are zero according to the equation `reduced = 0`
 
@@ -140,7 +125,8 @@ class MatrixConstraints:
     def _matrix_form_strings(self) -> tuple[list[str], list[str]]:
         """ Gets the strings used to build matrices and constraint equations"""
         strings = [" 0" for _ in range(self.n)]
-        characters = PopString("abcdefghi")
+        characters = list(reversed("abcdefghi"))
+
         for i, is_free in enumerate(self.free):
             if is_free:
                 strings[i] = " "+characters.pop()
