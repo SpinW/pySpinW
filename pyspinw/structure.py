@@ -8,6 +8,7 @@ from numpy._typing import ArrayLike
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
+from pyspinw.cell_offsets import cell_offset_generator
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
@@ -29,6 +30,18 @@ class Structure(SPWSerialisable):
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
                  show_unit_cell_warning: bool=True):
+
+
+        if not isinstance(unit_cell, UnitCell):
+            raise TypeError("Expected `unit_cell` to be of type `UnitCell`")
+
+        if spacegroup is not None:
+            if not isinstance(spacegroup, SymmetryGroup):
+                raise TypeError("Expected `spacegroup` to be of type `SymmetryGroup` (or SpaceGroup)")
+
+        if supercell is not None:
+            if not isinstance(supercell, Supercell):
+                raise TypeError("Expected `supercell` to be a subclass of `Supercell`")
 
         spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
 
@@ -176,21 +189,30 @@ class Structure(SPWSerialisable):
 
         return unique_sites
 
-    def _expansion_site_mapping(self):
+    def _expansion_site_mapping(self, supercell_size: tuple[int, int, int] | None = None):
         """ Expand supercell into a single, bigger cell """
         # Calculate new cell
-        scale = self.supercell.cell_size()
+        if supercell_size is None:
+            scale = self.supercell.cell_size()
+        else:
+            scale = supercell_size
 
         big_cell = self.unit_cell.updated(
             a=self.unit_cell.a * scale[0],
             b=self.unit_cell.b * scale[1],
             c=self.unit_cell.c * scale[2])
 
+        scaling = np.array(scale, dtype=float)
+
         # Create a mapping between sites and offsets to the new sites
         mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
-        for index, offset in enumerate(self.supercell.cells()):
+        for index, offset in enumerate(cell_offset_generator(*scale)):
             for site in self.sites:
-                position = self.supercell.fractional_in_supercell(site.ijk, offset)
+
+                position = offset.vector + np.array(site.ijk, dtype=float)
+                position /= scaling
+
+
                 spin = self.supercell.spin(site, cell_offset=offset)
 
                 new_site = LatticeSite(
@@ -475,12 +497,6 @@ class Structure(SPWSerialisable):
         """ Get the spacegroup"""
         return self._spacegroup
 
-    # @spacegroup.setter
-    # def spacegroup(self, spacegroup: SpaceGroup | MagneticSpaceGroup):
-    #     """ Set the spacegroup"""
-    #     self._spacegroup = spacegroup
-    #     self._build_sites()
-
     @property
     def unit_cell(self) -> UnitCell:
         """ Get the unit cell"""
@@ -502,6 +518,18 @@ class Structure(SPWSerialisable):
         """ Set the supercell """
         self._supercell = supercell
         self._build_sites()
+
+    def updated(self,
+                sites: list[LatticeSite] | None = None,
+                unit_cell: UnitCell | None = None,
+                spacegroup: SymmetryGroup | None = None,
+                supercell: Supercell | None = None):
+        """ Make a copy of this structure, but with selected (not None) fields replaced"""
+        return Structure(
+            self._input_sites if sites is None else sites,
+            self._unit_cell if unit_cell is None else unit_cell,
+            self._spacegroup if spacegroup is None else spacegroup,
+            self._supercell if supercell is None else supercell)
 
     def exchange_constraints(self,
                              site_1: LatticeSite | str | ArrayLike,

@@ -31,5 +31,8 @@ building the system.
 This is something that should be remembered when choosing groups, and may have consequences
 when interacting with other software and file formats.
 
+Status
+======
 
+Incomplete
 

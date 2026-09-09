@@ -47,4 +47,4 @@ Do we check this, or just ignore it? It's better to check, but maybe this is imp
 Status
 ------
 
-In progress
+**Rejected** as unnecessary, though some vestigial structures exist

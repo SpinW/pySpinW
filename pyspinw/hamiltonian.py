@@ -1,5 +1,6 @@
 """Selection of different Hamiltonians"""
 import logging
+import warnings
 from collections.abc import Callable
 import re
 from collections import Counter, defaultdict
@@ -19,7 +20,7 @@ from pyspinw.calculations.spinwave import (
     MagneticField as PyMagneticField)
 
 from pyspinw.anisotropy import Anisotropy
-from pyspinw.cell_offsets import CellOffset
+from pyspinw.cell_offsets import CellOffset, cell_offset_generator
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange
 from pyspinw.path import Path, Slice
@@ -35,25 +36,6 @@ from pyspinw.units import IntensityUnits, intensity_units
 # pylint: disable=R0903
 
 logger = logging.Logger("pyspinw.hamiltonian")
-
-def _defaultlistdict():
-    """ Used to create defaultdicts of defaultdicts of lists """
-    return defaultdict(list)
-
-def _defaultsetdict():
-    """ Used to create defaultdicts of defaultdicts of sets """
-    return defaultdict(set)
-
-def _defaultsetdictdict():
-    """ Used to create defaultdicts of defaultdicts of defaultdict of sets """
-    return defaultdict(_defaultsetdict)
-
-def _defaultsetdictdictdict():
-    """ Used to create defaultdicts of defaultdicts of defaultdict of defaultdict of sets """
-    return defaultdict(_defaultsetdictdict)
-
-
-
 
 def uniquetol(values: ArrayLike, tol: float=1e-5):
     """ Returns floating point unique values within a given tolerance """
@@ -288,10 +270,15 @@ class Hamiltonian(SPWSerialisable):
 
         return "\n".join(lines)
 
-    def _expand_with_mapping(self) -> tuple["Hamiltonian",
-                                            dict[tuple[int, tuple[int, int, int]], LatticeSite],
-                                            list[int],
-                                            list[int]]:
+
+
+
+    def _expand_with_mapping(self, supercell_size: tuple[int, int, int] | None = None) -> \
+            tuple[
+                "Hamiltonian",
+                dict[tuple[int, tuple[int, int, int]], LatticeSite],
+                list[int],
+                list[int]]:
         """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians
 
         This should only be used internally, and its not very user friendly
@@ -300,17 +287,20 @@ class Hamiltonian(SPWSerialisable):
         The exchange mapping is a len(new exchanges) list of indices for the original exchanges
         The anisotropy mapping is a len(new anisotropies) list of indices for the original anisotropies
         """
-        bigger_cell, site_mapping = self.structure._expansion_site_mapping()
+        bigger_cell, site_mapping = self.structure._expansion_site_mapping(supercell_size)
 
         new_exchanges = []
         new_anisotropies = []
 
-        si, sj, sk = self.structure.supercell.cell_size()
+        if supercell_size is None:
+            si, sj, sk = self.structure.supercell.cell_size()
+        else:
+            si, sj, sk = supercell_size
 
         exchange_mapping = []
         anisotropy_mapping = []
 
-        for first_site_offset in self.structure.supercell.cells():
+        for first_site_offset in cell_offset_generator(si, sj, sk):
             for original_index, exchange in enumerate(self.exchanges):
                 # Convert the offset in the exchange, into
                 #  1) an offset in the supercell, and
@@ -367,9 +357,25 @@ class Hamiltonian(SPWSerialisable):
                     ),
                 site_mapping, exchange_mapping, anisotropy_mapping)
 
-    def expanded(self):
+    def expanded(self, supercell_size: tuple[int, int, int] | None = None):
         """ Expand the supercell structure into a single cell structure """
-        expanded, _, _, _ = self._expand_with_mapping()
+        if supercell_size is not None:
+            if not isinstance(supercell_size, tuple):
+                raise TypeError("supercell_size should be a tuple")
+            if len(supercell_size) != 3:
+                raise TypeError("supercell_size should be a length 3 tuple")
+
+            supercell_size = tuple(int(x) for x in supercell_size)
+
+        if isinstance(self.structure.supercell, RotationSupercell):
+            if supercell_size is None:
+                logger.warning("Expanding an incommensurate structure requires a supercell_size parameter, "
+                              "or it will make a 1x1x1 supercell")
+        else:
+            if supercell_size is not None:
+                logger.warning("You are overriding the supercell size in a commensurate structure")
+
+        expanded, _, _, _ = self._expand_with_mapping(supercell_size)
         return expanded
 
     def without_nonmagnetic(self):
@@ -564,11 +570,11 @@ class Hamiltonian(SPWSerialisable):
                 newstruc = Structure(**{k:getattr(self.structure, k) for k in ['sites', 'unit_cell', 'spacegroup']},
                                supercell=self.structure.supercell.approximant())
                 expanded = Hamiltonian(newstruc, self.exchanges, self.anisotropies).expanded()
-                scaling, rotating_frame = (newstruc.supercell.scaling, None)
+                scaling, rotating_frame = (newstruc.supercell.cell_size(), None)
         else:
             if use_rotating:
                 logger.warning("Cannot do rotating frame calculation propagation vector or plane normal not specified")
-            expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.scaling, None)
+            expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.cell_size(), None)
 
         # Get the positions, rotations, spins for the sites
         spins = []
@@ -1041,6 +1047,16 @@ class Hamiltonian(SPWSerialisable):
             for anisotropy in minimiser.hamiltonian.anisotropies]
 
         return Hamiltonian(structure, exchanges, anisotropies)
+
+    def updated(self,
+                structure: Structure | None = None,
+                exchanges: list[Exchange] | None = None,
+                anisotropies: list[Anisotropy] | None = None):
+        """ Create a new Hamiltonian, but with some fields replaced (those not None) """
+        return Hamiltonian(
+            self.structure if structure is None else structure,
+            self.exchanges if exchanges is None else exchanges,
+            self.anisotropies if anisotropies is None else anisotropies)
 
     @staticmethod
     def _combine_exchanges(exchanges: list[Exchange], swapped_exchanges: list[Exchange]):

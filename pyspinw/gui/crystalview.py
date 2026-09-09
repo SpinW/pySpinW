@@ -363,7 +363,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
             self.cell_shader.camera = self.camera
 
-            for offset in self.render_model.hamiltonian.structure.supercell.cells():
+            for offset in self.render_model.cells():
                 translation_matrix = np.eye(4, dtype=np.float32)
                 translation_matrix[:3, 3] = offset.vector
 
