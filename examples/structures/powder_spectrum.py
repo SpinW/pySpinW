@@ -7,7 +7,7 @@ from pyspinw.path import Path, Path1D
 from pyspinw.sample import Powder
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 import sys
 
 

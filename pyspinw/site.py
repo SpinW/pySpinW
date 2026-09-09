@@ -7,6 +7,7 @@ from pyspinw.constants import ELECTRON_G
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, SPWDeserialisationContext, \
     numpy_deserialise, numpy_serialise, rgb_serialise
 from pyspinw.sitemeta import SiteMetadata
+from pyspinw.symmetry.operations import SpaceOperation
 
 _unique_id_counter = -1
 def _generate_unique_id():
@@ -226,6 +227,26 @@ class LatticeSite(SPWSerialisable):
             sz=float(coordinates[5]),
             name=name)
 
+    def symmetry_transformed(self, operation: SpaceOperation, unit_cell: "UnitCell"):
+        """ Transform site using a symmetry operation """
+        new_ijk = operation(self.ijk.reshape(1, 3)).reshape(-1)
+
+        # Transform spin, make sure it has same magnitude
+
+        t = operation.point_operation_in_cartesian(unit_cell)
+        new_spin = (t @ self.spin_data.T).T
+
+        new_g = t @ self._g @ t.T
+
+        return LatticeSite(
+            i=float(new_ijk[0]),
+            j=float(new_ijk[1]),
+            k=float(new_ijk[2]),
+            supercell_spins=new_spin,
+            g=new_g,
+            name=self.name,
+            metadata=self.metadata.copy())
+
     def __hash__(self):
         return self._unique_id
 
@@ -361,3 +382,23 @@ class ImpliedLatticeSite(LatticeSite):
             sz=float(coordinates[5]),
             name=name)
 
+
+    def __repr__(self):
+        m = self.base_spin
+
+        if self.name is None or self.name == "":
+            if np.sum(m**2) < 1e-9:
+                return (f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"parent={self.parent_site.name})")
+
+            else:
+                return (f"Site({self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"spin={self.base_spin}, parent={self.parent_site.name})")
+        else:
+            if np.sum(m ** 2) < 1e-9:
+                return (f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"parent={self.parent_site.name})")
+
+            else:
+                return (f"Site({self.name}, {self.i:.4g}, {self.j:.4g}, {self.k:.4g}, "
+                        f"spin={self.base_spin}, parent={self.parent_site.name})")

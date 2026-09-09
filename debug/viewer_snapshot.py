@@ -6,7 +6,7 @@ from pyspinw.gui.viewer import snapshot
 from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 

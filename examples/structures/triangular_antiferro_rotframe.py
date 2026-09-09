@@ -8,7 +8,7 @@ from pyspinw.interface import generate_exchanges, generate_helical_structure, ax
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 import sys
 
 """

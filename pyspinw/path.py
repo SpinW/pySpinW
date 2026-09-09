@@ -5,7 +5,7 @@ import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 
 
 class Path:

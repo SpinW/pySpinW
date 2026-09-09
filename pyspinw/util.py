@@ -1,4 +1,7 @@
 """Generally helpful functions that don't obviously live anywhere else in particular"""
+import functools
+from collections import defaultdict
+from typing import TypeVar, Generic
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -137,3 +140,40 @@ def rotation_from_z(target_vector):
         [-x*y / (1+z), 1 - y**2 / (1+z), y],
         [-x, -y, z]
     ])
+
+def is_diagonal(m: np.ndarray):
+    """ Check whether an array is diagonal """
+    return np.all(m == np.diag(np.diagonal(m)))
+
+
+T = TypeVar("T")
+class IncrementalPointHistogram(Generic[T]):
+    """ Histogramming method for finding nearest neighbour distances in lattices """
+
+    def __init__(self, tolerance=tolerances.SAME_SITE_ABS_TOL):
+        self._tolerance = tolerance
+        self._groups = defaultdict(list)
+
+    def add(self, distance, entry: T):
+        """ Add an entry to the collection"""
+        for key in self._groups:
+            if abs(key - distance) < self._tolerance:
+                self._groups[key].append(entry)
+                break
+
+        else:
+            self._groups[distance].append(entry)
+
+    def groups(self):
+        """ Groups in order of distance"""
+        ordered_keys = sorted(self._groups.keys())
+        return [self._groups[key] for key in ordered_keys]
+
+    def group_sizes(self):
+        """ Size of each group"""
+        return [len(group) for group in self.groups()]
+
+    def n_groups(self):
+        """ Number of groups at different distances """
+        return len(self._groups)
+

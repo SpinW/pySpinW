@@ -6,7 +6,7 @@ from pyspinw.interface import generate_exchanges, filter
 from pyspinw.path import Path
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 import sys
 
 if __name__ == "__main__":
