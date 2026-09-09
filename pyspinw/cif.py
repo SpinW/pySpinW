@@ -28,7 +28,7 @@ class LoadError(Exception):
 def load_cif(filename: str | pathlib.Path,
              supercell: Supercell = TiledSupercell(),
              entry_index: int=0,
-             verbose=True) -> Structure:
+             verbose=False) -> Structure:
     """ Load a CIF file in as a structure """
     # Get the right bit of data
 
