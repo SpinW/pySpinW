@@ -326,7 +326,7 @@ class Exchange(SPWSerialisable):
                       structure: "Structure",
                       site_1: LatticeSite,
                       site_2: LatticeSite,
-                      cell_offset: CellOffsetCoercible = (0,0,0)):
+                      cell_offset: CellOffsetCoercible = (0,0,0)) -> "Exchange":
         """ Copy this exchange using symmetry operations """
         # We want to copy the exchange under symmetry operations
         # There might be more than one symmetry operation that maps the pair of sites
@@ -338,7 +338,7 @@ class Exchange(SPWSerialisable):
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
 
-        if self.obeys_symmetry(spacegroup):
+        if self.obeys_symmetry(structure):
             # find the operations that map the pairs
 
             pair_operations = spacegroup.operations_between_pairs(
@@ -349,17 +349,13 @@ class Exchange(SPWSerialisable):
                 raise ValueError("New points are not related to the original by symmetry")
 
             # Pick one element for the transformation
-            op = next(iter(pair_operations))
-            transform = op.point_operation_matrix
-
-            # Apply after transforming to xyz space TODO: Verify, could require inverses/transforms
-            exchange_matrix_ijk = unit_cell._xyz_spins @ self.exchange_matrix @ unit_cell._xyz_spins.T
-            new_exchange_matrix_ijk = transform @ exchange_matrix_ijk @ transform.T
-            new_exchange_matrix = unit_cell._xyz_spins_inv @ new_exchange_matrix_ijk @ unit_cell._xyz_spins_inv.T
+            space_operation = next(iter(pair_operations))
+            point_operation = space_operation.point_operation_in_cartesian(unit_cell)
+            new_matrix = point_operation @ self._exchange_matrix @ point_operation.T
 
             return Exchange(site_1, site_2,
-                            exchange_matrix=new_exchange_matrix,
-                            name=f"{self.name} [{op.text_form}]",
+                            exchange_matrix=new_matrix,
+                            name=f"{self.name} [{space_operation.text_form}]",
                             cell_offset=CellOffset.coerce(cell_offset))
 
         else:
@@ -368,7 +364,8 @@ class Exchange(SPWSerialisable):
     def symmetry_fill(self,
                       structure: "Structure",
                       include_original=False,
-                      specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT):
+                      specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT
+                      ) -> list["Exchange"]:
         """ Make multiple copies of this exchange so that symmetry is satisfied """
         # Get the symmetry related sites
 

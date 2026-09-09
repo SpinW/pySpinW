@@ -110,6 +110,8 @@ diagonal_cases = [
     # diagonal_case_2()
 ]
 
+all_cases = heisenberg_cases + diagonal_cases
+
 if __name__ == "__main__":
     # for case in heisenberg_cases:
     for h in diagonal_cases:

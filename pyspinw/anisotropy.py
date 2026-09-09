@@ -113,7 +113,7 @@ class Anisotropy(SPWSerialisable):
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
 
-        if self.obeys_symmetry(spacegroup):
+        if self.obeys_symmetry(structure):
             # find the operations that map the sites
             operations = spacegroup.operations_between_sites(self.site, site)
 
@@ -128,7 +128,7 @@ class Anisotropy(SPWSerialisable):
 
             return Anisotropy(site,
                             anisotropy_matrix=new_anisotropy_matrix,
-                            #name=f"{self.name} [{op.text_form}]"
+                            name=f"{self.name} [{op.text_form}]"
                               )
 
         else:
@@ -160,11 +160,11 @@ class Anisotropy(SPWSerialisable):
                 op = operation.point_operation_in_cartesian(unit_cell)
                 new_matrix = op @ self._anisotropy_matrix @ op.T
 
-                # name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
+                name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
                 new_anisotropies.append(Anisotropy(site,
                                               anisotropy_matrix=new_matrix,
-                                              #name = name
-                                                   ))
+                                              name = name
+                                              ))
 
         # Hacky way of excluding the original, add to the list at the start, then remove first
         #  element after the duplicate removal.
