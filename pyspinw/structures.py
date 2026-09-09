@@ -23,6 +23,17 @@ class Structure(SPWSerialisable):
                  spacegroup: SymmetryGroup | None = None,
                  supercell: Supercell | None = None):
 
+        if not isinstance(unit_cell, UnitCell):
+            raise TypeError("Expected `unit_cell` to be of type `UnitCell`")
+
+        if spacegroup is not None:
+            if not isinstance(spacegroup, SymmetryGroup):
+                raise TypeError("Expected `spacegroup` to be of type `SymmetryGroup` (or SpaceGroup)")
+
+        if supercell is not None:
+            if not isinstance(supercell, Supercell):
+                raise TypeError("Expected `supercell` to be a subclass of `Supercell`")
+
         self._input_sites = sites
         self._input_uid_to_site = {site.unique_id: site for site in sites}
         self._unit_cell = unit_cell

@@ -227,7 +227,7 @@ def get_app():
 
 def snapshot(object: Hamiltonian | Structure,
              filename: str | None = None,
-             view_point: ArrayLike = (0,0,10.0),
+             view_point: ArrayLike = (-5.0, -5.0, -10.0),
              display_options: DisplayOptions | None = None,
              copies: tuple[int,int,int]=(1,1,1),
              rotation_supercell_expansion_max: tuple[int,int,int]=(10,10,10),

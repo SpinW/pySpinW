@@ -563,11 +563,11 @@ class Hamiltonian(SPWSerialisable):
                 newstruc = Structure(**{k:getattr(self.structure, k) for k in ['sites', 'unit_cell', 'spacegroup']},
                                supercell=self.structure.supercell.approximant())
                 expanded = Hamiltonian(newstruc, self.exchanges, self.anisotropies).expanded()
-                scaling, rotating_frame = (newstruc.supercell.scaling, None)
+                scaling, rotating_frame = (newstruc.supercell.cell_size(), None)
         else:
             if use_rotating:
                 logger.warning("Cannot do rotating frame calculation propagation vector or plane normal not specified")
-            expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.scaling, None)
+            expanded, scaling, rotating_frame = (self.expanded(), self.structure.supercell.cell_size(), None)
 
         # Get the positions, rotations, spins for the sites
         spins = []

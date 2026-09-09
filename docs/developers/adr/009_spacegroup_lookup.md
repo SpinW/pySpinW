@@ -50,4 +50,4 @@ Tests for this not causing collisions should be performed.
 Status
 ======
 
-Pending
+Accepted

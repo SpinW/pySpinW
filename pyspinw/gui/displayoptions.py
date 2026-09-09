@@ -11,14 +11,14 @@ class DisplayOptions:
     show_sites: bool = True
     show_exchanges: bool = True
     show_anisotropies: bool = True
-    show_unit_cell: bool = False
-    show_supercell: bool = False
+    show_unit_cell: bool = True
+    show_supercell: bool = True
 
     prettify: bool = True
 
     show_nonmagnetic_atoms: bool = True
     use_atomic_radii: bool = True
-    show_atoms_not_spins: bool = False
+    show_atoms_not_spins: bool = True
 
     atom_spin_scaling: float = 0.35
     exchange_scaling: float = 0.20
