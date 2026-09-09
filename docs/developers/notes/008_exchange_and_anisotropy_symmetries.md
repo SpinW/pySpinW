@@ -65,7 +65,7 @@ $= a M s_1 + a T + b M s_2 + b T = M (a s_1 + b s_2) + (a+b) T$
 
 and as long as $a + b = 1$
 
-$ = g(a s_1 + b s_2)$
+$= g(a s_1 + b s_2)$
  
 So, we can write it using this constraint as a convex combination, and compare to our starting point, giving:
 
@@ -126,7 +126,7 @@ $\text{vec}(AXB)=(B^T \otimes A)\text{vec}(X)$
 
 where $\text{vec}$ denotes the vectorisation, i.e. such that
 
-$\text{vec} \left(\begin{array}{ccc} a & b & c \\ d & e & f \\ g & h & i \end{array}\right) = \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ g \\ h \\ i  \end{array}\right)$
+$`\text{vec} \left(\begin{array}{ccc} a & b & c \\ d & e & f \\ g & h & i \end{array}\right) = \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ g \\ h \\ i  \end{array}\right)`$
 
 So, if $V = \text{vec}(J)$ is the vector of matrix components, then we can translate as
 
@@ -159,7 +159,7 @@ With this, for the swapped case we get
 
 $((M \otimes M) K - I) (R \otimes R) V = 0$
 
-To get a reduced system of equations for out matrix entries we build a $9$-by-$9n$
+To get a reduced system of equations for out matrix entries we build a $9$-by-$`9n`$
 matrix of $M \otimes M - I$ and $(M \otimes M)K - I$ and row-reduce it.
 
 ### Interpreting the row reduction
@@ -186,21 +186,11 @@ the symmetric and antisymmetic parts of the matrix separately.
 
 Let's now write $J$ in terms of matrix entries, with the aim of making a simple linear system in the form $Y = MX$
 
-$J = \left( \begin{array}{ccc} a & b & c \\ b & d & e \\ c & e & f \end{array} \right) + \left( \begin{array}{ccc} 0 & z & -y \\ -z & 0 & x \\ y & -x & 0 \end{array} \right)$
+$`J = \left( \begin{array}{ccc} a & b & c \\ b & d & e \\ c & e & f \end{array} \right) + \left( \begin{array}{ccc} 0 & z & -y \\ -z & 0 & x \\ y & -x & 0 \end{array} \right)`$
 
 We then want an equation to relate the entries to $V$ (dots used instead of zeros for readability)
 
-$V = \left(\begin{array}{ccccccccc}
-1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
-\cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & 1 \\
-\cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & -1 & \cdot \\
-\cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & -1 \\
-\cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot \\
-\cdot & \cdot & \cdot & \cdot & 1 & \cdot & 1 & \cdot & \cdot \\
-\cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
-\cdot & \cdot & \cdot & \cdot & 1 & \cdot & -1 & \cdot & \cdot \\
-\cdot & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot \\
-\end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ x \\ y \\ z  \end{array}\right)$
+$`V = \left(\begin{array}{ccccccccc} 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\ \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & 1 \\ \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & -1 & \cdot \\ \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & -1 \\ \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & \cdot \\ \cdot & \cdot & \cdot & \cdot & 1 & \cdot & 1 & \cdot & \cdot \\ \cdot & \cdot & 1 & \cdot & \cdot & \cdot & \cdot & 1 & \cdot \\ \cdot & \cdot & \cdot & \cdot & 1 & \cdot & -1 & \cdot & \cdot \\ \cdot & \cdot & \cdot & \cdot & \cdot & 1 & \cdot & \cdot & \cdot \\ \end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f \\ x \\ y \\ z  \end{array}\right)`$
 
 To get a system of equations in these terms, we can premultiply before doing the reduction.
 
@@ -208,10 +198,15 @@ To get a system of equations in these terms, we can premultiply before doing the
 
 ### Uniqueness of symmetry based copying 
 
-*There is not necessarily a single operation that maps the points of an exchange, but the exchange matrix should
-change in the same way under all of them as long as it is valid according to that symmetry.*
+*There is not necessarily a single operation that maps the sites of an exchange, but none-the-less
+a properly constrained exchange matrix should transform to the same matrix under 
+all of them.*
 
-Proof: For a pair of ordered exchange $(s_1, s_2)$ and $(t_1, t_2)$ we find all the 
+The practical consequence of this is that we can pick a single, arbitrary operation from
+the ones that relate the pair of sites to transform the matrix, as long as we check that
+the matrix itself is valid according to the symmetry constraints.
+
+**Proof:** For a pair of ordered exchange $(s_1, s_2)$ and $(t_1, t_2)$ we find all the 
 operations $g\in\mathcal{G}_x$ in the symmetry group $\mathcal{G}$ that maps them together,
 i.e.
 
@@ -255,17 +250,7 @@ where $\text{vec}A$ is the vectorised version of $A$.
 But we only have 6 degrees of freedom, to get this we can use a truncated version of the matrix $V$ above,
 which we can produce by truncating the matrix in $V$ above, i.e.
 
-$\text{vec}A = \left(\begin{array}{c} a \\ b \\ c \\ b \\ d \\ e \\ c \\ e \\ f  \end{array}\right) = \left(\begin{array}{ccccccccc}
-1 & \cdot & \cdot & \cdot & \cdot & \cdot \\
-\cdot & 1 & \cdot & \cdot & \cdot & \cdot \\
-\cdot & \cdot & 1 & \cdot & \cdot & \cdot \\
-\cdot & 1 & \cdot & \cdot & \cdot & \cdot \\
-\cdot & \cdot & \cdot & 1 & \cdot & \cdot \\
-\cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
-\cdot & \cdot & 1 & \cdot & \cdot & \cdot \\
-\cdot & \cdot & \cdot & \cdot & 1 & \cdot \\
-\cdot & \cdot & \cdot & \cdot & \cdot & 1 \\
-\end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f  \end{array}\right)$
+$`\text{vec}A = \left(\begin{array}{c} a \\ b \\ c \\ b \\ d \\ e \\ c \\ e \\ f  \end{array}\right) = \left(\begin{array}{ccccccccc} 1 & \cdot & \cdot & \cdot & \cdot & \cdot \\ \cdot & 1 & \cdot & \cdot & \cdot & \cdot \\ \cdot & \cdot & 1 & \cdot & \cdot & \cdot \\ \cdot & 1 & \cdot & \cdot & \cdot & \cdot \\ \cdot & \cdot & \cdot & 1 & \cdot & \cdot \\ \cdot & \cdot & \cdot & \cdot & 1 & \cdot \\ \cdot & \cdot & 1 & \cdot & \cdot & \cdot \\ \cdot & \cdot & \cdot & \cdot & 1 & \cdot \\ \cdot & \cdot & \cdot & \cdot & \cdot & 1 \\ \end{array}\right) \left(\begin{array}{c} a \\ b \\ c \\ d \\ e \\ f  \end{array}\right)`$
 
 ## Further analysis of allowed anisotropies
 
