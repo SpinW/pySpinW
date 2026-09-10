@@ -185,6 +185,15 @@ class UnitCell(RawUnitCell):
         return UnitCell(a, b, c, alpha, beta, gamma, ab_normal, direction)
 
     @property
+    def short_name(self):
+        parts = []
+        for name, angle in [("α", self.alpha), ("β", self.beta), ("γ", self.gamma)]:
+            if angle != 90:
+                parts.append(f"{name}={angle}")
+
+        return ", ".join([f"{self.a}x{self.b}x{self.c}"] + parts)
+
+    @property
     def text_summary(self):
         """ Formatted text """
         return f"({self.a}, {self.b}, {self.c}), alpha={self.alpha}, beta={self.beta}, gamma={self.gamma}"

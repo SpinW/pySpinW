@@ -581,4 +581,16 @@ class Structure(SPWSerialisable):
 
         return self.spacegroup.anisotropy_constraints(site, self.unit_cell, do_print=do_print)
 
+    def __repr__(self):
 
+        parts = [f"{len(self.sites)} sites",
+                 self.unit_cell.short_name,
+                 self.spacegroup.name]
+
+        if not (isinstance(self.supercell, TiledSupercell) and self.supercell.scaling == (1, 1, 1)):
+            parts.append(f"{self.supercell.supercell_name} supercell")
+
+
+        contents = ", ".join(parts)
+
+        return f"Structure({contents})"

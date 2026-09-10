@@ -309,6 +309,12 @@ class SpaceGroup(SymmetryGroup):
 
         return check
 
+    def name(self) -> str:
+        if self.choice is None:
+            return self.symbol
+        else:
+            return f"{self.symbol} [{self.choice}]"
+
     def __repr__(self):
         """repr"""
         if self.choice is None:
