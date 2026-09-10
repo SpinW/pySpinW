@@ -36,7 +36,7 @@ if __name__ == "__main__":
     hamiltonian.print_summary()
 
     snapshot(hamiltonian,
-             filename="snapshot_test.png",
+             filename="../snapshot_test.png",
              view_point=(0, 0, 10),
              display_options=DisplayOptions(show_sites=False))
 
