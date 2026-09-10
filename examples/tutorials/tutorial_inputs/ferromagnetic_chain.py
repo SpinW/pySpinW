@@ -26,12 +26,12 @@ only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
 # contains the sites, the unit cell, the symmetry group and the magnetic unit cell, or "supercell".
 # The symmetry group will default to P1, and the supercell to the "trivial supercell" (i.e. where there is no
 # magnetic ordering other than that specified in the unit cell).
-#
+
+## capture-stderr
+structure = Structure([only_site], unit_cell=unit_cell)
 # Note that in this example, we will see a warning about the choice of unit cell.
 # This is because we have chosen a 1x1x1 unit cell, which results in more symmetries than P1 specifies.
 # It is not of any consequence.
-## capture-stderr
-structure = Structure([only_site], unit_cell=unit_cell)
 ## end-capture-stderr
 
 # We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
