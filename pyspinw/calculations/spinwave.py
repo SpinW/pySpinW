@@ -1,8 +1,9 @@
 """Spinwave Calculations"""
 import logging
 import multiprocessing
+import platform
 import traceback
-from concurrent.futures import wait
+from concurrent.futures import wait, ThreadPoolExecutor, ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Optional
 
@@ -222,6 +223,13 @@ def _get_q_chunks(q_vectors: np.ndarray, n_proc: int):
     nq = int(np.floor(q_vectors.shape[0] / n_proc))
     return [q_vectors[i * nq : (i + 1) * nq] for i in range(n_proc - 1)] + [q_vectors[(n_proc - 1) * nq :]]
 
+
+def get_Executor():
+    """ Get an Executor appropriate for the current system """
+    if platform.system() == "Windows":
+        return ThreadPoolExecutor
+
+    return ProcessPoolExecutor
 
 def spinwave_calculation(
         rotations: list[np.ndarray],
