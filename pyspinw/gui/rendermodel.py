@@ -1,5 +1,5 @@
 """ Representation of the Hamiltonian that has lots of precalculated stuff needed for rendering it"""
-
+import warnings
 from collections import defaultdict
 from fractions import Fraction
 

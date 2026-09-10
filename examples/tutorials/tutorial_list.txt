@@ -1,2 +1,3 @@
 ferromagnetic_chain An introduction to basic functionality using a ferromagnetic chain as an example
 antiferromagnetic_chain Introduces different approaches to calculation using the example of an antiferromagnetic chain
+supercells Gives an overview of the different magnetic supercells available in pySpinW

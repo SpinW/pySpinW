@@ -332,6 +332,7 @@ def run(files):
 
 
         except Exception as e:
+            traceback.print_exc()
             raise ValueError(f"Problem with '{base_name}: {e}'") from e
 
 
