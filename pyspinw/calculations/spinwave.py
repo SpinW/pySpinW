@@ -11,7 +11,6 @@ import numpy as np
 from scipy.linalg import ldl, solve
 
 from pyspinw.constants import MU_B
-from pyspinw.windows_parallelisation import windows_python_parallelisation_enabled, get_Executor
 
 # smallest energy not considered negligible (in meV)
 ZERO_ENERGY_TOL = 1e-12
