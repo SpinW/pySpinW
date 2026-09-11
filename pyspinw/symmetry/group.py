@@ -311,6 +311,7 @@ class SpaceGroup(SymmetryGroup):
 
     @property
     def name(self) -> str:
+        """ Just the space group name with setting choice if relevant"""
         if self.choice is None:
             return self.symbol
         else:

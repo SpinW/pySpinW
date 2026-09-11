@@ -186,6 +186,7 @@ class UnitCell(RawUnitCell):
 
     @property
     def short_name(self):
+        """ Get a short string that describes this unit cell """
         parts = []
         for name, angle in [("α", self.alpha), ("β", self.beta), ("γ", self.gamma)]:
             if angle != 90:
