@@ -526,7 +526,7 @@ class Structure(SPWSerialisable):
                 supercell: Supercell | None = None):
         """ Make a copy of this structure, but with selected (not None) fields replaced"""
         return Structure(
-            self._input_sites if sites is None else sites,
+            self.sites if sites is None else sites,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
             self._supercell if supercell is None else supercell)
