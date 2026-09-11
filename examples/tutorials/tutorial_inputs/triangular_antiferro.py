@@ -5,7 +5,6 @@ Reproduces Tutorial 12: https://spinw.org/tutorials/12tutorial
 
 from pyspinw import *
 import matplotlib.pyplot as plt
-from pyspinw.legacy.genmagstr import genmagstr
 
 unit_cell = UnitCell(3, 3, 4, gamma=120)
 
