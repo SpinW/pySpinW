@@ -554,7 +554,10 @@ class RotationSupercell(Supercell):
         if not isinstance(propagation_vector, PropagationVector):
             propagation_vector = PropagationVector(*propagation_vector)
         super().__init__((1, 1, 1))
-        self.perpendicular = perpendicular
+
+        self.perpendicular = np.array(perpendicular, dtype=float)
+        self.perpendicular /= np.sqrt(np.sum(self.perpendicular**2))
+
         self.propagation_vector = propagation_vector
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):

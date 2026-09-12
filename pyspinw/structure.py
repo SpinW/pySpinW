@@ -529,7 +529,8 @@ class Structure(SPWSerialisable):
             self.sites if sites is None else sites,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
-            self._supercell if supercell is None else supercell)
+            self._supercell if supercell is None else supercell,
+            show_unit_cell_warning= not (spacegroup is None and unit_cell is None))
 
     def exchange_constraints(self,
                              site_1: LatticeSite | str | ArrayLike,

@@ -2,7 +2,6 @@
 import ctypes
 import os
 import sys
-import threading
 
 import numpy as np
 from PySide6.QtGui import QSurfaceFormat

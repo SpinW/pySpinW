@@ -227,12 +227,12 @@ def run(files):
                                 raise ValueError(f"Unknown level {level}")
 
                     artifacts_file.write('\n'
-                                         'with open("stdout_data.txt", "w") as file:\n'
+                                         'with open("stdout_data.txt", "w", encoding="utf-8") as file:\n'
                                          '    file.write(stdout_buffer.getvalue())\n'
                                          'sys.stdout = old_stdout\n\n')
 
                     artifacts_file.write('\n'
-                                         'with open("stderr_data.txt", "w") as file:\n'
+                                         'with open("stderr_data.txt", "w", encoding="utf-8") as file:\n'
                                          '    file.write(stderr_buffer.getvalue())\n'
                                          'sys.stderr = old_stderr\n\n')
 
@@ -332,6 +332,7 @@ def run(files):
 
 
         except Exception as e:
+            traceback.print_exc()
             raise ValueError(f"Problem with '{base_name}: {e}'") from e
 
 
