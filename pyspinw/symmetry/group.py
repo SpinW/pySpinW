@@ -466,7 +466,7 @@ class SpacegroupDatabase:
     def spacegroups_with_operations(self, operation_string: str) -> ExactMatch | PartialMatch:
         """ Get a spacegroup by a list of operations
 
-        Example: TODO
+        Example: "x, y, z; -x, -y, -z" should give P1
 
         :param operation_string: A list of operations in the x,y,z form, semicolon separated
         :return: ExactMatch or MultipleMatches
