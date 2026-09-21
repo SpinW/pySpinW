@@ -1,7 +1,5 @@
 """ Groups of exchanges, a neater way of representing multiple, similar exchanges
 
-TODO: Currently broken - WIP
-
 """
 
 import numpy as np
