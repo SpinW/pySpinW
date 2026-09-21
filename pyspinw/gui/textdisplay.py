@@ -371,7 +371,6 @@ class TextDisplay(QWidget):
     def set_hover(self, render_ids: list[int]):
         """ Set the hover state for specified render_ids"""
         for items in self.site_render_id_to_row_item.values():
-            # TODO Be more efficient
             for item in items:
                 self.set_row_boldness(item, False)
 
@@ -380,7 +379,6 @@ class TextDisplay(QWidget):
                 self.set_row_boldness(item, True)
 
         for items in self.exchange_render_id_to_row_item.values():
-            # TODO Be more efficient
             for item in items:
                 self.set_row_boldness(item, False)
 
