@@ -1,6 +1,4 @@
-""" Groups of exchanges, a neater way of representing multiple, similar exchanges
-
-"""
+""" Groups of exchanges, a neater way of representing multiple, similar exchanges """
 
 import numpy as np
 from numpy._typing import ArrayLike
