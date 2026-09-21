@@ -530,7 +530,6 @@ class Structure(SPWSerialisable):
                 spacegroup: SymmetryGroup | None = None,
                 supercell: Supercell | None = None):
         """ Make a copy of this structure, but with selected (not None) fields replaced"""
-
         symmetry_considerations_changed = sites is not None and spacegroup is not None
         sites_to_send = self._input_sites if symmetry_considerations_changed else self.sites
 
