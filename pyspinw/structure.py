@@ -29,7 +29,8 @@ class Structure(SPWSerialisable):
                  spacegroup: SpaceGroup | None = None,
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
-                 show_unit_cell_warning: bool=True):
+                 show_unit_cell_warning: bool=True,
+                 assume_sites_are_already_symmetric: bool=False):
 
 
         if not isinstance(unit_cell, UnitCell):
@@ -52,7 +53,11 @@ class Structure(SPWSerialisable):
         self._spacegroup = spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
-        self._sites: list[LatticeSite] = self._extended_sites()
+        if assume_sites_are_already_symmetric:
+            self._sites = sites
+        else:
+            self._sites: list[LatticeSite] = self._extended_sites()
+
         self._site_lookup = {site.unique_id: site for site in self._sites} # Cache a map
 
         if not skip_checks:
@@ -525,12 +530,18 @@ class Structure(SPWSerialisable):
                 spacegroup: SymmetryGroup | None = None,
                 supercell: Supercell | None = None):
         """ Make a copy of this structure, but with selected (not None) fields replaced"""
+
+        symmetry_considerations_changed = sites is not None and spacegroup is not None
+        sites_to_send = self._input_sites if symmetry_considerations_changed else self.sites
+
         return Structure(
-            self.sites if sites is None else sites,
+            sites_to_send,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
             self._supercell if supercell is None else supercell,
-            show_unit_cell_warning= not (spacegroup is None and unit_cell is None))
+            show_unit_cell_warning= not (spacegroup is None and unit_cell is None),
+            assume_sites_are_already_symmetric=not symmetry_considerations_changed
+            )
 
     def exchange_constraints(self,
                              site_1: LatticeSite | str | ArrayLike,
