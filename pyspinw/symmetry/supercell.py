@@ -394,6 +394,7 @@ class TiledSupercell(CommensurateSupercell):
 
 class SpinSetter:
     """ Helper class to set spins in a DirectSupercell"""
+
     def __init__(self, site: LatticeSite, size: tuple[int, int, int]):
         self.site = site
         self.size = size
@@ -451,12 +452,12 @@ class SpinSetter:
 class DirectSupercell(CommensurateSupercell):
     """ A supercell where the spin on each site can be set independently
 
-     The spin_data field for spins must be an n_cells x 3 matrix or a 1x3 matrix, and
-     in the former it is assumed the order of spins matches `np.reshape`.
+    The spin_data field for spins must be an n_cells x 3 matrix or a 1x3 matrix, and
+    in the former it is assumed the order of spins matches `np.reshape`.
 
-     There is an extra method on this class, `spins_for(LatticeSite)`,
-     that should make assigning spins easier.
-     """
+    There is an extra method on this class, `spins_for(LatticeSite)`,
+    that should make assigning spins easier.
+    """
 
     def __init__(self, a: int, b: int, c: int, scaling=(1,1,1)):
 
@@ -480,7 +481,6 @@ class DirectSupercell(CommensurateSupercell):
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
         """ Get the spin for a given cell, and the specified spin data """
-
         index = np.ravel_multi_index(cell_offset.as_tuple, self._base_shape)
         return spin_data[index, :]
 
