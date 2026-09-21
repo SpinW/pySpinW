@@ -33,5 +33,5 @@ def test_serialisation():
         assert parent.j == deserialised.parent_site.j
         assert parent.k == deserialised.parent_site.k
 
-        assert parent._spin_data == pytest.approx(deserialised.parent_site._spin_data)
+        assert parent.__spin_data == pytest.approx(deserialised.parent_site._spin_data)
         assert parent.name == deserialised.parent_site.name

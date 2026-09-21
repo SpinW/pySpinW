@@ -10,10 +10,10 @@ from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
 from pyspinw.cell_offsets import cell_offset_generator
 from pyspinw.serialisation import SPWSerialisable
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
-from pyspinw.symmetry.group import SpaceGroup, MagneticSpaceGroup, SymmetryGroup, database
+from pyspinw.site import LatticeSite
+from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.operations import SpaceOperation
-from pyspinw.symmetry.supercell import Supercell, TiledSupercell
+from pyspinw.symmetry.supercell import Supercell, TiledSupercell, DirectSupercell
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import connected_components, arraylike_equality, IncrementalPointHistogram
@@ -30,7 +30,8 @@ class Structure(SPWSerialisable):
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
                  show_unit_cell_warning: bool=True,
-                 assume_sites_are_already_symmetric: bool=False):
+                 assume_sites_are_already_symmetric: bool=False,
+                 cooerce_spin_data_to_match_supercell: bool=True):
 
 
         if not isinstance(unit_cell, UnitCell):
@@ -63,15 +64,27 @@ class Structure(SPWSerialisable):
         if not skip_checks:
 
             # Check that supercell components match site dimensions
+            n_components = self._supercell.n_components()
+            maybe_warn = False
             bad_sites = []
             for site in self.sites:
-                if site.n_components() != self._supercell.n_components():
-                    bad_sites.append(site)
+                if site.n_components() != n_components:
+
+                    if cooerce_spin_data_to_match_supercell and site.n_components() == 1:
+                        site.spin_data = np.repeat(site.spin_data, n_components, axis=0)
+                        maybe_warn = True
+                    else:
+                        bad_sites.append(site)
+
+            if maybe_warn and not isinstance(self._supercell, DirectSupercell):
+                logger.warning("`spin_data` for some sites has been adjusted to match the supercell")
 
             if bad_sites:
                 raise ValueError("Expected the shape of site spin data to match what the supercell requires "
                                  f"({supercell.n_components()}-by-3), "
-                                 "bad sites are: " + ", ".join([site.name for site in bad_sites]))
+                                 "bad sites are: " + ", ".join([
+                        site.name if site.name is not None and site.name != "" else f"UID-{site.unique_id}"
+                          for site in bad_sites]))
 
             # check that the unit cell is consistent with the spacegroup
 
@@ -166,8 +179,8 @@ class Structure(SPWSerialisable):
             site_1 = sites[0]
             for site_2 in sites[1:]:
                 if not arraylike_equality(
-                          site_1._spin_data,
-                          site_2._spin_data,
+                          site_1.__spin_data,
+                          site_2.__spin_data,
                           tolerances.SAME_SITE_ABS_TOL):
 
                     same_spin = False

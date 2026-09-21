@@ -171,7 +171,7 @@ class SpaceGroup(SymmetryGroup):
                 i=coordinates[0][0],
                 j=coordinates[0][1],
                 k=coordinates[0][2],
-                supercell_spins=site._spin_data,
+                supercell_spins=site.__spin_data,
                 name=site.name + f" [{i+1}]",
                 metadata=site.metadata.copy()
                 )
