@@ -264,7 +264,7 @@ class Exchange(SPWSerialisable):
                         identity_operations: set[SpaceOperation],
                         inversion_operations: set[SpaceOperation]) -> bool:
         """ Main logic for symmetry checking """
-        # We want the exchange matrix in lattice units TODO: Verify the details of this transform
+        # We want the exchange matrix in lattice units
         exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
         # exchange_matrix = unit_cell._xyz_spins_inv @ self._exchange_matrix @ unit_cell._xyz_spins_inv.T
         # exchange_matrix = self._exchange_matrix
