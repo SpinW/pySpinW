@@ -42,14 +42,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-    - name: Run tests with pyTest (non-Linux)
-      if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest'
+      # Skip the tutorial generation on windows, doesn't matter as long as something will run it
+    - name: Run tests with pyTest (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        python -m pytest --ignore=tests/test_tutorial_generation.py
+      # Need to make sure at least something runs the tutorial generation though, seems its mac
+    - name: Run tests with pyTest (MacOS)
+      if: matrix.os == 'macos-latest'
+      env:
+        QT_OPENGL: software
+        QT_LOGGING_RULES: "qt.qpa.gl=true"
       run: |
         python -m pytest
     - name: Run tests with pyTest and coverage (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        coverage run --source=pyspinw --omit="pyspinw/gui/*" -m pytest
+        coverage run --source=pyspinw --omit="pyspinw/gui/*" -m pytest --ignore=tests/test_tutorial_generation.py
         echo "### Python Code Coverage: " $(coverage report | grep TOTAL | awk '{print $4}') > coverage_report.md
         echo "<details> <summary>Coverage Files Table</summary>" >> coverage_report.md
         echo " " >> coverage_report.md

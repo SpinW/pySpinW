@@ -7,12 +7,12 @@ magnetic structures and excitations
 
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
 from pyspinw.exchange import HeisenbergExchange, DiagonalExchange, XYExchange, IsingExchange, DMExchange
 from pyspinw.hamiltonian import Hamiltonian
 
-from pyspinw.exchangegroup import InPlaneFilter, InDirectionFilter, BiDirectionFilter
+from pyspinw.exchangegroup import NoDirectionalityFilter, InPlaneFilter, InDirectionFilter, BiDirectionFilter
 
 from pyspinw.interface import (
     generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
@@ -25,7 +25,6 @@ from pyspinw.symmetry.supercell import (
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
 from pyspinw.path import Path, Path1D, Slice
-from pyspinw.windows_parallelisation import set_up_windows_python_parallelisation
 
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType
 from pyspinw.gui.viewer import show_object as view
@@ -38,8 +37,6 @@ from pyspinw.cif import load_cif
 
 from pyspinw.demo import demo_viewer, demo_chains
 from pyspinw.demo import run_demos as demos
-
-# TODO, add viewer and fitting things
 
 __all__ = [
     # site
@@ -57,6 +54,7 @@ __all__ = [
     "DMExchange",
 
     # filters
+    "NoDirectionalityFilter",
     "InPlaneFilter",
     "InDirectionFilter",
     "BiDirectionFilter",
@@ -115,9 +113,6 @@ __all__ = [
     "Path",
     "Path1D",
     "Slice",
-
-    # windows parallelisation
-    "set_up_windows_python_parallelisation",
 
     # viewer
     "view",

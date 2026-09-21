@@ -1,15 +1,18 @@
 """ Representation of the Hamiltonian that has lots of precalculated stuff needed for rendering it"""
-
+import warnings
 from collections import defaultdict
+from fractions import Fraction
 
 import numpy as np
 
 from pyspinw.anisotropy import Anisotropy
+from pyspinw.cell_offsets import cell_offset_generator
 from pyspinw.exchange import Exchange
 from pyspinw.gui.edge_cases import add_extra_edge_lines, add_extra_edge_points
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
+from pyspinw.symmetry.supercell import CommensurateSupercell, RotationSupercell, PropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.util import rotation_from_z
 
@@ -125,20 +128,111 @@ class RenderAnisotropy(Component):
 
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
-    def __init__(self, anisotropy: Anisotropy):
+    _epsilon = 0.02
+
+    @staticmethod
+    def calculate_model_matrix(position,
+                               anisotropy: Anisotropy,
+                               unit_cell: UnitCell,
+                               scale: float):
+        """ Gets the model matrix for the anisotropy (see dev docs 'anisotropy_representions')"""
+        symmetrised = -0.5 * (anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+
+        min_eig = np.min(np.linalg.eigvals(symmetrised))
+
+        ellipsoid = (RenderAnisotropy._epsilon * np.eye(3)) - (min_eig * np.eye(3) - symmetrised)/scale
+
+        # Turn the quadratic coefficients into a transformation
+        translation = unit_cell.lattice_units_to_cartesian(position)
+        rotation = np.linalg.cholesky(ellipsoid)
+
+        model_matrix = np.zeros((4, 4), dtype=np.float32)
+        model_matrix[3,3] = 1.0
+        model_matrix[:3, :3] = rotation
+        model_matrix[:3, 3] = translation
+
+        return model_matrix
+
+
+    def __init__(self, anisotropy: Anisotropy, unit_cell: UnitCell, scale: float):
+
 
         super().__init__(np.eye(4))
         self.anisotropy = anisotropy
+        self.site = anisotropy.site
+        self.xyz = unit_cell.lattice_units_to_cartesian(anisotropy.site.ijk)
+
+        self.pretty_render_model_matrices = [self.calculate_model_matrix(
+                                                new_position, anisotropy, unit_cell, scale)
+                                                for new_position in add_extra_edge_points(anisotropy.site.ijk)]
+
+        # Matrix to convert
+        self.model_matrix = self.calculate_model_matrix(
+            anisotropy.site.ijk, anisotropy, unit_cell, scale)
+
+
+    def model_matrices(self, pretty: bool) -> list[np.ndarray]:
+        """ Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries """
+        if pretty:
+            return self.pretty_render_model_matrices
+        else:
+            return [self.model_matrix]
 
 class RenderModel:
     """ Model of the hamiltonian, contains lots of derived information for rendering and text representation"""
 
-    def __init__(self, hamiltonian: Hamiltonian):
+    def __init__(self,
+                 hamiltonian: Hamiltonian,
+                 copies: tuple[int, int, int] = (1,1,1),
+                 rotation_supercell_expansion_max=(10,10,10),
+                 propagation_vector_tolerance=1e-4):
+
+
+        # Deal with added scaling, and rotation supercells
+
+        # Change the scaling on the supercell if its commensurate according to `copies`
+        if isinstance(hamiltonian.structure.supercell, CommensurateSupercell):
+
+            new_scaling = tuple(x*y for x, y in zip(copies, hamiltonian.structure.supercell.scaling))
+
+            hamiltonian = hamiltonian.updated(
+                structure = hamiltonian.structure.updated(
+                    supercell = hamiltonian.structure.supercell.rescale(new_scaling)
+                ))
+
+            expansion_size = None
+
+        # If it's a rotation supercell, we want to expand it sensibly
+        elif isinstance(hamiltonian.structure.supercell, RotationSupercell):
+            # Find the periodicity of the supercell, this is a bit weird because of floating points
+            # Basic plan is to see if the vector is close to a quotient in some limited set of quotients
+            # i.e. Q_test = {a/b | a,b in N, b < n}
+            # we can find the closest one of these using Fraction.limit_denominator
+            # then, when we have the closest one, see if it is close enough
+
+
+            propagation_vector = hamiltonian.structure.supercell.propagation_vector.vector
+
+            expansion_size = [s for s in rotation_supercell_expansion_max]
+            for i in range(3):
+                closest_fraction = Fraction(propagation_vector[i])\
+                    .limit_denominator(rotation_supercell_expansion_max[i])
+
+                if abs(float(closest_fraction) - propagation_vector[i]) < propagation_vector_tolerance:
+                    expansion_size[i] = closest_fraction.denominator
+
+            expansion_size = tuple(expansion_size)
+
+
+        else:
+            raise TypeError("Expected supercell to be of type RotationSupercell or subclass of CommensurateSupercell")
 
         self.hamiltonian = hamiltonian
 
         self.expanded, site_mapping, self.exchange_mapping, self.anisotropy_mapping = \
-            self.hamiltonian._expand_with_mapping()
+            self.hamiltonian._expand_with_mapping(expansion_size)
+
+        self.expansion_size = hamiltonian.structure.supercell.cell_size() if expansion_size is None else expansion_size
 
         self.site_expanded_uid_to_original_uid: dict[int, int] = {}
         self.site_original_uid_to_expanded_uid: defaultdict[int, list[int]] = defaultdict(list)
@@ -202,8 +296,24 @@ class RenderModel:
             render_id += 1
 
         self.anisotropies = []
+
+        # We want to calculate the range of eigenvalues that we have, including zero in that
+        scale = 0.0
         for anisotropy in self.expanded.anisotropies:
-            render_anisotropy = RenderAnisotropy(anisotropy)
+            symmetrized = 0.5*(anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
+            eigenvalues = np.linalg.eigvals(symmetrized)
+            smallest = np.min(eigenvalues)
+            largest = np.max(eigenvalues)
+
+            new_scale = largest - smallest
+
+            if scale < new_scale:
+                scale = new_scale
+
+
+
+        for anisotropy in self.expanded.anisotropies:
+            render_anisotropy = RenderAnisotropy(anisotropy, self.expanded.structure.unit_cell, scale)
             self.anisotropies.append(render_anisotropy)
             self.render_map[render_id] = render_anisotropy
             render_id += 1
@@ -235,3 +345,8 @@ class RenderModel:
             rotation_matrix[:3, :3] = rotation_from_z(direction)
 
             self.unit_cell_axes_transforms.append(rotation_matrix @ translation_matrix)
+
+    def cells(self):
+        """ Generator for cell offsets for each of the displayed cells"""
+        return cell_offset_generator(*self.expansion_size)
+

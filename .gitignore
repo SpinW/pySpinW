@@ -161,6 +161,9 @@ cython_debug/
 # Old Matlab examples scripts
 examples/*/*.m
 
+# Built tutorials
+examples/tutorials/tutorial_outputs
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

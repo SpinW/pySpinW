@@ -41,7 +41,7 @@ class AxesShader(Shader):
         self._camera = camera
 
         view = self.camera.axes_view_matrix() # Note, this is a different matrix to usual
-        proj = self.camera.perspective_matrix(0.01, 100)
+        proj = self.camera.projection_matrix(0.01, 100)
         self.projection_view = proj @ view
 
     def _set_uniforms(self):

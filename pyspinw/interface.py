@@ -12,7 +12,7 @@ from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirecti
     BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
     TransformationSupercell, SummationSupercell, RotationSupercell
@@ -242,6 +242,8 @@ def propagation_vectors(
 
         out.append(pv)
 
+    return out
+
 @check_sizes(perpendicular=(3,), propagation=(3,))
 def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
     """ Generate a helical supercell
@@ -252,7 +254,7 @@ def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
     """
     return RotationSupercell(perpendicular=perpendicular, propagation_vector=propagation)
 
-@check_sizes(directions=("n", 3), phases=("n",), force_numpy=True, allow_nones=True)
+@check_sizes(directions=("n", 3), phases=("n",), axes=("n", 3), force_numpy=True, allow_nones=True)
 def rotation_supercell(
         directions: ArrayLike,
         axes: ArrayLike,
@@ -266,8 +268,6 @@ def rotation_supercell(
     :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
     :param scaling: Make a larger supercell by tiling the result this many times in each axis
     """
-    # Check that the axes match up
-
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
     vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
 
@@ -344,12 +344,9 @@ def spacegroup(search_string: str):
             elif len(groups) == 1:
                 return groups[0]
 
-            elif 1 < len(groups) <= 5:
-                suggestions = ", ".join([group.symbol for group in groups[:-1]]) + " and " + groups[-1].symbol
-                raise NoSuchGroup(f"Found multiple groups with these operations: {suggestions}")
-
             else:
-                raise NoSuchGroup(f"Found {len(groups)} groups matching those operations.")
+                suggestions = ", ".join([group.symbol for group in groups[:-1]]) + " and " + groups[-1].symbol
+                raise NoSuchGroup(f"Found {len(groups)} groups with these operations: {suggestions}")
 
         else:
             raise ValueError("Expected `spacegroups_by_operations` to return ExactMatch or PartialMatch")
@@ -470,6 +467,10 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
         else:
             used_parameters[parameter] = default
 
+    # Adds extra parameters
+    if color is not None:
+        used_parameters['color'] = color
+
     group = ExchangeGroup(
         name = "<unnamed group>",
         bond = bond,
@@ -488,21 +489,23 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
 def axis_anisotropies(
         sites: list[LatticeSite] | Structure,
         a: float,
-        axis: ArrayLike = [0, 0, 1]):
+        axis: ArrayLike = [0, 0, 1],
+        name: str = ""):
     """ Create anisotropy objects with magnitude `a` in direction `axis` for each site """
     if isinstance(sites, Structure):
         sites = sites.sites
-    return [AxisMagnitudeAnisotropy(site, a, axis) for site in sites]
+    return [AxisMagnitudeAnisotropy(site, a, axis, name) for site in sites]
 
 
 @check_sizes(matrix=(3,3), force_numpy=True)
 def matrix_anisotropies(
         sites: list[LatticeSite] | Structure,
-        matrix: ArrayLike):
+        matrix: ArrayLike,
+        name: str = ""):
     """ Create anisotropy objects specified by a matrix, the same for each site """
     if isinstance(sites, Structure):
         sites = sites.sites
-    return [Anisotropy(site, matrix) for site in sites]
+    return [Anisotropy(site, matrix, name) for site in sites]
 
 def view(hamiltonian: Hamiltonian):
     """ Show the current Hamiltonian in the viewer"""

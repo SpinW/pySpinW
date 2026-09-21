@@ -5,9 +5,18 @@ from fractions import Fraction
 import numpy as np
 from numpy.typing import ArrayLike
 
+from pyspinw.symmetry.symbolic import evaluate as evaluate_text
+
 PointOperationType = tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]]
 TranslationType = tuple[Fraction, Fraction, Fraction]
 
+# Used for parsing text
+_parsing_zero = {"x": 0, "y": 0, "z": 0}
+_parsing_variables = {
+    "x": np.array([1,0,0], dtype=float),
+    "y": np.array([0,1,0], dtype=float),
+    "z": np.array([0,0,1], dtype=float),
+}
 
 class SpaceOperation:
     """ Spacegroup Operation """
@@ -16,7 +25,16 @@ class SpaceOperation:
         self.name = name
 
         self.point_operation = point_operation
+        self.point_operation_matrix = np.array(point_operation, dtype=float)
+
+        try:
+            self.inverse_point_operation_matrix = np.linalg.inv(self.point_operation_matrix)
+        except np.linalg.LinAlgError as e:
+            raise ValueError(f"Point operation matrix should be invertible, got: {point_operation}") from e
+
         self.translation = translation
+
+        self._symmorphic = np.allclose(self.translation, 0.0)
 
         # Validate data in the point_operation field
         if len(point_operation) != 3:
@@ -41,6 +59,10 @@ class SpaceOperation:
                 raise ValueError("Translation entries must take values in the half open interval [0, 1),"
                                  f" got translation of {translation}")
 
+    @property
+    def symmorphic(self):
+        """ Is this operation symmorphic (i.e. has non-integer translation)"""
+        return self._symmorphic
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
         """ Less than, implemented to provide a canonical ordering """
@@ -53,12 +75,15 @@ class SpaceOperation:
         return (self.point_operation, self.translation) == \
             (other.point_operation, other.translation)
 
+    def __hash__(self):
+        return hash((self.point_operation, self.translation))
+
 
     @staticmethod
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray) -> \
                     tuple[PointOperationType, TranslationType]:
         """ Method that converts numpy float data into ints/fractions """
-        point_operation = tuple(tuple(int(point_operation[i,j]) for i in range(3)) for j in range(3))
+        point_operation = tuple(tuple(int(round(point_operation[i,j])) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(float(translation[i])).limit_denominator() for i in range(3))
 
         return point_operation, translation
@@ -94,6 +119,22 @@ class SpaceOperation:
             strings.append(string)
 
         return ", ".join(strings)
+
+    @staticmethod
+    def from_text(operation_string: str):
+        """ Parse a string form of an expression, e.g. 'x,x-y,z+1/2' """
+        parts = [part.strip() for part in operation_string.split(",")]
+        if len(parts) != 3:
+            raise ValueError(f"Expected three comma separated values, e.g. 'x,y,z', got {operation_string}")
+
+        translation = np.array([evaluate_text(part, _parsing_zero) for part in parts])
+
+        matrix_components = np.array([evaluate_text(part, _parsing_variables) for part in parts])
+        matrix_components -= translation.reshape(-1, 1)
+        matrix_components = matrix_components.T
+
+        return SpaceOperation.from_numpy(matrix_components, translation, operation_string)
+
 
     def __repr__(self):
         return self.text_form
@@ -135,8 +176,8 @@ class SpaceOperation:
             SpaceOperation._from_numpy(point_operation, translation)
 
         return SpaceOperation(point_operation=point_operation,
-                                 translation=translation,
-                                 name=name)
+                              translation=translation,
+                              name=name)
 
     @staticmethod
     def from_transformation_matrix(matrix: np.ndarray, name: str | None = None):
@@ -149,14 +190,24 @@ class SpaceOperation:
             translation=translation,
             name=name)
 
-    def __call__(self, points: ArrayLike) -> np.ndarray:
-        """ Apply this operation to a list of points """
+    def apply_without_mod(self, points):
+        """ Apply this operation to a list of points without moving back to the unit cell"""
         point_operation = np.array(self.point_operation, dtype=float)
         translation = np.array([float(f) for f in self.translation]).reshape(-1, 1)
 
         points = np.array(points)
 
-        new_points = (point_operation @ points.T + translation).T % 1
+        new_points = (point_operation @ points.T + translation).T
+
+        return new_points
+
+    def point_operation_in_cartesian(self, cell: "UnitCell"):
+        """ Get the point group in cartesian coordinates"""
+        return cell._xyz.T @ self.point_operation @ cell._xyz_inv.T
+
+    def __call__(self, points: ArrayLike) -> np.ndarray:
+        """ Apply this operation to a list of points """
+        new_points = self.apply_without_mod(points) % 1
 
         return new_points
 

@@ -1,4 +1,4 @@
-"""Runs the scripts in the tutorials folder to ensure they run
+"""Runs the scripts in the tutorial_inputs folder to ensure they run
 
 We just want to check the syntax does not throw errors and do not
 check for output values or graphs
@@ -11,7 +11,7 @@ import os
 import importlib
 import builtins
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials', 'tutorial_inputs'))
 
 @patch('matplotlib.pyplot.show', MagicMock())
 @patch('pyspinw.view', MagicMock())
@@ -34,5 +34,5 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutor
                           'twin_example',
                          ])
 def test_tutorials(tutorial):
-    """Test tutorials by importing them, but with graphics mocked out so it can run headless"""
+    """Test tutorial_inputs by importing them, but with graphics mocked out so it can run headless"""
     importlib.import_module(tutorial)

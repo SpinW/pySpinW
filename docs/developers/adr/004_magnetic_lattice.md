@@ -10,7 +10,7 @@ The plan is to make separate classes for these descriptions, provide some degree
 1) The explicit structure - every unique site is described explicity - explcit supercell, only (0,0,0), supports biquadratic
 2) The implicit structure - described by a unit cell, and a single propagation vector - implicit supercell, supports incommensurate and true helical structures. The impilcit structure requires the "trick" used in spinw to calculate intensities at +/- the propagation vector.
 
-In both cases the classes should implement a method to return the set of `zed` and `eta` vectors needed for the spin wave calculations as detailed in [this doc](../design/001_linear_spinwave_theory.md#local-spin-directions).
+In both cases the classes should implement a method to return the set of `zed` and `eta` vectors needed for the spin wave calculations as detailed in [this doc](../notes/001_linear_spinwave_theory.md#local-spin-directions).
 
 In addition, it would be useful if the user can specify a set of propagation vector(s) and basis(es) in the explicit representation rather than every spin orientation in the unit cell, but this is an implementation detail to be discussed later.
 

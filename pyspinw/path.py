@@ -4,6 +4,9 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy._typing import ArrayLike
 
+from pyspinw.symmetry.unitcell import UnitCell
+from pyspinw.structure import Structure
+
 
 class Path:
     """Path through q-space."""
@@ -13,7 +16,8 @@ class Path:
                  n_points_per_segment: int=101,
                  labels: list[str] | None = None,
                  avoid_endpoints=True,
-                 scale_by_distance=False):
+                 scale_by_distance=False,
+                 convert_to_lattice_units_with: Structure | UnitCell | None = None):
 
         self._points = np.array(points, dtype=float)
 
@@ -24,6 +28,17 @@ class Path:
 
         if self._n_points < 2:
             raise ValueError("Path must contain at least 2 points")
+
+        # Convert to RLU
+        if convert_to_lattice_units_with is not None:
+            if isinstance(convert_to_lattice_units_with, Structure):
+                unit_cell = convert_to_lattice_units_with.unit_cell
+            elif isinstance(convert_to_lattice_units_with, UnitCell):
+                unit_cell = convert_to_lattice_units_with
+            else:
+                raise TypeError("Expected `convert_to_lattice_units_with` to be Structure, UnitCell, or None")
+
+            self._points = unit_cell.lattice_units_to_cartesian(self._points) # inverse transform
 
         if labels is None:
             self._labels = [f"{self._points[i, 0]:.4g}, {self._points[i, 1]:.4g}, {self._points[i, 2]:.4g}"

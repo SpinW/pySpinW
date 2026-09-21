@@ -54,7 +54,7 @@ class ObjectShader(Shader):
         self._camera = camera
 
         self.view = self.camera.view_matrix()
-        proj = self.camera.perspective_matrix(0.01, 100)
+        proj = self.camera.projection_matrix(0.01, 100)
         self.projection_view = proj @ self.view
 
         self.view_position = camera.position
