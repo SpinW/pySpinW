@@ -179,8 +179,8 @@ class Structure(SPWSerialisable):
             site_1 = sites[0]
             for site_2 in sites[1:]:
                 if not arraylike_equality(
-                          site_1.__spin_data,
-                          site_2.__spin_data,
+                          site_1._spin_data,
+                          site_2._spin_data,
                           tolerances.SAME_SITE_ABS_TOL):
 
                     same_spin = False
