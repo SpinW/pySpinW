@@ -6,13 +6,39 @@ check for output values or graphs
 
 import os
 import runpy
+import pytest
+import shutil
 
+import pyspinw
 
-def test_tutorial_docs_build(monkeypatch):
+path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials')
+output_directory = os.path.join(path, "tutorial_outputs")
+
+@pytest.fixture
+def preserve_directory(tmp_path):
+    """ We need to back up the tutorials directory"""
+    directory = os.path.abspath(output_directory)
+    backup = tmp_path / "tutorials_backup"
+
+    if os.path.exists(directory):
+        shutil.copytree(directory, backup)
+
+    yield
+
+    if os.path.exists(directory):
+        shutil.rmtree(directory)
+
+    if os.path.exists(backup):
+        shutil.copytree(backup, directory)
+
+def test_tutorial_docs_build(preserve_directory, monkeypatch):
     """ Run the tutorials docs build"""
-    path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials')
+
     monkeypatch.chdir(path)
     monkeypatch.syspath_prepend(path)
+
+    # Patch out snapshot as running it on a runner causes all sorts of issues!!!!!
+    monkeypatch.setattr(pyspinw, "snapshot", lambda *args, **kwargs: None)
 
     runpy.run_path(
         os.path.join(

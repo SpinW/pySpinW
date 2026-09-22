@@ -1002,8 +1002,6 @@ class Hamiltonian(SPWSerialisable):
             else:
                 raise TypeError("Expected entries in planar to be sites, or tuples of sites and axes")
 
-        # TODO: Apply constraints to symmetric sites?
-
         #
         # Run the minimisation
         #

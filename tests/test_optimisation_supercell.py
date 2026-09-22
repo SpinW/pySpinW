@@ -3,15 +3,16 @@ import pytest
 
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.interface import generate_exchanges
+from pyspinw.interface import generate_exchanges, spacegroup
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import LatticeSite
 from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector, \
-    TransformationSupercell, RotationTransform
+    TransformationSupercell, RotationTransform, RotationSupercell, PropagationVector
 
 from pyspinw.symmetry.unitcell import UnitCell
+
 
 def test_energy_invariance_trivial_supercell():
     """ Check energy stays the same when we make the supercell bigger """
@@ -197,11 +198,20 @@ def test_energy_behaviour_rotation_supercell():
 
 def test_rotation_supercell_error():
     """ Test that we throw an error if called on an incommensurate structure """
+    site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
 
-    # TODO, add when integrated with Duc's changes
+    supercell = RotationSupercell([0, 0, 1], PropagationVector(0, 0, np.sqrt(101)))
 
-    # with pytest.raises(TypeError):
-    #     pass
+    structure = Structure(
+        [site],
+        UnitCell(1, 1, 1),
+        spacegroup("p1"),
+        supercell=supercell)
+
+    hamiltonian = Hamiltonian(structure, [])
+
+    with pytest.raises(TypeError):
+        hamiltonian.ground_state()
 
 def test_optimise_transformation_supercell():
     """ Test optimisation of a supercell where spins need to be as unaligned as possible """

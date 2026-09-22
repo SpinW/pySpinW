@@ -57,8 +57,6 @@ When we come to a node that can be a duplicate, instead of serilising diretly, w
       D-->|json|context-->|reference|C-->|json|A;
 ```
 
-TODO: Better diagram
-
 Serialisation Methods
 =====================
 
