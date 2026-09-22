@@ -62,7 +62,7 @@ class PropagationVector(SPWSerialisable):
             "i": serialise_fraction_or_builtin(self.i),
             "j": serialise_fraction_or_builtin(self.j),
             "k": serialise_fraction_or_builtin(self.k),
-            "phase": self.phase,
+            "phase": float(self.phase),
             "assured_commensurate": False
         }
 
@@ -708,8 +708,8 @@ class RotationSupercell(Supercell):
         return TransformationSupercell([(k, RotationTransform(self.perpendicular))])
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        return [{"vector": self.propagation_vector._serialise(context),
-                 "perpendicular": numpy_serialise(self.perpendicular)}]
+        return {"vector": self.propagation_vector._serialise(context),
+                 "perpendicular": numpy_serialise(self.perpendicular)}
 
     @staticmethod
     def _deserialise_supercell(json, scale, context):
