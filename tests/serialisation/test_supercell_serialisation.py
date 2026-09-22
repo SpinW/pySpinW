@@ -2,7 +2,8 @@
 import numpy as np
 
 from pyspinw.symmetry.supercell import TiledSupercell, Supercell, \
-    CommensuratePropagationVector, SummationSupercell, TransformationSupercell, RotationTransform
+    CommensuratePropagationVector, SummationSupercell, TransformationSupercell, RotationTransform,
+    DirectSupercell
 
 
 def test_trivial_supercell_serialisation():
@@ -33,8 +34,8 @@ def test_summation_supercell_serialisation():
                 in zip(supercell._propagation_vectors, deserialised._propagation_vectors)])
 
 
-def test_rotation_supercell_serialisation():
-    """ Test that rotation supercells serialise correctly"""
+def test_transformation_supercell_serialisation():
+    """ Test that transformation supercells serialise correctly"""
     input_data = [(CommensuratePropagationVector(0, 0, 1 / 2), RotationTransform([0,1,0])),
                 (CommensuratePropagationVector(1 / 3, 1 / 3, 1 / 3), RotationTransform([1,0,0]))]
     supercell = TransformationSupercell(input_data, scaling=(1, 3, 5))
@@ -55,3 +56,9 @@ def test_rotation_supercell_serialisation():
         assert isinstance(unserialised, RotationTransform) # Should be true by this test
         assert np.all(np.abs(deserialised._axis - unserialised._axis) < 1e-10)
 
+def test_direct_supercell_serialisation():
+    """ Check that the direct supercell serialises correctly """
+    supercell = DirectSupercell
+
+def test_rotation_supercell_serialisation():
+    """ Check that rotation supercells serialise correctly """
