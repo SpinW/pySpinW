@@ -6,6 +6,7 @@ magnetic structures and excitations
 
 
 from pyspinw.site import LatticeSite
+from pyspinw.sitemeta import SiteMetadata
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
 from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
@@ -40,6 +41,7 @@ from pyspinw.demo import run_demos as demos
 __all__ = [
     # site
     "LatticeSite",
+    "SiteMetadata",
 
     # anisotropy
     "Anisotropy",

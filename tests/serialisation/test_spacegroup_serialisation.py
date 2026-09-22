@@ -13,5 +13,17 @@ def test_serialisation_string(group):
     assert from_string.symbol == group.symbol
     assert from_string.choice == group.choice
     assert from_string.short_symbol == group.short_symbol
+    assert from_string.hall_number == group.hall_number
 
+@pytest.mark.parametrize("group", database.spacegroups)
+def test_spacegroup_serialisation(group):
+    json = group.serialise()
 
+    deserialised = SpaceGroup.deserialise(json)
+
+    assert isinstance(deserialised, SpaceGroup)
+
+    assert deserialised.symbol == group.symbol
+    assert deserialised.choice == group.choice
+    assert deserialised.short_symbol == group.short_symbol
+    assert deserialised.hall_number == group.hall_number

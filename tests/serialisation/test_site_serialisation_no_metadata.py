@@ -35,3 +35,4 @@ def test_serialisation():
 
         assert parent._spin_data == pytest.approx(deserialised.parent_site._spin_data)
         assert parent.name == deserialised.parent_site.name
+

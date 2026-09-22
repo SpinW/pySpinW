@@ -11,7 +11,7 @@ from difflib import get_close_matches
 from numpy._typing import ArrayLike
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
-from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
 from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_formatted, preferred_names
@@ -122,11 +122,12 @@ class SpaceGroup(SymmetryGroup):
         return self.preferred_symbol
 
     def _serialise(self, context: SPWSerialisationContext):
-        pass
+        return {"name": self._serialisation_string()}
 
     @staticmethod
+    @expects_keys("name")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        pass
+        return database.spacegroup_by_name(json["name"])
 
     def for_supercell(self, supercell: Supercell):
         """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
