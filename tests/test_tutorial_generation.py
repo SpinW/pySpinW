@@ -7,12 +7,16 @@ check for output values or graphs
 import os
 import runpy
 
+import pyspinw
 
 def test_tutorial_docs_build(monkeypatch):
     """ Run the tutorials docs build"""
     path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials')
     monkeypatch.chdir(path)
     monkeypatch.syspath_prepend(path)
+
+    # Patch out snapshot as running it on a runner causes all sorts of issues!!!!!
+    monkeypatch.setattr(pyspinw, "snapshot", lambda *args, **kwargs: None)
 
     runpy.run_path(
         os.path.join(
