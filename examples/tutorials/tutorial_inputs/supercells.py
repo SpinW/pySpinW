@@ -206,7 +206,7 @@ site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
 # in which the spin rotates.
 # The spin will rotate by amount given by the period of the propagation vector.
 
-supercell = RotationSupercell([0,0,1], PropagationVector(0,0,np.sqrt(101)))
+supercell = RotationSupercell([0,0,1], PropagationVector(0,0,1/np.sqrt(101)))
 
 # Build the structure and view, if the propagation vector is truly incommensurate, the viewer will only
 # show a finite number of cells (controlled by the `rotation_supercell_expansion_max` parameter)
@@ -223,6 +223,35 @@ view(structure)
 ## snapshot(structure, "rotation.png", view_point=(5,2,5),
 ##          display_options=DisplayOptions(show_unit_cell=False, perspective=False))
 
+# Rotation supercells have an `approximant` method, which makes a commensurate supercell which
+# approximately matches the incommensurate propagation vector.
+#
+# `approximant` takes a parameter called `max_denominator` which is the maximum periodicity (maximum
+# denominator of the propagation vector components) of the approximated supercell. In this case we
+# set it to 100.
+
+approximant_supercell = supercell.approximant(100)
+
+structure = Structure(
+    [site],
+    UnitCell(1, 1, 1),
+    spacegroup("p1"),
+    supercell=approximant_supercell)
+
+# With a `max_denominator` of 100, we see that it has approximated the period $\sqrt{101}$ ($\approx 10.04987562...$)
+# with a commensurate supercell with a period of exactly 10.
+
+## capture-stdout
+structure.print_summary()
+## end-capture-stdout
+
+# and it looks pretty similar
+
+## skip
+view(structure)
+## image: rotation_approximant.png
+## snapshot(structure, "rotation_approximant.png", view_point=(5,2,5),
+##          display_options=DisplayOptions(show_unit_cell=False, perspective=False))
 
 
 
