@@ -28,7 +28,8 @@ def preserve_directory(tmp_path):
     if os.path.exists(directory):
         shutil.rmtree(directory)
 
-    shutil.copytree(backup, directory)
+    if os.path.exists(backup):
+        shutil.copytree(backup, directory)
 
 def test_tutorial_docs_build(preserve_directory, monkeypatch):
     """ Run the tutorials docs build"""
