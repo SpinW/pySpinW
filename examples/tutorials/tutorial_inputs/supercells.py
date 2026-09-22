@@ -202,8 +202,8 @@ view(structure)
 
 site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
 
-# We next build a supercell, this takes a parameter called "perpendicular" (first argument) which defines the plane
-# in which the spin rotates.
+# We next build a supercell, this takes a parameter called "perpendicular" (first argument) which defines the normal to
+# the plane in which the spin rotates.
 # The spin will rotate by amount given by the period of the propagation vector.
 
 supercell = RotationSupercell([0,0,1], PropagationVector(0,0,1/np.sqrt(101)))
