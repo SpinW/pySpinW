@@ -19,7 +19,7 @@ from pyspinw.interface import (
     filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure, generate_structure)
 
 from pyspinw.symmetry.supercell import (
-    SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell,
+    SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell, DirectSupercell,
     PropagationVector, CommensuratePropagationVector, RotationTransform)
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
@@ -88,11 +88,12 @@ __all__ = [
     "generate_helical_structure",
 
     # supercells
+    "TiledSupercell",
+    "DirectSupercell",
     "SummationSupercell",
     "RotationSupercell",
     "TransformationSupercell",
     "RotationTransform",
-    "TiledSupercell",
     "PropagationVector",
     "CommensuratePropagationVector",
 
