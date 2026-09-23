@@ -5,7 +5,7 @@ import numpy as np
 from ase.geometry.cell import cellpar_to_cell
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
-    SPWSerialisationError, numpy_serialise, numpy_deserialise, vec3_serialise
+    SPWSerialisationError, numpy_serialise, numpy_deserialise, vec3_serialise, vec3_deserialise
 
 
 class BadCellDefinition(Exception):
@@ -145,8 +145,8 @@ class UnitCell(RawUnitCell):
         self.beta = beta
         self.gamma = gamma
 
-        self.ab_normal = ab_normal
-        self.direction = direction
+        self.ab_normal = tuple(float(x) for x in ab_normal)
+        self.direction = None if direction is None else tuple(float(x) for x in direction)
 
         self.abc = np.array([a,b,c])
 
@@ -213,7 +213,7 @@ class UnitCell(RawUnitCell):
             "beta": self.beta,
             "gamma": self.gamma,
             "ab_normal": vec3_serialise(*self.ab_normal),
-            "direction": vec3_serialise(*self.direction)
+            "direction": None if self.direction is None else vec3_serialise(*self.direction)
         }
 
     @staticmethod
@@ -226,8 +226,8 @@ class UnitCell(RawUnitCell):
             alpha=json["alpha"],
             beta=json["beta"],
             gamma=json["gamma"],
-            ab_normal=json["ab_normal"],
-            direction=json["direction"]
+            ab_normal=vec3_deserialise(json["ab_normal"]),
+            direction=None if json["direction"] is None else vec3_deserialise(json["direction"])
         )
 
 

@@ -9,7 +9,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
 from pyspinw.cell_offsets import cell_offset_generator
-from pyspinw.serialisation import SPWSerialisable
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.operations import SpaceOperation
@@ -604,6 +604,26 @@ class Structure(SPWSerialisable):
                 raise TypeError("Expected `site` to be a LatticeSite, vector or a name") from e
 
         return self.spacegroup.anisotropy_constraints(site, self.unit_cell, do_print=do_print)
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "sites": [site._serialise(context) for site in self.sites],
+            "unit_cell": self.unit_cell._serialise(context),
+            "spacegroup": self.spacegroup._serialise(context),
+            "supercell": self.supercell._serialise(context)
+            }
+
+    @staticmethod
+    @expects_keys("sites, unit_cell, spacegroup, supercell")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["sites"]],
+                         unit_cell=UnitCell._deserialise(json["unit_cell"], context),
+                         spacegroup=SpaceGroup._deserialise(json["spacegroup"], context),
+                         supercell=Supercell._deserialise(json["supercell"], context),
+                         skip_checks= True,
+                         show_unit_cell_warning=False,
+                         assume_sites_are_already_symmetric=True,
+                         cooerce_spin_data_to_match_supercell=False)
 
     def __repr__(self):
 
