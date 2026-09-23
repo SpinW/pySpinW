@@ -4,8 +4,11 @@ See notes document 004 for details.
 
 """
 import inspect
+import os
 from fractions import Fraction
 from functools import wraps
+
+from importlib.metadata import version
 
 import numpy as np
 import json
@@ -166,25 +169,71 @@ class SPWDeserialisationContext:
         self.sites = SPWDeserialisationContexGroup("sites", context_data["sites"])
 
 
+def header(description: str):
+    """ Header for files """
+    return {
+        "created-with": "pySpinW",
+        "version": version("pyspinw"),
+        "description": description
+    }
+
+def save(object: "SPWSerialisable", filename: str, description: str = "", add_extension: bool = True):
+    """ Save a pySpinW object """
+    object.save(filename, description, add_extension)
+
+def load(filename):
+    """ Load a pySpinW object from a file"""
+
+    with_extension = filename + ".psw"
+
+    # Try the provided filename, if it's not there, try with extension, otherwise error
+    if os.path.exists(filename) and os.path.isfile(filename):
+        target_file = filename
+    elif os.path.exists(with_extension) and os.path.isfile(with_extension):
+        target_file = with_extension
+    else:
+        raise FileNotFoundError(f"Could not find file '{filename}' or '{with_extension}'")
+
+    with open(target_file, 'r') as file:
+        json = file.read()
+
+
+
 class SPWSerialisable:
     """ Classes that are serialisable to SPW files should use implement this interface """
 
     serialisation_name = "<not-implemented>"
 
-    def serialise(self) -> str:
+    def serialise(self, description: str = "") -> str:
         """ Serialise an object of this type to a JSON string"""
         context = SPWSerialisationContext()
         data = {
+            "meta": header(description),
             "type": self.serialisation_name,
             "object": self._serialise(context),
             "context": context.serialise()
         }
         return json.dumps(data, indent=4, sort_keys=True)
 
+    def save(self, filename: str, description: str = "", add_extension: bool=True):
+        """ Save this object to a file"""
+
+        if add_extension and "." not in filename:
+            filename += ".psw"
+
+        with open(filename, 'w') as file:
+            file.write(self.serialise(description))
+
+
     @classmethod
     def deserialise(cls, json_string: str):
-        """ Deserialise an object of this type to a JSON string """
+        """ Deserialise an object of this type from a JSON string """
         json_data = json.loads(json_string)
+        return cls._deserialise_from_json(json_data)
+
+    @classmethod
+    def _deserialise_from_json(self, json_data):
+        """ Deserialise an object of this type from a json object """
 
         for key in ["type", "object", "context"]:
             if key not in json_data:

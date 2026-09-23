@@ -2,7 +2,7 @@
 
 filenames = []
 text = []
-with open("tutorial_list.txt", 'r') as file:
+with open("../examples/tutorials/tutorial_list.txt", 'r') as file:
     for line in file:
         parts = line.split(" ", maxsplit=1)
         filenames.append(parts[0]+".py")

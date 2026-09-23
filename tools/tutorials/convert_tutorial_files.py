@@ -8,10 +8,10 @@ from pathlib import Path
 import runpy
 import sys
 
-from jupyter_files import JupyterFile
+from .jupyter_files import JupyterFile
 
-tutorial_input_dir = Path("tutorial_inputs")
-tutorial_output_dir = Path("tutorial_outputs")
+tutorial_input_dir = Path("../examples/tutorials/tutorial_inputs")
+tutorial_output_dir = Path("../examples/tutorials/tutorial_outputs")
 
 
 

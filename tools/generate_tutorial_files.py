@@ -1,5 +1,5 @@
-from convert_tutorial_files import run as convert, tutorial_output_dir
-from tutorial_list import filenames, text
+from tutorials.convert_tutorial_files import run as convert, tutorial_output_dir
+from tutorials.tutorial_list import filenames, text
 
 # This deletes the directory and rebuilds, needs to come first
 convert(filenames)
