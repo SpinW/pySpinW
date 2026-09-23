@@ -30,8 +30,9 @@ class Structure(SPWSerialisable):
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
                  show_unit_cell_warning: bool=True,
-                 assume_sites_are_already_symmetric: bool=False,
-                 cooerce_spin_data_to_match_supercell: bool=True):
+                 assume_symmetric_sites_are_provided: bool=False,
+                 cooerce_spin_data_to_match_supercell: bool=True,
+                 symmetric_sites: list[LatticeSite] | None = None):
 
 
         if not isinstance(unit_cell, UnitCell):
@@ -54,8 +55,8 @@ class Structure(SPWSerialisable):
         self._spacegroup = spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
-        if assume_sites_are_already_symmetric:
-            self._sites = sites
+        if assume_symmetric_sites_are_provided and symmetric_sites is not None:
+            self._sites = symmetric_sites
         else:
             self._sites: list[LatticeSite] = self._extended_sites()
 
@@ -544,15 +545,16 @@ class Structure(SPWSerialisable):
                 supercell: Supercell | None = None):
         """ Make a copy of this structure, but with selected (not None) fields replaced"""
         symmetry_considerations_changed = sites is not None and spacegroup is not None
-        sites_to_send = self._input_sites if symmetry_considerations_changed else self.sites
+        sites_to_send = None if symmetry_considerations_changed else self.sites
 
         return Structure(
-            sites_to_send,
+            self._input_sites,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
             self._supercell if supercell is None else supercell,
             show_unit_cell_warning= not (spacegroup is None and unit_cell is None),
-            assume_sites_are_already_symmetric=not symmetry_considerations_changed
+            assume_symmetric_sites_are_provided=not symmetry_considerations_changed,
+            symmetric_sites = sites_to_send
             )
 
     def exchange_constraints(self,
@@ -607,23 +609,25 @@ class Structure(SPWSerialisable):
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
-            "sites": [site._serialise(context) for site in self.sites],
+            "input_sites": [site._serialise(context) for site in self._input_sites],
             "unit_cell": self.unit_cell._serialise(context),
             "spacegroup": self.spacegroup._serialise(context),
-            "supercell": self.supercell._serialise(context)
+            "supercell": self.supercell._serialise(context),
+            "symmetric_sites": [site._serialise(context) for site in self.sites]
             }
 
     @staticmethod
-    @expects_keys("sites, unit_cell, spacegroup, supercell")
+    @expects_keys("input_sites, unit_cell, spacegroup, supercell, symmetric_sites")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["sites"]],
+        return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["input_sites"]],
                          unit_cell=UnitCell._deserialise(json["unit_cell"], context),
                          spacegroup=SpaceGroup._deserialise(json["spacegroup"], context),
                          supercell=Supercell._deserialise(json["supercell"], context),
                          skip_checks= True,
                          show_unit_cell_warning=False,
-                         assume_sites_are_already_symmetric=True,
-                         cooerce_spin_data_to_match_supercell=False)
+                         assume_symmetric_sites_are_provided=True,
+                         cooerce_spin_data_to_match_supercell=False,
+                         symmetric_sites=[LatticeSite._deserialise(s, context) for s in json["symmetric_sites"]])
 
     def __repr__(self):
 

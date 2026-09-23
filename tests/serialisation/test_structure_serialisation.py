@@ -40,7 +40,6 @@ def test_structure_serialisation(spacegroup, supercell, unit_cell):
     deserialised = Structure.deserialise(json)
 
     assert isinstance(deserialised, Structure)
-
     assert len(structure.sites) == len(deserialised.sites)
 
     # Check unit cell
@@ -56,3 +55,6 @@ def test_structure_serialisation(spacegroup, supercell, unit_cell):
 
     # Check the spacegroup
     assert structure.spacegroup.hall_number == deserialised.spacegroup.hall_number
+
+    # Check the summary string, this should catch whether the sites are implied or not
+    assert structure.text_summary == deserialised.text_summary
