@@ -11,7 +11,7 @@ from pyspinw.serialisation import (
     SPWSerialisable,
     numpy_serialise,
     numpy_deserialise,
-    SPWDeserialisationContext,
+    SPWDeserialisationContext, expects_keys,
 )
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.operations import SpaceOperation
@@ -202,6 +202,7 @@ class Anisotropy(SPWSerialisable):
                 "name": self._name}
 
     @staticmethod
+    @expects_keys("site, anisotropy_matrix, name")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         site = LatticeSite._deserialise(json["site"], context)
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
@@ -324,6 +325,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         }
 
     @staticmethod
+    @expects_keys("site, a, direction, name")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         return AxisMagnitudeAnisotropy(
             LatticeSite._deserialise(json["site"], context),
@@ -436,13 +438,13 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         if all_neg:
             a_constant *= -1
 
-        return AxisMagnitudeAnisotropy(anisotropy.site, a=float(a_constant), direction=vec)
+        return AxisMagnitudeAnisotropy(anisotropy.site, a=float(a_constant), direction=vec, name=anisotropy.name)
 
-_specialisation_search = [AxisMagnitudeAnisotropy, Anisotropy]
+_all_anisotropies = [AxisMagnitudeAnisotropy, Anisotropy]
 
 def specialise_anisotropy(anisotropy: Anisotropy) -> Anisotropy:
     """ Find the narrowest anisotropy subclass to fit the exchange """
-    for An in _specialisation_search:
+    for An in _all_anisotropies:
         specialised = An._specialise(anisotropy)
         if specialised is not None:
             return specialised

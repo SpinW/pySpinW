@@ -18,20 +18,31 @@ site_pairs = [(site1, site2)
               for index, site1 in enumerate(sites)
               for site2 in sites[:index]]
 
+colors = [None, (1,0,0), (0.1, 0.2, 0.3)]
+
 rng = np.random.default_rng(42069)
+
 
 @pytest.mark.parametrize("pair", site_pairs)
 @pytest.mark.parametrize("exchange_class", all_exchanges)
-def test_exchanges_serialise(pair: tuple[LatticeSite, LatticeSite], exchange_class: type[Exchange]):
+@pytest.mark.parametrize("color", colors)
+def test_exchanges_serialise(
+        pair: tuple[LatticeSite, LatticeSite],
+        exchange_class: type[Exchange],
+        color: tuple[float, float, float]):
+
     parameters = {parameter: rng.random() for parameter in exchange_class.parameters}
 
-    exchange = exchange_class(*pair, **parameters)
+    exchange = exchange_class(*pair, **parameters, name=f"{exchange_class} {pair}", color=color)
 
     json = exchange.serialise()
 
     deserialised = Exchange.deserialise(json)
 
     assert isinstance(deserialised, exchange_class)
+
+    assert exchange.name == deserialised.name
+    assert exchange.metadata.color == deserialised.metadata.color
 
     assert np.all(exchange.site_1.ijk == deserialised.site_1.ijk)
     assert np.all(exchange.site_2.ijk == deserialised.site_2.ijk)
