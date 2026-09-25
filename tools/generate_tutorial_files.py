@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+package_dir = Path(__file__).parent
+sys.path.insert(0, str(package_dir.parent))
+
 from tools.tutorials.convert_tutorial_files import run as convert, tutorial_output_dir
 from tools.tutorials.tutorial_list import filenames, text
 

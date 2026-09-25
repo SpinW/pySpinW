@@ -6,7 +6,10 @@ text = []
 
 print(os.path.dirname(__file__))
 
-path = os.path.abspath("../examples/tutorials/tutorial_list.txt")
+path = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "../../examples/tutorials/tutorial_list.txt"))
 
 with open(path, 'r') as file:
     for line in file:

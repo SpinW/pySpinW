@@ -10,8 +10,10 @@ import sys
 
 from .jupyter_files import JupyterFile
 
-tutorial_input_dir = Path("../examples/tutorials/tutorial_inputs")
-tutorial_output_dir = Path("../examples/tutorials/tutorial_outputs")
+tools_dir = Path(__file__).parent
+
+tutorial_input_dir = tools_dir / Path("../../examples/tutorials/tutorial_inputs")
+tutorial_output_dir = tools_dir / Path("../../examples/tutorials/tutorial_outputs")
 
 
 
