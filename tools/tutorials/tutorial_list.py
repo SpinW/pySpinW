@@ -1,8 +1,14 @@
 """ Load in the tutorial files """
+import os.path
 
 filenames = []
 text = []
-with open("../examples/tutorials/tutorial_list.txt", 'r') as file:
+
+print(os.path.dirname(__file__))
+
+path = os.path.abspath("../examples/tutorials/tutorial_list.txt")
+
+with open(path, 'r') as file:
     for line in file:
         parts = line.split(" ", maxsplit=1)
         filenames.append(parts[0]+".py")
