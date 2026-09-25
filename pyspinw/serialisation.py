@@ -8,10 +8,10 @@ import os
 from fractions import Fraction
 from functools import wraps
 
-from importlib.metadata import version
-
 import numpy as np
 import json
+
+from pyspinw.versions import get_version
 
 class SPWSerialisationError(Exception):
     """ Exceptions thrown by the [de]serialisation process """
@@ -173,7 +173,7 @@ def header(description: str):
     """ Header for files """
     return {
         "created-with": "pySpinW",
-        "version": version("pyspinw"),
+        "version": get_version(),
         "description": description
     }
 
@@ -232,7 +232,7 @@ class SPWSerialisable:
         return cls._deserialise_from_json(json_data)
 
     @classmethod
-    def _deserialise_from_json(self, json_data):
+    def _deserialise_from_json(cls, json_data):
         """ Deserialise an object of this type from a json object """
 
         for key in ["type", "object", "context"]:

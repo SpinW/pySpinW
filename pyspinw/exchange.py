@@ -839,7 +839,7 @@ class XYExchange(Exchange):
                  metadata: ExchangeMetadata | None = None):
 
         self._j = j
-        self._exchange_matrix = np.diag([j, j, 0.0], dtype=float)
+        self._exchange_matrix = np.diag(np.array([j, j, 0.0], dtype=float))
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
