@@ -1,5 +1,5 @@
 """ Serialisation tests for sites """
-
+import numpy as np
 import pytest
 
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
@@ -7,7 +7,7 @@ from pyspinw.site import LatticeSite, ImpliedLatticeSite
 def test_serialisation():
     """ Check that the serialisation for lattice sites works with a few examples"""
     s1 = LatticeSite(1,2,3, 4, 5, 6, name="s1")
-    s2 = LatticeSite(3, 4, 5, supercell_spins=[[7, 8, 9], [10, 11, 12]], name="s2")
+    s2 = LatticeSite(3, 4, 5, supercell_spins=[[7, 8, 9], [10, 11, 12]], name="s2", g=2-np.eye(1))
     s3 = ImpliedLatticeSite(s1, 4,5,6,7,8,9)
 
     # Even though this doesn't make sense, it should serialise correctly
@@ -19,6 +19,8 @@ def test_serialisation():
         assert site.i == deserialised.i
         assert site.j == deserialised.j
         assert site.k == deserialised.k
+
+        assert np.all(site.g == deserialised.g)
 
         assert site._spin_data == pytest.approx(deserialised._spin_data)
         assert site.name == deserialised.name
