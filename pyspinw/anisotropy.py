@@ -43,6 +43,7 @@ class Anisotropy(SPWSerialisable):
 
     #: Type name used when serialising anisotropy terms to SPW data.
     serialisation_name = "anisotropy"
+    _anisotropy_serialisation_name = "general"
 
     #: Names of scalar fields that can be varied by parameter definitions.
     scalar_parameters = []
@@ -197,13 +198,26 @@ class Anisotropy(SPWSerialisable):
         return [specialise_anisotropy(anisotropy) for anisotropy in new_anisotropies]
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "type": self._anisotropy_serialisation_name,
+            "data": self._anisotropy_serialise(context)
+        }
+
+
+    def _anisotropy_serialise(self, context: SPWSerialisationContext) -> dict:
         return {"site": self._site._serialise(context),
                 "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix),
                 "name": self._name}
 
+
+    @staticmethod
+    @expects_keys("type, data")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return _anisotropy_lookup[json["type"]]._anisotropy_deserialise(json["data"], context)
+
     @staticmethod
     @expects_keys("site, anisotropy_matrix, name")
-    def _deserialise(json: dict, context: SPWDeserialisationContext):
+    def _anisotropy_deserialise(json: dict, context: SPWDeserialisationContext):
         site = LatticeSite._deserialise(json["site"], context)
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
         return Anisotropy(site, anisotropy_matrix, json["name"])
@@ -274,6 +288,8 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         Optional name.
     """
 
+    _anisotropy_serialisation_name = "axis-magnitude"
+
     #: Names of scalar fields that can be varied by parameter definitions.
     scalar_parameters = ["a"]
 
@@ -316,7 +332,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         """A string representation of the parameters."""
         return f"a={self.constant}, axis={self.direction}"
 
-    def _serialise(self, context: SPWSerialisationContext):
+    def _anisotropy_serialise(self, context: SPWSerialisationContext):
         return {
             "site": self._site._serialise(context),
             "direction": numpy_serialise(self._direction),
@@ -326,7 +342,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @staticmethod
     @expects_keys("site, a, direction, name")
-    def _deserialise(json: dict, context: SPWDeserialisationContext):
+    def _anisotropy_deserialise(json: dict, context: SPWDeserialisationContext):
         return AxisMagnitudeAnisotropy(
             LatticeSite._deserialise(json["site"], context),
             json["a"],
@@ -441,6 +457,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
         return AxisMagnitudeAnisotropy(anisotropy.site, a=float(a_constant), direction=vec, name=anisotropy.name)
 
 _all_anisotropies = [AxisMagnitudeAnisotropy, Anisotropy]
+_anisotropy_lookup = {cls._anisotropy_serialisation_name: cls for cls in _all_anisotropies}
 
 def specialise_anisotropy(anisotropy: Anisotropy) -> Anisotropy:
     """ Find the narrowest anisotropy subclass to fit the exchange """
