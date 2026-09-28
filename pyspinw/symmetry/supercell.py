@@ -405,7 +405,7 @@ class SpinSetter:
         self.site = site
         self.size = size
         self.n_components = size[0]*size[1]*size[2]
-        self.index_map = np.arange(np.prod(size)).reshape(size)
+        self.index_map = np.arange(self.n_components, dtype=int).reshape(size)
 
         # Make sure the spin has the right kind of data
         if self.site.spin_data.shape[0] != self.n_components:
@@ -465,20 +465,20 @@ class DirectSupercell(CommensurateSupercell):
     that should make assigning spins easier.
     """
 
-    def __init__(self, a: int, b: int, c: int, scaling=(1,1,1)):
+    def __init__(self, n_a: int, n_b: int, n_c: int, scaling=(1, 1, 1)):
 
-        for component, name in zip([a, b, c], "abc"):
+        for component, name in zip([n_a, n_b, n_c], "abc"):
             if not isinstance(component, int):
                 raise TypeError(f"`{name}` is not an integer")
 
             if component <= 0:
-                raise ValueError(f"`{name}` should be (strictly) positive")
+                raise ValueError(f"`n_{name}` should be (strictly) positive")
 
-        self.a = a
-        self.b = b
-        self.c = c
+        self.n_a = n_a
+        self.n_b = n_b
+        self.n_c = n_c
 
-        self._base_shape = (a,b,c)
+        self._base_shape = (n_a, n_b, n_c)
 
         super().__init__([], scaling)
 
@@ -496,24 +496,24 @@ class DirectSupercell(CommensurateSupercell):
 
     def cell_size(self) -> tuple[int, int, int]:
         """ How big is this supercell """
-        return self.a*self._scaling[0], self.b*self.scaling[1], self.c*self.scaling[2]
+        return self.n_a * self._scaling[0], self.n_b * self.scaling[1], self.n_c * self.scaling[2]
 
     def rescale(self, new_scaling: tuple[int, int, int]):
         """ Rescale this supercell """
-        return DirectSupercell(self.a, self.b, self.c, new_scaling)
+        return DirectSupercell(self.n_a, self.n_b, self.n_c, new_scaling)
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        return {"a": self.a,
-                "b": self.b,
-                "c": self.c}
+        return {"n_a": self.n_a,
+                "n_b": self.n_b,
+                "n_c": self.n_c}
 
     @staticmethod
-    @expects_keys("a,b,c")
+    @expects_keys("n_a,n_b,n_c")
     def _deserialise_supercell(json, scale, context: SPWDeserialisationContext):
-        a = json["a"]
-        b = json["b"]
-        c = json["c"]
-        return DirectSupercell(a,b,c,scale)
+        n_a = json["n_a"]
+        n_b = json["n_b"]
+        n_c = json["n_c"]
+        return DirectSupercell(n_a, n_b, n_c, scale)
 
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
         """ Derivative of the spin at a given site with respect to one component of it """
@@ -525,14 +525,14 @@ class DirectSupercell(CommensurateSupercell):
     def text_data(self) -> list[str]:
         """ Lines of text describing this supercell """
         return [self.supercell_name.capitalize(),
-                f"a = {self.a}",
-                f"b = {self.b}",
-                f"c = {self.c}",
+                f"n_a = {self.n_a}",
+                f"n_b = {self.n_b}",
+                f"n_c = {self.n_c}",
                 f"size = {self.cell_size()}"]
 
     def n_components(self) -> int:
         """ Number of spin components/propagation vectors"""
-        return self.a * self.b * self.c
+        return self.n_a * self.n_b * self.n_c
 
 
 
