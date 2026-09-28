@@ -11,7 +11,7 @@ def test_hamiltonian_serialisation():
         LatticeSite(0.5, 0.5, 0, 1, 0, 0)
     ]
 
-    sg = spacegroup("P4mmm")
+    sg = spacegroup("P4/mmm")
     unit_cell = UnitCell(1,1,1)
     supercell = TiledSupercell(scaling=(2,3,5))
 

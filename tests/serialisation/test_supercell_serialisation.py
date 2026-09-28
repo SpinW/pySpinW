@@ -65,9 +65,9 @@ def test_direct_supercell_serialisation():
 
     assert isinstance(deserialised, DirectSupercell)
 
-    assert supercell.a == deserialised.a
-    assert supercell.b == deserialised.b
-    assert supercell.c == deserialised.c
+    assert supercell.n_a == deserialised.n_a
+    assert supercell.n_b == deserialised.n_b
+    assert supercell.n_c == deserialised.n_c
 
     assert supercell.scaling == deserialised.scaling
 
