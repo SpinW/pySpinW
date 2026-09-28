@@ -58,7 +58,6 @@ def test_fixed_vector_parameter(length, success):
             fixed_length_vector(x=test_input)
 
     else:
-        # TODO: check this is how to test a function just runs without error
         fixed_length_vector(test_input)
         fixed_length_vector(x=test_input)
 

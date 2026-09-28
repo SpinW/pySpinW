@@ -390,8 +390,6 @@ class ClassicalEnergyMinimisation:
             if verbose:
                 print(f"Failed to converge after {max_iters} iterations - maybe change the step_size?")
 
-        # TODO: Return new Hamiltonian
-
 
 
     def iterate(self, step_size=0.1):

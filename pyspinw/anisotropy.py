@@ -95,7 +95,7 @@ class Anisotropy(SPWSerialisable):
 
         # Checking is easier than finding the list of symmetry groups
         operations = spacegroup.operations_between_sites(self._site, self._site)
-        operations = [operation for operation in operations if operation.symmorphic] # TODO - does this matter?
+        operations = [operation for operation in operations if operation.symmorphic]
 
         return self._obeys_symmetry(unit_cell, operations)
 
