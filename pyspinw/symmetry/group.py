@@ -29,6 +29,8 @@ from pyspinw.tolerances import tolerances
 class SymmetryGroup(ABC, SPWSerialisable):
     """ Base class for symmetry group and magnetic symmetry group """
 
+    serialisation_name = "symmetry_group"
+
     @abstractmethod
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find all the sites that are required by symmetry by the input site """
@@ -39,7 +41,7 @@ class SymmetryGroup(ABC, SPWSerialisable):
 class MagneticSpaceGroup(SymmetryGroup):
     """ Representation of a magnetic space group"""
 
-    serialisation_name = "MagneticGroup"
+    serialisation_name = "magnetic_group"
 
     def __init__(self, number: int, symbol: str, operations: list[MagneticOperation]):
         self.number = number
@@ -92,7 +94,7 @@ class MagneticSpaceGroup(SymmetryGroup):
 class SpaceGroup(SymmetryGroup):
     """ Representation of a space group"""
 
-    serialisation_name = "SpaceGroup"
+    serialisation_name = "space_group"
 
     def __init__(self,
                  hall_number,

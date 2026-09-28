@@ -24,6 +24,8 @@ _chemical_pattern = _build_regex()
 class SiteMetadata(SPWSerialisable):
     """ Metadata about the element in the site """
 
+    serialisation_name = "site_metadata"
+
     def __init__(self,
                  element: str | None = None,
                  radius: float | None = None,

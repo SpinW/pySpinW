@@ -23,6 +23,8 @@ logger = logging.getLogger("Structure")
 class Structure(SPWSerialisable):
     """ Representation of the magnetic structure """
 
+    serialisation_name = "structure"
+
     def __init__(self,
                  sites: list[LatticeSite],
                  unit_cell: UnitCell,

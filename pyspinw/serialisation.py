@@ -197,6 +197,7 @@ def load(filename):
     with open(target_file, 'r') as file:
         json = file.read()
 
+    # TODO: Finish
 
 
 class SPWSerialisable:

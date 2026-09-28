@@ -14,6 +14,8 @@ class BadCellDefinition(Exception):
 class RawUnitCell(SPWSerialisable):
     """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""
 
+    serialisation_name = "unit_cell"
+
     _unit_cell_name = "raw"
 
     def __init__(self, xyz):
