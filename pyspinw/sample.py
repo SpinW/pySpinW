@@ -9,6 +9,7 @@ from numpy._typing import ArrayLike
 
 import matplotlib.pyplot as plt
 
+from pyspinw.serialisation import SPWSerialisable
 from pyspinw.units import IntensityUnits
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType, point_generator
 from pyspinw.checks import check_sizes
@@ -19,8 +20,10 @@ from pyspinw.tolerances import tolerances
 
 # pylint: disable=R0903
 
-class Sample(ABC):
+class Sample(ABC, SPWSerialisable):
     """Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
+
+    serialisation_name = "sample"
 
     def __init__(self, hamiltonian: Hamiltonian):
         self.hamiltonian = hamiltonian

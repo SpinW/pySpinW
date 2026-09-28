@@ -3,6 +3,7 @@ import inspect
 import pkgutil
 
 from pyspinw.serialisation import SPWSerialisable
+from pyspinw.deserialisation import serialisation_class_lookup
 
 
 def get_classes(package_name):
@@ -87,6 +88,8 @@ def test_all_SPWSerialisable_is_represented():
                             if issubclass(cls, SPWSerialisable)]
 
     # Get a set of the serialisation_names
-    names = set(cls.serialisation_name for cls in serialisable_classes)
+    names = set(cls.serialisation_name for cls in serialisable_classes if "SPWSerialisable" not in cls.__name__)
 
-    print(names)
+    # Check the deserialisation list
+    for name in names:
+        assert name in serialisation_class_lookup, f"There should be an entry in deserialisation.py for `{name}`"

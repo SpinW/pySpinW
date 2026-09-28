@@ -26,10 +26,8 @@ from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints, Anisot
 
 from pyspinw.tolerances import tolerances
 
-class SymmetryGroup(ABC, SPWSerialisable):
+class SymmetryGroup(ABC):
     """ Base class for symmetry group and magnetic symmetry group """
-
-    serialisation_name = "symmetry_group"
 
     @abstractmethod
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
@@ -38,7 +36,7 @@ class SymmetryGroup(ABC, SPWSerialisable):
 
 
 
-class MagneticSpaceGroup(SymmetryGroup):
+class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a magnetic space group"""
 
     serialisation_name = "magnetic_group"
@@ -91,7 +89,7 @@ class MagneticSpaceGroup(SymmetryGroup):
 
 
 
-class SpaceGroup(SymmetryGroup):
+class SpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a space group"""
 
     serialisation_name = "space_group"
