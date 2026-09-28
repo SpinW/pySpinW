@@ -28,7 +28,7 @@ dependencies = [
     "numpy>=2.0.0",
     "packaging",
     "pycifrw",
-    "spglib>2.1.0",
+    "spglib>2.5.0",
     "scipy",
     "pyopengl>=3.1.10",
     "PySide6-Essentials",
