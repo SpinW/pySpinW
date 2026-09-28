@@ -422,7 +422,7 @@ class Multidomain(Sample3D):
     def _sample_serialise(self, context: SPWSerialisationContext):
         return {
             "hamiltonian": self.hamiltonian._serialise(context),
-            "domains": [domain._serialse(context) for domain in self._domains]
+            "domains": [domain._serialise(context) for domain in self._domains]
         }
 
 
