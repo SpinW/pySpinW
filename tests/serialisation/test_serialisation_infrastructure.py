@@ -67,7 +67,7 @@ def test_all_serialisation_names_follow_conventions():
         assert " " not in cls.serialisation_name, \
             f"`serialisation_name` should not have spaces, got '{cls.serialisation_name}'"
 
-        for forbidden in "<>-:/\[]":
+        for forbidden in r"<>-:/\[]":
             assert forbidden not in cls.serialisation_name, \
                 f"`serialisation_name` should not have '{forbidden}', got '{cls.serialisation_name}'"
 
