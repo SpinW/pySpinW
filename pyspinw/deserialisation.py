@@ -1,5 +1,5 @@
 """ Things needed specifically for deserialisation, basically a list of objects that can be serialised """
-
+from pyspinw import CrystalDomain
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchange import Exchange
 from pyspinw.exchangemetadata import ExchangeMetadata
@@ -35,6 +35,7 @@ serialisation_entry_classes = [
 
     Hamiltonian,
 
+    CrystalDomain,
     Sample,
 
     Experiment

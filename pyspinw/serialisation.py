@@ -195,9 +195,23 @@ def load(filename):
         raise FileNotFoundError(f"Could not find file '{filename}' or '{with_extension}'")
 
     with open(target_file, 'r') as file:
-        json = file.read()
+        json_string = file.read()
 
-    # TODO: Finish
+    json_data = json.loads(json_string)
+
+    try:
+        serialisation_name = json["type"]
+    except:
+        raise ValueError("Expected to have a 'type' key")
+
+    from pyspinw.deserialisation import serialisation_class_lookup
+
+    try:
+        cls = serialisation_class_lookup[serialisation_name]
+    except:
+        raise ValueError(f"Unknown object type '{serialisation_name}'")
+
+    return cls._deserialise_from_json(json_data)
 
 
 class SPWSerialisable:
@@ -233,12 +247,9 @@ class SPWSerialisable:
         return cls._deserialise_from_json(json_data)
 
     @classmethod
+    @expects_keys("meta,type,object,context", parameter_index=1)
     def _deserialise_from_json(cls, json_data):
         """ Deserialise an object of this type from a json object """
-
-        for key in ["type", "object", "context"]:
-            if key not in json_data:
-                raise SPWSerialisationError(f"Expected json key: '{key}'")
 
         got_type = json_data["type"]
         if cls.serialisation_name != got_type:
