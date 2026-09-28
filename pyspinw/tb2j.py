@@ -161,8 +161,8 @@ class TB2J_Input:
         idx = [(i1,i2+i1+1) for i1, c1 in enumerate(couplings) for i2, c2 in enumerate(couplings[i1+1:]) if c1 == -c2]
         # TB2J uses the convention that spins a normalised so a TB2J exchange = J*SiSJ - need scale this out
         # TB2J also follows the opposite sign convention to SpinW so we have a negative here
-        mm = [np.linalg.norm(m) for m in moms]
-        jf = {f'{self.atoms[i1]}{self.atoms[i2]}':-mm[i1]*mm[i2] for i1 in range(3) for i2 in range(3)}
+        mm = [np.linalg.norm(m) for m in moms if m != 0.0]
+        jf = {f'{self.atoms[i1]}{self.atoms[i2]}':-mm[i1]*mm[i2] for i1 in range(len(mm)) for i2 in range(len(mm))}
         # Now construct the Hamiltonian
         def _DM(dv):
             return np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
