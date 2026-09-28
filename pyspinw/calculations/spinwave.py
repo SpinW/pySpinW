@@ -250,8 +250,6 @@ def spinwave_calculation(
         R1 = (np.eye(3) - 1j*nmat - R2) / 2.
         rotating_frame = (nmat, R1, R2, km)
 
-        # TODO: There is a util function for this ^^, its just a general formula for a rotation matrix
-
         # Transforms the coupling matrices after Toth & Lake, eq (21)
         for coupling in couplings:
             qdotr = 2 * np.pi * np.dot(km, coupling.inter_site_vector)

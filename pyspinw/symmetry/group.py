@@ -52,8 +52,6 @@ class MagneticSpaceGroup(SymmetryGroup):
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
-        # TODO: Transform moments in the correct coordinate system
-
         coordinates = site.values.reshape(1, -1) % 1
 
         new_coordinates = []
@@ -467,7 +465,7 @@ class SpacegroupDatabase:
     def spacegroups_with_operations(self, operation_string: str) -> ExactMatch | PartialMatch:
         """ Get a spacegroup by a list of operations
 
-        Example: TODO
+        Example: "x, y, z; -x, -y, -z" should give P1
 
         :param operation_string: A list of operations in the x,y,z form, semicolon separated
         :return: ExactMatch or MultipleMatches
