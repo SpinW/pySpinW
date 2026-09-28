@@ -264,7 +264,7 @@ class Exchange(SPWSerialisable):
                         identity_operations: set[SpaceOperation],
                         inversion_operations: set[SpaceOperation]) -> bool:
         """ Main logic for symmetry checking """
-        # We want the exchange matrix in lattice units TODO: Verify the details of this transform
+        # We want the exchange matrix in lattice units
         exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
         # exchange_matrix = unit_cell._xyz_spins_inv @ self._exchange_matrix @ unit_cell._xyz_spins_inv.T
         # exchange_matrix = self._exchange_matrix
@@ -387,9 +387,6 @@ class Exchange(SPWSerialisable):
                     symmetry_related.append((site_1, site_2, shared_ops))
 
         new_exchanges = []
-        #
-        # to_cart = structure.unit_cell._xyz_spins # TODO: Check this is the right way round
-        # to_lattice = structure.unit_cell._xyz_spins_inv
 
         for site_1, site_2, operations in symmetry_related:
 
@@ -409,13 +406,6 @@ class Exchange(SPWSerialisable):
 
                 expected_cell_offset = new_vector - new_in_cell_vector
                 cell_offset = CellOffset.coerce(expected_cell_offset)
-
-                # # Get the cell offset by using the transformation in cartesian coordinates
-                # cartesian_vector = op @ self.lattice_vector
-                # site_difference = unit_cell.lattice_units_to_cartesian(site_2.ijk - site_1.ijk)
-                # cell_offset_in_cartesian = cartesian_vector - site_difference
-                # cell_offset_vector = unit_cell.cartesian_to_lattice_units(cell_offset_in_cartesian)
-                # cell_offset = CellOffset.coerce(cell_offset_vector)
 
                 name = self.name + " " + ", ".join([f"({operation.text_form})" for operation in operations])
                 new_exchanges.append(Exchange(site_1, site_2,
