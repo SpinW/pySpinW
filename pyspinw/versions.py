@@ -1,3 +1,5 @@
+""" Information about versions """
+
 from importlib.metadata import PackageNotFoundError, version
 import tomllib
 from pathlib import Path

@@ -183,7 +183,6 @@ def save(object: "SPWSerialisable", filename: str, description: str = "", add_ex
 
 def load(filename):
     """ Load a pySpinW object from a file"""
-
     with_extension = filename + ".psw"
 
     # Try the provided filename, if it's not there, try with extension, otherwise error
@@ -201,14 +200,14 @@ def load(filename):
 
     try:
         serialisation_name = json["type"]
-    except:
+    except Exception:
         raise ValueError("Expected to have a 'type' key")
 
     from pyspinw.deserialisation import serialisation_class_lookup
 
     try:
         cls = serialisation_class_lookup[serialisation_name]
-    except:
+    except Exception:
         raise ValueError(f"Unknown object type '{serialisation_name}'")
 
     return cls._deserialise_from_json(json_data)
@@ -232,7 +231,6 @@ class SPWSerialisable:
 
     def save(self, filename: str, description: str = "", add_extension: bool=True):
         """ Save this object to a file"""
-
         if add_extension and "." not in filename:
             filename += ".psw"
 
@@ -250,7 +248,6 @@ class SPWSerialisable:
     @expects_keys("meta,type,object,context", parameter_index=1)
     def _deserialise_from_json(cls, json_data):
         """ Deserialise an object of this type from a json object """
-
         got_type = json_data["type"]
         if cls.serialisation_name != got_type:
             raise SPWSerialisationError(f"Tried to deserialise object of kind '{got_type}' but "
