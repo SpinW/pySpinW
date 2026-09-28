@@ -34,9 +34,7 @@ class Structure(SPWSerialisable):
                  show_unit_cell_warning: bool=True,
                  assume_symmetric_sites_are_provided: bool=False,
                  cooerce_spin_data_to_match_supercell: bool=True,
-                 symmetric_sites: list[LatticeSite] | None = None,
-                 assume_sites_are_already_symmetric: bool=False,
-                 cooerce_spin_data_to_match_supercell: bool=True):
+                 symmetric_sites: list[LatticeSite] | None = None):
 
 
         if not isinstance(unit_cell, UnitCell):
