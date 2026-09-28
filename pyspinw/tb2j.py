@@ -7,7 +7,7 @@ import pathlib
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.site import LatticeSite
 from pyspinw.exchange import Exchange, HeisenbergExchange
-from pyspinw.structures import Structure
+from pyspinw.structure import Structure
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.tolerances import tolerances
 
@@ -24,6 +24,7 @@ from pyspinw.tolerances import tolerances
 # * In non-collinear calcs, J_iso, DMI and J_ani are given and site-moments are 3-vectors
 CELL_EXPR = ''.join([r'Cell \(Angstrom\):\s*'] + [r'([\-\d\.]*)\s*']*9)
 ATOMS_EXPR = ''.join([r'^(\w*)\s*'] + [r'([\-\d\.]*)\s*']*7)
+ORBITALS_EXPR = r'The name of the orbitals for the decomposition:(.*)============='
 JPOS_EXPR = r'----\s*\n\s*([A-Za-z0-9]*)\s*([A-Za-z0-9]*)\s*\(\s*([\-\d]*),\s*([\-\d]*),\s*([\-\d]*)\)' \
                         r'\s*([\d\-\.]*)\s*\(\s*([\-\d\.]*),\s*([\-\d\.]*),\s*([\-\d\.]*)\)\s*([\d\-\.]*)'
 JISO_EXPR = r'J_iso:\s*([\d\-\.]*)\s*$'
@@ -83,6 +84,11 @@ class TB2J_Input:
                 self.atoms.append(at.group(1))
                 syms.append(re.match(r'([A-Za-z]{1,2})', at.group(1)).group(1))
                 pos.append(tuple(map(float, at.groups()[1:4])))
+        # Above generates all atoms. Now search for magnetic atoms from list of orbital decomposition
+        if orbitals_re := re.search(ORBITALS_EXPR, self.data, re.DOTALL):
+            # If this exists (some files don't have this) then set moments of atoms not decompose to zero
+            orbital_atoms = re.findall(r'^([A-Za-z0-9]*)\s*:', orbitals_re.group(1), re.MULTILINE)
+            magmoms = [magmoms[i] if self.atoms[i] in orbital_atoms else 0 for i in range(len(magmoms))]
         self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
         exch_txt = self.data.split('Exchange:')[1]
         self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[5]), list(map(float, v[6:9]))]
@@ -101,7 +107,7 @@ class TB2J_Input:
     def _parse_pickle(self, data: dict):
         self.type, self.data = ('pickle', data)
         self.struct = self.data['atoms']
-        self.struct.set_initial_magnetic_moments(self.data['magmoms'])
+        magmoms = self.data['magmoms']
         self.noncolinear = not self.data['colinear']
         sym_index = _sym_index()
         self.atoms = [sym_index(sym) for sym in self.struct.get_chemical_symbols()]
@@ -112,6 +118,10 @@ class TB2J_Input:
         #   the J_iso value, full inter-site vector and distance in Angstrom
         self.j_pos = [[self.atoms[k[1]], self.atoms[k[2]], k[0], 1000*d_exch[k], d_dist[k][0], d_dist[k][1]]
                       for k in ord_k]
+        # If atom not involved in any exchanges, set its moment to zero
+        for non_mag_id in [i for i in range(len(self.atoms)) if i not in set([k[1] for k in ord_k])]:
+            magmoms[non_mag_id] = 0
+        self.struct.set_initial_magnetic_moments(magmoms)
         # TB2J stores different types of exchanges in separate variables:
         #   J_iso (Heisenberg) is present for all files, DMI and J_ani are only in "non-colinear" files
         self.j_iso, self.j_dmi, self.j_ani = ([1000*d_exch[k] for k in ord_k], [], [])
