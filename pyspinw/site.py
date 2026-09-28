@@ -161,7 +161,7 @@ class LatticeSite(SPWSerialisable):
     @property
     def base_spin(self):
         """spins as numpy array"""
-        return self._base_spin
+        return np.sum(self._spin_data, axis=0)
 
     @property
     def spin_data(self):
@@ -179,7 +179,6 @@ class LatticeSite(SPWSerialisable):
             raise ValueError("Expected spin data to be length 3, or convertable to a 3-by-n array")
 
         self._spin_data = spin_data
-        self._base_spin = np.sum(self._spin_data, axis=0)
 
     @property
     def spin(self) -> np.ndarray:
