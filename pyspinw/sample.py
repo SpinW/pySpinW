@@ -412,7 +412,7 @@ class Multidomain(Sample3D):
         return output_energies, output_intensities
 
     @staticmethod
-    @expects_keys("hamiltonain,domains")
+    @expects_keys("hamiltonian,domains")
     def _sample_deserialise(json, context: SPWDeserialisationContext):
         return Multidomain(
             hamiltonian=Hamiltonian._deserialise(json["hamiltonian"], context),
