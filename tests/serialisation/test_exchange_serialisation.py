@@ -22,18 +22,22 @@ colors = [None, (1,0,0), (0.1, 0.2, 0.3)]
 
 rng = np.random.default_rng(42069)
 
+cell_offsets = [(0,0,0), (1,0,0), (1,2,3)]
 
 @pytest.mark.parametrize("pair", site_pairs)
 @pytest.mark.parametrize("exchange_class", all_exchanges)
+@pytest.mark.parametrize("cell_offset", cell_offsets)
 @pytest.mark.parametrize("color", colors)
 def test_exchanges_serialise(
         pair: tuple[LatticeSite, LatticeSite],
         exchange_class: type[Exchange],
-        color: tuple[float, float, float]):
+        color: tuple[float, float, float],
+        cell_offset: tuple[int, int, int]):
 
     parameters = {parameter: rng.random() for parameter in exchange_class.parameters}
 
-    exchange = exchange_class(*pair, **parameters, name=f"{exchange_class} {pair}", color=color)
+    exchange = exchange_class(*pair, **parameters,
+                              name=f"{exchange_class} {pair}", color=color, cell_offset=cell_offset)
 
     json = exchange.serialise()
 
@@ -50,8 +54,7 @@ def test_exchanges_serialise(
     assert np.all(exchange.site_1.spin_data == deserialised.site_1.spin_data)
     assert np.all(exchange.site_2.spin_data == deserialised.site_2.spin_data)
 
-    print(parameters)
-    print(deserialised.__dict__)
+    assert exchange.cell_offset == deserialised.cell_offset
 
     for parameter in parameters:
         assert deserialised.__dict__["_" + parameter] == parameters[parameter]
