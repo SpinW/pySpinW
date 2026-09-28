@@ -399,7 +399,7 @@ class SpinSetter:
         self.site = site
         self.size = size
         self.n_components = size[0]*size[1]*size[2]
-        self.index_map = np.arange(np.prod(size)).reshape(size)
+        self.index_map = np.arange(self.n_components, dtype=int).reshape(size)
 
         # Make sure the spin has the right kind of data
         if self.site.spin_data.shape[0] != self.n_components:
