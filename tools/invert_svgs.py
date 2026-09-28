@@ -14,7 +14,7 @@ def invert_gray_match(m):
     return f'#{hex_byte * 3}'
 
 
-directory = "svg"
+directory = "../pyspinw/gui/icons/svg"
 
 for filename in os.listdir(directory):
 

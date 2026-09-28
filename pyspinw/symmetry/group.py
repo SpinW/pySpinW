@@ -11,7 +11,7 @@ from difflib import get_close_matches
 from numpy._typing import ArrayLike
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
-from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite, ImpliedLatticeSite
 from pyspinw.symmetry.canonise import canonise_string
 from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_formatted, preferred_names
@@ -26,7 +26,7 @@ from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints, Anisot
 
 from pyspinw.tolerances import tolerances
 
-class SymmetryGroup(ABC, SPWSerialisable):
+class SymmetryGroup(ABC):
     """ Base class for symmetry group and magnetic symmetry group """
 
     @abstractmethod
@@ -36,10 +36,10 @@ class SymmetryGroup(ABC, SPWSerialisable):
 
 
 
-class MagneticSpaceGroup(SymmetryGroup):
+class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a magnetic space group"""
 
-    serialisation_name = "MagneticGroup"
+    serialisation_name = "magnetic_group"
 
     def __init__(self, number: int, symbol: str, operations: list[MagneticOperation]):
         self.number = number
@@ -87,10 +87,10 @@ class MagneticSpaceGroup(SymmetryGroup):
 
 
 
-class SpaceGroup(SymmetryGroup):
+class SpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a space group"""
 
-    serialisation_name = "SpaceGroup"
+    serialisation_name = "space_group"
 
     def __init__(self,
                  hall_number,
@@ -120,11 +120,12 @@ class SpaceGroup(SymmetryGroup):
         return self.preferred_symbol
 
     def _serialise(self, context: SPWSerialisationContext):
-        pass
+        return {"name": self._serialisation_string()}
 
     @staticmethod
+    @expects_keys("name")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        pass
+        return database.spacegroup_by_name(json["name"])
 
     def for_supercell(self, supercell: Supercell):
         """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
