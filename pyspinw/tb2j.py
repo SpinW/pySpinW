@@ -3,7 +3,9 @@ import pickle
 import numpy as np
 import ase
 import re
+import spglib
 import pathlib
+from numpy._typing import ArrayLike
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.site import LatticeSite
 from pyspinw.exchange import Exchange, HeisenbergExchange
@@ -24,7 +26,6 @@ from pyspinw.tolerances import tolerances
 # * In non-collinear calcs, J_iso, DMI and J_ani are given and site-moments are 3-vectors
 CELL_EXPR = ''.join([r'Cell \(Angstrom\):\s*'] + [r'([\-\d\.]*)\s*']*9)
 ATOMS_EXPR = ''.join([r'^(\w*)\s*'] + [r'([\-\d\.]*)\s*']*7)
-ORBITALS_EXPR = r'The name of the orbitals for the decomposition:(.*)============='
 JPOS_EXPR = r'----\s*\n\s*([A-Za-z0-9]*)\s*([A-Za-z0-9]*)\s*\(\s*([\-\d]*),\s*([\-\d]*),\s*([\-\d]*)\)' \
                         r'\s*([\d\-\.]*)\s*\(\s*([\-\d\.]*),\s*([\-\d\.]*),\s*([\-\d\.]*)\)\s*([\d\-\.]*)'
 JISO_EXPR = r'J_iso:\s*([\d\-\.]*)\s*$'
@@ -80,16 +81,10 @@ class TB2J_Input:
         self.atoms, syms, pos, magmoms = [], [], [], []
         for at in atoms_re:
             if at.group(5):
-                magmoms.append(list(map(float, at.groups()[6:9])) if at.group(8) else float(at.group(6)))
+                magmoms.append(np.array(list(map(float, at.groups()[5:8]))) if at.group(8) else float(at.group(6)))
                 self.atoms.append(at.group(1))
                 syms.append(re.match(r'([A-Za-z]{1,2})', at.group(1)).group(1))
                 pos.append(tuple(map(float, at.groups()[1:4])))
-        # Above generates all atoms. Now search for magnetic atoms from list of orbital decomposition
-        if orbitals_re := re.search(ORBITALS_EXPR, self.data, re.DOTALL):
-            # If this exists (some files don't have this) then set moments of atoms not decompose to zero
-            orbital_atoms = re.findall(r'^([A-Za-z0-9]*)\s*:', orbitals_re.group(1), re.MULTILINE)
-            magmoms = [magmoms[i] if self.atoms[i] in orbital_atoms else 0 for i in range(len(magmoms))]
-        self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
         exch_txt = self.data.split('Exchange:')[1]
         self.j_pos = [[v[0], v[1], list(map(int, v[2:5])), float(v[5]), list(map(float, v[6:9]))]
                       for v in re.findall(JPOS_EXPR, exch_txt)]
@@ -103,24 +98,37 @@ class TB2J_Input:
             if self.j_iso.shape[0] != self.j_dmi.shape[0] or self.j_iso.shape[0] != self.j_ani.shape[0]:
                 raise RuntimeError("Inconsistent number of exchanges")
         assert len(self.j_pos) == len(self.j_iso), "Inconsistent number of exchanges"
+        # Checks for atoms which have no exchanges defined and zeros their moments so they don't enter the LSW calc
+        mag_atoms = set([jp[0] for jp in self.j_pos])
+        for non_mag_id in [i for i in range(len(self.atoms)) if self.atoms[i] not in mag_atoms]:
+            magmoms[non_mag_id] = magmoms[non_mag_id] * 0  # Handle both scalar and vector (non-coll) cases
+        self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
 
     def _parse_pickle(self, data: dict):
         self.type, self.data = ('pickle', data)
-        self.struct = self.data['atoms']
-        magmoms = self.data['magmoms']
         self.noncolinear = not self.data['colinear']
+        if self.noncolinear:
+            magmoms = self.data['spinat']
+        else:
+            magmoms = self.data['magmoms']
+        self.struct = self.data['atoms']
         sym_index = _sym_index()
         self.atoms = [sym_index(sym) for sym in self.struct.get_chemical_symbols()]
         d_exch, d_dist = (self.data[k] for k in ['exchange_Jdict', 'distance_dict'])
         ord_k = [k for k, v in d_dist.items() if k in d_exch]
         ord_k = [ord_k[i] for i in np.argsort([v[1] for k, v in d_dist.items() if k in d_exch])]
+        # ind_atoms is the list of magnetic atoms which have non-zero exchanges. Set other moments to zero
+        if 'ind_atoms' in self.data:
+            idmap = self.data['ind_atoms']
+        else:
+            # Assume that the index order is the same as the order of atoms but ignore those atoms without exchanges
+            idmap = {i:i for i in set([k[1] for k in ord_k])}
+        for non_mag_id in [i for i in range(len(self.atoms)) if i not in idmap.values()]:
+            magmoms[non_mag_id] = magmoms[non_mag_id] * 0
         # Determines the list of couplings in the file, labelled by site-i, site-j, normalised inter-site vector
         #   the J_iso value, full inter-site vector and distance in Angstrom
-        self.j_pos = [[self.atoms[k[1]], self.atoms[k[2]], k[0], 1000*d_exch[k], d_dist[k][0], d_dist[k][1]]
-                      for k in ord_k]
-        # If atom not involved in any exchanges, set its moment to zero
-        for non_mag_id in [i for i in range(len(self.atoms)) if i not in set([k[1] for k in ord_k])]:
-            magmoms[non_mag_id] = 0
+        self.j_pos = [[self.atoms[idmap[k[1]]], self.atoms[idmap[k[2]]], k[0], 1000*d_exch[k],
+                       d_dist[k][0], d_dist[k][1]] for k in ord_k]
         self.struct.set_initial_magnetic_moments(magmoms)
         # TB2J stores different types of exchanges in separate variables:
         #   J_iso (Heisenberg) is present for all files, DMI and J_ani are only in "non-colinear" files
@@ -128,6 +136,9 @@ class TB2J_Input:
         if self.noncolinear:
             self.j_dmi = [1000*self.data['dmi_ddict'][k] for k in ord_k]
             self.j_ani = [1000*self.data['Jani_dict'][k] for k in ord_k]
+
+    def _get_symmetrized_structure(self, pos: ArrayLike, moms: ArrayLike, precision: float=1e-5):
+        raise NotImplementedError
 
     @classmethod
     def from_exchange_out(cls, filename: pathlib.Path | str):
@@ -146,11 +157,14 @@ class TB2J_Input:
         with open(filename, 'rb') as f:
             return cls()._parse_pickle(pickle.load(f))
 
-    def to_hamiltonian(self):
+    def to_hamiltonian(self, symmetrize: bool=False):
         """ Create a SpinW Hamiltonian object from the TB2J inputs """
-        unitcell = UnitCell(*tuple(self.struct.get_cell().cellpar()))
         # ASE and TB2J uses moments in uB; SpinW wants it as spin length S where mu = g*S
         pos, moms = self.struct.get_scaled_positions(), self.struct.get_initial_magnetic_moments() / 2
+        if symmetrize:
+            unitcell, pos, moms = self._get_symmetrized_structure(pos, moms)
+        else:
+            unitcell = UnitCell(*tuple(self.struct.get_cell().cellpar()))
         # Calculates the inter-cell vector from the inter-site vector given by TB2J
         vec = unitcell.cartesian_to_lattice_units(np.array([p[4] for p in self.j_pos]))
         idx = {n:i for i, n in enumerate(self.atoms)}
@@ -161,7 +175,7 @@ class TB2J_Input:
         idx = [(i1,i2+i1+1) for i1, c1 in enumerate(couplings) for i2, c2 in enumerate(couplings[i1+1:]) if c1 == -c2]
         # TB2J uses the convention that spins a normalised so a TB2J exchange = J*SiSJ - need scale this out
         # TB2J also follows the opposite sign convention to SpinW so we have a negative here
-        mm = [np.linalg.norm(m) for m in moms if m != 0.0]
+        mm = [np.linalg.norm(m) for m in moms]
         jf = {f'{self.atoms[i1]}{self.atoms[i2]}':-mm[i1]*mm[i2] for i1 in range(len(mm)) for i2 in range(len(mm))}
         # Now construct the Hamiltonian
         def _DM(dv):
