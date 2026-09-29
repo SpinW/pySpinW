@@ -2,7 +2,8 @@
 
 from dataclasses import dataclass
 
-from pyspinw.symmetry.group import MagneticSpaceGroup, SpaceGroup
+from pyspinw.symmetry.group import SpaceGroup
+from pyspinw.symmetry.magnetic_group import MagneticSpaceGroup
 from pyspinw.symmetry.unitcell import UnitCell
 
 

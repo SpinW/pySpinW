@@ -34,59 +34,6 @@ class SymmetryGroup(ABC):
         """ Find all the sites that are required by symmetry by the input site """
 
 
-
-
-class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
-    """ Representation of a magnetic space group"""
-
-    serialisation_name = "magnetic_group"
-
-    def __init__(self, number: int, symbol: str, operations: list[MagneticOperation]):
-        self.number = number
-        self.symbol = symbol
-        self.operations = operations
-
-    def __repr__(self):
-        """repr"""
-        return f"MagneticSpaceGroup({self.number}, {self.symbol})"
-
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
-        """ Find "duplicate" sites of a given site """
-        coordinates = site.values.reshape(1, -1) % 1
-
-        new_coordinates = []
-        for operation in self.operations:
-
-            candidate = operation(coordinates)
-
-            # If its not the input, continue
-            if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
-                continue
-
-            # Is it one we've already found
-            new = True
-            for ijkm in new_coordinates:
-                if np.all(np.abs(candidate - ijkm) < tolerances.SAME_SITE_ABS_TOL):
-                    new = False
-                    break
-
-            if new:
-                new_coordinates.append(candidate)
-
-
-        new_sites = []
-        for i, ijkm in enumerate(new_coordinates):
-            new_site = ImpliedLatticeSite.from_coordinates(
-                coordinates=ijkm.reshape(-1),
-                parent_site=site,
-                name=site.name + f" [{i+1}]")
-
-            new_sites.append(new_site)
-
-        return new_sites
-
-
-
 class SpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a space group"""
 

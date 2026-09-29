@@ -345,7 +345,7 @@ class MagneticOperation:
 
     @staticmethod
     def from_numpy(point_operation: np.ndarray, translation: np.ndarray,
-                   time_reversal: np.ndarray, name: str | None = None) -> "MagneticOperation":
+                   time_reversal: np.ndarray | float | int, name: str | None = None) -> "MagneticOperation":
         """ Create magnetic operation from data as numpy arrays"""
         point_operation, translation, time_reversal = \
             MagneticOperation._from_numpy(point_operation, translation, time_reversal)
@@ -373,6 +373,32 @@ class MagneticOperation:
         new_momenta = ((point_operation @ moments.T) * self.time_reversal).T
 
         return np.concatenate((new_points, new_momenta), axis=1)
+
+    @staticmethod
+    def from_text(operation_string: str):
+        """ Parse a string form of an expression, e.g. 'x,x-y,z+1/2' """
+        parts = [part.strip() for part in operation_string.split(",")]
+        if len(parts) != 4:
+            raise ValueError(f"Expected three comma separated values, e.g. 'x,y,z', got {operation_string}")
+
+        translation = np.array([evaluate_text(part, _parsing_zero) for part in parts[:3]])
+
+        matrix_components = np.array([evaluate_text(part, _parsing_variables) for part in parts[:3]])
+        matrix_components -= translation.reshape(-1, 1)
+        matrix_components = matrix_components.T
+
+        time_reversal = int(parts[3])
+
+        return MagneticOperation.from_numpy(matrix_components, translation, time_reversal, operation_string)
+
+    def space_operation(self):
+        return SpaceOperation(self.point_operation, self.translation)
+
+    def __repr__(self):
+        return f"MagneticOperation({self.text_form})"
+
+    def __hash__(self):
+        return hash((self.point_operation, self.translation, self.time_reversal))
 
 if __name__ == "__main__":
     MagneticOperation(rotation=((1,0,0),(0,1,0),(0,0,1)),
