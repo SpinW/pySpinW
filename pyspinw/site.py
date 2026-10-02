@@ -228,7 +228,9 @@ class LatticeSite(SPWSerialisable):
 
     def symmetry_transformed(self, operation: SpaceOperation, unit_cell: "UnitCell"):
         """ Transform site using a symmetry operation """
-        new_ijk = operation(self.ijk.reshape(1, 3)).reshape(-1)
+
+
+        new_ijk = operation.transform_positions(self.ijk.reshape(1, 3)).reshape(-1)
 
         # Transform spin, make sure it has same magnitude
 

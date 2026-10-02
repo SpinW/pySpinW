@@ -29,102 +29,10 @@ from pyspinw.tolerances import tolerances
 class SymmetryGroup(ABC):
     """ Base class for symmetry group and magnetic symmetry group """
 
+    @property
     @abstractmethod
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
-        """ Find all the sites that are required by symmetry by the input site """
-
-
-class SpaceGroup(SymmetryGroup, SPWSerialisable):
-    """ Representation of a space group"""
-
-    serialisation_name = "space_group"
-
-    def __init__(self,
-                 hall_number,
-                 number,
-                 international_symbol,
-                 short_symbol,
-                 preferred_symbol,
-                 operations,
-                 lattice_system: LatticeSystem,
-                 choice: str | None):
-
-        self.hall_number = hall_number
-        self.number = number
-        self.symbol = international_symbol
-        self.short_symbol = short_symbol
-        self.preferred_symbol = preferred_symbol
-        self.operations = operations
-        self.lattice_system = lattice_system
-        self.choice = choice
-        self.setting = Setting.from_optional_string(choice)
-
-        # This is slightly unusual, make a reference to the lattice system create_unit_cell method
-        self.create_unit_cell = lattice_system.create_unit_cell
-
-    def _serialisation_string(self):
-        """ Name to use to refer to this group in serialisation"""
-        return self.preferred_symbol
-
-    def _serialise(self, context: SPWSerialisationContext):
-        return {"name": self._serialisation_string()}
-
-    @staticmethod
-    @expects_keys("name")
-    def _deserialise(json: dict, context: SPWDeserialisationContext):
-        return database.spacegroup_by_name(json["name"])
-
-    def for_supercell(self, supercell: Supercell):
-        """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
-        return database.spacegroup_by_name("p1") # TODO: Implement properly
-
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
-        """ Find "duplicate" sites of a given site """
-        coordinates = site.ijk.reshape(1, -1) % 1
-
-        new_coordinates = []
-        for operation in self.operations:
-            candidate = operation(coordinates)
-
-            # If it's not the input, continue
-            if np.allclose(candidate, coordinates, atol=tolerances.SAME_SITE_ABS_TOL):
-                continue
-
-            # Is it one we've already found
-            new = True
-            for existing_coordinate in new_coordinates:
-                if np.allclose(candidate, existing_coordinate, atol=tolerances.SAME_SITE_ABS_TOL):
-                    new = False
-                    break
-
-            if new:
-                new_coordinates.append(candidate)
-
-        new_sites = []
-        for i, coordinates in enumerate(new_coordinates):
-            #
-            # new_site = ImpliedLatticeSite(
-            #     parent_site=site,
-            #     i=coordinates[0][1],
-            #     j=coordinates[0][0],
-            #     k=coordinates[0][2],
-            #     supercell_spins=site._spin_data,
-            #     name=site.name + f" [{i+1}]"
-            #     )
-
-            new_site = ImpliedLatticeSite(
-                parent_site=site,
-                i=coordinates[0][0],
-                j=coordinates[0][1],
-                k=coordinates[0][2],
-                supercell_spins=site._spin_data,
-                name=site.name + f" [{i+1}]",
-                metadata=site.metadata.copy()
-                )
-
-            new_sites.append(new_site)
-
-        return new_sites
+    def space_operations(self) -> list[SpaceOperation]:
+        pass
 
     def operations_between_sites(self,
                                  site_1: "LatticeSite",
@@ -134,8 +42,8 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
         """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
         offset = CellOffset.coerce(offset)
 
-        return [operation for operation in self.operations
-                if np.allclose(operation([site_1.ijk]),
+        return [operation for operation in self.space_operations
+                if np.allclose(operation.transform_positions([site_1.ijk]),
                                [site_2.ijk + offset.vector],
                                atol=tolerance)]
 
@@ -254,6 +162,98 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
             check.print_summary()
 
         return check
+
+
+class SpaceGroup(SymmetryGroup, SPWSerialisable):
+    """ Representation of a space group"""
+
+    serialisation_name = "space_group"
+
+    def __init__(self,
+                 hall_number,
+                 number,
+                 international_symbol,
+                 short_symbol,
+                 preferred_symbol,
+                 operations,
+                 lattice_system: LatticeSystem,
+                 choice: str | None):
+
+        self.hall_number = hall_number
+        self.number = number
+        self.symbol = international_symbol
+        self.short_symbol = short_symbol
+        self.preferred_symbol = preferred_symbol
+        self.operations = operations
+        self.lattice_system = lattice_system
+        self.choice = choice
+        self.setting = Setting.from_optional_string(choice)
+
+        # This is slightly unusual, make a reference to the lattice system create_unit_cell method
+        self.create_unit_cell = lattice_system.create_unit_cell
+
+    @property
+    def space_operations(self):
+        return self.operations
+
+
+    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+        """ Find "duplicate" sites of a given site """
+        coordinates = site.ijk.reshape(1, -1) % 1
+
+        new_coordinates = []
+        for operation in self.operations:
+            # input = np.concatenate((coordinates, np.zeros((1,3))), axis=1)
+
+            candidate = operation.transform_positions(coordinates)[:1,:3]
+
+            # If it's not the input, continue
+            if np.allclose(candidate, coordinates, atol=tolerances.SAME_SITE_ABS_TOL):
+                continue
+
+            # Is it one we've already found
+            new = True
+            for existing_coordinate in new_coordinates:
+                if np.allclose(candidate, existing_coordinate, atol=tolerances.SAME_SITE_ABS_TOL):
+                    new = False
+                    break
+
+            if new:
+                new_coordinates.append(candidate)
+
+        new_sites = []
+        for i, coordinates in enumerate(new_coordinates):
+
+            new_site = ImpliedLatticeSite(
+                parent_site=site,
+                i=coordinates[0][0],
+                j=coordinates[0][1],
+                k=coordinates[0][2],
+                supercell_spins=site._spin_data,
+                name=site.name + f" [{i+1}]",
+                metadata=site.metadata.copy()
+                )
+
+            new_sites.append(new_site)
+
+        return new_sites
+
+
+    def _serialisation_string(self):
+        """ Name to use to refer to this group in serialisation"""
+        return self.preferred_symbol
+
+    def _serialise(self, context: SPWSerialisationContext):
+        return {"name": self._serialisation_string()}
+
+    @staticmethod
+    @expects_keys("name")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return database.spacegroup_by_name(json["name"])
+
+    def for_supercell(self, supercell: Supercell):
+        """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
+        return database.spacegroup_by_name("p1") # TODO: Implement properly
 
     @property
     def name(self) -> str:

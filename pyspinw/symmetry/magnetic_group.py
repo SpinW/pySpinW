@@ -14,8 +14,15 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     serialisation_name = "magnetic_group"
 
+    @property
+    def space_operations(self):
+        return self.parent_spacegroup.operations
+
+
     def __init__(self, operations: list[MagneticOperation]):
         self.operations = operations
+        self.parent_spacegroup = self.get_spacegroup(operations)
+
 
     def __repr__(self):
         """repr"""
@@ -56,9 +63,10 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
         return new_sites
 
-    def get_spacegroup(self):
+    @staticmethod
+    def get_spacegroup(operations):
 
-        space_operations = [operation.space_operation().text_form for operation in self.operations]
+        space_operations = [operation.space_operation().text_form for operation in operations]
 
         match_data = database.spacegroups_with_operations("; ".join(space_operations))
 
@@ -74,7 +82,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
         all_operations = set(centering.and_then(op)
                              for centering in centerings
                               for op in operations)
-    
+
         last_operations_count = 0
         while last_operations_count < len(all_operations):
             last_operations_count = len(all_operations)
