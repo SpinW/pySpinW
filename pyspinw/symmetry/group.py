@@ -34,6 +34,47 @@ class SymmetryGroup(ABC):
     def space_operations(self) -> list[SpaceOperation]:
         pass
 
+
+    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+        """ Find "duplicate" sites of a given site """
+        coordinates = site.ijk.reshape(1, 3) % 1
+        spins = site.spin_data
+
+        new_coordinates = []
+        for operation in self.operations:
+
+            candidate, candidate_spins = operation.transform_positions_and_spins(coordinates, spins)
+
+            # If its not the input, continue
+            if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
+                continue
+
+            # Is it one we've already found
+            new = True
+            for ijk, spin in new_coordinates:
+                if np.all(np.abs(candidate - ijk) < tolerances.SAME_SITE_ABS_TOL):
+                    new = False
+                    break
+
+            if new:
+                new_coordinates.append((candidate, candidate_spins))
+
+
+        new_sites = []
+        for i, (coordinates, spin_data) in enumerate(new_coordinates):
+            new_site = ImpliedLatticeSite(
+                i=coordinates[0,0],
+                j=coordinates[0,1],
+                k=coordinates[0,2],
+                supercell_spins=spin_data,
+                parent_site=site,
+                name=site.name + f" [{i+1}]",
+                metadata=site.metadata)
+
+            new_sites.append(new_site)
+
+        return new_sites
+
     def operations_between_sites(self,
                                  site_1: "LatticeSite",
                                  site_2: "LatticeSite",
@@ -195,48 +236,6 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
     @property
     def space_operations(self):
         return self.operations
-
-
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
-        """ Find "duplicate" sites of a given site """
-        coordinates = site.ijk.reshape(1, -1) % 1
-
-        new_coordinates = []
-        for operation in self.operations:
-            # input = np.concatenate((coordinates, np.zeros((1,3))), axis=1)
-
-            candidate = operation.transform_positions(coordinates)[:1,:3]
-
-            # If it's not the input, continue
-            if np.allclose(candidate, coordinates, atol=tolerances.SAME_SITE_ABS_TOL):
-                continue
-
-            # Is it one we've already found
-            new = True
-            for existing_coordinate in new_coordinates:
-                if np.allclose(candidate, existing_coordinate, atol=tolerances.SAME_SITE_ABS_TOL):
-                    new = False
-                    break
-
-            if new:
-                new_coordinates.append(candidate)
-
-        new_sites = []
-        for i, coordinates in enumerate(new_coordinates):
-
-            new_site = ImpliedLatticeSite(
-                parent_site=site,
-                i=coordinates[0][0],
-                j=coordinates[0][1],
-                k=coordinates[0][2],
-                supercell_spins=site._spin_data,
-                name=site.name + f" [{i+1}]",
-                metadata=site.metadata.copy()
-                )
-
-            new_sites.append(new_site)
-
-        return new_sites
 
 
     def _serialisation_string(self):

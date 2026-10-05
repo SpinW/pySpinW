@@ -28,41 +28,6 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
         """repr"""
         return f"MagneticSpaceGroup({self.number}, {self.symbol})"
 
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
-        """ Find "duplicate" sites of a given site """
-        coordinates = site.values.reshape(1, -1) % 1
-
-        new_coordinates = []
-        for operation in self.operations:
-
-            candidate = operation(coordinates)
-
-            # If its not the input, continue
-            if np.all(np.abs(candidate - coordinates) < tolerances.SAME_SITE_ABS_TOL):
-                continue
-
-            # Is it one we've already found
-            new = True
-            for ijkm in new_coordinates:
-                if np.all(np.abs(candidate - ijkm) < tolerances.SAME_SITE_ABS_TOL):
-                    new = False
-                    break
-
-            if new:
-                new_coordinates.append(candidate)
-
-
-        new_sites = []
-        for i, ijkm in enumerate(new_coordinates):
-            new_site = ImpliedLatticeSite.from_coordinates(
-                coordinates=ijkm.reshape(-1),
-                parent_site=site,
-                name=site.name + f" [{i+1}]")
-
-            new_sites.append(new_site)
-
-        return new_sites
-
     @staticmethod
     def get_spacegroup(operations):
 
@@ -96,13 +61,3 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
         return MagneticSpaceGroup(list(all_operations))
 
-
-def load_magnetic_spacegroups():
-    for uni in range(1, 1652):
-        symmetry_data = spglib.get_magnetic_symmetry_from_database(uni)
-        metadata = spglib.get_magnetic_spacegroup_type(uni)
-
-        print(metadata)
-
-if __name__ == "__main__":
-    load_magnetic_spacegroups()
