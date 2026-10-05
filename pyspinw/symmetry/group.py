@@ -32,7 +32,7 @@ class SymmetryGroup(ABC):
     @property
     @abstractmethod
     def space_operations(self) -> list[SpaceOperation]:
-        pass
+        """ The SpaceOperations for this group """
 
 
     def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
@@ -235,6 +235,7 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @property
     def space_operations(self):
+        """ The SpaceOperations for this group """
         return self.operations
 
 

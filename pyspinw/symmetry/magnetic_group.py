@@ -1,12 +1,9 @@
-import numpy as np
+""" Magnetic Spacegroups"""
 
-import spglib
 
 from pyspinw.serialisation import SPWSerialisable
-from pyspinw.site import ImpliedLatticeSite, LatticeSite
 from pyspinw.symmetry.group import SymmetryGroup, database, ExactMatch
 from pyspinw.symmetry.operations import MagneticOperation
-from pyspinw.tolerances import tolerances
 
 
 class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
@@ -16,6 +13,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @property
     def space_operations(self):
+        """ The SpaceOperations for this group """
         return self.parent_spacegroup.operations
 
 
@@ -30,7 +28,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @staticmethod
     def get_spacegroup(operations):
-
+        """ Get the spacegroup that corresponds to this magnetic group """
         space_operations = [operation.space_operation().text_form for operation in operations]
 
         match_data = database.spacegroups_with_operations("; ".join(space_operations))
@@ -43,7 +41,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @staticmethod
     def closure(operations: list[MagneticOperation], centerings: list[MagneticOperation]):
-        # Find the closure of the group
+        """ Find the closure of a list of operations, based on the operation/centering convention """
         all_operations = set(centering.and_then(op)
                              for centering in centerings
                               for op in operations)

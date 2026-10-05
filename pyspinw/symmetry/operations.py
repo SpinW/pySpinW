@@ -19,10 +19,14 @@ _parsing_variables = {
 }
 
 class Operation:
+    """ Base class for SpaceOperation and MagneticOperation """
+
     def transform_positions(self, positions: ArrayLike):
+        """ Transform an array of positions with this operation """
         raise NotImplementedError("Transformation of position not implemented in base class")
 
     def transform_positions_and_spins(self, positions: ArrayLike, spins: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
+        """ Transform an array of positions and an array of spins with this operation """
         raise NotImplementedError("Transformation of positions and spins not implemented in base class")
 
 class SpaceOperation(Operation):
@@ -216,11 +220,10 @@ class SpaceOperation(Operation):
 
     def transform_positions(self, positions: ArrayLike) -> np.ndarray:
         """ Apply this operation to a list of points """
-
         positions = np.array(positions)
 
-        point_operation = self.point_operation_matrix #np.array(self.point_operation, dtype=float)
-        translation = self.translation_vector.reshape(-1, 1) #np.array([float(f) for f in self.translation]).reshape(-1, 1)
+        point_operation = self.point_operation_matrix
+        translation = self.translation_vector.reshape(-1, 1)
 
         new_positions = (point_operation @ positions.T + translation).T
 
@@ -231,12 +234,11 @@ class SpaceOperation(Operation):
 
         IMPORTANT: This expects spins to be in lattice coordinates (but with preserved magnitude)
         """
-
         positions = np.array(positions, dtype=float).reshape(-1, 3)
         spins = np.array(spins, dtype=float).reshape(-1, 3)
 
-        point_operation = self.point_operation_matrix #np.array(self.point_operation, dtype=float)
-        translation = self.translation_vector.reshape(-1, 1) #np.array([float(f) for f in self.translation]).reshape(-1, 1)
+        point_operation = self.point_operation_matrix
+        translation = self.translation_vector.reshape(-1, 1)
 
         new_positions = (point_operation @ positions.T + translation).T
         new_spins = (point_operation @ spins.T).T
@@ -393,7 +395,7 @@ class MagneticOperation(Operation):
                                  name=name)
 
     def transform_positions(self, positions: ArrayLike):
-
+        """ Apply this operation to a list of positions """
         positions = np.array(positions, dtype=float).reshape(-1, 3)
 
         point_operation = np.array(self.point_operation, dtype=float)
@@ -405,8 +407,7 @@ class MagneticOperation(Operation):
 
 
     def transform_positions_and_spins(self, positions: ArrayLike, spins: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
-        """ Apply this operation to a list of points """
-
+        """ Apply this operation to a list of positions, and a potentially different sized list of spins"""
         positions = np.array(positions, dtype=float).reshape(-1, 3)
         spins = np.array(spins, dtype=float).reshape(-1, 3)
 
@@ -436,6 +437,7 @@ class MagneticOperation(Operation):
         return MagneticOperation.from_numpy(matrix_components, translation, time_reversal, operation_string)
 
     def space_operation(self):
+        """ Get the corresponding pure space operation for this magnetic operation"""
         return SpaceOperation(self.point_operation, self.translation)
 
     def __repr__(self):
