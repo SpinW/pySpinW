@@ -35,10 +35,10 @@ class SymmetryGroup(ABC):
         """ The SpaceOperations for this group """
 
 
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+    def implied_sites_for(self, site: LatticeSite, unit_cell: UnitCell) -> list[ImpliedLatticeSite]:
         """ Find "duplicate" sites of a given site """
         coordinates = site.ijk.reshape(1, 3) % 1
-        spins = site.spin_data
+        spins = unit_cell.spin_cartesian_to_lattice_units(site.spin_data)
 
         new_coordinates = []
         for operation in self.operations:
@@ -66,7 +66,7 @@ class SymmetryGroup(ABC):
                 i=coordinates[0,0],
                 j=coordinates[0,1],
                 k=coordinates[0,2],
-                supercell_spins=spin_data,
+                supercell_spins=unit_cell.spin_lattice_units_to_cartesian(spin_data),
                 parent_site=site,
                 name=site.name + f" [{i+1}]",
                 metadata=site.metadata)

@@ -134,7 +134,7 @@ class Structure(SPWSerialisable):
         """ All the sites, including those implied by symmetry """
         site_list = self._input_sites.copy()
         for site in self._input_sites:
-            site_list += self._spacegroup.implied_sites_for(site)
+            site_list += self._spacegroup.implied_sites_for(site, self.unit_cell)
 
         # Check for collisions, if there is an input site that
         # collides with an implied site, choose the input site
