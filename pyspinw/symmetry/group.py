@@ -204,6 +204,19 @@ class SymmetryGroup(ABC):
 
         return check
 
+    @property
+    def lattice_system(self):
+        """ Get the lattice system object """
+        raise NotImplementedError("`lattice_system` is not implemented in base class")
+
+    def _description(self):
+        """ Description string for this spacegroup """
+        raise NotImplementedError("`description()` is not implemented in base class")
+
+    def for_supercell(self, supercell: Supercell):
+        """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
+        return database.spacegroup_by_name("p1") # TODO: Implement properly
+
 
 class SpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a space group"""
@@ -226,12 +239,16 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
         self.short_symbol = short_symbol
         self.preferred_symbol = preferred_symbol
         self.operations = operations
-        self.lattice_system = lattice_system
+        self._lattice_system = lattice_system
         self.choice = choice
         self.setting = Setting.from_optional_string(choice)
 
         # This is slightly unusual, make a reference to the lattice system create_unit_cell method
         self.create_unit_cell = lattice_system.create_unit_cell
+
+    @property
+    def lattice_system(self):
+        return self._lattice_system
 
     @property
     def space_operations(self):
@@ -251,10 +268,6 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         return database.spacegroup_by_name(json["name"])
 
-    def for_supercell(self, supercell: Supercell):
-        """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
-        return database.spacegroup_by_name("p1") # TODO: Implement properly
-
     @property
     def name(self) -> str:
         """ Just the space group name with setting choice if relevant"""
@@ -262,6 +275,10 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
             return self.symbol
         else:
             return f"{self.symbol} [{self.choice}]"
+
+    def _description(self):
+        """ Description string for this spacegroup"""
+        return self.name
 
     def __repr__(self):
         """repr"""

@@ -21,10 +21,20 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
         self.operations = operations
         self.parent_spacegroup = self.get_spacegroup(operations)
 
+    def _description(self) -> str:
+        """ Description string for this spacegroup, only used internally """
+        parent_string = "Magnetic group based on " + self.parent_spacegroup._description()
+        return parent_string + "".join(["\n  " + op.text_form for op in self.operations])
 
     def __repr__(self):
         """repr"""
-        return f"MagneticSpaceGroup({self.number}, {self.symbol})"
+
+        text = "; ".join([op.text_form for op in self.operations])
+        return f"MagneticSpaceGroup({text})"
+
+    @property
+    def lattice_system(self):
+        return self.parent_spacegroup.lattice_system
 
     @staticmethod
     def get_spacegroup(operations):
