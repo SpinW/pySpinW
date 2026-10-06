@@ -9,7 +9,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
 from pyspinw.cell_offsets import cell_offset_generator
-from pyspinw.serialisation import SPWSerialisable
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.operations import SpaceOperation
@@ -23,15 +23,18 @@ logger = logging.getLogger("Structure")
 class Structure(SPWSerialisable):
     """ Representation of the magnetic structure """
 
+    serialisation_name = "structure"
+
     def __init__(self,
                  sites: list[LatticeSite],
                  unit_cell: UnitCell,
-                 spacegroup: SpaceGroup | None = None,
+                 spacegroup: SymmetryGroup | None = None,
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
                  show_unit_cell_warning: bool=True,
-                 assume_sites_are_already_symmetric: bool=False,
-                 cooerce_spin_data_to_match_supercell: bool=True):
+                 assume_symmetric_sites_are_provided: bool=False,
+                 cooerce_spin_data_to_match_supercell: bool=True,
+                 symmetric_sites: list[LatticeSite] | None = None):
 
 
         if not isinstance(unit_cell, UnitCell):
@@ -54,8 +57,8 @@ class Structure(SPWSerialisable):
         self._spacegroup = spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
-        if assume_sites_are_already_symmetric:
-            self._sites = sites
+        if assume_symmetric_sites_are_provided and symmetric_sites is not None:
+            self._sites = symmetric_sites
         else:
             self._sites: list[LatticeSite] = self._extended_sites()
 
@@ -131,7 +134,7 @@ class Structure(SPWSerialisable):
         """ All the sites, including those implied by symmetry """
         site_list = self._input_sites.copy()
         for site in self._input_sites:
-            site_list += self._spacegroup.implied_sites_for(site)
+            site_list += self._spacegroup.implied_sites_for(site, self.unit_cell)
 
         # Check for collisions, if there is an input site that
         # collides with an implied site, choose the input site
@@ -493,7 +496,7 @@ class Structure(SPWSerialisable):
         """ Textual details of this structure """
         lines = []
         lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
-        lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
+        lines.append(f"Spacegroup: {self.spacegroup._description()}")
         supercell_text_data = self.supercell.text_data()
         lines.append(f"Supercell: {supercell_text_data[0]}")
         lines += ["  " + s for s in supercell_text_data[1:]]
@@ -544,15 +547,16 @@ class Structure(SPWSerialisable):
                 supercell: Supercell | None = None):
         """ Make a copy of this structure, but with selected (not None) fields replaced"""
         symmetry_considerations_changed = sites is not None and spacegroup is not None
-        sites_to_send = self._input_sites if symmetry_considerations_changed else self.sites
+        sites_to_send = None if symmetry_considerations_changed else self.sites
 
         return Structure(
-            sites_to_send,
+            self._input_sites,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
             self._supercell if supercell is None else supercell,
             show_unit_cell_warning= not (spacegroup is None and unit_cell is None),
-            assume_sites_are_already_symmetric=not symmetry_considerations_changed
+            assume_symmetric_sites_are_provided=not symmetry_considerations_changed,
+            symmetric_sites = sites_to_send
             )
 
     def exchange_constraints(self,
@@ -604,6 +608,28 @@ class Structure(SPWSerialisable):
                 raise TypeError("Expected `site` to be a LatticeSite, vector or a name") from e
 
         return self.spacegroup.anisotropy_constraints(site, self.unit_cell, do_print=do_print)
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {
+            "input_sites": [site._serialise(context) for site in self._input_sites],
+            "unit_cell": self.unit_cell._serialise(context),
+            "spacegroup": self.spacegroup._serialise(context),
+            "supercell": self.supercell._serialise(context),
+            "symmetric_sites": [site._serialise(context) for site in self.sites]
+            }
+
+    @staticmethod
+    @expects_keys("input_sites, unit_cell, spacegroup, supercell, symmetric_sites")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["input_sites"]],
+                         unit_cell=UnitCell._deserialise(json["unit_cell"], context),
+                         spacegroup=SpaceGroup._deserialise(json["spacegroup"], context),
+                         supercell=Supercell._deserialise(json["supercell"], context),
+                         skip_checks= True,
+                         show_unit_cell_warning=False,
+                         assume_symmetric_sites_are_provided=True,
+                         cooerce_spin_data_to_match_supercell=False,
+                         symmetric_sites=[LatticeSite._deserialise(s, context) for s in json["symmetric_sites"]])
 
     def __repr__(self):
 

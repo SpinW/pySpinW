@@ -9,7 +9,9 @@ from numpy._typing import ArrayLike
 
 import matplotlib.pyplot as plt
 
-from pyspinw.units import IntensityUnits
+from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
+    numpy_serialise, numpy_deserialise
+from pyspinw.units import IntensityUnits, CoordsUnits
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType, point_generator
 from pyspinw.checks import check_sizes
 from pyspinw.hamiltonian import Hamiltonian, ParametrizationType, omegasum, egrid
@@ -19,8 +21,11 @@ from pyspinw.tolerances import tolerances
 
 # pylint: disable=R0903
 
-class Sample(ABC):
+class Sample(ABC, SPWSerialisable):
     """Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
+
+    serialisation_name = "sample"
+    sample_name = "<base-class>"
 
     def __init__(self, hamiltonian: Hamiltonian):
         self.hamiltonian = hamiltonian
@@ -31,6 +36,24 @@ class Sample(ABC):
                  use_rust: bool=True):
 
         return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {"type": self.sample_name,
+                "data": self._sample_serialise(context)}
+
+    @staticmethod
+    @expects_keys("type,data")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return _all_samples_lookup[json["type"]]._sample_deserialise(json["data"], context)
+
+    @abstractmethod
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        """ Serialise the data for specific kind of sample """
+
+    @staticmethod
+    @abstractmethod
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        """ Deserialise the data for this kind of sample """
 
 class Sample3D(Sample):
     """ Sample where the direction of q matters"""
@@ -243,11 +266,15 @@ class Sample1D(Sample):
 
 
 
-class CrystalDomain:
+class CrystalDomain(SPWSerialisable):
     """ Orientation and amount of crystalline domain (e.g. one of a twin, or a domain in the traditional sense) """
+
+    serialisation_name = "crystal_domain"
 
     @check_sizes(transformation=(3,3), force_numpy=True)
     def __init__(self, transformation: ArrayLike, weighting: float):
+
+        transformation = np.array(transformation, dtype=float)
 
         # check the transformation is valid
         if not np.allclose(transformation @ transformation.T, np.eye(3), atol=tolerances.IS_ZERO_TOL):
@@ -258,6 +285,19 @@ class CrystalDomain:
 
         self.transformation = transformation
         self.weighting = weighting
+
+    def _serialise(self, context: SPWSerialisationContext):
+        return {
+            "transformation": numpy_serialise(self.transformation),
+            "weighting": float(self.weighting)
+        }
+
+    @staticmethod
+    @expects_keys("transformation,weighting")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return CrystalDomain(
+            transformation=numpy_deserialise(json["transformation"]),
+            weighting=json["weighting"])
 
 CrystalDomainLike = CrystalDomain | tuple[ArrayLike, float]
 
@@ -272,6 +312,8 @@ def _domain_like_to_domain(domain_like: CrystalDomainLike) -> CrystalDomain:
 
 class SingleCrystal(Sample3D):
     """Specifies a single crystal sample"""
+
+    sample_name = "single_crystal"
 
     def __init__(self, hamiltonian: Hamiltonian):
 
@@ -288,9 +330,19 @@ class SingleCrystal(Sample3D):
         return self.hamiltonian._energies_and_intensities(
             q_points, field=field, use_rust=use_rust, use_rotating=use_rotating, intensity_unit=intensity_unit)
 
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        return {"hamiltonian": self.hamiltonian._serialise(context)}
+
+    @staticmethod
+    @expects_keys("hamiltonian")
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        return SingleCrystal(Hamiltonian._deserialise(json["hamiltonian"], context))
+
 
 class Multidomain(Sample3D):
     """Sample consisting of multiple domains"""
+
+    sample_name = "multidomain"
 
     def __init__(self,
                  hamiltonian: Hamiltonian,
@@ -359,28 +411,88 @@ class Multidomain(Sample3D):
 
         return output_energies, output_intensities
 
+    @staticmethod
+    @expects_keys("hamiltonian,domains")
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        return Multidomain(
+            hamiltonian=Hamiltonian._deserialise(json["hamiltonian"], context),
+            domains=[CrystalDomain._deserialise(data, context) for data in json["domains"]]
+        )
+
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        return {
+            "hamiltonian": self.hamiltonian._serialise(context),
+            "domains": [domain._serialise(context) for domain in self._domains]
+        }
 
 
 class Twin(Multidomain):
-    """Specify a twinned crystal.
+    """Specify a twinned crystal by a twinning plane.
 
-    Special case of multidomain
+    This is a special case of `Multidomain`, which can use completely general transformations,
+    and have more than one "twin".
     """
 
+    sample_name = "twin"
+
+    @check_sizes(twinning_plane_normal=(3,), force_numpy=True)
     def __init__(self,
                  hamiltonian: Hamiltonian,
-                 relative_rotation: ArrayLike,
-                 second_twin_fraction: float):
+                 twinning_plane_normal: ArrayLike,
+                 second_twin_fraction: float,
+                 units: CoordsUnits | str = "lu"):
 
         if not (0 <= second_twin_fraction <= 1):
             raise ValueError("Expected weighting to be between 0 and 1")
+
+        self._twinning_plane_normal = twinning_plane_normal
+        self._second_twin_fraction = second_twin_fraction
+
+        if isinstance(units, str):
+            units = CoordsUnits(units)
+
+        self._units = units
+
+        # Get the transformation in lattice units
+        match units:
+            case CoordsUnits.LU:
+                vector = twinning_plane_normal
+            case CoordsUnits.XYZ:
+                vector = hamiltonian.structure.unit_cell.cartesian_to_lattice_units(twinning_plane_normal)
+            case _:
+                raise ValueError(f"Unknown unit type {units}")
+
+        # Vector needs to be normalised
+        vector = np.array(vector, dtype=float)
+        vector /= np.sqrt(np.sum(vector**2))
+
+        # Reflection in plane specified by the normal
+        transform = np.eye(3) - 2 * vector.reshape(1, 3) * vector.reshape(3, 1)
 
         first_twin_fraction = 1 - second_twin_fraction
 
         super().__init__(
             hamiltonian=hamiltonian,
             domains=[CrystalDomain(np.eye(3), first_twin_fraction),
-                     CrystalDomain(relative_rotation, second_twin_fraction)])
+                     CrystalDomain(transform, second_twin_fraction)])
+
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        return {
+            "hamiltonian": self.hamiltonian._serialise(context),
+            "normal": numpy_serialise(self._twinning_plane_normal),
+            "fraction": self._second_twin_fraction,
+            "units": self._units.value
+        }
+
+    @staticmethod
+    @expects_keys("hamiltonian,normal,fraction,units")
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        return Twin(
+            hamiltonian=Hamiltonian._deserialise(json["hamiltonian"], context),
+            twinning_plane_normal=numpy_deserialise(json["normal"]),
+            second_twin_fraction=json["fraction"],
+            units=CoordsUnits(json["units"])
+        )
 
 class ScalingMethod(Enum):
     """ Scaling methods for plots"""
@@ -608,10 +720,21 @@ class Powder(Sample1D):
         else:
             return fig
 
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        return {
+            "hamiltonian": self.hamiltonian._serialise(context)
+        }
 
+    @staticmethod
+    @expects_keys("hamiltonian")
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        return Powder(Hamiltonian._deserialise(json["hamiltonian"], context))
 
 class MagneticFieldPowder(Sample1D):
     """ Powder in magnetic field (slightly different parallelisation method to Powder)"""
 
 class TwoMagnon(Sample3D):
     """ Two magnon excitations in a single crystal"""
+
+_all_samples = [SingleCrystal, Twin, Multidomain, Powder]
+_all_samples_lookup = {cls.sample_name: cls for cls in _all_samples}

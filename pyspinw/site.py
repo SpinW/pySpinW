@@ -228,7 +228,7 @@ class LatticeSite(SPWSerialisable):
 
     def symmetry_transformed(self, operation: SpaceOperation, unit_cell: "UnitCell"):
         """ Transform site using a symmetry operation """
-        new_ijk = operation(self.ijk.reshape(1, 3)).reshape(-1)
+        new_ijk = operation.transform_positions(self.ijk.reshape(1, 3)).reshape(-1)
 
         # Transform spin, make sure it has same magnitude
 
@@ -300,6 +300,7 @@ class LatticeSite(SPWSerialisable):
                     i=json["i"],
                     j=json["j"],
                     k=json["k"],
+                    g=numpy_deserialise(json["g"]),
                     supercell_spins=numpy_deserialise(json["supercell_spins"]),
                     name=json["name"],
                     metadata=SiteMetadata._deserialise(json["metadata"], context))
@@ -308,6 +309,7 @@ class LatticeSite(SPWSerialisable):
                     i=json["i"],
                     j=json["j"],
                     k=json["k"],
+                    g=numpy_deserialise(json["g"]),
                     supercell_spins=numpy_deserialise(json["supercell_spins"]),
                     name=json["name"],
                     metadata=SiteMetadata._deserialise(json["metadata"], context))
@@ -328,6 +330,7 @@ class ImpliedLatticeSite(LatticeSite):
                  sz: float | None = None,
                  supercell_spins: np.ndarray | None = None,
                  name: str | None = None,
+                 g: ArrayLike | None = None,
                  metadata: SiteMetadata | None = None,
                  color: tuple[float, float, float] | None = None,
                  radius: float | None = None,
@@ -340,6 +343,7 @@ class ImpliedLatticeSite(LatticeSite):
                          supercell_spins=supercell_spins,
                          name=name,
                          metadata=metadata,
+                         g=g,
                          color=color,
                          radius=radius,
                          element=element)
@@ -356,6 +360,7 @@ class ImpliedLatticeSite(LatticeSite):
                 "i": self.i,
                 "j": self.j,
                 "k": self.k,
+                "g": numpy_serialise(self.g),
                 "supercell_spins": numpy_serialise(self._spin_data),
                 "name": self.name,
                 "parent": parent_ref,

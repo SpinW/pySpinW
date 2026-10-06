@@ -5,7 +5,7 @@ import numpy as np
 from ase.geometry.cell import cellpar_to_cell
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
-    SPWSerialisationError, numpy_serialise, numpy_deserialise, vec3_serialise
+    SPWSerialisationError, numpy_serialise, numpy_deserialise, vec3_serialise, vec3_deserialise
 
 
 class BadCellDefinition(Exception):
@@ -13,6 +13,8 @@ class BadCellDefinition(Exception):
 
 class RawUnitCell(SPWSerialisable):
     """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""
+
+    serialisation_name = "unit_cell"
 
     _unit_cell_name = "raw"
 
@@ -62,6 +64,20 @@ class RawUnitCell(SPWSerialisable):
         except np.linalg.LinAlgError as e:
 
             raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible spin definition")
+
+
+        self._normalised_xyz = np.array([
+                a_vector/np.sqrt(np.sum(a_vector**2)),
+                b_vector/np.sqrt(np.sum(b_vector**2)),
+                c_vector/np.sqrt(np.sum(c_vector**2))])
+
+        try:
+            self._normalised_xyz_inv = np.linalg.inv(self._normalised_xyz)
+
+        except np.linalg.LinAlgError as e:
+
+            raise BadCellDefinition(f"{self._normalised_xyz} doesn't allow an invertible normalised form")
+
 
     # @check_sizes(points=(-1, 3))
     def lattice_units_to_cartesian(self, points: np.ndarray):
@@ -145,8 +161,8 @@ class UnitCell(RawUnitCell):
         self.beta = beta
         self.gamma = gamma
 
-        self.ab_normal = ab_normal
-        self.direction = direction
+        self.ab_normal = tuple(float(x) for x in ab_normal)
+        self.direction = None if direction is None else tuple(float(x) for x in direction)
 
         self.abc = np.array([a,b,c])
 
@@ -213,7 +229,7 @@ class UnitCell(RawUnitCell):
             "beta": self.beta,
             "gamma": self.gamma,
             "ab_normal": vec3_serialise(*self.ab_normal),
-            "direction": vec3_serialise(*self.direction)
+            "direction": None if self.direction is None else vec3_serialise(*self.direction)
         }
 
     @staticmethod
@@ -226,8 +242,8 @@ class UnitCell(RawUnitCell):
             alpha=json["alpha"],
             beta=json["beta"],
             gamma=json["gamma"],
-            ab_normal=json["ab_normal"],
-            direction=json["direction"]
+            ab_normal=vec3_deserialise(json["ab_normal"]),
+            direction=None if json["direction"] is None else vec3_deserialise(json["direction"])
         )
 
 

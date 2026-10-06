@@ -4,11 +4,14 @@ See notes document 004 for details.
 
 """
 import inspect
+import os
 from fractions import Fraction
 from functools import wraps
 
 import numpy as np
 import json
+
+from pyspinw.versions import get_version
 
 class SPWSerialisationError(Exception):
     """ Exceptions thrown by the [de]serialisation process """
@@ -166,30 +169,85 @@ class SPWDeserialisationContext:
         self.sites = SPWDeserialisationContexGroup("sites", context_data["sites"])
 
 
+def header(description: str):
+    """ Header for files """
+    return {
+        "created-with": "pySpinW",
+        "version": get_version(),
+        "description": description
+    }
+
+def save(object: "SPWSerialisable", filename: str, description: str = "", add_extension: bool = True):
+    """ Save a pySpinW object """
+    object.save(filename, description, add_extension)
+
+def load(filename):
+    """ Load a pySpinW object from a file"""
+    with_extension = filename + ".psw"
+
+    # Try the provided filename, if it's not there, try with extension, otherwise error
+    if os.path.exists(filename) and os.path.isfile(filename):
+        target_file = filename
+    elif os.path.exists(with_extension) and os.path.isfile(with_extension):
+        target_file = with_extension
+    else:
+        raise FileNotFoundError(f"Could not find file '{filename}' or '{with_extension}'")
+
+    with open(target_file, 'r') as file:
+        json_string = file.read()
+
+    json_data = json.loads(json_string)
+
+    try:
+        serialisation_name = json["type"]
+    except Exception:
+        raise ValueError("Expected to have a 'type' key")
+
+    from pyspinw.deserialisation import serialisation_class_lookup
+
+    try:
+        cls = serialisation_class_lookup[serialisation_name]
+    except Exception:
+        raise ValueError(f"Unknown object type '{serialisation_name}'")
+
+    return cls._deserialise_from_json(json_data)
+
+
 class SPWSerialisable:
     """ Classes that are serialisable to SPW files should use implement this interface """
 
     serialisation_name = "<not-implemented>"
 
-    def serialise(self) -> str:
+    def serialise(self, description: str = "") -> str:
         """ Serialise an object of this type to a JSON string"""
         context = SPWSerialisationContext()
         data = {
+            "meta": header(description),
             "type": self.serialisation_name,
             "object": self._serialise(context),
             "context": context.serialise()
         }
         return json.dumps(data, indent=4, sort_keys=True)
 
+    def save(self, filename: str, description: str = "", add_extension: bool=True):
+        """ Save this object to a file"""
+        if add_extension and "." not in filename:
+            filename += ".psw"
+
+        with open(filename, 'w') as file:
+            file.write(self.serialise(description))
+
+
     @classmethod
     def deserialise(cls, json_string: str):
-        """ Deserialise an object of this type to a JSON string """
+        """ Deserialise an object of this type from a JSON string """
         json_data = json.loads(json_string)
+        return cls._deserialise_from_json(json_data)
 
-        for key in ["type", "object", "context"]:
-            if key not in json_data:
-                raise SPWSerialisationError(f"Expected json key: '{key}'")
-
+    @classmethod
+    @expects_keys("meta,type,object,context", parameter_index=1)
+    def _deserialise_from_json(cls, json_data):
+        """ Deserialise an object of this type from a json object """
         got_type = json_data["type"]
         if cls.serialisation_name != got_type:
             raise SPWSerialisationError(f"Tried to deserialise object of kind '{got_type}' but "
