@@ -1,0 +1,327 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\title{Biquadratic Exchanges}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem}
+
+The general problem here is to take the linearised spin operator
+\[\bar{S}_i = \sqrt{\frac{S_i}{2}} \left(z_i^* b_i + z_i b^\dagger \right) + \eta_i\left(S_i - b^\dagger_i b_i\right)\]
+and use it calculate the quantised value terms such as $(S_i\cdot S_j)^2$ in the classical Hamiltonian, and to express them in the form
+\[H = \sum_q X^\dagger h X\]
+where $X$ is a column vector of boson operators
+\[X = \left(b_1, b_2 ... b_N, b^\dagger_1, b^\dagger_2 ... b^\dagger_N\right)\]
+When there are only quadratic terms, we can decompose the matrix $h$ into $A\in\mathbb{C}^{n\times n}$, $B\in\mathbb{C}^{n\times n}$, and $C\in\mathbb{R}^{n\times n}$ blocks. Giving us:
+\begin{equation}
+\left(\begin{array}{c}
+     b^\dagger \\
+     \hline
+%     \vdots \\
+     b \\
+%     \vdots
+\end{array}
+\right) \cdot \left(
+\begin{array}{cc}
+A - C & B \\
+B^\dagger & A^* - C
+\end{array}
+\right) \left(
+\begin{array}{c}
+%     \vdots \\
+     b \\
+%     \vdots \\
+     \hline
+%     \vdots \\
+     b^\dagger \\
+%     \vdots
+\end{array}
+\right)
+\end{equation}
+The $C$ term contains diagonal elements that are mixtures of creation and annihilation (i.e. $b_i b_i^\dagger$ and $b_i^\dagger b_i$), and makes writing the quadratic case simpler, we do the same here by adding a $D$ matrix which contains diagonals elements of the same kind (i.e. $b_i b_i$ and $b_i^\dagger b_i^\dagger$):
+\begin{equation}
+\left(\begin{array}{c}
+     b^\dagger \\
+     \hline
+%     \vdots \\
+     b \\
+%     \vdots
+\end{array}
+\right) \cdot \left(
+\begin{array}{cc}
+A - C & B + D \\
+B^\dagger + D^\dagger & A^* - C
+\end{array}
+\right) \left(
+\begin{array}{c}
+%     \vdots \\
+     b \\
+%     \vdots \\
+     \hline
+%     \vdots \\
+     b^\dagger \\
+%     \vdots
+\end{array}
+\right)
+\end{equation}
+
+\section{Derivation}
+
+In the Heisenberg case, we have terms of the form $JS_i.S_j$, the dot product is
+
+\[\bar{S}_i \cdot \bar{S}_j = \left[\sqrt{\frac{S_i}{2}} \left(z_i^* b_i + z_i b^\dagger \right) + \eta_i\left(S_i - b^\dagger_i b_i\right)\right] \left[\sqrt{\frac{S_j}{2}} \left(z_j^* b_j + z_j b^\dagger \right) + \eta_j\left(S_j - b^\dagger_j b_j\right)\right]\]
+
+From this we get rid of anything that is not quadratic in the boson operators: constant terms are ignored because we only care about energy up to an offset, linear terms are ignored because we are considering perturbations around the ground state (we're at the bottom of an energy well), higher order terms than quadratic are discarded as an approximation.
+
+For the biquadratic exchange, we're going to square this again, so we cannot yet get rid of the lower order terms just yet.
+
+\begin{eqnarray}
+= & & \frac{\sqrt{S_i S_j}}{2} \left(z_i^* b_i + z_i b_i^\dagger\right)^\dagger \left(z_j^* b_j + z_j b_j^\dagger\right) \\
+&+& S_i \sqrt{S_j/2} \eta^\dagger_i \left(z_j^* b_j + z_j b_j^\dagger\right) \\
+&+& S_j \sqrt{S_i/2} \left(z_i^* b_i + z_i b_i^\dagger\right)^\dagger \eta_j \\
+&+& S_i S_j\eta_i^\dagger \eta_j \\
+&-& S_j \eta_i^\dagger \eta_j b^\dagger_i b_i \\
+&-& S_i \eta_i^\dagger \eta_j b^\dagger_j b_j \\
+&+& O(b^3) \nonumber
+\end{eqnarray}
+
+It helps to rewrite this using the fact that $\eta$ is real
+\[
+\begin{array}{rlr}
+ & \frac{\sqrt{S_i S_j}}{2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \left(z_j^* b_j + z_j b_j^\dagger\right) & \text{(a)} \nonumber \\
++& S_i \sqrt{S_j/2} \eta^T_i \left(z_j^* b_j + z_j b_j^\dagger\right) & \text{(b)} \nonumber\\
++& S_j \sqrt{S_i/2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \eta_j & \text{(c)} \nonumber\\
++& S_i S_j\eta_i^T \eta_j & \text{(d)} \nonumber\\
+-& S_j \eta_i^T \eta_j b_i^\dagger b_i & \text{(e)} \nonumber\\
+-& S_i \eta_i^T \eta_j b_j^\dagger b_j & \text{(f)} \nonumber\\
++& O(b^3) \nonumber
+\end{array}
+\]
+
+There are 6 terms that when squared, will result in 36 new terms. We don't want all of them.
+To reduce work, we can look at the order of the terms and infer which of their products to keep
+
+\begin{center}
+\begin{tabular}{c|c|cccccc}
+     & Term  & a & b & c & d & e & f \\ \hline
+Term & Order & 2 & 1 & 1 & 0 & 2 & 2 \\ \hline
+   a & 2     & 4 & 3 & 3 & 2 & 4 & 4 \\
+   b & 1     & 3 & 2 & 2 & 1 & 3 & 3 \\
+   c & 1     & 3 & 2 & 2 & 1 & 3 & 3 \\
+   d & 0     & 2 & 1 & 1 & 0 & 2 & 2 \\
+   e & 2     & 4 & 3 & 3 & 2 & 3 & 3 \\
+   f & 2     & 4 & 3 & 3 & 2 & 3 & 3 \\
+\end{tabular}
+\end{center}
+
+We therefore only need the products $a d$, $d a$, $b b$, $b c$, $c b$, $c c$, $d e$, $e d$, $d f$ and $f d$. Still, quite a few...
+
+It simplifies a lot when we note the inner products of $\eta$ and $z$ are scalars, which we'll assign some names to.
+\begin{align}
+    E &= \eta_i^T \eta_j \\
+    Z_s &= z_i^T z_j \\
+    Z_s^* &= z_i^\dagger z_j^* \\
+    Z_d &= z_i^\dagger z_j \\
+    Z_d^* &= z_i^T z_j^* \\
+    F &= \eta_i^T z_j \\
+    F^* &= \eta_i^T z_j^* \\
+    G &= z_i^T \eta_j \\
+    G^* &= z_i^\dagger \eta_j
+\end{align}
+
+Ultimately, we want the coefficients of $bb$, $bb^\dagger$, $b^\dagger b$ and $b^\dagger b^\dagger$,
+so we will expand things to get these terms, and put them in this order.
+
+\begin{align} (a)(d) &= \frac{\sqrt{S_i S_j}}{2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \left(z_j^* b_j + z_j b_j^\dagger\right) S_i S_j\eta_i^T \eta_j \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \eta_i^T \eta_j \left(
+b_i^\dagger z_i^T z_j^* b_j +
+b_i^\dagger z_i^T z_j b_j^\dagger +
+b_i z_i^\dagger z_j^* b_j +
+b_i z_i^\dagger z_j b_j^\dagger
+\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \eta_i^T \eta_j \left(
+z_i^T z_j^* b_i^\dagger b_j +
+z_i^T z_j b_i^\dagger b_j^\dagger +
+z_i^\dagger z_j^* b_i b_j +
+z_i^\dagger z_j b_i b_j^\dagger
+\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \left(
+E Z_d^* b_i^\dagger b_j +
+E Z_s b_i^\dagger b_j^\dagger +
+E Z_s^* b_i b_j +
+E Z_d b_i b_j^\dagger
+\right)\\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \left(
+E Z_s^* b_i b_j +
+E Z_d b_i b_j^\dagger +
+E Z_d^* b_i^\dagger b_j +
+E Z_s b_i^\dagger b_j^\dagger
+\right)
+\end{align}
+
+as $(d)$ is scalar $(a)(d) = (d)(a)$. Now for the four $(b)$ and $(c)$ related terms:
+
+\begin{align}
+(b)(b) &= \frac{1}{2} S_i^2 S_j \left(\eta_i^T z_j^* b_j + \eta_i^T z_j b^\dagger \right) \left(\eta_i^T z_j^* b_j + \eta_i^T z_j b^\dagger \right) \\
+&= \frac{1}{2} S_i^2 S_j \left(F^* b_j + F b^\dagger \right) \left(F^* b_j + F b^\dagger \right) \\
+&= \frac{1}{2} S_i^2 S_j \left(
+F^* b_j F^* b_j +
+F^* b_j F b^\dagger +
+F b^\dagger F^* b_j +
+F b^\dagger F b^\dagger
+\right) \\
+&= \frac{1}{2} S_i^2 S_j \left(
+F^* F^* b_j b_j +
+F^* F b_j b_j^\dagger +
+F F^* b_j^\dagger b_j +
+F F b_j^\dagger b_j^\dagger
+\right)
+\end{align}
+
+For some of these terms we'll use the commutation identities, $[b_i, b^\dagger_j] = \delta_{ij}$, $[b_i, b_j] = [b_i^\dagger, b_j^\dagger] = 0$.
+
+\begin{align}
+(b)(c) &= S_i \sqrt{S_j/2} \eta^T_i \left(z_j^* b_j + z_j b_j^\dagger\right) S_j \sqrt{S_i/2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \eta_j \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \left(\eta^T_i z_j^* b_j + \eta^T_i z_j b_j^\dagger\right) \left(b_i^\dagger z_i^T \eta_j + b_i z_i^\dagger \eta_j\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \left(F^* b_j + F b_j^\dagger\right) \left(b_i^\dagger G + b_i G^* \right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \left(
+F^* b_j b_i^\dagger G +
+F^* b_j b_i G^* +
+F b_j^\dagger b_i^\dagger G +
+F b_j^\dagger b_i G^*
+\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2} \left(
+F^* G^* b_i b_j +
+F G^* b_i b_j^\dagger +
+F^* G b_i^\dagger b_j +
+F G b_i^\dagger b_j^\dagger
+\right)
+\end{align}
+
+\begin{align}
+(c)(b) &= S_j \sqrt{S_i/2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \eta_j S_i \sqrt{S_j/2} \eta^T_i \left(z_j^* b_j + z_j b_j^\dagger\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2}  \left(b_i^\dagger z_i^T \eta_j + b_i z_i^\dagger \eta_j \right) \left(\eta^T_i z_j^* b_j + \eta^T_i z_j b_j^\dagger\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2}  \left(b_i^\dagger G + b_i G^* \right) \left(F^* b_j + F b_j^\dagger\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2}  \left(
+b_i^\dagger G F^* b_j +
+b_i^\dagger G F b_j^\dagger +
+b_i G^* F^* b_j +
+b_i G^* F b_j^\dagger
+\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2}  \left(
+F^* G b_i^\dagger b_j +
+F G b_i^\dagger b_j^\dagger +
+F^* G^* b_i b_j +
+F G^* b_i b_j^\dagger
+\right) \\
+&= \frac{1}{2} S_i^{3/2} S_j^{3/2}  \left(
+F^* G^* b_i b_j  +
+F G^* b_i b_j^\dagger +
+F^* G b_i^\dagger b_j +
+F G b_i^\dagger b_j^\dagger
+\right)
+\end{align}
+
+Note, this is the same as $(b)(c)$.
+
+\begin{align}
+(c)(c) &= S_j \sqrt{S_i/2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \eta_j S_j \sqrt{S_i/2} \left(b_i^\dagger z_i^T + b_i z_i^\dagger \right) \eta_j \\
+&= S_i S_j^2 \left(b_i^\dagger z_i^T \eta_j + b_i z_i^\dagger \eta_j \right) \left(b_i^\dagger z_i^T \eta_j + b_i z_i^\dagger \eta_j \right) \\
+&= S_i S_j^2 \left(b_i^\dagger G + b_i G^* \right) \left(b_i^\dagger G + b_i G^* \right) \\
+&= S_i S_j^2 \left(
+b_i^\dagger G b_i^\dagger G +
+b_i^\dagger G b_i G^* +
+b_i G^* b_i^\dagger G +
+b_i G^* b_i G^*
+\right) \\
+&= S_i S_j^2 \left(
+G G b_i^\dagger b_i^\dagger +
+G G^* b_i^\dagger b_i +
+G^* G b_i b_i^\dagger +
+G^* G^* b_i b_i
+\right) \\
+&= S_i S_j^2 \left(
+G^* G^* b_i b_i +
+G^* G b_i b_i^\dagger +
+G G^* b_i^\dagger b_i +
+G G b_i^\dagger b_i^\dagger
+\right)
+\end{align}
+
+The $(d)(e)$ and $(d)(f)$ type terms are a bit simpler, and as $(d)$ is scalar, there's no problem with
+assuming $(d)(e) = (e)(d)$ and $(d)(f) = (f)(d)$
+
+\begin{align}
+(d)(e) &= -S_i S_j\eta_i^T \eta_j S_j \eta_i^T b_i^\dagger b_i \\
+&= -S_i S_j^2 E^2 b^\dagger_i b_i
+\end{align}
+
+\begin{align}
+(d)(f) &= -S_i S_j\eta_i^T \eta_j S_i \eta_j b_j^\dagger b_j\\
+&= -S_i^2 S_j E^2 b^\dagger_j b_j
+\end{align}
+
+We can now gather the coefficients of the boson operator terms, of which there are 12 types in total.
+
+$i$/$j$ terms:
+\begin{align}
+b_i b_j                 &: S_i^{3/2} S_j^{3/2} \left( EZ_s^* + F^*G^* \right)  \\
+b_i b_j^\dagger         &: S_i^{3/2} S_j^{3/2} \left( EZ_d   + FG^*   \right)  \\
+b_i^\dagger b_j         &: S_i^{3/2} S_j^{3/2} \left( EZ_d^* + F^*G   \right)  \\
+b_i^\dagger b_j^\dagger &: S_i^{3/2} S_j^{3/2} \left( EZ_s   + FG     \right)
+\end{align}
+$i$/$i$ terms:
+\begin{align}
+b_i b_i                 &: \frac{1}{2} S_i S_j^2 G^* G^* \\
+b_i b_i^\dagger         &: \frac{1}{2} S_i S_j^2 G G^*  \\
+b_i^\dagger b_i         &: \frac{1}{2} S_i S_j^2 G G^* - 2 S_i S_j^2 E E  \\
+b_i^\dagger b_i^\dagger &: \frac{1}{2} S_i S_j^2 G G
+\end{align}
+$j$/$j$ terms:
+\begin{align}
+b_j b_j                 &: \frac{1}{2} S_i^2 S_j F^* F^* \\
+b_j b_j^\dagger         &: \frac{1}{2} S_i^2 S_j F F^*  \\
+b_j^\dagger b_j         &: \frac{1}{2} S_i^2 S_j F F^* - 2 S_i^2 S_j E E   \\
+b_j^\dagger b_j^\dagger &: \frac{1}{2} S_i^2 S_j F F
+\end{align}
+
+These terms will form entries of the $h$ matrix, and therefore of the $A$, $B$, $C$ and $D$ blocks.
+
+First, we need to do use a cheeky trick to put things in a form that fits the formalism.
+As we are ignoring constant terms, we can use the commutation relationship
+\[b_i b_i^\dagger = b_i^\dagger b_i + 1\]
+and just drop the constant of $1$. This means we can substitute the coefficients
+for $b_i b_i^\dagger$ and $b^\dagger b_i$ with their mean without any worries.
+
+$i$/$i$ terms:
+\begin{align}
+b_i b_i                 &: \frac{1}{2} S_i S_j^2 G^* G^* \\
+b_i b_i^\dagger         &: \frac{1}{2} S_i S_j^2 G G^* - S_i S_j^2 E E \\
+b_i^\dagger b_i         &: \frac{1}{2} S_i S_j^2 G G^* - S_i S_j^2 E E  \\
+b_i^\dagger b_i^\dagger &: \frac{1}{2} S_i S_j^2 G G
+\end{align}
+$j$/$j$ terms:
+\begin{align}
+b_j b_j                 &: \frac{1}{2} S_i^2 S_j F^* F^* \\
+b_j b_j^\dagger         &: \frac{1}{2} S_i^2 S_j F F^* - S_i^2 S_j E E  \\
+b_j^\dagger b_j         &: \frac{1}{2} S_i^2 S_j F F^* - S_i^2 S_j E E   \\
+b_j^\dagger b_j^\dagger &: \frac{1}{2} S_i^2 S_j F F
+\end{align}
+
+To add an exchange between the $i$th and $j$th atoms, we add $\Delta X$ to various matrix elements:
+\begin{align}
+    2\Delta A_{ij} &= S_i^{3/2} S_j^{3/2} \left( EZ_d^* + F^*G   \right) \\
+    2\Delta B_{ij} &= S_i^{3/2} S_j^{3/2} \left( EZ_s^* + F^*G^* \right) \\
+    2\Delta C_{ii} &= S_i S_j^2 (G G^* - 2 E E) \\
+    2\Delta C_{jj} &= S_i^2 S_j (F F^* - 2 E E) \\
+    2\Delta D_{ii} &= S_i S_j^2 G^* G^* \\
+    2\Delta D_{jj} &= S_i^2 S_j F^* F^*
+\end{align}
+
+\end{document}
