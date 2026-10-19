@@ -199,6 +199,16 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
 
     return exchanges, anisotropies
 
+def _q_points(path: Path | ArrayLike) -> np.ndarray:
+    """ The q-points of a Path, or an n-by-3 array of q-vectors as given """
+    if hasattr(path, "q_points"):
+        return path.q_points()
+
+    q_vectors = np.asarray(path, dtype=float)
+    if q_vectors.ndim != 2 or q_vectors.shape[1] != 3:
+        raise ValueError(f"Expected a Path or an n-by-3 array of q-vectors, got an array of shape {q_vectors.shape}")
+    return q_vectors
+
 
 class Hamiltonian(SPWSerialisable):
     """Hamiltonian base class"""
@@ -401,7 +411,7 @@ class Hamiltonian(SPWSerialisable):
 
     @check_sizes(field=(3,), allow_nones=True, force_numpy=True)
     def energies_and_intensities(self,
-                                 path: Path,
+                                 path: Path | ArrayLike,
                                  field: ArrayLike | None = None,
                                  use_rust: bool=True,
                                  use_rotating: bool=True,
@@ -410,7 +420,7 @@ class Hamiltonian(SPWSerialisable):
                                  ):
         """Calculate the energy levels and intensities of the system for the given q-vectors.
 
-        :param path: *required* Path along which to calculate
+        :param path: *required* Path along which to calculate, or an n-by-3 array of q-vectors in lattice units
         :param field: Optional field direction
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
@@ -418,7 +428,7 @@ class Hamiltonian(SPWSerialisable):
         :param components: Whether to compute a particular polarised neutron component (default: 'Sperp')
         """
         return self.without_nonmagnetic()._energies_and_intensities(
-            q_vectors=path.q_points(),
+            q_vectors=_q_points(path),
             field=field,
             use_rust=use_rust,
             use_rotating=use_rotating,
@@ -467,7 +477,7 @@ class Hamiltonian(SPWSerialisable):
         return energies, intensities
 
     def spinwave_calculation(self,
-                          path: Path,
+                          path: Path | ArrayLike,
                           field: ArrayLike | None = None,
                           use_rust: bool = True,
                           use_rotating: bool = True,
@@ -477,7 +487,7 @@ class Hamiltonian(SPWSerialisable):
                           ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Performs a spin wave calculation of the system for the given q-point path.
 
-        :param path: *required* Path along which to calculate
+        :param path: *required* Path along which to calculate, or an n-by-3 array of q-vectors in lattice units
         :param field: Optional field direction
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
@@ -491,7 +501,7 @@ class Hamiltonian(SPWSerialisable):
         """
         energies, intensities, sab, wavefunctions, scaling, rlu_to_cart = \
             self.without_nonmagnetic()._spinwave_calculation(
-                q_vectors=path.q_points(),
+                q_vectors=_q_points(path),
                 field=field,
                 use_rust=use_rust,
                 use_rotating=use_rotating,
