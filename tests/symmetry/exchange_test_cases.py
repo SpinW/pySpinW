@@ -13,7 +13,7 @@ def heisenberg_case_1():
 
     s = LatticeSite(0.25,0.25,0.25,0,0,1, name="X")
 
-    structure = Structure([s], unit_cell=UnitCell(1,1,1), spacegroup=sg)
+    structure = Structure([s], unit_cell=UnitCell(1,1,1), spacegroupx=sg)
 
     s1 = structure.site_by_name("X")
     s2 = structure.site_by_name("X [3]")
@@ -35,7 +35,7 @@ def heisenberg_case_2():
     b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")
     c = LatticeSite(0, 0.2, 0, 0, 0, 1, name="c")
 
-    structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
+    structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroupx=sg)
 
 
     exchanges = [
@@ -60,7 +60,7 @@ def diagonal_case_1():
 
     s = LatticeSite(0.25,0.25,0.25,0,0,1, name="X")
 
-    structure = Structure([s], unit_cell=UnitCell(1,1,1), spacegroup=sg)
+    structure = Structure([s], unit_cell=UnitCell(1,1,1), spacegroupx=sg)
 
     s1 = structure.site_by_name("X")
     s2 = structure.site_by_name("X [3]")
@@ -82,7 +82,7 @@ def diagonal_case_2():
     b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")
     c = LatticeSite(0, 0.2, 0, 0, 0, 1, name="c")
 
-    structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
+    structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroupx=sg)
 
 
     exchanges = [

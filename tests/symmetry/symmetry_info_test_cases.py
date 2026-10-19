@@ -28,7 +28,7 @@ def case_1() -> Structure:
         LatticeSite(0.4,0.2,0.3, name="g4"), # g
         ]
 
-    return Structure(sites, unit_cell=unit_cell, spacegroup=sg)
+    return Structure(sites, unit_cell=unit_cell, spacegroupx=sg)
 
 cases = [case_1()]
 

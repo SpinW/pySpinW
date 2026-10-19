@@ -16,7 +16,7 @@ sites = cif_struc.sites_by_name('Mn1') + cif_struc.sites_by_name('Mn2')
 perm, scales = [3, 2, 0, 1, 7, 4, 5, 6], [1.5]*4 + [2]*4
 for mom, idx, scale in zip(S0, perm, scales):
     sites[idx].spin = mom / np.linalg.norm(np.real(mom)) * scale
-structure = Structure(sites, unit_cell=cif_struc.unit_cell, spacegroup=cif_struc.spacegroup,
+structure = Structure(sites, unit_cell=cif_struc.unit_cell, spacegroupx=cif_struc.spacegroup,
                       supercell=SummationSupercell([CommensuratePropagationVector(0.5, 0, 0.5)]))
 
 # Set the exchange interactions Jx, Kx using notation of PRB84 054444

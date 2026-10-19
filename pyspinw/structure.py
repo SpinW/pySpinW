@@ -48,13 +48,12 @@ class Structure(SPWSerialisable):
             if not isinstance(supercell, Supercell):
                 raise TypeError("Expected `supercell` to be a subclass of `Supercell`")
 
-        spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
+        self._spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
 
         self._input_sites = sites
         self._input_uid_to_site = {site.unique_id: site for site in sites}
         self._unit_cell = unit_cell
 
-        self._spacegroup = spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
         if assume_symmetric_sites_are_provided and symmetric_sites is not None:
@@ -91,16 +90,16 @@ class Structure(SPWSerialisable):
 
             # check that the unit cell is consistent with the spacegroup
 
-            if spacegroup.lattice_system.constrain(unit_cell) != unit_cell:
-                raise ValueError(f"{unit_cell} is not compatible with spacegroup {spacegroup}, "
-                                 f"requires lattice type {spacegroup.lattice_system.name}")
+            if self._spacegroup.lattice_system.constrain(unit_cell) != unit_cell:
+                raise ValueError(f"{unit_cell} is not compatible with spacegroup {self._spacegroup}, "
+                                 f"requires lattice type {self._spacegroup.lattice_system.name}")
 
             # Check that the unit cell fulfils all the constraints of the unit cell
-            if show_unit_cell_warning:
-                violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
+            if show_unit_cell_warning and spacegroup is not None:
+                violations = self._spacegroup.lattice_system.violated_negative_constraints(unit_cell)
                 if violations:
-                    logger.warning(f"{unit_cell} violates the conditions {violations} for {spacegroup.lattice_system}"
-                                   f" used by {spacegroup}")
+                    logger.warning(f"{unit_cell} violates the conditions {violations} for "
+                                   f"{self._spacegroup.lattice_system} used by {self._spacegroup}")
 
 
 
@@ -265,7 +264,7 @@ class Structure(SPWSerialisable):
         return Structure(
             sites=[site for site in mapping.values()],
             unit_cell=cell,
-            spacegroup=self.spacegroup.for_supercell(self.supercell),
+            spacegroupx=self.spacegroup.for_supercell(self.supercell),
             supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
@@ -358,7 +357,7 @@ class Structure(SPWSerialisable):
 
         new_sites = [site for site in self._sites if site.metadata.element not in elements]
 
-        return Structure(new_sites, unit_cell=self.unit_cell, spacegroup=self.spacegroup, supercell=self.supercell)
+        return Structure(new_sites, unit_cell=self.unit_cell, spacegroupx=self.spacegroup, supercell=self.supercell)
 
 
     @property
@@ -641,7 +640,7 @@ class Structure(SPWSerialisable):
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["input_sites"]],
                          unit_cell=UnitCell._deserialise(json["unit_cell"], context),
-                         spacegroup=SpaceGroup._deserialise(json["spacegroup"], context),
+                         spacegroupx=SpaceGroup._deserialise(json["spacegroup"], context),
                          supercell=Supercell._deserialise(json["supercell"], context),
                          skip_checks= True,
                          show_unit_cell_warning=False,

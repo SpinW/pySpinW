@@ -15,7 +15,7 @@ def test_hamiltonian_serialisation():
     unit_cell = UnitCell(1,1,1)
     supercell = TiledSupercell(scaling=(2,3,5))
 
-    structure = Structure(sites, unit_cell=unit_cell, supercell=supercell, spacegroup=sg)
+    structure = Structure(sites, unit_cell=unit_cell, supercell=supercell, spacegroupx=sg)
 
     anisotropies = [AxisMagnitudeAnisotropy(sites[0], direction=(1,0,0), a=-1),
                     Anisotropy(sites[1], anisotropy_matrix=np.eye(3))]

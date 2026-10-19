@@ -6,7 +6,7 @@ def test_load_save(tmp_path, add_extension):
     """ Check that loading and saving of internal structures works """
 
     site = LatticeSite(1 / 2, 1 / 2, 1 / 2, name="test_site")
-    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroup=spacegroup("p4mm"))
+    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroupx=spacegroup("p4mm"))
     hamiltonian = Hamiltonian(structure, [])
     sample = SingleCrystal(hamiltonian)
 
@@ -29,7 +29,7 @@ def test_load_save_alt_extension(tmp_path):
     """ Check that loading and saving of internal structures works """
 
     site = LatticeSite(1 / 2, 1 / 2, 1 / 2, name="test_site")
-    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroup=spacegroup("p4mm"))
+    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroupx=spacegroup("p4mm"))
     hamiltonian = Hamiltonian(structure, [])
     sample = SingleCrystal(hamiltonian)
 

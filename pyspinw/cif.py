@@ -114,7 +114,7 @@ def load_cif(filename: str | pathlib.Path,
 
             sites.append(site)
 
-        return Structure(sites, unit_cell = cell, spacegroup=sg, supercell=supercell)
+        return Structure(sites, unit_cell = cell, spacegroupx=sg, supercell=supercell)
 
     raise LoadError("No entries in CIF file")
 

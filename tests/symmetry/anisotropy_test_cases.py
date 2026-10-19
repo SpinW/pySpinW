@@ -38,7 +38,7 @@ def anisotropy_test_system():
     for site in sites:
         site.spin = 0, 0, 1
 
-    structure = Structure(sites, unit_cell=unit_cell, spacegroup=sg)
+    structure = Structure(sites, unit_cell=unit_cell, spacegroupx=sg)
 
     anisotropies = []
     for site in sites:

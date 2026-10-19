@@ -27,7 +27,7 @@ def test_expansion_chain_no_rot():
     unexpanded_structure = Structure(
                             sites=unexpanded_sites,
                             unit_cell=unexpanded_unit_cell,
-                            spacegroup=database.spacegroup_by_name("P1"),
+                            spacegroupx=database.spacegroup_by_name("P1"),
                             supercell=TiledSupercell((1, 2, 3)))
 
     unexpanded_hamiltonian = Hamiltonian(
