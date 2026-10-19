@@ -17,7 +17,8 @@ from pyspinw.exchangegroup import NoDirectionalityFilter, InPlaneFilter, InDirec
 
 from pyspinw.interface import (
     generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
-    filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure, generate_structure)
+    filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure, generate_structure,
+    load_tb2j)
 
 from pyspinw.symmetry.supercell import (
     SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell, DirectSupercell,
@@ -62,7 +63,8 @@ __all__ = [
     "InDirectionFilter",
     "BiDirectionFilter",
 
-    # Loading and Saving
+    # Loading and Saving  
+    'load_tb2j',
     'load_cif',
     'load_spw',
     'load',
