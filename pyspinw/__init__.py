@@ -20,7 +20,7 @@ from pyspinw.interface import (
     load_tb2j)
 
 from pyspinw.symmetry.supercell import (
-    SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell,
+    SummationSupercell, RotationSupercell, TransformationSupercell, TiledSupercell, DirectSupercell,
     PropagationVector, CommensuratePropagationVector, RotationTransform)
 
 from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powder, ScalingMethod
@@ -90,11 +90,12 @@ __all__ = [
     "generate_helical_structure",
 
     # supercells
+    "TiledSupercell",
+    "DirectSupercell",
     "SummationSupercell",
     "RotationSupercell",
     "TransformationSupercell",
     "RotationTransform",
-    "TiledSupercell",
     "PropagationVector",
     "CommensuratePropagationVector",
 

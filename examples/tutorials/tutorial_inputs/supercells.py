@@ -34,9 +34,8 @@
 # require more information at each site than just the three components of spin.
 # This is the case in what we call `SummationSupercell` and `RotationSupercell`, where the spin is a
 # linear combination of components specified by `supercell_spins`, rather than `sx`, `sy` and `sz`
-# in `LatticeSite` constructor. It is possible that there will be more kinds of supercell, that use the
-# information in `supercell_spins` different ways in the future, but in all current supercell classes, it represents
-# components of the spin that are given different weightings depending on which cell is being considered.
+# in `LatticeSite` constructor. Additionally, the DirectSupercell uses the `supercell_spins` data
+# as a list that specifies the spin in each cell of the supercell.
 
 ## subtitle: The Supercell Types
 
@@ -49,6 +48,10 @@ from pyspinw import *
 # We will also use numpy
 
 import numpy as np
+
+
+
+
 
 ## subtitle: Tiled Supercell (Commensurate, Single Spin Component)
 
@@ -70,6 +73,10 @@ view(structure)
 ## snapshot(structure, "tiled.png", view_point=(-2,-3,8))
 
 # The scaling option is available for all commensurate supercells.
+
+
+
+
 
 ## subtitle: Summation Supercell (Commensurate, Multiple Spin Components)
 
@@ -141,6 +148,13 @@ view(structure)
 # Whilst quite general, there is a disadvantage in specifying the system this way, as the magnitude of spins are
 # not conserved automatically, one must assure this oneself (if it matters).
 # Transformation supercells can be better if this is a concern.
+#
+# If one is doing a ground state optimisation, it might be better to use the transformation supercell.
+
+
+
+
+
 
 ## subtitle: Transformation Supercell (Commensurate, Single Spin Component)
 
@@ -172,9 +186,14 @@ view(structure)
 ## image: transformation.png
 ## snapshot(structure, "transformation.png", view_point=(0.5,0.5,5), display_options=DisplayOptions())
 
+
+
+
+
+
 ## subtitle: Rotation Supercell (Incommensurate, Single Spin Component)
 
-# The final supercell is the RotationSupercell, which is necessary for running incommensurate calculations.
+# The next supercell is the RotationSupercell, which is necessary for running incommensurate calculations.
 #
 # Building these automatically can be made easier using `generate_helical_structure`. But we will
 # go through the more explicit set-up here.
@@ -183,11 +202,11 @@ view(structure)
 
 site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
 
-# We next build a supercell, this takes a parameter called "perpendicular" (first argument) which defines the plane
-# in which the spin rotates.
+# We next build a supercell, this takes a parameter called "perpendicular" (first argument) which defines the normal to
+# the plane in which the spin rotates.
 # The spin will rotate by amount given by the period of the propagation vector.
 
-supercell = RotationSupercell([0,0,1], PropagationVector(0,0,np.sqrt(101)))
+supercell = RotationSupercell([0,0,1], PropagationVector(0,0,1/np.sqrt(101)))
 
 # Build the structure and view, if the propagation vector is truly incommensurate, the viewer will only
 # show a finite number of cells (controlled by the `rotation_supercell_expansion_max` parameter)
@@ -204,3 +223,78 @@ view(structure)
 ## snapshot(structure, "rotation.png", view_point=(5,2,5),
 ##          display_options=DisplayOptions(show_unit_cell=False, perspective=False))
 
+# Rotation supercells have an `approximant` method, which makes a commensurate supercell which
+# approximately matches the incommensurate propagation vector.
+#
+# `approximant` takes a parameter called `max_denominator` which is the maximum periodicity (maximum
+# denominator of the propagation vector components) of the approximated supercell. In this case we
+# set it to 100.
+
+approximant_supercell = supercell.approximant(100)
+
+structure = Structure(
+    [site],
+    UnitCell(1, 1, 1),
+    spacegroup("p1"),
+    supercell=approximant_supercell)
+
+# With a `max_denominator` of 100, we see that it has approximated the period $\sqrt{101}$ ($\approx 10.04987562...$)
+# with a commensurate supercell with a period of exactly 10.
+
+## capture-stdout
+structure.print_summary()
+## end-capture-stdout
+
+# and it looks pretty similar
+
+## skip
+view(structure)
+## image: rotation_approximant.png
+## snapshot(structure, "rotation_approximant.png", view_point=(5,2,5),
+##          display_options=DisplayOptions(show_unit_cell=False, perspective=False))
+
+
+
+
+## subtitle: Direct Supercell (Commensurate, Multiple Spin Components)
+
+# The final supercell is the DirectSupercell, this uses the spin components to specify the spin in each unit cell
+# explicitly.
+#
+# A simple example of using this might be specifying a 2x1x1 cell with different spins in each cell; in this case
+# in $z$ and $-z$
+
+site = LatticeSite(1/2, 1/2, 1/2, supercell_spins=[[0,0,1], [0,0,-1]])
+supercell = DirectSupercell(2,1,1)
+unit_cell = UnitCell(1,1,1)
+
+structure = Structure([site], unit_cell, supercell=supercell)
+
+## skip
+view(structure)
+## image: direct_1.png
+## snapshot(structure, "direct_1.png", view_point=(-0.3,-3,0.3))
+
+# This supercell also has a helper function for setting either individual spins or groups of spins.
+#
+# In this example we will make a 3x5x1 supercell, set a single spin in $-y$, a row of spins to point in $y$, and
+# otherwise zero.
+#
+# First we create the site and supercell
+
+site = LatticeSite(1/2, 1/2, 1/2, 0,0,0)
+supercell = DirectSupercell(5,3,1)
+
+# Set a single spin one in from the edge to point in the $-y$ direction
+supercell.spins_for(site)[1, 1, 0] = 0, -1, 0
+
+# Set a row of spins in the $y$ direction to point in the $y$ direction
+supercell.spins_for(site)[3, :, 0] = 0, 1, 0
+
+# Create the structure and view it
+structure = Structure([site], unit_cell, supercell=supercell)
+
+## skip
+view(structure)
+## image: direct_2.png
+## snapshot(structure, "direct_2.png", view_point=(0,0,5))
