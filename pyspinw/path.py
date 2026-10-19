@@ -44,7 +44,7 @@ class Path:
             self._labels = [f"{self._points[i, 0]:.4g}, {self._points[i, 1]:.4g}, {self._points[i, 2]:.4g}"
                             for i in range(self._n_points)]
         else:
-            if len(self._labels) != self._n_points:
+            if len(labels) != self._n_points:
                 raise ValueError("Expects same number of labels as points")
             self._labels = labels
 
