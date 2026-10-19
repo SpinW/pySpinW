@@ -1,9 +1,10 @@
 """ Loading files in general """
 import pathlib
 
-from pyspinw import TiledSupercell
+from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.serialisation import load as load_spw
 from pyspinw.cif import load_cif
+from pyspinw.interface import load_tb2j
 from pyspinw.symmetry.supercell import Supercell
 
 
@@ -16,8 +17,24 @@ def load(filename: str | pathlib.Path,
     Extension:
       .spw: loads as pySpinW internal format
       .cif: loads as Crystallographic Interchange Format
+
+    For TB2J, providing a directory containing `tb2j.pickle` and `exchange.out`
     """
-    filename_string = str(filename)
+    # Check for TB2J
+    filename_path = pathlib.Path(filename)
+
+    if filename_path.is_dir():
+
+        pickle = filename_path / "tb2j.pickle"
+        if pickle.exists():
+            return load_tb2j(pickle)
+
+        out = filename_path / "exchange.out"
+        if out.exists():
+            return load_tb2j(out)
+
+    # Extension based
+    filename_string = str(filename_path.name)
 
     if filename_string.lower().endswith(".spw"):
         return load_spw(filename)

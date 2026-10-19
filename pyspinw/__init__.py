@@ -63,7 +63,7 @@ __all__ = [
     "InDirectionFilter",
     "BiDirectionFilter",
 
-    # Loading and Saving  
+    # Loading and Saving
     'load_tb2j',
     'load_cif',
     'load_spw',
