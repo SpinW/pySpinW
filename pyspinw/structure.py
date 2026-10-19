@@ -14,6 +14,7 @@ from pyspinw.site import LatticeSite
 from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell, DirectSupercell
+from pyspinw.symmetry.system import Triclinic
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 from pyspinw.util import connected_components, arraylike_equality, IncrementalPointHistogram
@@ -96,7 +97,8 @@ class Structure(SPWSerialisable):
                                  f"requires lattice type {spacegroup.lattice_system.name}")
 
             # Check that the unit cell fulfils all the constraints of the unit cell
-            if show_unit_cell_warning:
+            #  (every cell is a valid triclinic cell, so there is nothing to warn about for P1, the default)
+            if show_unit_cell_warning and not isinstance(spacegroup.lattice_system, Triclinic):
                 violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
                 if violations:
                     logger.warning(f"{unit_cell} violates the conditions {violations} for {spacegroup.lattice_system}"
