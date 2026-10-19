@@ -31,7 +31,7 @@ class Structure(SPWSerialisable):
                  spacegroup: SpaceGroup | None = None,
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
-                 show_unit_cell_warning: bool=True,
+                 show_unit_cell_warning: bool=False,
                  assume_symmetric_sites_are_provided: bool=False,
                  cooerce_spin_data_to_match_supercell: bool=True,
                  symmetric_sites: list[LatticeSite] | None = None):
@@ -272,14 +272,32 @@ class Structure(SPWSerialisable):
     def _without_nonmagnetic_with_removed_uids(self) -> tuple["Structure", set[int]]:
         """ Get a copy of the structure without magnetic sites, along with a list of uids for the removed sites """
         new_sites: list[LatticeSite] = []
-        excluded_uids: set[int] = set()
+
+        # Get rid of the nonmagnetic atoms from input sites
+        new_input_sites: list[LatticeSite] = []
         for site in self._input_sites:
+            if not np.allclose(site.spin_data, 0.0):
+                new_input_sites.append(site)
+
+        # Get rid of them from all the sites
+        excluded_uids: set[int] = set()
+        for site in self._sites:
             if np.allclose(site.spin_data, 0.0):
                 excluded_uids.add(site.unique_id)
             else:
                 new_sites.append(site)
 
-        return Structure(new_sites, self.unit_cell, self.spacegroup, self.supercell), excluded_uids
+        new_structure = Structure(
+            new_input_sites,
+            self._unit_cell,
+            self._spacegroup,
+            self._supercell,
+            show_unit_cell_warning = False,
+            assume_symmetric_sites_are_provided=True,
+            symmetric_sites = new_sites
+            )
+
+        return new_structure, excluded_uids
 
     def without_nonmagnetic(self) -> "Structure":
         """ Get a copy of this structure with non-magnetic sites removed"""
