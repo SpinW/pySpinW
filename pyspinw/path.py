@@ -368,6 +368,8 @@ class EmpiricalPath1D(Path1DBase):
         if len(self._q_values.shape) != 1:
             raise ValueError("Expected q_values to be a 1D array")
 
+        self.n_points = len(self._q_values)
+
     def q_values(self):
         """Get the q values."""
         return self._q_values
