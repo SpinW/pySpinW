@@ -345,7 +345,7 @@ class Hamiltonian(SPWSerialisable):
         structure = Structure(
             sites=[site for site in site_mapping.values()],
             unit_cell=bigger_cell,
-            spacegroupx=self.structure.spacegroup.for_supercell(self.structure.supercell),
+            spacegroup=self.structure.spacegroup.for_supercell(self.structure.supercell),
             supercell=TiledSupercell(scaling=(1, 1, 1)),
             show_unit_cell_warning=False,
         )
@@ -1161,7 +1161,7 @@ class Hamiltonian(SPWSerialisable):
         # Structure
         new_structure = Structure(new_sites,
                                   unit_cell=self.structure.unit_cell,
-                                  spacegroupx=self.structure.spacegroup,
+                                  spacegroup=self.structure.spacegroup,
                                   supercell=self.structure.supercell)
 
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)

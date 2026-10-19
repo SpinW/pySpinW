@@ -17,7 +17,7 @@ def test_trivial_supercell():
 
     supercell = TiledSupercell((1, 2, 3))
 
-    structure = Structure([x], unit_cell=unit_cell, spacegroupx=None, supercell=supercell)
+    structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
 
     expanded = structure.expand()
 
@@ -37,7 +37,7 @@ def test_transform_supercell(n):
 
     supercell = TransformationSupercell([(propagation_vector, RotationTransform([0,0,1]))])
 
-    structure = Structure([x], unit_cell=unit_cell, spacegroupx=None, supercell=supercell)
+    structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
 
     expanded = structure.expand()
 
@@ -58,7 +58,7 @@ def test_summation_supercell(n):
 
     supercell = SummationSupercell([propagation_vector_1, propagation_vector_2])
 
-    structure = Structure([x], unit_cell=unit_cell, spacegroupx=None, supercell=supercell)
+    structure = Structure([x], unit_cell=unit_cell, spacegroup=None, supercell=supercell)
 
     expanded = structure.expand()
 

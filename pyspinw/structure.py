@@ -264,7 +264,7 @@ class Structure(SPWSerialisable):
         return Structure(
             sites=[site for site in mapping.values()],
             unit_cell=cell,
-            spacegroupx=self.spacegroup.for_supercell(self.supercell),
+            spacegroup=self.spacegroup.for_supercell(self.supercell),
             supercell=TiledSupercell(scaling=(1, 1, 1))
         )
 
@@ -357,7 +357,7 @@ class Structure(SPWSerialisable):
 
         new_sites = [site for site in self._sites if site.metadata.element not in elements]
 
-        return Structure(new_sites, unit_cell=self.unit_cell, spacegroupx=self.spacegroup, supercell=self.supercell)
+        return Structure(new_sites, unit_cell=self.unit_cell, spacegroup=self.spacegroup, supercell=self.supercell)
 
 
     @property
@@ -640,7 +640,7 @@ class Structure(SPWSerialisable):
     def _deserialise(json: dict, context: SPWDeserialisationContext):
         return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["input_sites"]],
                          unit_cell=UnitCell._deserialise(json["unit_cell"], context),
-                         spacegroupx=SpaceGroup._deserialise(json["spacegroup"], context),
+                         spacegroup=SpaceGroup._deserialise(json["spacegroup"], context),
                          supercell=Supercell._deserialise(json["supercell"], context),
                          skip_checks= True,
                          show_unit_cell_warning=False,

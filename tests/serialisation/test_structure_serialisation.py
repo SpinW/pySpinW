@@ -33,7 +33,7 @@ def test_structure_serialisation(spacegroup, supercell, unit_cell):
 
     # Need to skip checks on inputs, because we've been a bit careless about whether the structure is actually valid
     # Shouldn't be a problem for serialisation testing though.
-    structure = Structure(sites, unit_cell=unit_cell, spacegroupx=spacegroup, supercell=supercell, skip_checks=True)
+    structure = Structure(sites, unit_cell=unit_cell, spacegroup=spacegroup, supercell=supercell, skip_checks=True)
 
     json = structure.serialise()
 
