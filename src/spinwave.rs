@@ -195,6 +195,8 @@ fn calc_spin_hamiltonian(
     // create A and B matrices for the Hamiltonian
 
     let mut A = Mat::<C64>::zeros(n_sites, n_sites);
+    // A(-q), which differs from A(q) if the model is non-reciprocal
+    let mut A_minus_q = Mat::<C64>::zeros(n_sites, n_sites);
     let mut B = Mat::<C64>::zeros(n_sites, n_sites);
 
     for c in couplings {
@@ -203,10 +205,12 @@ fn calc_spin_hamiltonian(
 
         // contributions to A and B from this coupling
         A[(i, j)] += (z[i].transpose() * c.matrix.as_ref() * z[j].conjugate()) * phase_factor;
+        A_minus_q[(i, j)] += (z[i].transpose() * c.matrix.as_ref() * z[j].conjugate()) * phase_factor.conj();
         B[(i, j)] += (z[i].transpose() * c.matrix.as_ref() * z[j].as_ref()) * phase_factor;
     }
 
     A = component_mul(&A, spin_coefficients);
+    A_minus_q = component_mul(&A_minus_q, spin_coefficients);
     B = component_mul(&B, spin_coefficients);
 
     // slightly convoluted way to add to the diagonal of A because adding a Diag to a Mat
@@ -214,14 +218,17 @@ fn calc_spin_hamiltonian(
     if let Some(Az_vals) = Az {
         for i in 0..n_sites {
             A[(i, i)] += Az_vals[i];
+            A_minus_q[(i, i)] += Az_vals[i];
         }
     }
 
     let A_minus_C: Mat<C64> = A.clone() - C;
-    let A_conj_minus_C: Mat<C64> = A.adjoint() - C;
+    // The lower right block acts on the b_{-q} bosons, so it is A(-q)^T, not A(q)^dagger;
+    // its eigenvalues give the energy-gain branch at q as -E(-q) (detailed balance)
+    let A_minus_q_T_minus_C: Mat<C64> = A_minus_q.transpose() - C;
     let B_adj = B.adjoint().to_owned();
 
-    block_matrix(&A_minus_C, &B, &B_adj, &A_conj_minus_C)
+    block_matrix(&A_minus_C, &B, &B_adj, &A_minus_q_T_minus_C)
 }
 
 /// Calculate energies and correlation S'^{alpha, beta} for a set of q-vectors.
