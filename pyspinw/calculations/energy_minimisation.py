@@ -8,6 +8,7 @@ import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.checks import check_sizes
+from pyspinw.constants import MU_B
 from pyspinw.symmetry.supercell import CommensurateSupercell
 from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 
@@ -190,9 +191,9 @@ class ClassicalEnergyMinimisation:
             self.site_to_anisotropy[anisotropy.site.unique_id].append(anisotropy)
 
         # Magnetic field contributions
-        self.field_contribution_vector = [] # Vectors v such that E_field = v.S = B g S
+        self.field_contribution_vector = [] # Vectors v such that E_field = v.S = mu_B B g S, B in tesla
         for site in self.sites:
-            self.field_contribution_vector.append(field @ site.g)
+            self.field_contribution_vector.append(MU_B * field @ site.g)
 
         # Get the derived quantities
         self.spin_data = np.array([site.spin_data for site in self.sites])

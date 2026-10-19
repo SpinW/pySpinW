@@ -4,6 +4,7 @@ import numpy as np
 
 
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation, Free, Fixed, Planar
+from pyspinw.constants import MU_B
 from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
@@ -360,7 +361,8 @@ def test_anisotropies_planar(axis):
     assert np.isclose(np.dot(axis, minimiser.spin_data[0, 0, :]), 0, atol=1e-4) # Should be in plane perpendicular to axis
 
 rng = np.random.default_rng(118)
-test_fields = rng.normal(0,1, (20, 3))
+# Fields in tesla, scaled so that the Zeeman energies are of order 1 meV
+test_fields = rng.normal(0,1, (20, 3)) / MU_B
 
 @pytest.mark.parametrize("field", test_fields)
 def test_field_free(field):

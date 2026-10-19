@@ -411,7 +411,7 @@ class Hamiltonian(SPWSerialisable):
         """Calculate the energy levels and intensities of the system for the given q-vectors.
 
         :param path: *required* Path along which to calculate
-        :param field: Optional field direction
+        :param field: Optional magnetic field vector, in tesla
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
@@ -440,7 +440,7 @@ class Hamiltonian(SPWSerialisable):
         ** Does not remove nonmagnetic sites **
 
         :param q_vectors: *required* An array of q-vectors
-        :param field: Optional field direction
+        :param field: Optional magnetic field vector, in tesla
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
@@ -478,7 +478,7 @@ class Hamiltonian(SPWSerialisable):
         """Performs a spin wave calculation of the system for the given q-point path.
 
         :param path: *required* Path along which to calculate
-        :param field: Optional field direction
+        :param field: Optional magnetic field vector, in tesla
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
@@ -516,7 +516,7 @@ class Hamiltonian(SPWSerialisable):
         ** Does not remove nonmagnetic sites **
 
         :param q_vectors: *required* An array of q-vectors
-        :param field: Optional field direction
+        :param field: Optional magnetic field vector, in tesla
         :param use_rust: Whether to use Rust or Python calculator (default: True)
         :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
         :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
@@ -946,7 +946,7 @@ class Hamiltonian(SPWSerialisable):
         :param fixed: List of sites that should be ignored by the minimisation, i.e. fixed in place
         :param planar: List of sites, or (site, axis) tuples that should be constrained to a plane
         :param planar_axis: Axis to use for planar constraints if not specified explicitly, default=[0,0,1]
-        :param field: Magnetic field applied
+        :param field: Magnetic field applied, in tesla
         :param step_size: Size of step to make relative to the force, smaller values than the default might be needed
                           for systems with high energy.
         :param initial_randomisation: Option to RANDOMISE or JITTER the starting state, default JITTER, can also be NONE
