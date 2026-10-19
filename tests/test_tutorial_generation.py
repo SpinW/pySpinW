@@ -44,7 +44,6 @@ def test_tutorial_docs_build(preserve_directory, monkeypatch):
         os.path.join(
             os.path.dirname(__file__),
             '..',
-            'examples',
-            'tutorials',
+            'tools',
             'generate_tutorial_files.py'
         ), run_name="__main__")

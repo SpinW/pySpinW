@@ -62,7 +62,7 @@ class PropagationVector(SPWSerialisable):
             "i": serialise_fraction_or_builtin(self.i),
             "j": serialise_fraction_or_builtin(self.j),
             "k": serialise_fraction_or_builtin(self.k),
-            "phase": self.phase,
+            "phase": float(self.phase),
             "assured_commensurate": False
         }
 
@@ -181,6 +181,9 @@ class IdentityTransform(SupercellTransformation):
         """ Apply this transformation to a given spin (as it is the identity it does nothing to it)"""
         return spin
 
+    def __repr__(self):
+        return "IdentityTransform"
+
 class RotationTransform(SupercellTransformation):
     """ Rotation transformation in a supercell"""
 
@@ -202,6 +205,9 @@ class RotationTransform(SupercellTransformation):
         """ Apply this transformation (rotation) to a spin in a specified cell """
         angle = -2 * np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase
         return spin @ rotation_matrix(angle, self._axis)
+
+    def __repr__(self):
+        return f"RotationTransform({self._axis[0]}, {self._axis[1]}, {self._axis[2]})"
 
 transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, RotationTransform]}
 
@@ -708,8 +714,8 @@ class RotationSupercell(Supercell):
         return TransformationSupercell([(k, RotationTransform(self.perpendicular))])
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        return [{"vector": self.propagation_vector._serialise(context),
-                 "perpendicular": numpy_serialise(self.perpendicular)}]
+        return {"vector": self.propagation_vector._serialise(context),
+                 "perpendicular": numpy_serialise(self.perpendicular)}
 
     @staticmethod
     def _deserialise_supercell(json, scale, context):

@@ -6,6 +6,7 @@ magnetic structures and excitations
 
 
 from pyspinw.site import LatticeSite
+from pyspinw.sitemeta import SiteMetadata
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
 from pyspinw.anisotropy import Anisotropy, AxisMagnitudeAnisotropy
@@ -34,6 +35,8 @@ from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.units import CoordsUnits, IntensityUnits
 
 from pyspinw.cif import load_cif
+from pyspinw.serialisation import load as load_spw, save
+from pyspinw.loading import load
 
 from pyspinw.demo import demo_viewer, demo_chains
 from pyspinw.demo import run_demos as demos
@@ -41,6 +44,7 @@ from pyspinw.demo import run_demos as demos
 __all__ = [
     # site
     "LatticeSite",
+    "SiteMetadata",
 
     # anisotropy
     "Anisotropy",
@@ -59,9 +63,12 @@ __all__ = [
     "InDirectionFilter",
     "BiDirectionFilter",
 
-    # Inputs
-    'load_cif',
+    # Loading and Saving
     'load_tb2j',
+    'load_cif',
+    'load_spw',
+    'load',
+    'save',
 
     # structures / hamiltonian
     "Structure",

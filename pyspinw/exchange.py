@@ -253,7 +253,8 @@ class Exchange(SPWSerialisable):
             site_2=base.site_2,
             cell_offset=base.cell_offset,
             name=base.name,
-            exchange_matrix=numpy_deserialise(data["matrix"]))
+            exchange_matrix=numpy_deserialise(data["matrix"]),
+            metadata=base.metadata)
 
     def is_symmetric(self):
         """Return whether this is a symmetric exchange."""
@@ -559,7 +560,9 @@ class HeisenbergExchange(Exchange):
             site_2=base.site_2,
             cell_offset=base.cell_offset,
             name=base.name,
-            j = data["j"])
+            j = data["j"],
+            metadata=base.metadata
+        )
 
     def is_symmetric(self):
         """Return whether this is a symmetric exchange.
@@ -715,7 +718,8 @@ class DiagonalExchange(Exchange):
             name=base.name,
             j_x = data["j_x"],
             j_y = data["j_y"],
-            j_z = data["j_z"])
+            j_z = data["j_z"],
+            metadata=base.metadata)
 
     def is_symmetric(self):
         """Return whether this is a symmetric exchange.
@@ -829,7 +833,7 @@ class XYExchange(Exchange):
                  metadata: ExchangeMetadata | None = None):
 
         self._j = j
-        self._exchange_matrix = np.diag([j, j, 0.0], dtype=float)
+        self._exchange_matrix = np.diag(np.array([j, j, 0.0], dtype=float))
 
         super().__init__(site_1=site_1,
                          site_2=site_2,
@@ -853,7 +857,8 @@ class XYExchange(Exchange):
             site_2=base.site_2,
             cell_offset=base.cell_offset,
             name=base.name,
-            j = data["j"])
+            j = data["j"],
+            metadata=base.metadata)
 
     def is_symmetric(self):
         """Return whether this is a symmetric exchange.
@@ -994,7 +999,8 @@ class XXZExchange(Exchange):
             cell_offset=base.cell_offset,
             name=base.name,
             j_xy = data["j_xy"],
-            j_z = data["j_z"])
+            j_z = data["j_z"],
+            metadata=base.metadata)
 
 
     def updated(self,
@@ -1125,7 +1131,8 @@ class IsingExchange(Exchange):
             site_2=base.site_2,
             cell_offset=base.cell_offset,
             name=base.name,
-            j_z = data["j_z"])
+            j_z = data["j_z"],
+            metadata=base.metadata)
 
 
     def updated(self,
@@ -1274,7 +1281,8 @@ class DMExchange(Exchange):
             name=base.name,
             d_x = data["d_x"],
             d_y = data["d_y"],
-            d_z = data["d_z"])
+            d_z = data["d_z"],
+            metadata=base.metadata)
 
 
     def updated(self,

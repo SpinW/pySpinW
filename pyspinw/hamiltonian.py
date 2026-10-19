@@ -1170,7 +1170,7 @@ class Hamiltonian(SPWSerialisable):
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"magnetic_structure": self.structure._serialise(context),
                 "exchanges": [exchange._serialise(context) for exchange in self.exchanges],
-                "anisotropies": [anisotropy._serialise(context) for anisotropy in self.anisotopies]}
+                "anisotropies": [anisotropy._serialise(context) for anisotropy in self.anisotropies]}
 
     @staticmethod
     @expects_keys("magnetic_structure, exchanges, anisotropies")

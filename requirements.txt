@@ -1,7 +1,7 @@
 numpy >= 2.0.0
 ase
 PyCifRW
-spglib == 2.5.0
+spglib >= 2.7.0
 
 pyopengl
 PySide6-Essentials

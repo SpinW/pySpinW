@@ -6,6 +6,8 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 class ExchangeMetadata(SPWSerialisable):
     """ Metadata for exchanges"""
 
+    serialisation_name = "exchange_metadata"
+
     def __init__(self, color: tuple[float, float, float] | None = None):
         self.color = color
 

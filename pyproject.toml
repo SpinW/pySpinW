@@ -1,6 +1,6 @@
 [project]
-name = "spinw-python"
-requires-python = ">=3.10"
+name = "pyspinw"
+requires-python = ">=3.11"
 dynamic = ["version"]
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
@@ -28,7 +28,7 @@ dependencies = [
     "numpy>=2.0.0",
     "packaging",
     "pycifrw",
-    "spglib>2.1.0",
+    "spglib>=2.7.0",
     "scipy",
     "pyopengl>=3.1.10",
     "PySide6-Essentials",

@@ -1,0 +1,60 @@
+import pytest
+from pyspinw import LatticeSite
+
+import numpy as np
+
+from pyspinw.exchange import all_exchanges, Exchange
+
+sites = [
+    LatticeSite(0,0,1/2, 0,0,1),
+    LatticeSite(1/2,0,1/2, 2,0,1),
+    LatticeSite(0,1/2,1/2, 0,4,1),
+    LatticeSite(0,1/2,1/2, 0,0,5),
+    LatticeSite(1/2,1/2,1/2, 0,1,1),
+]
+
+
+site_pairs = [(site1, site2)
+              for index, site1 in enumerate(sites)
+              for site2 in sites[:index]]
+
+colors = [None, (1,0,0), (0.1, 0.2, 0.3)]
+
+rng = np.random.default_rng(42069)
+
+cell_offsets = [(0,0,0), (1,0,0), (1,2,3)]
+
+@pytest.mark.parametrize("pair", site_pairs)
+@pytest.mark.parametrize("exchange_class", all_exchanges)
+@pytest.mark.parametrize("cell_offset", cell_offsets)
+@pytest.mark.parametrize("color", colors)
+def test_exchanges_serialise(
+        pair: tuple[LatticeSite, LatticeSite],
+        exchange_class: type[Exchange],
+        color: tuple[float, float, float],
+        cell_offset: tuple[int, int, int]):
+
+    parameters = {parameter: rng.random() for parameter in exchange_class.parameters}
+
+    exchange = exchange_class(*pair, **parameters,
+                              name=f"{exchange_class} {pair}", color=color, cell_offset=cell_offset)
+
+    json = exchange.serialise()
+
+    deserialised = Exchange.deserialise(json)
+
+    assert isinstance(deserialised, exchange_class)
+
+    assert exchange.name == deserialised.name
+    assert exchange.metadata.color == deserialised.metadata.color
+
+    assert np.all(exchange.site_1.ijk == deserialised.site_1.ijk)
+    assert np.all(exchange.site_2.ijk == deserialised.site_2.ijk)
+
+    assert np.all(exchange.site_1.spin_data == deserialised.site_1.spin_data)
+    assert np.all(exchange.site_2.spin_data == deserialised.site_2.spin_data)
+
+    assert exchange.cell_offset == deserialised.cell_offset
+
+    for parameter in parameters:
+        assert deserialised.__dict__["_" + parameter] == parameters[parameter]

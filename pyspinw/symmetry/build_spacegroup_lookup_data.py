@@ -6,7 +6,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 
-from spglib import spglib
+import spglib
 
 from pyspinw.symmetry.settings import Setting, UniqueAxis, RhombohedralOrHexagonal, AxisPermutation
 from pyspinw.symmetry.canonise import canonise_string
