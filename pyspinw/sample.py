@@ -369,8 +369,8 @@ class Multidomain(Sample3D):
         output = []
         for transformation in self._transformations:
 
-            transformed_q = transformation @ q_vectors
-            transformed_field = None if field is None else transformation @ field
+            transformed_q = q_vectors @ transformation.T
+            transformed_field = None if field is None else field @ transformation.T
 
             output += self.hamiltonian.sorted_positive_energies(
                         transformed_q,
