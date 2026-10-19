@@ -184,7 +184,6 @@ def save(object: "SPWSerialisable", filename: str | pathlib.Path, description: s
 
 def load(filename: str | pathlib.Path):
     """ Load a pySpinW object from a file"""
-
     # Convert to string (refactoring option would be rewriting it all in path terms)
     if isinstance(filename, pathlib.Path):
         filename = str(filename)
@@ -237,8 +236,6 @@ class SPWSerialisable:
 
     def save(self, filename: str | pathlib.Path, description: str = "", add_extension: bool=True):
         """ Save this object to a file"""
-
-
         filename = pathlib.Path(filename)
 
         if add_extension and "." not in filename.name:

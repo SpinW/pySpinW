@@ -17,7 +17,6 @@ def load(filename: str | pathlib.Path,
       .spw: loads as pySpinW internal format
       .cif: loads as Crystallographic Interchange Format
     """
-
     filename_string = str(filename)
 
     if filename_string.lower().endswith(".spw"):
