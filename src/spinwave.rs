@@ -441,15 +441,15 @@ fn solve_ham_hermitian(mut sqrt_hamiltonian: Mat<C64>, n_sites: usize) -> Hamilt
 
     let eigvals: Col<C64> = eigendecomp.S().column_vector().to_owned();
 
-    // we reverse the columns of U to match the nonincreasing order of eigenvalues in sqrt_E
-    let eigvecs: MatRef<C64> = eigendecomp.U().reverse_cols();
+    // the columns of U are in the same (nondecreasing) order as eigvals and sqrt_E, as in
+    // the Python code; reversing them only gives the same T if the spectrum is +/- symmetric,
+    // which it is not for a non-reciprocal model
+    let eigvecs: MatRef<C64> = eigendecomp.U();
 
     // calculate transformation matrix for spin-spin correlation function
     // this is T = K^-1 U sqrt(E) where E is the diagonal 2 * n_sites matrix of eigenvalues
     // where the first n_sites entries are sqrt(eigval) and the remaining are sqrt(-eigval)
     // for the eigenvalues of the Hamiltonian
-    // these should be in nonincreasing order but it doesn't matter as the array comes out
-    // the same once we apply the commutation sign flips
     let mut sqrt_E = eigvals.clone();
     sqrt_E.iter_mut().for_each(|x| {
         *x = match *x {

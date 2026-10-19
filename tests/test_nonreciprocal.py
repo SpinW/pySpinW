@@ -12,6 +12,9 @@ from pyspinw import Hamiltonian, HeisenbergExchange, LatticeSite, Path, Structur
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy
 from pyspinw.exchange import DMExchange
 
+# The CI job that builds the Rust core runs only tests marked `rust`
+USE_RUST = [pytest.param(True, marks=pytest.mark.rust), False]
+
 
 def dm_chain(dm: float, hard_x: float = 0.0):
     """Ferromagnetic chain with a DM vector along the spins, optionally with a hard axis along x."""
@@ -37,7 +40,7 @@ def ends_of_path(hamiltonian: Hamiltonian, use_rust: bool):
     return energies[[0, -1]], intensities[[0, -1]]
 
 
-@pytest.mark.parametrize("use_rust", [True, False])
+@pytest.mark.parametrize("use_rust", USE_RUST)
 @pytest.mark.parametrize("hard_x, energy_plus, energy_minus, intensity", [
     # B = 0: the loss branch is right without the fix, only the gain branch moves
     (0.0, [-0.795859, 0.208073], [-0.208073, 0.795859], 0.5),
@@ -53,7 +56,7 @@ def test_gain_branch_is_minus_loss_branch_at_minus_q(use_rust, hard_x, energy_pl
     np.testing.assert_allclose(intensities, intensity, atol=2e-6)
 
 
-@pytest.mark.parametrize("use_rust", [True, False])
+@pytest.mark.parametrize("use_rust", USE_RUST)
 def test_reciprocal_model_keeps_mirrored_branches(use_rust):
     """Without DM, E(q) = E(-q), so the gain branch at q stays the mirror of the loss branch."""
     energies, intensities = ends_of_path(dm_chain(0.0), use_rust)
