@@ -34,6 +34,8 @@ from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.units import CoordsUnits, IntensityUnits
 
 from pyspinw.cif import load_cif
+from pyspinw.serialisation import load as load_spw, save
+from pyspinw.loading import load
 
 from pyspinw.demo import demo_viewer, demo_chains
 from pyspinw.demo import run_demos as demos
@@ -60,8 +62,11 @@ __all__ = [
     "InDirectionFilter",
     "BiDirectionFilter",
 
-    # CIFs
+    # Loading and Saving
     'load_cif',
+    'load_spw',
+    'load',
+    'save',
 
     # structures / hamiltonian
     "Structure",
