@@ -5,6 +5,7 @@ See notes document 004 for details.
 """
 import inspect
 import os
+import pathlib
 from fractions import Fraction
 from functools import wraps
 
@@ -177,13 +178,17 @@ def header(description: str):
         "description": description
     }
 
-def save(object: "SPWSerialisable", filename: str, description: str = "", add_extension: bool = True):
+def save(object: "SPWSerialisable", filename: str | pathlib.Path, description: str = "", add_extension: bool = True):
     """ Save a pySpinW object """
     object.save(filename, description, add_extension)
 
-def load(filename):
+def load(filename: str | pathlib.Path):
     """ Load a pySpinW object from a file"""
-    with_extension = filename + ".psw"
+    # Convert to string (refactoring option would be rewriting it all in path terms)
+    if isinstance(filename, pathlib.Path):
+        filename = str(filename)
+
+    with_extension = filename + ".spw"
 
     # Try the provided filename, if it's not there, try with extension, otherwise error
     if os.path.exists(filename) and os.path.isfile(filename):
@@ -199,7 +204,7 @@ def load(filename):
     json_data = json.loads(json_string)
 
     try:
-        serialisation_name = json["type"]
+        serialisation_name = json_data["type"]
     except Exception:
         raise ValueError("Expected to have a 'type' key")
 
@@ -229,10 +234,12 @@ class SPWSerialisable:
         }
         return json.dumps(data, indent=4, sort_keys=True)
 
-    def save(self, filename: str, description: str = "", add_extension: bool=True):
+    def save(self, filename: str | pathlib.Path, description: str = "", add_extension: bool=True):
         """ Save this object to a file"""
-        if add_extension and "." not in filename:
-            filename += ".psw"
+        filename = pathlib.Path(filename)
+
+        if add_extension and "." not in filename.name:
+            filename = filename.parent / (filename.name + ".spw")
 
         with open(filename, 'w') as file:
             file.write(self.serialise(description))

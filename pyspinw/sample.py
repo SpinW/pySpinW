@@ -35,7 +35,25 @@ class Sample(ABC, SPWSerialisable):
                  field: ArrayLike | None = None,
                  use_rust: bool=True):
 
-        return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
+        return self.hamiltonian.sorted_positive_energies(path, field=field, use_rust=use_rust)
+
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {"type": self.sample_name,
+                "data": self._sample_serialise(context)}
+
+    @staticmethod
+    @expects_keys("type,data")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return _all_samples_lookup[json["type"]]._sample_deserialise(json["data"], context)
+
+    @abstractmethod
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        """ Serialise the data for specific kind of sample """
+
+    @staticmethod
+    @abstractmethod
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        """ Deserialise the data for this kind of sample """
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"type": self.sample_name,
@@ -369,10 +387,10 @@ class Multidomain(Sample3D):
         output = []
         for transformation in self._transformations:
 
-            transformed_q = transformation @ q_vectors
+            transformed_q = q_vectors @ transformation.T
             transformed_field = None if field is None else transformation @ field
 
-            output += self.hamiltonian.sorted_positive_energies(
+            output += self.hamiltonian._sorted_positive_energies(
                         transformed_q,
                         field=transformed_field,
                         use_rust=use_rust)
@@ -598,7 +616,7 @@ class Powder(Sample1D):
         energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
 
         # Output map
-        output = np.zeros((path.n_points, n_energy_bins))
+        output = np.zeros((len(qs), n_energy_bins))
 
         if energy_stddev is not None:
             # Gausian scaling

@@ -49,3 +49,15 @@ def test_slice_padding():
     q = s.q_points()
     assert np.min(q[:,0]) == -0.1
     assert np.max(q[:,0]) == 1.1
+
+
+def test_path_labels_are_used():
+    """labels given to a path become its tick labels (issue #256)"""
+    path = Path([[0, 0, 0], [0.5, 0, 0], [0.5, 0.5, 0]], labels=["G", "X", "M"])
+    assert path.x_tick_labels() == ["G", "X", "M"]
+
+
+def test_path_labels_must_match_the_points():
+    """one label per point"""
+    with pytest.raises(ValueError):
+        Path([[0, 0, 0], [0.5, 0, 0]], labels=["G"])

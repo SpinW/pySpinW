@@ -30,5 +30,5 @@ path = Path([[-0.5,0,0], [0,0,0], [0.5,0.5,0]])
 hamiltonian.energy_plot(path, show=False)
 
 sample = Powder(hamiltonian)
-path1D = Path1D(0.1, 2.5, n_points=100)
+path1D = Path1D(0.1, 2.5, n_q=100)
 sample.show_spectrum(path1D, n_energy_bins=250)
