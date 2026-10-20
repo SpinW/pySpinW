@@ -894,7 +894,14 @@ class Hamiltonian(SPWSerialisable):
                                  field: ArrayLike | None = None,
                                  use_rust: bool = True) -> list[np.ndarray]:
         """ Return energies as series corresponding to q, sorted by energy """
-        energy, intensities = self._energies_and_intensities(path.q_points(), field=field, use_rust=use_rust)
+        return self._sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
+
+    def _sorted_positive_energies(self,
+                                  q_vectors: np.ndarray,
+                                  field: ArrayLike | None = None,
+                                  use_rust: bool = True) -> list[np.ndarray]:
+        """ Return energies as series corresponding to q, sorted by energy, for an array of q-vectors """
+        energy, intensities = self._energies_and_intensities(q_vectors, field=field, use_rust=use_rust)
 
         energy = np.array(energy)
 
