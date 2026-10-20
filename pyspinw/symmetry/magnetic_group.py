@@ -1,10 +1,12 @@
 """ Magnetic Spacegroups"""
 
+import logging
 
 from pyspinw.serialisation import SPWSerialisable
 from pyspinw.symmetry.group import SymmetryGroup, database, ExactMatch
 from pyspinw.symmetry.operations import MagneticOperation
 
+logger = logging.getLogger("MagneticSpaceGroup")
 
 class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
     """ Representation of a magnetic space group"""
@@ -20,6 +22,11 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
     def __init__(self, operations: list[MagneticOperation]):
         self.operations = operations
         self.parent_spacegroup = MagneticSpaceGroup._get_spacegroup(operations)
+
+        logger.warning("Magnetic space groups are not fully supported yet, they will not serialise correctly, "
+                       "and the symmetry checking will assume the parent spacegroup. It is recommended that"
+                       "you use the parent spacegroup (`MagneticSpaceGroup.parent_spacegroup`) instead until"
+                       "these everything is fully implemented.")
 
     def _description(self) -> str:
         """ Description string for this spacegroup, only used internally """
