@@ -35,7 +35,7 @@ class Sample(ABC, SPWSerialisable):
                  field: ArrayLike | None = None,
                  use_rust: bool=True):
 
-        return self.hamiltonian.sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
+        return self.hamiltonian.sorted_positive_energies(path, field=field, use_rust=use_rust)
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"type": self.sample_name,
@@ -369,10 +369,10 @@ class Multidomain(Sample3D):
         output = []
         for transformation in self._transformations:
 
-            transformed_q = transformation @ q_vectors
+            transformed_q = q_vectors @ transformation.T
             transformed_field = None if field is None else transformation @ field
 
-            output += self.hamiltonian.sorted_positive_energies(
+            output += self.hamiltonian._sorted_positive_energies(
                         transformed_q,
                         field=transformed_field,
                         use_rust=use_rust)
