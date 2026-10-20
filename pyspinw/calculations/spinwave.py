@@ -132,6 +132,7 @@ def _calc_spin_hamiltonian(
         Az: np.ndarray | None = None):
     """Calculate the square root of the 'Hamiltonian' h(q) for a single q-value."""
     A = np.zeros((n_sites, n_sites), dtype=complex)
+    A_minus_q = np.zeros((n_sites, n_sites), dtype=complex)  # A(-q), which differs from A(q) if non-reciprocal
     B = np.zeros((n_sites, n_sites), dtype=complex)
     z_conj = z.conj()
 
@@ -143,15 +144,20 @@ def _calc_spin_hamiltonian(
         j = coupling.index2
 
         A[i, j] += z[i, :] @ coupling.matrix @ z_conj[j, :] * phase_factor
+        A_minus_q[i, j] += z[i, :] @ coupling.matrix @ z_conj[j, :] * np.conj(phase_factor)
         B[i, j] += z[i, :] @ coupling.matrix @ z[j, :] * phase_factor
 
     A *= spin_coefficients
+    A_minus_q *= spin_coefficients
     B *= spin_coefficients
 
     if Az is not None:
         A += Az
+        A_minus_q += Az
 
-    return np.block([[A - C, B], [B.conj().T, A.conj().T - C]])
+    # The lower right block acts on the b_{-q} bosons, so it is A(-q)^T, not A(q)^dagger;
+    # its eigenvalues give the energy-gain branch at q as -E(-q) (detailed balance)
+    return np.block([[A - C, B], [B.conj().T, A_minus_q.T - C]])
 
 
 def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
