@@ -1160,9 +1160,9 @@ class Hamiltonian(SPWSerialisable):
 
         # Structure
         new_structure = Structure(new_sites,
-                                   unit_cell=self.structure.unit_cell,
-                                   spacegroup=self.structure.spacegroup,
-                                   supercell=self.structure.supercell)
+                                  unit_cell=self.structure.unit_cell,
+                                  spacegroup=self.structure.spacegroup,
+                                  supercell=self.structure.supercell)
 
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
