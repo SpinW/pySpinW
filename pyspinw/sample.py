@@ -598,7 +598,7 @@ class Powder(Sample1D):
         energy_bin_centres = 0.5 * (energy_bin_edges[1:] + energy_bin_edges[:-1])
 
         # Output map
-        output = np.zeros((path.n_points, n_energy_bins))
+        output = np.zeros((len(qs), n_energy_bins))
 
         if energy_stddev is not None:
             # Gausian scaling
