@@ -260,8 +260,9 @@ def spinwave_calculation(
     n_sites = len(rotations)
 
     # Linear algebra routines in numpy are already parallelised and usually use 4 cores
-    # for a single process, so we want to reduce contention by using fewer processes.
-    n_proc = max(int(np.floor(multiprocessing.cpu_count() / 4)), 1)
+    # for a single process, so we want to reduce contention by using fewer processes,
+    # and never more chunks than q-points, as an empty chunk cannot be concatenated with the rest
+    n_proc = max(min(int(np.floor(multiprocessing.cpu_count() / 4)), q_vectors.shape[0]), 1)
     Executor = get_Executor()
 
     with Executor() as executor:
