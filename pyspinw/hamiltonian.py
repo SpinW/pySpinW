@@ -1042,10 +1042,18 @@ class Hamiltonian(SPWSerialisable):
             new_sites.append(new_site)
             old_uid_to_new_site[old_uid] = new_site
 
-        structure = Structure(new_sites,
-                              minimiser.hamiltonian.structure.unit_cell,
-                              minimiser.hamiltonian.structure.spacegroup,
-                              minimiser.hamiltonian.structure.supercell)
+        # Convert input sites too
+        new_input_sites = [old_uid_to_new_site[site.unique_id] for site in minimiser.hamiltonian.structure._input_sites]
+
+        structure = Structure(new_input_sites,
+                 unit_cell=minimiser.hamiltonian.structure.unit_cell,
+                 spacegroup=minimiser.hamiltonian.structure.spacegroup,
+                 supercell=minimiser.hamiltonian.structure.supercell,
+                 skip_checks=False,
+                 show_unit_cell_warning=False,
+                 assume_symmetric_sites_are_provided=True,
+                 cooerce_spin_data_to_match_supercell=False,
+                 symmetric_sites=new_sites)
 
         exchanges = [exchange.updated(
             site_1=old_uid_to_new_site[exchange.site_1.unique_id],

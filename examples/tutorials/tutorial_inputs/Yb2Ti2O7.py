@@ -47,4 +47,7 @@ for exchange in extra_exchanges:
     print(exchange)
 
 symmetry_ham = Hamiltonian(structure, [base_exchange] + extra_exchanges)
-view(symmetry_ham)
+
+refined = symmetry_ham.ground_state(step_size=0.1, max_iters=2000)
+
+view(refined)
