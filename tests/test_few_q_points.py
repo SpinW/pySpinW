@@ -13,7 +13,11 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 @pytest.mark.parametrize("n_q", [1, 2, 4, 5])
 def test_python_path_with_fewer_q_points_than_processes(monkeypatch, n_q):
-    """ With 20 cores the q-points are split into 5 chunks; fewer q-points than that used to fail """
+    """ The Python path gives the Rust path's energies for as few as one q-point.
+
+    With 20 cores the Python path would use 5 worker chunks, so 1 to 4 q-points are fewer points than
+    chunks, and 5 is the case with one point per chunk.
+    """
     monkeypatch.setattr(pyspinw.calculations.spinwave.multiprocessing, "cpu_count", lambda: 20)
 
     site = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
