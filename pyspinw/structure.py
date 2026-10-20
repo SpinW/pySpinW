@@ -48,13 +48,12 @@ class Structure(SPWSerialisable):
             if not isinstance(supercell, Supercell):
                 raise TypeError("Expected `supercell` to be a subclass of `Supercell`")
 
-        spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
+        self._spacegroup = database.spacegroups[0] if spacegroup is None else spacegroup
 
         self._input_sites = sites
         self._input_uid_to_site = {site.unique_id: site for site in sites}
         self._unit_cell = unit_cell
 
-        self._spacegroup = spacegroup
         self._supercell = TiledSupercell() if supercell is None else supercell
 
         if assume_symmetric_sites_are_provided and symmetric_sites is not None:
@@ -91,16 +90,16 @@ class Structure(SPWSerialisable):
 
             # check that the unit cell is consistent with the spacegroup
 
-            if spacegroup.lattice_system.constrain(unit_cell) != unit_cell:
-                raise ValueError(f"{unit_cell} is not compatible with spacegroup {spacegroup}, "
-                                 f"requires lattice type {spacegroup.lattice_system.name}")
+            if self._spacegroup.lattice_system.constrain(unit_cell) != unit_cell:
+                raise ValueError(f"{unit_cell} is not compatible with spacegroup {self._spacegroup}, "
+                                 f"requires lattice type {self._spacegroup.lattice_system.name}")
 
             # Check that the unit cell fulfils all the constraints of the unit cell
-            if show_unit_cell_warning:
-                violations = spacegroup.lattice_system.violated_negative_constraints(unit_cell)
+            if show_unit_cell_warning and spacegroup is not None:
+                violations = self._spacegroup.lattice_system.violated_negative_constraints(unit_cell)
                 if violations:
-                    logger.warning(f"{unit_cell} violates the conditions {violations} for {spacegroup.lattice_system}"
-                                   f" used by {spacegroup}")
+                    logger.warning(f"{unit_cell} violates the conditions {violations} for "
+                                   f"{self._spacegroup.lattice_system} used by {self._spacegroup}")
 
 
 
@@ -272,14 +271,32 @@ class Structure(SPWSerialisable):
     def _without_nonmagnetic_with_removed_uids(self) -> tuple["Structure", set[int]]:
         """ Get a copy of the structure without magnetic sites, along with a list of uids for the removed sites """
         new_sites: list[LatticeSite] = []
-        excluded_uids: set[int] = set()
+
+        # Get rid of the nonmagnetic atoms from input sites
+        new_input_sites: list[LatticeSite] = []
         for site in self._input_sites:
+            if not np.allclose(site.spin_data, 0.0):
+                new_input_sites.append(site)
+
+        # Get rid of them from all the sites
+        excluded_uids: set[int] = set()
+        for site in self._sites:
             if np.allclose(site.spin_data, 0.0):
                 excluded_uids.add(site.unique_id)
             else:
                 new_sites.append(site)
 
-        return Structure(new_sites, self.unit_cell, self.spacegroup, self.supercell), excluded_uids
+        new_structure = Structure(
+            new_input_sites,
+            self._unit_cell,
+            self._spacegroup,
+            self._supercell,
+            show_unit_cell_warning = False,
+            assume_symmetric_sites_are_provided=True,
+            symmetric_sites = new_sites
+            )
+
+        return new_structure, excluded_uids
 
     def without_nonmagnetic(self) -> "Structure":
         """ Get a copy of this structure with non-magnetic sites removed"""
