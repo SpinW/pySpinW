@@ -42,6 +42,7 @@ def parse_components(components: str, rlu_to_cart: ArrayLike):
     """
     if components == 'all':
         return [], np.array([0., 0., 1.]), True
+    component_string = components
     # First determine if horizontal plane is given
     components = components.split(',', maxsplit=1)
     if len(components) > 1:
@@ -56,8 +57,14 @@ def parse_components(components: str, rlu_to_cart: ArrayLike):
         normal = np.array([0., 0., 1.])
     components = re.sub(r'[\s;]', '', components[0].lower()).replace('p', 'P').replace('m', 'M')
     rv = []
-    for comp in components.replace('+', ';+').replace('-', ';-').split(';'):
-        pt = re.match(r'([+-]*[0-9\.]*)[\*]*([PM][xyz]*)', comp).groups()
+    for comp in components.replace('+', ';+').replace('-', ';-').lstrip(';').split(';'):
+        match = re.match(r'([+-]*[0-9\.]*)[\*]*([PM][xyz]*)', comp)
+        if match is None:
+            raise ValueError(f'Could not parse polarised components string "{component_string}": expected "all", '
+                             'or a sum of terms with optional prefactors, each one of Pab (full polarisation), '
+                             'Pa (half polarisation) or Mab (projected Sab) with a, b in x, y, z, optionally '
+                             'followed by a comma and the horizontal plane, e.g. "Pxy+0.33*Pyz, [0,1,0]"')
+        pt = match.groups()
         prefac = _STRFLOATDIC[pt[0]] if pt[0] in _STRFLOATDIC.keys() else float(pt[0])
         poltyp = PolarisationType(pt[1])
         if not rv:
