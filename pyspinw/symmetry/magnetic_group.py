@@ -19,7 +19,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     def __init__(self, operations: list[MagneticOperation]):
         self.operations = operations
-        self.parent_spacegroup = self.get_spacegroup(operations)
+        self.parent_spacegroup = MagneticSpaceGroup._get_spacegroup(operations)
 
     def _description(self) -> str:
         """ Description string for this spacegroup, only used internally """
@@ -37,7 +37,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
         return self.parent_spacegroup.lattice_system
 
     @staticmethod
-    def get_spacegroup(operations):
+    def _get_spacegroup(operations):
         """ Get the spacegroup that corresponds to this magnetic group """
         space_operations = [operation.space_operation().text_form for operation in operations]
 

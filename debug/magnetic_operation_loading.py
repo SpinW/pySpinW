@@ -1,8 +1,8 @@
-from pyspinw.symmetry.magnetic_group import build_group
+from pyspinw.symmetry.magnetic_group import MagneticSpaceGroup
 from pyspinw.symmetry.operations import MagneticOperation
 
 operations_string = "x,y,z,+1; -x+1/2,y+1/2,-z+1/2,+1; -x,-y,-z,+1; x+1/2,-y+1/2,z+1/2,+1"
-operations_string = "x,y,z,+1; -x+1/2,y+1/2,-z+1/2,+1; -x,-y,-z,+1"#; x+1/2,-y+1/2,z+1/2,+1"
+#operations_string = "x,y,z,+1; -x+1/2,y+1/2,-z+1/2,+1; -x,-y,-z,+1"#; x+1/2,-y+1/2,z+1/2,+1"
 centering_string = "x,y,z,+1; x+1/2,y+1/2,z,-1"
 
 mag_ops = []
@@ -18,7 +18,7 @@ for string, output in [(operations_string, mag_ops), (centering_string, centerin
 
         output.append(op)
 
-magnetic_group = build_group(mag_ops, centering_ops)
-space_group = magnetic_group.get_spacegroup()
+magnetic_group = MagneticSpaceGroup.closure(mag_ops, centering_ops)
+space_group = magnetic_group.parent_spacegroup
 
 print(space_group)
