@@ -28,12 +28,12 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     def __repr__(self):
         """repr"""
-
         text = "; ".join([op.text_form for op in self.operations])
         return f"MagneticSpaceGroup({text})"
 
     @property
     def lattice_system(self):
+        """ Get the lattice system associated with this spacegroup """
         return self.parent_spacegroup.lattice_system
 
     @staticmethod

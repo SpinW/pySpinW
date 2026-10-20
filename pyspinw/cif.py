@@ -121,9 +121,7 @@ def load_cif(filename: str | pathlib.Path,
     raise LoadError("No entries in CIF file")
 
 def load_mcif(filename: str | pathlib.Path, entry_index: int=0, verbose: bool=False) -> Structure:
-
     """ Load a mCIF file in as a structure """
-
     cif = ReadCif(str(filename), grammar=None, permissive=True)
 
     names = [key for key in cif.keys()]

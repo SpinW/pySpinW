@@ -248,6 +248,7 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @property
     def lattice_system(self):
+        """ Get the lattice system associated with this spacegroup """
         return self._lattice_system
 
     @property
