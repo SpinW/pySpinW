@@ -55,7 +55,7 @@ two_site_hamiltonian = Hamiltonian(two_site_structure, two_site_exchanges)
 ## skip
 view(two_site_hamiltonian)
 ## image: two_site_hamiltonian.png
-## snapshot(two_site_structure, "two_site_hamiltonian.png", view_point=(0,-5,-0.5))
+## snapshot(two_site_hamiltonian, "two_site_hamiltonian.png", view_point=(0,-5,-0.5), display_options=DisplayOptions())
 
 # And plot the dispersion, here we specify the path in angstroms to make it comparable with different unit cells.
 path = Path([(0, 0, 0), (1, 0, 0)], convert_to_lattice_units_with=two_site_unit_cell)
@@ -80,7 +80,7 @@ two_site_hamiltonian.spaghetti_plot(path)
 # propagation vector in the $a$ axis ($x$), i.e. (1/2,0,0).
 
 unit_cell = UnitCell(1,1,1)
-site = LatticeSite(0.5, 0.5, 0.5, sz=1, name="S")
+site = LatticeSite(0.5, 0.5, 0.5, sz=1)
 
 supercell = rotation_supercell(directions=[(0.5, 0, 0)], axes=[(0, 1, 0)])
 
@@ -115,22 +115,19 @@ hamiltonian.spaghetti_plot(path)
 
 
 
-# We can view this too, it looks identical
-## skip
-view(hamiltonian)
-## image: one_spin_hamiltonian_2.png
-## snapshot(two_site_structure, "one_spin_hamiltonian_2.png", view_point=(0,-5,-0.5))
+## subtitle: One spin per unit cell (rotating frame)
 
 # The following generates a 2x1x1 supercell in which the spins alternate in y (period 2 rotation around z)
-structure = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
-                                   perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
+structure = generate_helical_structure(unit_cell, positions=[[1/2,1/2,1/2]], spins=[[0, 0, 1]],
+                                   perpendicular=[1,0,0], propagation_vector=[0.5, 0, 0])
 
 
-# Generate Heisenberg exchanges based on distance, this will only be in x because of the shape of the unit cell
+# Generate Heisenberg exchanges based on distance (`max_distance`) and direction (`direction_filter`)
 exchanges = generate_exchanges(sites=structure,
-                               max_distance=3.1,
+                               max_distance=1.1,
                                exchange_type=HeisenbergExchange,
-                               j=1)
+                               j=1,
+                               direction_filter=filter([1,0,0]))
 
 # Build the Hamiltonian
 hamiltonian = Hamiltonian(structure, exchanges)
@@ -147,9 +144,9 @@ hamiltonian.print_summary()
 ## skip
 view(hamiltonian)
 
-## image: structure.png
-## snapshot(hamiltonian, filename="structure.png", view_point=(-5,-5,-10),
-##          display_options=DisplayOptions(perspective=False, atom_spin_scaling=0.5))
+## image: one_site_hamiltonian_2.png
+## snapshot(hamiltonian, filename="one_site_hamiltonian_2.png", view_point=(0,-5,-0.5),
+##           display_options=DisplayOptions())
 
 # Now we can plot a spaghetti diagram, first we generate a path though the lattice
 # from $q=0$ to $1$ reciprocal lattice unit in $x$.
@@ -159,6 +156,6 @@ path = Path([[0,0,0], [1,0,0]])
 ## skip: 1
 hamiltonian.spaghetti_plot(path, scale='log')
 
-## image: spaghetti_plot.png
+## image: one_site_dispersion_2.png
 ## fig = hamiltonian.spaghetti_plot(path, scale='log', show=False)
-## fig.savefig("spaghetti_plot.png")
+## fig.savefig("one_site_dispersion_2.png")
