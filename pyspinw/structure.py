@@ -28,7 +28,7 @@ class Structure(SPWSerialisable):
     def __init__(self,
                  sites: list[LatticeSite],
                  unit_cell: UnitCell,
-                 spacegroup: SpaceGroup | None = None,
+                 spacegroup: SymmetryGroup | None = None,
                  supercell: Supercell | None = None,
                  skip_checks: bool = False,
                  show_unit_cell_warning: bool=True,
@@ -133,7 +133,7 @@ class Structure(SPWSerialisable):
         """ All the sites, including those implied by symmetry """
         site_list = self._input_sites.copy()
         for site in self._input_sites:
-            site_list += self._spacegroup.implied_sites_for(site)
+            site_list += self._spacegroup.implied_sites_for(site, self.unit_cell)
 
         # Check for collisions, if there is an input site that
         # collides with an implied site, choose the input site
@@ -513,7 +513,7 @@ class Structure(SPWSerialisable):
         """ Textual details of this structure """
         lines = []
         lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
-        lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
+        lines.append(f"Spacegroup: {self.spacegroup._description()}")
         supercell_text_data = self.supercell.text_data()
         lines.append(f"Supercell: {supercell_text_data[0]}")
         lines += ["  " + s for s in supercell_text_data[1:]]

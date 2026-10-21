@@ -55,6 +55,24 @@ class Sample(ABC, SPWSerialisable):
     def _sample_deserialise(json, context: SPWDeserialisationContext):
         """ Deserialise the data for this kind of sample """
 
+    def _serialise(self, context: SPWSerialisationContext) -> dict:
+        return {"type": self.sample_name,
+                "data": self._sample_serialise(context)}
+
+    @staticmethod
+    @expects_keys("type,data")
+    def _deserialise(json: dict, context: SPWDeserialisationContext):
+        return _all_samples_lookup[json["type"]]._sample_deserialise(json["data"], context)
+
+    @abstractmethod
+    def _sample_serialise(self, context: SPWSerialisationContext):
+        """ Serialise the data for specific kind of sample """
+
+    @staticmethod
+    @abstractmethod
+    def _sample_deserialise(json, context: SPWDeserialisationContext):
+        """ Deserialise the data for this kind of sample """
+
 class Sample3D(Sample):
     """ Sample where the direction of q matters"""
 

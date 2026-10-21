@@ -65,6 +65,20 @@ class RawUnitCell(SPWSerialisable):
 
             raise BadCellDefinition(f"{self._xyz} doesn't allow an invertible spin definition")
 
+
+        self._normalised_xyz = np.array([
+                a_vector/np.sqrt(np.sum(a_vector**2)),
+                b_vector/np.sqrt(np.sum(b_vector**2)),
+                c_vector/np.sqrt(np.sum(c_vector**2))])
+
+        try:
+            self._normalised_xyz_inv = np.linalg.inv(self._normalised_xyz)
+
+        except np.linalg.LinAlgError as e:
+
+            raise BadCellDefinition(f"{self._normalised_xyz} doesn't allow an invertible normalised form")
+
+
     # @check_sizes(points=(-1, 3))
     def lattice_units_to_cartesian(self, points: np.ndarray):
         """ Convert a list of points  from the fractional (ijk) type to cartesian (xyz) """
