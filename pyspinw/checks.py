@@ -17,15 +17,15 @@ def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
     """Decorator to check the dimensionality of a given vector
 
     Example usage:
-        check that a function has an n-by-3 vector input called `a`, and
-        a 2-by-n-by-whatever input called 'b'
+        check that a function has an n-by-3 vector input called ``a``, and
+        a 2-by-n-by-whatever input called ``b``::
 
-        @dimensionality_check(a=('n',3), b=(2,'n',-1))
-        def my_function(a, b):
-            ...
+            @dimensionality_check(a=('n',3), b=(2,'n',-1))
+            def my_function(a, b):
+                ...
 
         Limitations: can only check dimensions are the same, can't check things like whether sizes are related by
-                     some arbitrary formula.
+        some arbitrary formula.
 
     :param force_numpy: default=False, Convert the named arrays into numpy form if they are not already
     :param allow_nones: default=False, Allow None to be given for values

@@ -93,7 +93,7 @@ def batch_exchanges(sites: list[Site],
     :param sites: List of LatticeSite or ImpliedLatticeSite to find exchanges between
     :param unit_cell: Unit cell, needed for working out cartesian distances
     :param max_distance: Maximum distance to get exchanges for
-    :param naming_convention: Formatting string for the naming, see `apply_naming_convention` for details
+    :param naming_convention: Formatting string for the naming, see :func:`apply_naming_convention` for details
     :param both_directions: Exchanges in both directions
 
 

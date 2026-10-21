@@ -319,7 +319,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @property
     def constant(self):
-        """Amount of anisotropy (anisotropy constant), alias for `a`."""
+        """Amount of anisotropy (anisotropy constant), alias for ``a``."""
         return self._a
 
     @property

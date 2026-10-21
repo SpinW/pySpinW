@@ -18,7 +18,7 @@ def load(filename: str | pathlib.Path,
       .spw: loads as pySpinW internal format
       .cif: loads as Crystallographic Interchange Format
 
-    For TB2J, providing a directory containing `tb2j.pickle` and `exchange.out`
+    For TB2J, providing a directory containing ``tb2j.pickle`` and ``exchange.out``
     """
     # Check for TB2J
     filename_path = pathlib.Path(filename)

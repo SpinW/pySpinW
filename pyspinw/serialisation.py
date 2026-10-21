@@ -19,7 +19,7 @@ class SPWSerialisationError(Exception):
 
 
 def expects_keys(keystring: str, parameter_index=0):
-    """ Decorator for functions that take json dicts with given keys as the `parameter_index` place parameter"""
+    """ Decorator for functions that take json dicts with given keys as the ``parameter_index`` place parameter"""
     keys = [x.strip() for x in keystring.split(",")]
 
     def decorator(fun):
@@ -31,7 +31,7 @@ def expects_keys(keystring: str, parameter_index=0):
         if len(params) > parameter_index:
             parameter = params[parameter_index]
         else:
-            raise RuntimeError("expects_keys decorator cannot be applied with `parameter_index` out of range")
+            raise RuntimeError("expects_keys decorator cannot be applied with ``parameter_index`` out of range")
 
         @wraps(fun)
         def wrapper(*args, **kwargs):

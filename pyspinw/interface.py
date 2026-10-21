@@ -164,8 +164,8 @@ def generate_structure(unit_cell: UnitCell,
     :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
                                  spins_units is not 'xyz' and allows conversion from those units
                                  to the default used in LatticeSite.
-                                 (see `pyspinw.UnitCell.spin_fractional_to_cartesian and
-                                 `pyspinw.UnitCell.spin_cartesian_to_fractional`)
+                                 (see :meth:`~pyspinw.UnitCell.spin_fractional_to_cartesian` and
+                                 :meth:`~pyspinw.UnitCell.spin_cartesian_to_fractional`)
     """
     s = generate_sites(*_transform_site(unit_cell, positions, spins, names, magnitudes, positions_unit, spins_unit))
     if propagation_vectors is not None:
@@ -202,8 +202,8 @@ def generate_helical_structure(unit_cell: UnitCell,
     :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
                                  spins_units is not 'xyz' and allows conversion from those units
                                  to the default used in LatticeSite.
-                                 (see `pyspinw.UnitCell.spin_fractional_to_cartesian and
-                                 `pyspinw.UnitCell.spin_cartesian_to_fractional`)
+                                 (see :meth:`~pyspinw.UnitCell.spin_fractional_to_cartesian` and
+                                 :meth:`~pyspinw.UnitCell.spin_cartesian_to_fractional`)
     """
     s = generate_sites(*_transform_site(unit_cell, positions, spins, names, magnitudes, positions_unit, spins_unit))
     return Structure(s, unit_cell, supercell=RotationSupercell(perpendicular, propagation_vector))
@@ -406,7 +406,7 @@ def generate_exchanges(sites: list[Site] | Structure,
     :param bond: The bond index (If this is given the _distance parameters are ignored)
     :param max_distance: Maximum Cartesian distance (in Angstrom) at which exchanges are made
     :param min_distance: Minimum Cartesian distance (in Angstrom) at which exchanges are made
-    :param direction_filter: Supply a DirectionalityFilter object (e.g. using ``filter``)
+    :param direction_filter: Supply a DirectionalityFilter object (e.g. using :func:`filter`)
                              to only create exchanges in certain directions
     :param max_order: Maximum "order" of exchanges
     :param j: Constant for scalar valued Heisenberg exchanges (only needed for Heisenberg)
@@ -418,7 +418,7 @@ def generate_exchanges(sites: list[Site] | Structure,
     :param d_y: Constant for y component of Dzyaloshinskii-Moriya exchange (DM)
     :param d_z: Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
     :param exchange_parameters: Parameters can be supplied in a dictionary instead
-    :param naming_pattern: String used to assign names to exchanges, see ``apply_naming_convention``
+    :param naming_pattern: String used to assign names to exchanges, see :func:`~pyspinw.batch_exchanges.apply_naming_convention`
     :param color: Colour to draw the exchange with
 
     :returns: list of exchanges
@@ -491,7 +491,7 @@ def axis_anisotropies(
         a: float,
         axis: ArrayLike = [0, 0, 1],
         name: str = ""):
-    """ Create anisotropy objects with magnitude `a` in direction `axis` for each site """
+    """ Create anisotropy objects with magnitude ``a`` in direction ``axis`` for each site """
     if isinstance(sites, Structure):
         sites = sites.sites
     return [AxisMagnitudeAnisotropy(site, a, axis, name) for site in sites]

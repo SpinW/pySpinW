@@ -447,7 +447,7 @@ class Multidomain(Sample3D):
 class Twin(Multidomain):
     """Specify a twinned crystal by a twinning plane.
 
-    This is a special case of `Multidomain`, which can use completely general transformations,
+    This is a special case of :class:`Multidomain`, which can use completely general transformations,
     and have more than one "twin".
     """
 

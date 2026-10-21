@@ -953,7 +953,7 @@ class Hamiltonian(SPWSerialisable):
                      verbose: bool=True):
         """ Get the classical ground state via gradient descent
 
-        For more direct control, use the `ClassicalEnergyMinimisation` class
+        For more direct control, use the :class:`~pyspinw.calculations.energy_minimisation.ClassicalEnergyMinimisation` class
 
         :param fixed: List of sites that should be ignored by the minimisation, i.e. fixed in place
         :param planar: List of sites, or (site, axis) tuples that should be constrained to a plane
@@ -968,7 +968,7 @@ class Hamiltonian(SPWSerialisable):
         :param max_iters: Limit on the number of iterations
         :param verbose: Print information about the process to stdout
 
-        :returns: A new `Hamiltonian` with optimised spin state
+        :returns: A new :class:`Hamiltonian` with optimised spin state
         """
         #
         # Build the constraints
