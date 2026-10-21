@@ -21,7 +21,7 @@ def ferromagnetic_chain(a: float) -> Hamiltonian:
 
 def spectrum_at(a: float, q: float, max_energy: float, n_energy_bins: int) -> np.ndarray:
     """ Powder spectrum of the chain with lattice constant a at a single |q| in inverse angstrom """
-    path = Path1D(q, q, n_points=1, avoid_endpoints=False)
+    path = Path1D(q, q, n_q=1, avoid_endpoints=False)
     return Powder(ferromagnetic_chain(a)).spectrum(path, n_samples=400, min_energy=0.0, max_energy=max_energy,
                                                    n_energy_bins=n_energy_bins)[-1][0]
 
