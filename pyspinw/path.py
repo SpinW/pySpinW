@@ -44,7 +44,7 @@ class Path:
             self._labels = [f"{self._points[i, 0]:.4g}, {self._points[i, 1]:.4g}, {self._points[i, 2]:.4g}"
                             for i in range(self._n_points)]
         else:
-            if len(self._labels) != self._n_points:
+            if len(labels) != self._n_points:
                 raise ValueError("Expects same number of labels as points")
             self._labels = labels
 
@@ -322,9 +322,6 @@ class Slice:
 class Path1DBase(ABC):
     """Base class for 1D paths."""
 
-    def __init__(self):
-        self.n_points = None
-
     @abstractmethod
     def q_values(self):
         """Get the q values for this path."""
@@ -336,18 +333,18 @@ class Path1D(Path1DBase):
                  q_min: float = 0.0,
                  q_max: float = 1.0,
                  avoid_endpoints=True,
-                 n_points: int = 101):
+                 n_q: int = 101):
 
         super().__init__()
 
         self.q_min = q_min
         self.q_max = q_max
-        self.n_points = n_points
+        self._n_q = n_q
         self.avoid_endpoints = avoid_endpoints
 
     def q_values(self):
         """Get the q magnitudes."""
-        base = np.linspace(0, 1, self.n_points)
+        base = np.linspace(0, 1, self._n_q)
 
         if self.avoid_endpoints:
             base[0] = 1e-8
