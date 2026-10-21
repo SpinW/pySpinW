@@ -21,7 +21,7 @@ def run(files):
 
 
 
-    spinw_tutorial_text = "\n_This tutorial mirrors MATLAB spinW Tutorial %s_\n\n"
+    spinw_tutorial_text = "\n_This tutorial mirrors MATLAB spinW [Tutorial %d](../../../spinw/tutorials/tutorial%02d)_\n\n"
     md_placeholder_stdout = "%%%%% stdout "
     md_placeholder_stderr = "%%%%% stderr "
 
@@ -100,7 +100,7 @@ def run(files):
 
             jupyter = JupyterFile()
 
-            with open(output_target_dir / "tutorial.md", 'w') as md_file:
+            with open(output_target_dir / "index.md", 'w') as md_file:
                 with open(output_target_dir / "artifacts.py", 'w') as artifacts_file:
                     artifacts_file.write("import sys\n"
                                          "import io\n"
@@ -195,8 +195,8 @@ def run(files):
                                                     skip_lines = int(parts[1])
 
                                             elif line.startswith("reproduces"):
-                                                parts = line.split(":")
-                                                md_file.write(spinw_tutorial_text % parts[1].strip())
+                                                index = int(line.split(":")[1].strip())
+                                                md_file.write(spinw_tutorial_text % (index, index))
 
                                             elif line.startswith("capture-stdout"):
                                                 # Five hashes and a colon, all of this is hacky
@@ -311,11 +311,11 @@ def run(files):
 
             # do the replacement
             oldlines = []
-            with open(output_target_dir / "tutorial.md", 'r') as md_file:
+            with open(output_target_dir / "index.md", 'r') as md_file:
                 oldlines = md_file.readlines()
 
 
-            with open(output_target_dir / "tutorial.md", 'w') as md_file:
+            with open(output_target_dir / "index.md", 'w') as md_file:
                 for line in oldlines:
                     if line.startswith(md_placeholder_stdout):
                         block_index = int(line[len(md_placeholder_stdout):].strip())
