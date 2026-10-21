@@ -22,5 +22,6 @@ path = Path([[0,0,0], [1,0,0]])
 
 sample = Powder(hamiltonian)
 
-path1D = Path1D(0.01, 1)
+# |q| is in inverse angstrom: on this 1 angstrom chain the band top (h = 1/2) is at pi
+path1D = Path1D(0.01, 6.3)
 sample.show_spectrum(path1D, n_energy_bins=100, n_samples=500, energy_stddev=0.4)

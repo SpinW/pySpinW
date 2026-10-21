@@ -594,7 +594,12 @@ class Powder(Sample1D):
 
         chunk_size = generator.actual_n_points
         qs = path.q_values()
-        points = np.concatenate([generator.points*q for q in qs], axis=0)
+
+        # The sphere has radius |q| in inverse angstrom, which is what a powder measures, but the
+        # calculation takes lattice units: q_lu = q_xyz A^T / 2 pi, where the rows of A are the
+        # real-space lattice vectors
+        cartesian_to_lattice_units = self.hamiltonian.structure.unit_cell._xyz.T / (2 * np.pi)
+        points = np.concatenate([(generator.points * q) @ cartesian_to_lattice_units for q in qs], axis=0)
 
         energies, intensities = self.hamiltonian._energies_and_intensities(points, use_rust=use_rust)
 
