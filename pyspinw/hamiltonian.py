@@ -1340,7 +1340,7 @@ class Hamiltonian(SPWSerialisable):
                      verbose: bool=True):
         """Get the classical ground state via gradient descent.
 
-        For more direct control, use the ``ClassicalEnergyMinimisation`` class.
+        For more direct control, use the :class:`~pyspinw.calculations.energy_minimisation.ClassicalEnergyMinimisation` class
 
         Parameters
         ----------
@@ -1377,7 +1377,7 @@ class Hamiltonian(SPWSerialisable):
         Returns
         -------
         Hamiltonian
-            A new ``Hamiltonian`` with optimised spin state.
+            A new :class:`Hamiltonian` with optimised spin state.
 
         Raises
         ------
