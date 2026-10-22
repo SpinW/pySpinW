@@ -1,6 +1,6 @@
 [project]
 name = "pyspinw"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
 dynamic = ["version"]
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
@@ -13,10 +13,9 @@ keywords = [
 ]
 
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: OSI Approved :: BSD License",
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -45,7 +44,7 @@ universal2 = true  # produces arm64 + x86_64 macOS wheels
 version = {attr = "pyspinw.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/spinw/pyspinw"
+Homepage = "https://spinw.org/pyspinw"
 Repository = "https://github.com/spinw/pyspinw"
 "Bug Tracker" = "https://github.com/spinw/pyspinw/issues"
 
