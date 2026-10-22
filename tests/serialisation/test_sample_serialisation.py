@@ -6,7 +6,7 @@ from pyspinw import *
 from pyspinw.basis import angle_axis_rotation_matrix
 from pyspinw.sample import Sample
 
-site = LatticeSite(1/2,1/2,1/2, name="test_site")
+site = Site(1 / 2, 1 / 2, 1 / 2, name="test_site")
 structure = Structure([site], unit_cell=UnitCell(1,1,1))
 hamiltonian = Hamiltonian(structure, [])
 

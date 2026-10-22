@@ -8,7 +8,7 @@ at -q: the negative branch at q must be -E(-q), not -E(q). The reference values 
 import numpy as np
 import pytest
 
-from pyspinw import Hamiltonian, HeisenbergExchange, LatticeSite, Path, Structure, UnitCell
+from pyspinw import Hamiltonian, HeisenbergExchange, Site, Path, Structure, UnitCell
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy
 from pyspinw.exchange import DMExchange
 
@@ -18,7 +18,7 @@ USE_RUST = [pytest.param(True, marks=pytest.mark.rust), False]
 
 def dm_chain(dm: float, hard_x: float = 0.0):
     """Ferromagnetic chain with a DM vector along the spins, optionally with a hard axis along x."""
-    site = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
+    site = Site(0, 0, 0, 0, 0, 1, name="S")
     exchanges = [
         HeisenbergExchange(site, site, j=-1.0, cell_offset=(1, 0, 0), name="J"),
         DMExchange(site, site, 0.0, 0.0, dm, cell_offset=(1, 0, 0), name="D"),

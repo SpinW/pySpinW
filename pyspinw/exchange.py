@@ -9,7 +9,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.exchangemetadata import ExchangeMetadata
 from pyspinw.serialisation import SPWSerialisationContext, SPWSerialisable, numpy_serialise, \
     expects_keys, numpy_deserialise, SPWDeserialisationContext
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
@@ -27,8 +27,8 @@ class ExchangeBaseDeserialisation:
     """Hold basic properties of an exchange term."""
 
     name: str
-    site_1: LatticeSite
-    site_2: LatticeSite
+    site_1: Site
+    site_2: Site
     cell_offset: CellOffset
     metadata: ExchangeMetadata
 
@@ -38,9 +38,9 @@ class Exchange(SPWSerialisable):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         First lattice site in the exchange term.
-    site_2 : LatticeSite
+    site_2 : Site
         Second lattice site in the exchange term.
     cell_offset : CellOffsetCoercible
         Offset between the unit cells containing the two sites.
@@ -58,8 +58,8 @@ class Exchange(SPWSerialisable):
 
     @check_sizes(exchange_matrix=(3,3))
     def __init__(self,
-                 site_1: LatticeSite,
-                 site_2: LatticeSite,
+                 site_1: Site,
+                 site_2: Site,
                  cell_offset: CellOffsetCoercible,
                  exchange_matrix: np.ndarray,
                  name: str = "",
@@ -183,8 +183,8 @@ class Exchange(SPWSerialisable):
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
     def updated(self,
-                site_1 :LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1 : Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 exchange_matrix: np.ndarray | None = None,
@@ -219,8 +219,8 @@ class Exchange(SPWSerialisable):
     def _base_deserialisation(json, context: SPWSerialisationContext):
         return ExchangeBaseDeserialisation(
             name=json["name"],
-            site_1=LatticeSite._deserialise(json["site_1"], context),
-            site_2=LatticeSite._deserialise(json["site_2"], context),
+            site_1=Site._deserialise(json["site_1"], context),
+            site_2=Site._deserialise(json["site_2"], context),
             cell_offset=CellOffset._deserialise(json["cell_offset"], context),
             metadata=ExchangeMetadata._deserialise(json["metadata"], context)
         )
@@ -325,8 +325,8 @@ class Exchange(SPWSerialisable):
 
     def symmetry_copy(self,
                       structure: "Structure",
-                      site_1: LatticeSite,
-                      site_2: LatticeSite,
+                      site_1: Site,
+                      site_2: Site,
                       cell_offset: CellOffsetCoercible = (0,0,0)) -> "Exchange":
         """ Copy this exchange using symmetry operations """
         # We want to copy the exchange under symmetry operations
@@ -380,7 +380,7 @@ class Exchange(SPWSerialisable):
         site_2_related = structure.symmetry_related(self.site_2)
 
         # Go through all possible pairs, and see if they have any symmetry operations relating them
-        symmetry_related: list[tuple[LatticeSite, LatticeSite, list[SpaceOperation]]] = []
+        symmetry_related: list[tuple[Site, Site, list[SpaceOperation]]] = []
         for site_1, site_1_ops in site_1_related:
             for site_2, site_2_ops in site_2_related:
                 shared_ops = site_1_ops.intersection(site_2_ops)
@@ -500,9 +500,9 @@ class HeisenbergExchange(Exchange):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2 : LatticeSite
+    site_2 : Site
         Lattice site associated with :math:`\mathbf{S}_j`.
     j : float
         Exchange coefficient, :math:`J_{ij}`.
@@ -522,7 +522,7 @@ class HeisenbergExchange(Exchange):
     short_string = "J"
 
 
-    def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
+    def __init__(self, site_1: Site, site_2: Site,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
                  name: str="",
@@ -572,8 +572,8 @@ class HeisenbergExchange(Exchange):
         return True
 
     def updated(self,
-                site_1 :LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1 : Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j: float | None = None,
@@ -636,9 +636,9 @@ class DiagonalExchange(Exchange):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2 : LatticeSite
+    site_2 : Site
         Lattice site associated with :math:`\mathbf{S}_j`.
     j_x : float
         Scalar exchange coefficient for the x component, :math:`J^{xx}_{ij}`.
@@ -661,7 +661,7 @@ class DiagonalExchange(Exchange):
     parameter_defaults = [1.0, 1.0, 1.0]
     short_string = "J"
 
-    def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
+    def __init__(self, site_1: Site, site_2: Site,
                  j_x: float, j_y: float, j_z: float,
                  cell_offset: CellOffsetCoercible = None,
                  name: str="",
@@ -729,8 +729,8 @@ class DiagonalExchange(Exchange):
         return True
 
     def updated(self,
-                site_1 :LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1 : Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j_x: float | None = None,
@@ -798,9 +798,9 @@ class XYExchange(Exchange):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2 : LatticeSite
+    site_2 : Site
         Lattice site associated with :math:`\mathbf{S}_j`.
     j : float
         Exchange coefficient for the x and y components, :math:`J_{ij}`.
@@ -825,7 +825,7 @@ class XYExchange(Exchange):
         """Exchange constant for x and y."""
         return self._j
 
-    def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
+    def __init__(self, site_1: Site, site_2: Site,
                  j: float,
                  cell_offset: CellOffsetCoercible = None,
                  name: str="",
@@ -868,8 +868,8 @@ class XYExchange(Exchange):
         return True
 
     def updated(self,
-                site_1: LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1: Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j: float | None = None,
@@ -927,9 +927,9 @@ class XXZExchange(Exchange):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2 : LatticeSite
+    site_2 : Site
         Lattice site associated with :math:`\mathbf{S}_j`.
     j_xy : float
         Exchange coefficient for the x and y components, :math:`J_{xy}`.
@@ -950,7 +950,7 @@ class XXZExchange(Exchange):
     parameter_defaults = [1.0, 1.0]
     short_string = "J"
 
-    def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
+    def __init__(self, site_1: Site, site_2: Site,
                  j_xy: float, j_z: float,
                  cell_offset: CellOffsetCoercible = None,
                  name: str="",
@@ -1004,8 +1004,8 @@ class XXZExchange(Exchange):
 
 
     def updated(self,
-                site_1: LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1: Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j_xy: float | None = None,
@@ -1073,9 +1073,9 @@ class IsingExchange(Exchange):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2 : LatticeSite
+    site_2 : Site
         Lattice site associated with :math:`\mathbf{S}_j`.
     j_z : float
         Exchange coefficient for the z component, :math:`J_{ij}`.
@@ -1094,7 +1094,7 @@ class IsingExchange(Exchange):
     parameter_defaults = [1.0]
     short_string = "J"
 
-    def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
+    def __init__(self, site_1: Site, site_2: Site,
                  j_z: float,
                  cell_offset: CellOffsetCoercible = None,
                  name: str="",
@@ -1136,8 +1136,8 @@ class IsingExchange(Exchange):
 
 
     def updated(self,
-                site_1: LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1: Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 j_z: float | None = None,
@@ -1200,9 +1200,9 @@ class DMExchange(Exchange):
 
     Parameters
     ----------
-    site_1 : LatticeSite
+    site_1 : Site
         Lattice site associated with :math:`\mathbf{S}_i`.
-    site_2 : LatticeSite
+    site_2 : Site
         Lattice site associated with :math:`\mathbf{S}_j`.
     d_x : float
         x component of the D vector, :math:`\mathbf{D}^x_{ij}`.
@@ -1226,7 +1226,7 @@ class DMExchange(Exchange):
     short_string = "DM"
 
 
-    def __init__(self, site_1: LatticeSite, site_2: LatticeSite,
+    def __init__(self, site_1: Site, site_2: Site,
                  d_x: float, d_y: float, d_z: float,
                  cell_offset: CellOffsetCoercible = None,
                  name: str="",
@@ -1286,8 +1286,8 @@ class DMExchange(Exchange):
 
 
     def updated(self,
-                site_1: LatticeSite | None = None,
-                site_2: LatticeSite | None = None,
+                site_1: Site | None = None,
+                site_2: Site | None = None,
                 cell_offset: CellOffset | None = None,
                 name: str | None = None,
                 d_x: float | None = None,

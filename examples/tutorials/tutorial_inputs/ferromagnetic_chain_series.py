@@ -4,14 +4,14 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges, filter
 from pyspinw.path import Path
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
 
 
 unit_cell = UnitCell(1,1,1)
 
-only_site = LatticeSite(0, 0, 0, 0,0,1, name="X")
+only_site = Site(0, 0, 0, 0, 0, 1, name="X")
 
 s = Structure([only_site], unit_cell=unit_cell)
 

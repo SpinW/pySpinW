@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 
 from pyspinw.exchange import Exchange
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 
 

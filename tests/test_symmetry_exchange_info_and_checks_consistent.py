@@ -5,7 +5,7 @@ import pytest
 
 import numpy as np
 
-from pyspinw import Structure, LatticeSite, Anisotropy
+from pyspinw import Structure, Site, Anisotropy
 from symmetry.symmetry_info_test_cases import cases
 
 test_list = [(structure, site)
@@ -16,7 +16,7 @@ rng = np.random.default_rng(667)
 
 @pytest.mark.parametrize("structure, site", test_list, ids=[f"{x[1].name}" for x in test_list])
 def test_anisotropy_info_and_checks_consistent_positive_results(
-        structure: Structure, site: LatticeSite):
+        structure: Structure, site: Site):
     """ Generate random values that satisfy the constraints, and check that the check method thinks they're good"""
 
     anisotropy_constraints = structure.anisotropy_constraints(site, do_print=False)
@@ -68,7 +68,7 @@ def test_anisotropy_info_and_checks_consistent_positive_results(
 
 @pytest.mark.parametrize("structure, site", test_list, ids=[f"{x[1].name}" for x in test_list])
 def test_anisotropy_info_and_checks_consistent_negative_results_zeros(
-        structure: Structure, site: LatticeSite):
+        structure: Structure, site: Site):
     """ Generate random values that don't satisfy the constraints by having non-zero values where there should be zeros
 
     Check that the check is false!
@@ -135,7 +135,7 @@ def test_anisotropy_info_and_checks_consistent_negative_results_zeros(
 
 @pytest.mark.parametrize("structure, site", test_list, ids=[f"{x[1].name}" for x in test_list])
 def test_anisotropy_info_and_checks_consistent_negative_results_break_equality(
-        structure: Structure, site: LatticeSite):
+        structure: Structure, site: Site):
     """ Generate random values that don't satisfy the constraints by having different values where they should be same
 
     Check that the check is false!

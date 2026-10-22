@@ -7,9 +7,9 @@ from pyspinw import *
 
 unit_cell = UnitCell(6,6,5, gamma=120)
 
-x = LatticeSite(0.5, 0, 0, 0, 1, 0, name="X")
-y = LatticeSite(0, 0.5, 0, 0, 1, 0, name="Y")
-z = LatticeSite(0.5, 0.5, 0, 0, 1, 0, name="Z")
+x = Site(0.5, 0, 0, 0, 1, 0, name="X")
+y = Site(0, 0.5, 0, 0, 1, 0, name="Y")
+z = Site(0.5, 0.5, 0, 0, 1, 0, name="Z")
 
 sites = [x, y, z]
 

@@ -11,7 +11,7 @@ def heisenberg_case_1():
 
     sg = get_spacegroup("p4mm")
 
-    s = LatticeSite(0.25,0.25,0.25,0,0,1, name="X")
+    s = Site(0.25, 0.25, 0.25, 0, 0, 1, name="X")
 
     structure = Structure([s], unit_cell=UnitCell(1,1,1), spacegroup=sg)
 
@@ -31,9 +31,9 @@ def heisenberg_case_2():
 
     sg = get_spacegroup("p6mm")
 
-    a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
-    b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")
-    c = LatticeSite(0, 0.2, 0, 0, 0, 1, name="c")
+    a = Site(0, 0, 0, 0, 0, 1, name="a")
+    b = Site(0.2, 0, 0, 0, 0, 1, name="b")
+    c = Site(0, 0.2, 0, 0, 0, 1, name="c")
 
     structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
 
@@ -58,7 +58,7 @@ def diagonal_case_1():
 
     sg = get_spacegroup("p4mm")
 
-    s = LatticeSite(0.25,0.25,0.25,0,0,1, name="X")
+    s = Site(0.25, 0.25, 0.25, 0, 0, 1, name="X")
 
     structure = Structure([s], unit_cell=UnitCell(1,1,1), spacegroup=sg)
 
@@ -78,9 +78,9 @@ def diagonal_case_2():
 
     sg = get_spacegroup("p6mm")
 
-    a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
-    b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")
-    c = LatticeSite(0, 0.2, 0, 0, 0, 1, name="c")
+    a = Site(0, 0, 0, 0, 0, 1, name="a")
+    b = Site(0.2, 0, 0, 0, 0, 1, name="b")
+    c = Site(0, 0.2, 0, 0, 0, 1, name="c")
 
     structure = Structure([a, b, c], unit_cell=UnitCell(1, 1, 1, gamma=120), spacegroup=sg)
 

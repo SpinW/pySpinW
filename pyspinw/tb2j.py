@@ -7,7 +7,7 @@ import spglib
 import pathlib
 from numpy._typing import ArrayLike
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.structure import Structure
 from pyspinw.hamiltonian import Hamiltonian
@@ -182,7 +182,7 @@ class TB2J_Input:
             return np.array([[0, dv[2], dv[1]], [-dv[2], 0, dv[0]], [-dv[1], -dv[0], 0]])
         exchanges = []
         if self.noncolinear:
-            s = {n:LatticeSite(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
+            s = {n:Site(*tuple(p), *tuple(m), name=n) for p, m, n in zip(pos, moms, self.atoms)}
             for i1, i2 in idx:
                 p, j, v = self.j_pos[i1], (self.j_iso[i1] + self.j_iso[i2]) / 2., ijvec[i1]
                 ani, dm = (self.j_ani[i1] + self.j_ani[i2]) / 2., (self.j_dmi[i1] + self.j_dmi[i2]) / 2.
@@ -190,7 +190,7 @@ class TB2J_Input:
                 if np.linalg.norm(exch_mat) > tolerances.EXCHANGE_ORDER_THRESHOLD:
                     exchanges.append(Exchange(s[p[0]], s[p[1]], v, exch_mat / jf[f'{p[0]}{p[1]}']))
         else:
-            s = {n:LatticeSite(p[0], p[1], p[2], 0, 0, m, name=n) for p, m, n in zip(pos, moms, self.atoms)}
+            s = {n:Site(p[0], p[1], p[2], 0, 0, m, name=n) for p, m, n in zip(pos, moms, self.atoms)}
             for i1, i2 in idx:
                 p, j, v = self.j_pos[i1], (self.j_iso[i1] + self.j_iso[i2]) / 2., ijvec[i1]
                 if abs(j) > tolerances.EXCHANGE_ORDER_THRESHOLD:

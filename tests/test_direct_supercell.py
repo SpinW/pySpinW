@@ -25,7 +25,7 @@ def test_direct_supercell_manual_spin_setting(create_structure_first, input_type
         return output.reshape(-1)
 
 
-    site = LatticeSite(1/2,1/2,1/2,1,2,3)
+    site = Site(1 / 2, 1 / 2, 1 / 2, 1, 2, 3)
 
     should_be_changed = bool_indices(slices)
 
@@ -68,7 +68,7 @@ def test_direct_supercell_spin_setting_correctness_by_expanding():
     size = 2, 3, 5
     supercell = DirectSupercell(*size)
 
-    site = LatticeSite(0,0,0)
+    site = Site(0, 0, 0)
     structure = Structure([site], UnitCell(1,1,1), supercell=supercell)
 
     for cell in supercell.cells():
@@ -90,7 +90,7 @@ def test_direct_supercell_spins_are_optimisable():
     size = 2, 3, 5
     supercell = DirectSupercell(*size)
 
-    site = LatticeSite(1/2,1/2,1/2)
+    site = Site(1 / 2, 1 / 2, 1 / 2)
     structure = Structure([site], UnitCell(1, 1, 1), supercell=supercell)
 
     supercell.spins_for(site)[:,:,:] = rng.normal(size=size + (3,)).reshape(-1, 3)

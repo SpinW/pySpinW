@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TransformationSupercell, CommensuratePropagationVector, RotationTransform, \
@@ -13,7 +13,7 @@ def test_trivial_supercell():
     """ Test that trivial supercell works as it should """
     unit_cell = UnitCell(1, 1, 1)
 
-    x = LatticeSite(0, 0, 0, 1, 0, 0, name="X")
+    x = Site(0, 0, 0, 1, 0, 0, name="X")
 
     supercell = TiledSupercell((1, 2, 3))
 
@@ -31,7 +31,7 @@ def test_transform_supercell(n):
     """ Check that transformation supercell works as it should """
     unit_cell = UnitCell(1,1,1)
 
-    x = LatticeSite(0,0,0,1,0,0, name="X")
+    x = Site(0, 0, 0, 1, 0, 0, name="X")
 
     propagation_vector = CommensuratePropagationVector(0,0,1/n)
 
@@ -51,7 +51,7 @@ def test_summation_supercell(n):
     """ Check that transformation supercell works as it should """
     unit_cell = UnitCell(1,1,1)
 
-    x = LatticeSite(0, 0, 0, supercell_spins=[[1, 0, 0], [0, 1, 0]], name="X")
+    x = Site(0, 0, 0, supercell_spins=[[1, 0, 0], [0, 1, 0]], name="X")
 
     propagation_vector_1 = CommensuratePropagationVector(0,0, 1/n) # Cosine
     propagation_vector_2 = CommensuratePropagationVector(0,0, 1/n, phase=np.pi/2) # -Sine
@@ -69,7 +69,7 @@ def test_summation_supercell(n):
 
 def test_antiferromagnet_chain():
     k = CommensuratePropagationVector(i=1/2, j=1, k=1)
-    x = LatticeSite(0, 0, 0, 0, 1, 0, name="X")
+    x = Site(0, 0, 0, 0, 1, 0, name="X")
     delta = CellOffset(1, 0, 0)
 
     supercell = SummationSupercell(propagation_vectors=[k])
@@ -80,7 +80,7 @@ def test_antiferromagnet_chain():
 
 def test_triangular_antiferromagnet():
     k = CommensuratePropagationVector(i=1/3, j=1, k=1)
-    x = LatticeSite(0, 0, 0, 0, 1, 0, name="X")
+    x = Site(0, 0, 0, 0, 1, 0, name="X")
     delta = CellOffset(1, 0, 0)
     rotmat = RotationTransform(axis=[0, 0, 1])
 

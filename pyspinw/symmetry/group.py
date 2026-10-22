@@ -12,7 +12,7 @@ from numpy._typing import ArrayLike
 
 from pyspinw.cell_offsets import CellOffsetCoercible, CellOffset
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import Site, ImpliedSite
 from pyspinw.symmetry.canonise import canonise_string
 from pyspinw.symmetry.spacegroup_lookup import canonical_aliases, canonical_to_formatted, preferred_names
 
@@ -30,7 +30,7 @@ class SymmetryGroup(ABC):
     """ Base class for symmetry group and magnetic symmetry group """
 
     @abstractmethod
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+    def implied_sites_for(self, site: Site) -> list[ImpliedSite]:
         """ Find all the sites that are required by symmetry by the input site """
 
 
@@ -50,7 +50,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
         """repr"""
         return f"MagneticSpaceGroup({self.number}, {self.symbol})"
 
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+    def implied_sites_for(self, site: Site) -> list[ImpliedSite]:
         """ Find "duplicate" sites of a given site """
         coordinates = site.values.reshape(1, -1) % 1
 
@@ -76,7 +76,7 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
         new_sites = []
         for i, ijkm in enumerate(new_coordinates):
-            new_site = ImpliedLatticeSite.from_coordinates(
+            new_site = ImpliedSite.from_coordinates(
                 coordinates=ijkm.reshape(-1),
                 parent_site=site,
                 name=site.name + f" [{i+1}]")
@@ -131,7 +131,7 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
         """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
         return database.spacegroup_by_name("p1") # TODO: Implement properly
 
-    def implied_sites_for(self, site: LatticeSite) -> list[ImpliedLatticeSite]:
+    def implied_sites_for(self, site: Site) -> list[ImpliedSite]:
         """ Find "duplicate" sites of a given site """
         coordinates = site.ijk.reshape(1, -1) % 1
 
@@ -165,7 +165,7 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
             #     name=site.name + f" [{i+1}]"
             #     )
 
-            new_site = ImpliedLatticeSite(
+            new_site = ImpliedSite(
                 parent_site=site,
                 i=coordinates[0][0],
                 j=coordinates[0][1],
@@ -180,8 +180,8 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
         return new_sites
 
     def operations_between_sites(self,
-                                 site_1: "LatticeSite",
-                                 site_2: "LatticeSite",
+                                 site_1: "Site",
+                                 site_2: "Site",
                                  offset: tuple[int, int, int] = (0,0,0),
                                  tolerance=1e-10) -> list[SpaceOperation]:
         """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
@@ -193,8 +193,8 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
                                atol=tolerance)]
 
     def operations_on_single_site_pairs(self,
-                                        site_1: LatticeSite,
-                                        site_2: LatticeSite,
+                                        site_1: Site,
+                                        site_2: Site,
                                         offset: CellOffsetCoercible = (0, 0, 0)) \
             -> tuple[set[SpaceOperation], set[SpaceOperation]]:
         """ Get operations on pairs of sites """
@@ -219,8 +219,8 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
         return identity_operations, inversion_operations
 
     def operations_between_pairs(self,
-                                 pair_1: tuple[LatticeSite, LatticeSite],
-                                 pair_2: tuple[LatticeSite, LatticeSite],
+                                 pair_1: tuple[Site, Site],
+                                 pair_2: tuple[Site, Site],
                                  offset: CellOffsetCoercible = (0, 0, 0),
                                  tolerance: float=1e-10) -> set[SpaceOperation]:
         """ Operations in this group that transform one ordered pair into another """
@@ -235,26 +235,26 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
 
 
     def exchange_constraints(self,
-                             site_1: LatticeSite | ArrayLike,
-                             site_2: LatticeSite | ArrayLike,
+                             site_1: Site | ArrayLike,
+                             site_2: Site | ArrayLike,
                              unit_cell: UnitCell,
                              do_print: bool = True) -> ExchangeMatrixConstraints:
         """ Get the details of the allowed exchange matrices"""
-        if not isinstance(site_1, LatticeSite):
+        if not isinstance(site_1, Site):
             try:
-                site_1 = LatticeSite(i=float(site_1[0]),
-                                     j=float(site_1[1]),
-                                     k=float(site_1[2]),
-                                     name="tmp_site_1")
+                site_1 = Site(i=float(site_1[0]),
+                              j=float(site_1[1]),
+                              k=float(site_1[2]),
+                              name="tmp_site_1")
             except Exception as e:
                 raise TypeError("Expected `site_1` to be a LatticeSite or vector") from e
 
-        if not isinstance(site_2, LatticeSite):
+        if not isinstance(site_2, Site):
             try:
-                site_2 = LatticeSite(i=float(site_2[0]),
-                                     j=float(site_2[1]),
-                                     k=float(site_2[2]),
-                                     name="tmp_site_1")
+                site_2 = Site(i=float(site_2[0]),
+                              j=float(site_2[1]),
+                              k=float(site_2[2]),
+                              name="tmp_site_1")
             except Exception as e:
                 raise TypeError("Expected `site_2` to be a LatticeSite or vector") from e
 
@@ -279,16 +279,16 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
         return check
 
     def anisotropy_constraints(self,
-            site: LatticeSite | ArrayLike,
-            unit_cell: UnitCell,
-            do_print: bool = True) -> AnisotropyMatrixConstraints:
+                               site: Site | ArrayLike,
+                               unit_cell: UnitCell,
+                               do_print: bool = True) -> AnisotropyMatrixConstraints:
         """ Get the details of the allowed anisotropy matrices"""
-        if not isinstance(site, LatticeSite):
+        if not isinstance(site, Site):
             try:
-                site = LatticeSite(i=float(site[0]),
-                                   j=float(site[1]),
-                                   k=float(site[2]),
-                                   name="tmp_site")
+                site = Site(i=float(site[0]),
+                            j=float(site[1]),
+                            k=float(site[2]),
+                            name="tmp_site")
             except Exception as e:
                 raise TypeError("Expected `site_1` to be a LatticeSite or vector") from e
 

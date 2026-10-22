@@ -1,10 +1,10 @@
 import numpy as np
 
 from pyspinw.exchange import HeisenbergExchange, DMExchange
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 
-a = LatticeSite(0,0,0, name="A")
-b = LatticeSite(0.5,0.5,0.5, name="B")
+a = Site(0, 0, 0, name="A")
+b = Site(0.5, 0.5, 0.5, name="B")
 
 def test_create_heisenberg():
     hc = HeisenbergExchange(site_1=a, site_2=b, j=10, name="J1")

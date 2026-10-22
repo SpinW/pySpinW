@@ -6,7 +6,7 @@ from numpy._typing import ArrayLike
 from pyspinw.exchange import Exchange
 from pyspinw.batch_exchanges import batch_exchanges, default_naming_pattern
 from pyspinw.symmetry.symmetry_settings import SymmetrySettings
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 
@@ -14,7 +14,7 @@ from pyspinw.tolerances import tolerances
 class AbstractExchangeGroup:
     """ Base class for exchange groups"""
 
-    def exchanges(self, sites: list[LatticeSite], symmetry: SymmetrySettings):
+    def exchanges(self, sites: list[Site], symmetry: SymmetrySettings):
         """ Get the exchanges defined by this groups given the sites and symmetry provided """
         raise NotImplementedError("exchanges not available in base class")
 
@@ -107,7 +107,7 @@ class ExchangeGroup:
         self.direction_filter = direction_filter
 
 
-    def exchanges(self, sites: list[LatticeSite], unit_cell: UnitCell):
+    def exchanges(self, sites: list[Site], unit_cell: UnitCell):
         """ Get the exchanges defined by this groups given the sites and symmetry provided """
         if self.bond > 0:
             # Try to improve this heuristic for the maximum distance

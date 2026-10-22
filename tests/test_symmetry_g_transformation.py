@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy._typing import ArrayLike
 
-from pyspinw import UnitCell, LatticeSite
+from pyspinw import UnitCell, Site
 from pyspinw.symmetry.group import database, SpaceGroup
 
 def labeller(sg: SpaceGroup):
@@ -28,7 +28,7 @@ g_tensors = [
     m + m.T]
 
 sites = [
-    LatticeSite(0,0,0,supercell_spins=spin, g=g_tensor)
+    Site(0, 0, 0, supercell_spins=spin, g=g_tensor)
     for spin in spins
     for g_tensor in g_tensors
 ]

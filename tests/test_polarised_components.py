@@ -3,13 +3,13 @@
 import numpy as np
 import pytest
 
-from pyspinw import HeisenbergExchange, Hamiltonian, LatticeSite, Path, Structure, UnitCell
+from pyspinw import HeisenbergExchange, Hamiltonian, Site, Path, Structure, UnitCell
 
 
 @pytest.fixture
 def ferromagnetic_chain():
     """ A spin-1 ferromagnetic chain along a """
-    site = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
+    site = Site(0, 0, 0, 0, 0, 1, name="S")
     coupling = HeisenbergExchange(site, site, j=-1.0, cell_offset=(1, 0, 0), name="J")
     return Hamiltonian(Structure([site], UnitCell(3.0, 8.0, 8.0)), [coupling])
 

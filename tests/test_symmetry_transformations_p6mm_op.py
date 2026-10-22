@@ -44,13 +44,13 @@ def test_p6mm_site_operation(unit_cell: UnitCell, n_rotations: int, position_or_
     because some directions of spin are inconsistent with C4 symmetry
     """
 
-    point_in_off_boundary = LatticeSite(*expected_off_boundary_points[0], 1, 0, 0)
-    point_round_off_boundary = LatticeSite(*expected_off_boundary_points[0], 0, 1, 0)
-    point_up_off_boundary = LatticeSite(*expected_off_boundary_points[0], 0, 0, 1)
+    point_in_off_boundary = Site(*expected_off_boundary_points[0], 1, 0, 0)
+    point_round_off_boundary = Site(*expected_off_boundary_points[0], 0, 1, 0)
+    point_up_off_boundary = Site(*expected_off_boundary_points[0], 0, 0, 1)
 
-    point_in_on_boundary = LatticeSite(*expected_on_boundary_points[0], 1, 0, 0)
-    point_round_on_boundary = LatticeSite(*expected_on_boundary_points[0], 0, 1, 0)
-    point_up_on_boundary = LatticeSite(*expected_on_boundary_points[0], 0, 0, 1)
+    point_in_on_boundary = Site(*expected_on_boundary_points[0], 1, 0, 0)
+    point_round_on_boundary = Site(*expected_on_boundary_points[0], 0, 1, 0)
+    point_up_on_boundary = Site(*expected_on_boundary_points[0], 0, 0, 1)
 
     # Example p6 operation
     rotation_matrix = np.array([

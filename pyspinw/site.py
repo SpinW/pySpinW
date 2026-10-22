@@ -16,7 +16,7 @@ def _generate_unique_id():
     _unique_id_counter += 1
     return _unique_id_counter
 
-class LatticeSite(SPWSerialisable):
+class Site(SPWSerialisable):
     """A spin site within a lattice
 
     :param i,j,k: *required* Fractional coordinates within unit cell
@@ -217,7 +217,7 @@ class LatticeSite(SPWSerialisable):
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
         """ Create from an array of values """
-        return LatticeSite(
+        return Site(
             i=float(coordinates[0]),
             j=float(coordinates[1]),
             k=float(coordinates[2]),
@@ -237,7 +237,7 @@ class LatticeSite(SPWSerialisable):
 
         new_g = t @ self._g @ t.T
 
-        return LatticeSite(
+        return Site(
             i=float(new_ijk[0]),
             j=float(new_ijk[1]),
             k=float(new_ijk[2]),
@@ -294,8 +294,8 @@ class LatticeSite(SPWSerialisable):
             # Do the actual deserialisation
 
             if "parent" in json:
-                parent = LatticeSite._deserialise(json["parent"], context)
-                site = ImpliedLatticeSite(
+                parent = Site._deserialise(json["parent"], context)
+                site = ImpliedSite(
                     parent_site = parent,
                     i=json["i"],
                     j=json["j"],
@@ -305,7 +305,7 @@ class LatticeSite(SPWSerialisable):
                     name=json["name"],
                     metadata=SiteMetadata._deserialise(json["metadata"], context))
             else:
-                site = LatticeSite(
+                site = Site(
                     i=json["i"],
                     j=json["j"],
                     k=json["k"],
@@ -319,11 +319,11 @@ class LatticeSite(SPWSerialisable):
             return site
 
 
-class ImpliedLatticeSite(LatticeSite):
+class ImpliedSite(Site):
     """ Lattice site that is implied by symmetry by a specified site"""
 
     def __init__(self,
-                 parent_site: LatticeSite,
+                 parent_site: Site,
                  i: float, j: float, k: float,
                  sx: float | None = None,
                  sy: float | None = None,
@@ -374,9 +374,9 @@ class ImpliedLatticeSite(LatticeSite):
 
 
     @staticmethod
-    def from_coordinates(parent_site: LatticeSite, coordinates: np.ndarray, name: str = ""):
+    def from_coordinates(parent_site: Site, coordinates: np.ndarray, name: str = ""):
         """ Create ImpliedLatticeSite from coordinates"""
-        return ImpliedLatticeSite(
+        return ImpliedSite(
             parent_site=parent_site,
             i=float(coordinates[0]),
             j=float(coordinates[1]),

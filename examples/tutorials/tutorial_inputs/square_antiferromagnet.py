@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 unit_cell = UnitCell(3, 3, 9)
 
-sites = [LatticeSite(0, 0, 0, 1, 0, 0, name="X")]
+sites = [Site(0, 0, 0, 1, 0, 0, name="X")]
 k = CommensuratePropagationVector(0.5, 0.5, 0)
 s = Structure(sites, unit_cell, supercell=SummationSupercell(propagation_vectors=[k]))
 

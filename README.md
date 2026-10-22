@@ -14,23 +14,23 @@ Here is an example of calculating dispersion curves for simple ferromagnetic cha
 from pyspinw import *
 
 # Define the unit cell
-unit_cell = UnitCell(1,1,1)
+unit_cell = UnitCell(1, 1, 1)
 
 # Specify a magetic atom at (0,0,0), with moment (0,0,1)
-x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
+x = Site(0, 0, 0, 0, 0, 1, name="X")
 
 # Create a magnetic structure (this could include a spacegroup, or 
 # supercell structure, but we don't do so here)
 structure = Structure([x], unit_cell=unit_cell)
 
 # A single exchange between atoms in neighbouring unit cells (in the x direction)
-exchanges = [HeisenbergExchange(x, x, cell_offset=(1,0,0), j=-1)]
+exchanges = [HeisenbergExchange(x, x, cell_offset=(1, 0, 0), j=-1)]
 
 # Create a Hamiltonian object that holds things together 
 hamiltonian = Hamiltonian(structure, exchanges)
 
 # Define a path through q-space for out dispersion curve
-path = Path([[0,0,0], [1,0,0]])
+path = Path([[0, 0, 0], [1, 0, 0]])
 
 # Show the spaghetti plot, with constant energy smearing of 0.4
 hamiltonian.spaghetti_plot(path, dE=0.4)

@@ -9,7 +9,7 @@ import numpy as np
 
 from pyspinw.lattice_distances import find_relative_positions
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import Site, ImpliedSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 
@@ -19,8 +19,8 @@ class AbstractExchange:
     """ Used to internally represent some exchange properties, and some properties that are only needed internally"""
 
     name: str
-    site_1: LatticeSite
-    site_2: LatticeSite
+    site_1: Site
+    site_2: Site
     cell_offset: CellOffset
     distance: float
     order: int
@@ -82,7 +82,7 @@ def apply_naming_convention(naming_pattern: str,
 
 default_naming_pattern = "[type][order]:[site1]-[site2]" #[type]_[order]([site1], [site2])"
 
-def batch_exchanges(sites: list[LatticeSite],
+def batch_exchanges(sites: list[Site],
                     unit_cell: UnitCell,
                     max_distance: float,
                     naming_pattern: str=default_naming_pattern,
@@ -99,7 +99,7 @@ def batch_exchanges(sites: list[LatticeSite],
 
     Most of the work here is about constraining by order and giving it a sensible name
     """
-    unique_sites = set([site.parent_site if isinstance(site, ImpliedLatticeSite) else site for site in sites])
+    unique_sites = set([site.parent_site if isinstance(site, ImpliedSite) else site for site in sites])
     unique_index = {site: index for index, site in enumerate(unique_sites)}
 
     # Get all the distances we'll need
@@ -130,12 +130,12 @@ def batch_exchanges(sites: list[LatticeSite],
     for site_1 in pair_data:
         for site_2 in pair_data[site_1]:
 
-            if isinstance(site_1, ImpliedLatticeSite):
+            if isinstance(site_1, ImpliedSite):
                 root_site_1 = site_1.parent_site
             else:
                 root_site_1 = site_1
 
-            if isinstance(site_2, ImpliedLatticeSite):
+            if isinstance(site_2, ImpliedSite):
                 root_site_2 = site_2.parent_site
             else:
                 root_site_2 = site_2
@@ -180,12 +180,12 @@ def batch_exchanges(sites: list[LatticeSite],
             for link_index, order in orders:
                 site_1, site_2, vector, cell_offset_raw, distance = all_links[link_index]
 
-                if isinstance(site_1, ImpliedLatticeSite):
+                if isinstance(site_1, ImpliedSite):
                     site_1_name = site_1.parent_site.name
                 else:
                     site_1_name = site_1.name
 
-                if isinstance(site_2, ImpliedLatticeSite):
+                if isinstance(site_2, ImpliedSite):
                     site_2_name = site_2.parent_site.name
                 else:
                     site_2_name = site_2.name

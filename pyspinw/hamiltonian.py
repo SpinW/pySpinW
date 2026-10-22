@@ -26,7 +26,7 @@ from pyspinw.exchange import Exchange
 from pyspinw.path import Path, Slice
 from pyspinw.polarisation import calculate_polarised_intensity
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.basis import site_rotations
 from pyspinw.symmetry.operations import SpaceOperation
@@ -276,7 +276,7 @@ class Hamiltonian(SPWSerialisable):
     def _expand_with_mapping(self, supercell_size: tuple[int, int, int] | None = None) -> \
             tuple[
                 "Hamiltonian",
-                dict[tuple[int, tuple[int, int, int]], LatticeSite],
+                dict[tuple[int, tuple[int, int, int]], Site],
                 list[int],
                 list[int]]:
         """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians
@@ -391,7 +391,7 @@ class Hamiltonian(SPWSerialisable):
 
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
-    def sites_by_name(self, test_string) -> list[LatticeSite]:
+    def sites_by_name(self, test_string) -> list[Site]:
         """ Get sites where name matches regex"""
         return self.structure.sites_by_name(test_string)
 
@@ -940,17 +940,17 @@ class Hamiltonian(SPWSerialisable):
             plt.show()
 
     def ground_state(self,
-                      fixed: list[LatticeSite] | None = None,
-                      planar: list[LatticeSite | tuple[LatticeSite, ArrayLike]] | None = None,
-                      planar_axis: ArrayLike | None = None,
-                      field: ArrayLike | None = None,
-                      step_size: float = 0.1,
-                      initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
-                      seed: int | None = None,
-                      rtol: float=1e-10,
-                      atol: float=1e-12,
-                      max_iters: int=1000,
-                      verbose: bool=True):
+                     fixed: list[Site] | None = None,
+                     planar: list[Site | tuple[Site, ArrayLike]] | None = None,
+                     planar_axis: ArrayLike | None = None,
+                     field: ArrayLike | None = None,
+                     step_size: float = 0.1,
+                     initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
+                     seed: int | None = None,
+                     rtol: float=1e-10,
+                     atol: float=1e-12,
+                     max_iters: int=1000,
+                     verbose: bool=True):
         """ Get the classical ground state via gradient descent
 
         For more direct control, use the `ClassicalEnergyMinimisation` class
@@ -991,7 +991,7 @@ class Hamiltonian(SPWSerialisable):
 
         for site_or_tuple in planar:
 
-            if isinstance(site_or_tuple, LatticeSite):
+            if isinstance(site_or_tuple, Site):
                 index = site_uid_lookup[site_or_tuple.unique_id]
                 constraints[index] = Planar(default_axis)
 
@@ -1000,7 +1000,7 @@ class Hamiltonian(SPWSerialisable):
                 if len(site_or_tuple) != 2:
                     raise ValueError("Expected tuples in `planar` to be length 2")
 
-                if not isinstance(site_or_tuple[0], LatticeSite):
+                if not isinstance(site_or_tuple[0], Site):
                     raise TypeError("Expected first component of tuples to be a LatticeSite")
 
                 try:
@@ -1035,9 +1035,9 @@ class Hamiltonian(SPWSerialisable):
             spin_data = minimiser.spin_data[site_index, :, :]
 
             old_uid = site.unique_id
-            new_site = LatticeSite(site.i, site.j, site.k,
-                                   supercell_spins=spin_data,
-                                   g=site.g, name=site.name)
+            new_site = Site(site.i, site.j, site.k,
+                            supercell_spins=spin_data,
+                            g=site.g, name=site.name)
 
             new_sites.append(new_site)
             old_uid_to_new_site[old_uid] = new_site

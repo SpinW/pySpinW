@@ -4,7 +4,7 @@ import numpy as np
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.group import database
 from pyspinw.symmetry.supercell import TiledSupercell
@@ -13,7 +13,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 def test_expansion_chain_no_rot():
     """ Test the expansion with a simple chain and simple duplication """
-    site = LatticeSite(0,0,0,0,0,1)
+    site = Site(0, 0, 0, 0, 0, 1)
 
     unexpanded_unit_cell = UnitCell(1,1,1)
     unexpanded_sites = [site]

@@ -10,7 +10,7 @@ The main thing to check is that the symmetry implied sites are correctly seriali
 import pytest
 
 from pyspinw import TiledSupercell, CommensuratePropagationVector, RotationTransform, TransformationSupercell, UnitCell, \
-    LatticeSite, Structure
+    Site, Structure
 from pyspinw.symmetry.group import database
 
 input_data = [(CommensuratePropagationVector(0, 0, 1 / 2), RotationTransform([0,1,0])),
@@ -27,9 +27,9 @@ unit_cells = [UnitCell(1,1,1),
 @pytest.mark.parametrize("supercell", supercells)
 @pytest.mark.parametrize("unit_cell", unit_cells)
 def test_structure_serialisation(spacegroup, supercell, unit_cell):
-    sites = [LatticeSite(1/2,0,1/2, name="S1"),
-             LatticeSite(0,0,0, name="S2"),
-             LatticeSite(0.1, 0.2, 0.3, name="S3")]
+    sites = [Site(1 / 2, 0, 1 / 2, name="S1"),
+             Site(0, 0, 0, name="S2"),
+             Site(0.1, 0.2, 0.3, name="S3")]
 
     # Need to skip checks on inputs, because we've been a bit careless about whether the structure is actually valid
     # Shouldn't be a problem for serialisation testing though.

@@ -6,7 +6,7 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.interface import generate_exchanges
 from pyspinw.path import Path
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.supercell import SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
@@ -16,8 +16,8 @@ from pyspinw.debug_plot import debug_plot
 
 unit_cell = UnitCell(3, 8, 8)
 
-x = LatticeSite(0, 0, 0, 0, 1, 0, name="X")
-y = LatticeSite(0.5, 0, 0, 0, 1, 0, name="Y")
+x = Site(0, 0, 0, 0, 1, 0, name="X")
+y = Site(0.5, 0, 0, 0, 1, 0, name="Y")
 
 j1 = HeisenbergExchange(x, y, j=1, cell_offset=(0, 0, 0), name="J1")
 j2 = HeisenbergExchange(y, x, j=1, cell_offset=(0, 1, 0), name="J2")

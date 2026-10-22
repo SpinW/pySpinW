@@ -1,16 +1,16 @@
 import pytest
-from pyspinw import LatticeSite
+from pyspinw import Site
 
 import numpy as np
 
 from pyspinw.exchange import all_exchanges, Exchange
 
 sites = [
-    LatticeSite(0,0,1/2, 0,0,1),
-    LatticeSite(1/2,0,1/2, 2,0,1),
-    LatticeSite(0,1/2,1/2, 0,4,1),
-    LatticeSite(0,1/2,1/2, 0,0,5),
-    LatticeSite(1/2,1/2,1/2, 0,1,1),
+    Site(0, 0, 1 / 2, 0, 0, 1),
+    Site(1 / 2, 0, 1 / 2, 2, 0, 1),
+    Site(0, 1 / 2, 1 / 2, 0, 4, 1),
+    Site(0, 1 / 2, 1 / 2, 0, 0, 5),
+    Site(1 / 2, 1 / 2, 1 / 2, 0, 1, 1),
 ]
 
 
@@ -29,7 +29,7 @@ cell_offsets = [(0,0,0), (1,0,0), (1,2,3)]
 @pytest.mark.parametrize("cell_offset", cell_offsets)
 @pytest.mark.parametrize("color", colors)
 def test_exchanges_serialise(
-        pair: tuple[LatticeSite, LatticeSite],
+        pair: tuple[Site, Site],
         exchange_class: type[Exchange],
         color: tuple[float, float, float],
         cell_offset: tuple[int, int, int]):

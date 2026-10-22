@@ -6,7 +6,7 @@ import pytest
 import pyspinw.calculations.spinwave
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.unitcell import UnitCell
 
@@ -20,7 +20,7 @@ def test_python_path_with_fewer_q_points_than_processes(monkeypatch, n_q):
     """
     monkeypatch.setattr(pyspinw.calculations.spinwave.multiprocessing, "cpu_count", lambda: 20)
 
-    site = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
+    site = Site(0, 0, 0, 0, 0, 1, name="S")
     hamiltonian = Hamiltonian(Structure([site], UnitCell(3.0, 8.0, 8.0)),
                               [HeisenbergExchange(site, site, j=-1.0, cell_offset=(1, 0, 0))])
     q_vectors = np.column_stack([np.linspace(0.1, 0.4, n_q), np.zeros(n_q), np.zeros(n_q)])
