@@ -14,7 +14,9 @@ jobs:
         - {os: macos-latest, env:, skip:, name: macos}
         - {os: windows-latest, env:, skip: "*32", name: windows}
     env:
-      CIBW_SKIP: ${{ matrix.config.skip }}
+
+      env:
+      CIBW_SKIP: ${{ matrix.config.skip }} cp315-*
       #CIBW_ARCHS_WINDOWS: "AMD64 ARM64"
       CIBW_ARCHS_MACOS: "x86_64 arm64"
       MACOSX_DEPLOYMENT_TARGET: "10.12"
