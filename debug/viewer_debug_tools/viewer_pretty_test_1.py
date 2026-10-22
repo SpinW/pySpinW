@@ -4,7 +4,7 @@ from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.gui.viewer import show_object
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(1,1,1)
 
-    x = LatticeSite(0, 0.5, 0.5, 0, 0, 1, name="X")
+    x = Site(0, 0.5, 0.5, 0, 0, 1, name="X")
 
     sites = [x]
 

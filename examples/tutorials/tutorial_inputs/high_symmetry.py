@@ -2,7 +2,7 @@
 from pyspinw import *
 
 unit_cell = UnitCell(8.539,8.539, 5.2414, 90, 90, 120)
-sites = [LatticeSite(0, 0.24964, 1/2, 0, 0, 5/2, name="Fe3")]
+sites = [Site(0, 0.24964, 1 / 2, 0, 0, 5 / 2, name="Fe3")]
 sg = spacegroup("P 3 2 1")
 
 

@@ -8,7 +8,7 @@ from pyspinw.constants import MU_B
 from pyspinw.interface import generate_exchanges, axis_anisotropies
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
@@ -22,7 +22,7 @@ def test_jitter_free(size):
 
     assert start_spins.shape == (30, 1, 3), "Input shape must be n_sites-by-n_components-by-3"
 
-    sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_spins.reshape(30, 3)]
+    sites = [Site(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_spins.reshape(30, 3)]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
@@ -47,7 +47,7 @@ def test_jitter_planar(size):
 
     assert start_spins.shape == (30, 1, 3), "Input shape must be n_sites-by-n_components-by-3"
 
-    sites = [LatticeSite(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_spins.reshape(30, 3)]
+    sites = [Site(m1, m2, m3, m1, m2, m3) for m1, m2, m3 in start_spins.reshape(30, 3)]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
@@ -136,7 +136,7 @@ def test_randomisation_free():
 
     assert start_spins.shape == (30, 2, 3), "Input shape must be n_sites-by-n_components-by-3"
 
-    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_spins=x) for x in [
+    sites = [Site(x[0,0], x[0,1], x[0,2], supercell_spins=x) for x in [
                 start_spins[i, :, :] for i in range(n_sites) ]]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
@@ -168,7 +168,7 @@ def test_randomisation_planar(axis):
 
     assert start_spins.shape == (30, 2, 3), "Input shape must be n_sites-by-n_components-by-3"
 
-    sites = [LatticeSite(x[0,0], x[0,1], x[0,2], supercell_spins=x) for x in [
+    sites = [Site(x[0,0], x[0,1], x[0,2], supercell_spins=x) for x in [
                 start_spins[i, :, :] for i in range(n_sites) ]]
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
@@ -201,8 +201,8 @@ def test_randomisation_planar(axis):
 def test_simple_ferromagnet_fixed_free(spin_size):
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, spin_size, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, spin_size, 0, name="X2")
+    x1 = Site(0, 0, 0.5, 0, 0, spin_size, name="X1")
+    x2 = Site(0, 0, 0, 0, spin_size, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -229,8 +229,8 @@ def test_simple_ferromagnet_fixed_free(spin_size):
 def test_simple_antiferromagnet_fixed_planar():
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
+    x1 = Site(0, 0, 0.5, 0, 0, 1, name="X1")
+    x2 = Site(0, 0, 0, 0, 1, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -261,8 +261,8 @@ def test_simple_antiferromagnet_free_planar(axis, spin_size):
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, spin_size, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, spin_size, 0, name="X2")
+    x1 = Site(0, 0, 0.5, 0, 0, spin_size, name="X1")
+    x2 = Site(0, 0, 0, 0, spin_size, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -306,7 +306,7 @@ def test_anisotropies_free(axis, a):
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X")
+    x = Site(0, 0, 0.5, 0, 0, 1, name="X")
 
     sites = [x]
 
@@ -342,7 +342,7 @@ def test_anisotropies_planar(axis):
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X")
+    x = Site(0, 0, 0.5, 0, 0, 1, name="X")
 
     sites = [x]
 
@@ -369,11 +369,11 @@ def test_field_free(field):
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0.1, 0, 0.5, 0, 1, 0, name="X1")
-    x2 = LatticeSite(0.2, 0, 0.5, 1, 0, 0, name="X2")
-    x3 = LatticeSite(0.3, 0, 0.5, 1, 1, 0, name="X3")
-    x4 = LatticeSite(0.4, 0, 0.5, 1, -1, 0, name="X4")
-    x5 = LatticeSite(0.5, 0, 0.5, -1, -1, 0, name="X5")
+    x1 = Site(0.1, 0, 0.5, 0, 1, 0, name="X1")
+    x2 = Site(0.2, 0, 0.5, 1, 0, 0, name="X2")
+    x3 = Site(0.3, 0, 0.5, 1, 1, 0, name="X3")
+    x4 = Site(0.4, 0, 0.5, 1, -1, 0, name="X4")
+    x5 = Site(0.5, 0, 0.5, -1, -1, 0, name="X5")
 
     sites = [x1, x2, x3, x4, x5]
 
@@ -402,11 +402,11 @@ def test_field_planar(field):
 
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0.1, 0, 0.5, 0, 1, 0, name="X1")
-    x2 = LatticeSite(0.2, 0, 0.5, 1, 0, 0, name="X2")
-    x3 = LatticeSite(0.3, 0, 0.5, 1, 1, 0, name="X3")
-    x4 = LatticeSite(0.4, 0, 0.5, 1, -1, 0, name="X4")
-    x5 = LatticeSite(0.5, 0, 0.5, -1, -1, 0, name="X5")
+    x1 = Site(0.1, 0, 0.5, 0, 1, 0, name="X1")
+    x2 = Site(0.2, 0, 0.5, 1, 0, 0, name="X2")
+    x3 = Site(0.3, 0, 0.5, 1, 1, 0, name="X3")
+    x4 = Site(0.4, 0, 0.5, 1, -1, 0, name="X4")
+    x5 = Site(0.5, 0, 0.5, -1, -1, 0, name="X5")
 
     sites = [x1, x2, x3, x4, x5]
 

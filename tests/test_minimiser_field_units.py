@@ -6,22 +6,22 @@ from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation
 from pyspinw.constants import MU_B
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.unitcell import UnitCell
 
 
 def _ferromagnetic_chain(sz: float) -> Hamiltonian:
     """ One-site ferromagnetic chain with S=1 along z, with sign sz """
-    site = LatticeSite(0, 0, 0, 0, 0, sz, name="S")
+    site = Site(0, 0, 0, 0, 0, sz, name="S")
     exchange = HeisenbergExchange(site, site, j=-1.0, cell_offset=(1, 0, 0))
     return Hamiltonian(Structure([site], UnitCell(3.0, 8.0, 8.0)), [exchange])
 
 
 def _antiferromagnetic_chain() -> Hamiltonian:
     """ Two-site antiferromagnetic chain, J=1 meV, S=1, spins along z """
-    a = LatticeSite(0, 0, 0, 0, 0, 1, name="A")
-    b = LatticeSite(0.5, 0, 0, 0, 0, -1, name="B")
+    a = Site(0, 0, 0, 0, 0, 1, name="A")
+    b = Site(0.5, 0, 0, 0, 0, -1, name="B")
     exchanges = [HeisenbergExchange(a, b, j=1.0, cell_offset=(0, 0, 0)),
                  HeisenbergExchange(b, a, j=1.0, cell_offset=(1, 0, 0))]
     return Hamiltonian(Structure([a, b], UnitCell(6.0, 8.0, 8.0)), exchanges)

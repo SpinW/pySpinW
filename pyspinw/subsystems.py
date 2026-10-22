@@ -1,7 +1,7 @@
 """ Identification of subsystems of a collection of sites and exchanges """
 
 from pyspinw.exchange import Exchange
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import Site, ImpliedLatticeSite
 
 
 class Node:
@@ -22,8 +22,8 @@ class Node:
         else:
             return False
 
-def find_components(sites: list[LatticeSite], exchanges: list[Exchange]) \
-        -> list[tuple[list[LatticeSite], list[Exchange]]]:
+def find_components(sites: list[Site], exchanges: list[Exchange]) \
+        -> list[tuple[list[Site], list[Exchange]]]:
     """Find components (maximal disjoint subsystems) of the given system
 
     or in other words, group the sites by being coupled to each other.

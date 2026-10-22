@@ -6,7 +6,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.interface import generate_exchanges, spacegroup
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell, SummationSupercell, CommensuratePropagationVector, \
     TransformationSupercell, RotationTransform, RotationSupercell, PropagationVector
@@ -18,8 +18,8 @@ def test_energy_invariance_trivial_supercell():
     """ Check energy stays the same when we make the supercell bigger """
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, 0, 0, 1, name="X1")
-    x2 = LatticeSite(0, 0, 0, 0, 1, 0, name="X2")
+    x1 = Site(0, 0, 0.5, 0, 0, 1, name="X1")
+    x2 = Site(0, 0, 0, 0, 1, 0, name="X2")
 
     sites = [x1, x2]
 
@@ -55,8 +55,8 @@ def test_energy_behaviour_summation_supercell():
     """
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
-    x2 = LatticeSite(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
+    x1 = Site(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
+    x2 = Site(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
 
     sites = [x1, x2]
 
@@ -109,8 +109,8 @@ def test_energy_behaviour_summation_supercell():
     """
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x1 = LatticeSite(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
-    x2 = LatticeSite(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
+    x1 = Site(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X1")
+    x2 = Site(0, 0, 0, supercell_spins=[[0, 0, 0], [0, 0, 1]], name="X2")
 
     sites = [x1, x2]
 
@@ -163,7 +163,7 @@ def test_energy_behaviour_rotation_supercell():
     """
     unit_cell = UnitCell(1, 1, 1, gamma=60)
 
-    x = LatticeSite(0, 0, 0.5, 0,0,1, name="X")
+    x = Site(0, 0, 0.5, 0, 0, 1, name="X")
 
     exchanges = [HeisenbergExchange(x, x, cell_offset=CellOffset(0, 0, 1), j=-1)]
 
@@ -198,7 +198,7 @@ def test_energy_behaviour_rotation_supercell():
 
 def test_rotation_supercell_error():
     """ Test that we throw an error if called on an incommensurate structure """
-    site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
+    site = Site(0.5, 0.5, 0.5, 1, 0, 0)
 
     supercell = RotationSupercell([0, 0, 1], PropagationVector(0, 0, np.sqrt(101)))
 
@@ -215,8 +215,8 @@ def test_rotation_supercell_error():
 
 def test_optimise_transformation_supercell():
     """ Test optimisation of a supercell where spins need to be as unaligned as possible """
-    a = LatticeSite(0.25,0,0, 1, 0, 0, name="A")
-    x = LatticeSite(0.5, 0, 0, 1, 1, 1, name="X")
+    a = Site(0.25, 0, 0, 1, 0, 0, name="A")
+    x = Site(0.5, 0, 0, 1, 1, 1, name="X")
 
     sites = [a, x]
 
@@ -241,8 +241,8 @@ def test_optimise_transformation_supercell():
 
 def test_optimise_summation_supercell():
     """ A system where we optimise one of the in the supercell but not the other, just check it doesn't crash """
-    x = LatticeSite(0.25, 0, 0, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X")
-    y = LatticeSite(0.75, 0, 0, supercell_spins=[[0, 0, 0], [1, 1, 1]], name="Y")
+    x = Site(0.25, 0, 0, supercell_spins=[[0, 0, 1], [0, 0, 0]], name="X")
+    y = Site(0.75, 0, 0, supercell_spins=[[0, 0, 0], [1, 1, 1]], name="Y")
 
     exchanges = [HeisenbergExchange(x, y, j=1)]
 

@@ -7,13 +7,13 @@ def run_demos():
 
 def demo_chains():
     """ Antiferromagnetic chain example """
-    from pyspinw import (UnitCell, LatticeSite, HeisenbergExchange, Structure,
+    from pyspinw import (UnitCell, Site, HeisenbergExchange, Structure,
                          Hamiltonian, Path)
 
     unit_cell = UnitCell(3, 8, 8)
 
-    x = LatticeSite(0, 0, 0, 0, 1, 0, name="X")
-    y = LatticeSite(0.5, 0, 0, 0, 1, 0, name="Y")
+    x = Site(0, 0, 0, 0, 1, 0, name="X")
+    y = Site(0.5, 0, 0, 0, 1, 0, name="Y")
 
     j1 = HeisenbergExchange(x, y, j=1, cell_offset=(0, 0, 0), name="J1")
     j2 = HeisenbergExchange(y, x, j=1, cell_offset=(0, 1, 0), name="J2")
@@ -63,15 +63,15 @@ def demo_chains():
 def demo_viewer():
     """ Show the viewer with an example """
     from pyspinw import (
-        UnitCell, LatticeSite, Structure, TiledSupercell,
+        UnitCell, Site, Structure, TiledSupercell,
         generate_exchanges, HeisenbergExchange, Hamiltonian, view)
 
     unit_cell = UnitCell(1,1,1, gamma=60)
 
-    x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
-    y = LatticeSite(0.5, 0, 0, 0, 0, 1, name="Y")
-    z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="Z")
-    w = LatticeSite(0.5, 0.5, 0, 0, 0, 0, name="W")
+    x = Site(0, 0, 0, 0, 0, 1, name="X")
+    y = Site(0.5, 0, 0, 0, 0, 1, name="Y")
+    z = Site(0, 0.5, 0, 0, 0, 1, name="Z")
+    w = Site(0.5, 0.5, 0, 0, 0, 0, name="W")
 
     sites = [x, y, z, w]
 

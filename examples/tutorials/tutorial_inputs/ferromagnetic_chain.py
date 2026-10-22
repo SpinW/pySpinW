@@ -19,7 +19,7 @@ unit_cell = UnitCell(1,1,1)
 # we just choose the centre, $(1/2,1/2,1/2)$. In this case, we have a spin 1 system, with the spin pointing the z direction.
 # It is also possible to definite the element type and colour for viewing here.
 
-only_site = LatticeSite(1/2, 1/2, 1/2, 0,0,1, name="X")
+only_site = Site(1 / 2, 1 / 2, 1 / 2, 0, 0, 1, name="X")
 
 # We now create a `Structure` object.
 # `Structure` objects contain information about the crystal structure and spins, and

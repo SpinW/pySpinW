@@ -7,14 +7,14 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.path import Path1D
 from pyspinw.sample import Powder
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.unitcell import UnitCell
 
 
 def ferromagnetic_chain(a: float) -> Hamiltonian:
     """ Chain along x with J = -1, S = 1, so E(h) = 2 (1 - cos 2 pi h) meV, band top 4 meV """
-    site = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
+    site = Site(0, 0, 0, 0, 0, 1, name="S")
     exchange = HeisenbergExchange(site, site, j=-1.0, cell_offset=(1, 0, 0))
     return Hamiltonian(Structure([site], UnitCell(a, 8.0, 8.0)), [exchange])
 

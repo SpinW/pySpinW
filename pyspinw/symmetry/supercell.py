@@ -10,7 +10,7 @@ from pyspinw.checks import check_sizes
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, \
     serialise_fraction_or_builtin, deserialise_fraction_or_builtin, SPWDeserialisationContext, expects_keys, \
     SPWSerialisationError, numpy_serialise, numpy_deserialise
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.cell_offsets import CellOffset, cell_offset_generator
 from pyspinw.util import rotation_matrix
 
@@ -82,11 +82,11 @@ class PropagationVector(SPWSerialisable):
     def __eq__(self, other):
         return self.i == other.i and self.j == other.j and self.k == other.k
 
-    def uncorrected_phase_position(self, site: LatticeSite):
+    def uncorrected_phase_position(self, site: Site):
         """ Get the position of a site along the propagation vector, from (0,0,0), ignoring the phase correction"""
         return 2*np.pi*(self.vector * site.ijk)
 
-    def corrected_phase_position(self, site: LatticeSite):
+    def corrected_phase_position(self, site: Site):
         """ Get the position of a site along the propagation vector, from (0,0,0), including the phase correction"""
         return 2 * np.pi * (self.vector * site.ijk) + self.phase
 
@@ -232,15 +232,15 @@ class Supercell(ABC, SPWSerialisable):
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
         """ Get the spin for a given cell, and the specified spin data """
 
-    def spin(self, site: LatticeSite, cell_offset: CellOffset):
+    def spin(self, site: Site, cell_offset: CellOffset):
         """ Get the spin for a site in a specified cell according to the supercell"""
         return self.spin_calculation(site.spin_data, cell_offset)
 
-    def cell_position_and_spin(self, site: LatticeSite, cell_offset: CellOffset):
+    def cell_position_and_spin(self, site: Site, cell_offset: CellOffset):
         """ Position within the unit cell, and spin"""
         return np.concatenate((site.ijk, self.spin(site, cell_offset)))
 
-    def supercell_position_and_spin(self, site: LatticeSite, cell_offset: CellOffset):
+    def supercell_position_and_spin(self, site: Site, cell_offset: CellOffset):
         """ Position within the supercell and spin """
         return np.concatenate((site.ijk + cell_offset.vector, self.spin(site, cell_offset)))
 
@@ -401,7 +401,7 @@ class TiledSupercell(CommensurateSupercell):
 class SpinSetter:
     """ Helper class to set spins in a DirectSupercell"""
 
-    def __init__(self, site: LatticeSite, size: tuple[int, int, int]):
+    def __init__(self, site: Site, size: tuple[int, int, int]):
         self.site = site
         self.size = size
         self.n_components = size[0]*size[1]*size[2]
@@ -490,7 +490,7 @@ class DirectSupercell(CommensurateSupercell):
         index = np.ravel_multi_index(cell_offset.as_tuple, self._base_shape)
         return spin_data[index, :]
 
-    def spins_for(self, site: LatticeSite):
+    def spins_for(self, site: Site):
         """ Use <supercell>.spins_for(<site>).spin[<a>,<b>,<c>] = <x>, <y>, <z> to set spins in a convenient way"""
         return SpinSetter(site, self._base_shape)
 

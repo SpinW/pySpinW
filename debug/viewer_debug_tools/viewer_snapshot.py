@@ -5,7 +5,7 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.gui.viewer import snapshot
 from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.supercell import TiledSupercell
 from pyspinw.symmetry.unitcell import UnitCell
@@ -15,9 +15,9 @@ if __name__ == "__main__":
 
     unit_cell = UnitCell(1,1,1, gamma=60)
 
-    x = LatticeSite(0, 0, 0, 0, 0, 1, name="X")
-    y = LatticeSite(0.5, 0, 0, 0, 0, 1, name="Y")
-    z = LatticeSite(0, 0.5, 0, 0, 0, 1, name="Z")
+    x = Site(0, 0, 0, 0, 0, 1, name="X")
+    y = Site(0.5, 0, 0, 0, 0, 1, name="Y")
+    z = Site(0, 0.5, 0, 0, 0, 1, name="Z")
 
     sites = [x, y, z]
 

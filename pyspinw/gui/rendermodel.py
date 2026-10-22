@@ -11,7 +11,7 @@ from pyspinw.exchange import Exchange
 from pyspinw.gui.edge_cases import add_extra_edge_lines, add_extra_edge_points
 from pyspinw.gui.wrap_line import split_and_wrap_line_segment
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.supercell import CommensurateSupercell, RotationSupercell, PropagationVector
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.util import rotation_from_z
@@ -48,7 +48,7 @@ class RenderSite(Selectable):
 
         return model_matrix
 
-    def __init__(self, render_id: int, site: LatticeSite, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
+    def __init__(self, render_id: int, site: Site, unit_cell: UnitCell, offset: tuple[int, int, int] | None):
         # Build model matrix
 
         position, spin = site.ijk, site.base_spin

@@ -63,7 +63,7 @@ import numpy as np
 supercell = TiledSupercell(scaling=(3,5,2))
 
 structure = Structure(
-    [LatticeSite(0.5, 0.5, 0.5, 0, 0, 1)],
+    [Site(0.5, 0.5, 0.5, 0, 0, 1)],
     UnitCell(1, 1, 1),
     spacegroup("p1"),
     supercell=supercell)
@@ -96,7 +96,7 @@ view(structure)
 # The following system defines a single spin rotating by 72 degrees in the xy plane, as one moves in the x direction.
 #
 # First define the spin with the first component in x, and the second component in y
-site = LatticeSite(0.5, 0.5, 0.5, supercell_spins=[[1,0,0], [0,1,0]])
+site = Site(0.5, 0.5, 0.5, supercell_spins=[[1, 0, 0], [0, 1, 0]])
 
 # Now we define propagation vectors corresponding to each component, the first being
 # a period-5 cosine, and the second, because of the phase, being a period-5 sine.
@@ -132,9 +132,9 @@ supercell = SummationSupercell([
 # The ellipsoidal spin lengths are specified by scaling the last component.
 
 sites = [
-    LatticeSite(0, 0, 0.5, supercell_spins=[[0,0,1], [0,0,0], [0,0,0], [0,0,0], [0,0,0]], color=(1,0,0)),
-    LatticeSite(0.5, 0, 0.5, supercell_spins=[[0,0,0], [1,0,0], [0,1,0], [0,0,0], [0,0,0]], color=(0,1,0)),
-    LatticeSite(0, 0.5, 0.5, supercell_spins=[[0,0,0], [0,0,0], [0,0,0], [1,0,0], [0,2,0]], color=(0,0.3,0.8)),
+    Site(0, 0, 0.5, supercell_spins=[[0, 0, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]], color=(1, 0, 0)),
+    Site(0.5, 0, 0.5, supercell_spins=[[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 0]], color=(0, 1, 0)),
+    Site(0, 0.5, 0.5, supercell_spins=[[0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 0, 0], [0, 2, 0]], color=(0, 0.3, 0.8)),
     ]
 
 # Build the system and show it
@@ -164,7 +164,7 @@ view(structure)
 #
 # We being with a spin pointing in x
 
-site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
+site = Site(0.5, 0.5, 0.5, 1, 0, 0)
 
 # We then rotate first around z by 180 degrees per y cell, then 120 degrees per x cell
 
@@ -200,7 +200,7 @@ view(structure)
 #
 # First we define a site with a component in the plane of the spin
 
-site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0)
+site = Site(0.5, 0.5, 0.5, 1, 0, 0)
 
 # We next build a supercell, this takes a parameter called "perpendicular" (first argument) which defines the normal to
 # the plane in which the spin rotates.
@@ -264,7 +264,7 @@ view(structure)
 # A simple example of using this might be specifying a 2x1x1 cell with different spins in each cell; in this case
 # in $z$ and $-z$
 
-site = LatticeSite(1/2, 1/2, 1/2, supercell_spins=[[0,0,1], [0,0,-1]])
+site = Site(1 / 2, 1 / 2, 1 / 2, supercell_spins=[[0, 0, 1], [0, 0, -1]])
 supercell = DirectSupercell(2,1,1)
 unit_cell = UnitCell(1,1,1)
 
@@ -282,7 +282,7 @@ view(structure)
 #
 # First we create the site and supercell
 
-site = LatticeSite(1/2, 1/2, 1/2, 0,0,0)
+site = Site(1 / 2, 1 / 2, 1 / 2, 0, 0, 0)
 supercell = DirectSupercell(5,3,1)
 
 # Set a single spin one in from the edge to point in the $-y$ direction

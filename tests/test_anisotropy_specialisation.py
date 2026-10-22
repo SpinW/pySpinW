@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 
-from pyspinw import AxisMagnitudeAnisotropy, LatticeSite
+from pyspinw import AxisMagnitudeAnisotropy, Site
 from pyspinw.anisotropy import specialise_anisotropy, Anisotropy
 
 n=10
@@ -24,7 +24,7 @@ def test_axis_magnitude_specialisation_recovers(filter):
     """ Check that axis-magnitude anisotropies """
 
     filter = np.array(filter, dtype=float)
-    site = LatticeSite(0,0,0)
+    site = Site(0, 0, 0)
 
     for i in range(n):
         vec = rng.normal(0,1, (3,))
@@ -60,7 +60,7 @@ matrices = [
 def test_general_matrix_does_not_specialise(matrix):
     """ Check that axis-magnitude anisotropies """
 
-    site = LatticeSite(0,0,0)
+    site = Site(0, 0, 0)
 
     original = Anisotropy(site=site, anisotropy_matrix=matrix)
 

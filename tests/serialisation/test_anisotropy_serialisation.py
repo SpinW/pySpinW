@@ -1,6 +1,6 @@
 import pytest
 
-from pyspinw import LatticeSite
+from pyspinw import Site
 from pyspinw.anisotropy import Anisotropy, _all_anisotropies
 
 import numpy as np
@@ -16,8 +16,8 @@ matrices = [
 ]
 
 sites = [
-    LatticeSite(1/2, 1/2, 1/2, 0, 1, 0),
-    LatticeSite(0,0,0,1,0,1)
+    Site(1 / 2, 1 / 2, 1 / 2, 0, 1, 0),
+    Site(0, 0, 0, 1, 0, 1)
 
 ]
 

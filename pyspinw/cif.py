@@ -5,7 +5,7 @@ import pathlib
 
 from CifFile.CifFile_module import ReadCifWithErrors
 
-from pyspinw import LatticeSite, TiledSupercell, Structure
+from pyspinw import Site, TiledSupercell, Structure
 from pyspinw.sitemeta import SiteMetadata
 from pyspinw.symmetry.group import NoSuchGroup
 from pyspinw.symmetry.magnetic_group import MagneticSpaceGroup
@@ -112,7 +112,7 @@ def load_cif(filename: str | pathlib.Path,
             # We need to set sensible defaults according to the supercell
             supercell_spins = np.zeros((supercell.n_components(), 3), dtype=float)
 
-            site = LatticeSite(x,y,z, supercell_spins=supercell_spins, name=label, metadata=metadata)
+            site = Site(x, y, z, supercell_spins=supercell_spins, name=label, metadata=metadata)
 
             sites.append(site)
 
@@ -245,10 +245,10 @@ def load_mcif(filename: str | pathlib.Path, entry_index: int=0, verbose: bool=Fa
             else:
                 moment = np.zeros((n_components, 3), dtype=float)
 
-            sites.append(LatticeSite(x,y,z,
-                                     supercell_spins=moment,
-                                     name=label,
-                                     metadata=metadata))
+            sites.append(Site(x, y, z,
+                              supercell_spins=moment,
+                              name=label,
+                              metadata=metadata))
 
 
 

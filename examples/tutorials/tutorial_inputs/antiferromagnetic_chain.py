@@ -22,8 +22,8 @@ from pyspinw import *
 # facing in different directions in $z$.
 
 two_site_unit_cell = UnitCell(2, 1, 1)
-two_site_site_1 = LatticeSite(0.25, 0.5, 0.5, sz=1, name="a")
-two_site_site_2 = LatticeSite(0.75, 0.5, 0.5, sz=-1, name="b")
+two_site_site_1 = Site(0.25, 0.5, 0.5, sz=1, name="a")
+two_site_site_2 = Site(0.75, 0.5, 0.5, sz=-1, name="b")
 two_site_structure = Structure([two_site_site_1, two_site_site_2], two_site_unit_cell)
 
 # Like in the previous example, there are different ways we can set up the exchanges, if we do it explicitly we
@@ -80,7 +80,7 @@ two_site_hamiltonian.spaghetti_plot(path)
 # propagation vector in the $a$ axis ($x$), i.e. (1/2,0,0).
 
 unit_cell = UnitCell(1,1,1)
-site = LatticeSite(0.5, 0.5, 0.5, sz=1)
+site = Site(0.5, 0.5, 0.5, sz=1)
 
 supercell = rotation_supercell(directions=[(0.5, 0, 0)], axes=[(0, 1, 0)])
 
