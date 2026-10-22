@@ -39,22 +39,39 @@ hamiltonian.spaghetti_plot(path, dE=0.4)
 
 
 
-## New features in the python version
+## New in V1.1
 
-There are a number of features in pySpinW that did not exist in the MATLAB version. 
+In going from 1.0 to 1.1 we've made a lot of improvements. 
+There have been a number of name changes, most importantly, changing `LatticeSite` to `Site`. 
+This will likely affect quite a lot of existing scripts, but we considered it's best
+to make this change as early as possible, to minimise its impact.
 
- * A viewer that lets you see magnetic structures and their data simultaneously
- * Parameterisation of hamiltonians
- * Saving of objects (note: we are still in alpha, so expect there to be changes in file format in the near future)
- * Approximation of incommensurate structures
- * Tools for working with spacegroups
+Here's a summary of the main changes:
 
-## Functional parity with SpinW
-
-pySpinW is still in alpha, this means that a small number of features of SpinW are not present or complete
-in pySpinW and that some features are not considered stable.
-
-Not fully ported:
- * Fitting of incommensurate k-vectors (work in progress)
- * Powder fitting tools (basic powder fitting available, but not all tools are ported yet)
-
+ * Tools for navigating an updating an existing crystal structure:
+   * Get sites by name and/or element
+   * Nearest neighbour searches
+   * Finding by symmetry relations
+ * A symmetry based workflow:
+   * Report symmetry constraints
+   * Check validity of exchanges/anisotropies 
+   * Copy exchanges/anisotropies using symmetry
+ * Metadata for sites: color, element, radius
+ * `DirectSupercell` lets you specify spins in different cells independently
+ * Updates to the viewer
+   * Fixes for macOS
+   * Lots more settings
+   * Rendering improvements
+   * Multiple copies of the viewer can run at the same time 
+   * Non-interactive `snapshot` function
+ * Improvements to
+ * Loading and saving: 
+   * CIF
+   * TB2J
+   * pyspinw native format (.spw)
+   * mCIF (currently limited support)
+ * A new website, with new tutorials
+ * Various performance improvements
+ * Bugfixes:
+   * Fixed an error that affected some spinwave calculations involving DM interactions
+   * Viewer bug fixes
