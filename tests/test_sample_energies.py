@@ -6,14 +6,14 @@ from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.path import Path
 from pyspinw.sample import CrystalDomain, Multidomain, SingleCrystal
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.unitcell import UnitCell
 
 
 def ferromagnetic_chain() -> Hamiltonian:
     """ Chain along x with J = -1, S = 1, so E(h) = 2 (1 - cos 2 pi h) meV, independent of k and l """
-    site = LatticeSite(0, 0, 0, 0, 0, 1, name="S")
+    site = Site(0, 0, 0, 0, 0, 1, name="S")
     return Hamiltonian(Structure([site], UnitCell(3.0, 8.0, 8.0)),
                        [HeisenbergExchange(site, site, j=-1.0, cell_offset=(1, 0, 0))])
 

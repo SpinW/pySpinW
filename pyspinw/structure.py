@@ -10,7 +10,7 @@ from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
 from pyspinw.cell_offsets import cell_offset_generator
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
 from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.symmetry.supercell import Supercell, TiledSupercell, DirectSupercell
@@ -26,7 +26,7 @@ class Structure(SPWSerialisable):
     serialisation_name = "structure"
 
     def __init__(self,
-                 sites: list[LatticeSite],
+                 sites: list[Site],
                  unit_cell: UnitCell,
                  spacegroup: SymmetryGroup | None = None,
                  supercell: Supercell | None = None,
@@ -34,7 +34,7 @@ class Structure(SPWSerialisable):
                  show_unit_cell_warning: bool=True,
                  assume_symmetric_sites_are_provided: bool=False,
                  cooerce_spin_data_to_match_supercell: bool=True,
-                 symmetric_sites: list[LatticeSite] | None = None):
+                 symmetric_sites: list[Site] | None = None):
 
 
         if not isinstance(unit_cell, UnitCell):
@@ -59,7 +59,7 @@ class Structure(SPWSerialisable):
         if assume_symmetric_sites_are_provided and symmetric_sites is not None:
             self._sites = symmetric_sites
         else:
-            self._sites: list[LatticeSite] = self._extended_sites()
+            self._sites: list[Site] = self._extended_sites()
 
         self._site_lookup = {site.unique_id: site for site in self._sites} # Cache a map
 
@@ -112,7 +112,7 @@ class Structure(SPWSerialisable):
 
         # supercell
         for cell in self.supercell.cells():
-            all_sites += [LatticeSite(
+            all_sites += [Site(
                 i=site.i + cell.i,
                 j=site.j + cell.j,
                 k=site.k + cell.k,
@@ -129,7 +129,7 @@ class Structure(SPWSerialisable):
 
         return array_data[:,0], array_data[:, 1], array_data[:, 2]
 
-    def _extended_sites(self)  -> list[LatticeSite]:
+    def _extended_sites(self)  -> list[Site]:
         """ All the sites, including those implied by symmetry """
         site_list = self._input_sites.copy()
         for site in self._input_sites:
@@ -188,7 +188,7 @@ class Structure(SPWSerialisable):
                     same_spin = False
 
             if same_spin:
-                unique_sites.append(LatticeSite(
+                unique_sites.append(Site(
                     site_1.i,
                     site_1.j,
                     site_1.k,
@@ -198,7 +198,7 @@ class Structure(SPWSerialisable):
                 ))
 
             else:
-                unique_sites.append(LatticeSite(
+                unique_sites.append(Site(
                     site_1.i,
                     site_1.j,
                     site_1.k,
@@ -225,7 +225,7 @@ class Structure(SPWSerialisable):
         scaling = np.array(scale, dtype=float)
 
         # Create a mapping between sites and offsets to the new sites
-        mapping: dict[tuple[int, tuple[int, int, int]], LatticeSite] = {}
+        mapping: dict[tuple[int, tuple[int, int, int]], Site] = {}
         for index, offset in enumerate(cell_offset_generator(*scale)):
             for site in self.sites:
 
@@ -235,7 +235,7 @@ class Structure(SPWSerialisable):
 
                 spin = self.supercell.spin(site, cell_offset=offset)
 
-                new_site = LatticeSite(
+                new_site = Site(
                     i=position[0],
                     j=position[1],
                     k=position[2],
@@ -270,10 +270,10 @@ class Structure(SPWSerialisable):
 
     def _without_nonmagnetic_with_removed_uids(self) -> tuple["Structure", set[int]]:
         """ Get a copy of the structure without magnetic sites, along with a list of uids for the removed sites """
-        new_sites: list[LatticeSite] = []
+        new_sites: list[Site] = []
 
         # Get rid of the nonmagnetic atoms from input sites
-        new_input_sites: list[LatticeSite] = []
+        new_input_sites: list[Site] = []
         for site in self._input_sites:
             if not np.allclose(site.spin_data, 0.0):
                 new_input_sites.append(site)
@@ -309,12 +309,12 @@ class Structure(SPWSerialisable):
         self._sites = self._extended_sites()
 
     @property
-    def sites(self) -> list[LatticeSite]:
+    def sites(self) -> list[Site]:
         """ Get the sites used to define the structure and implied by symmetry """
         return self._sites.copy()
         # return self._input_sites.copy()
 
-    def sites_by_name(self, name) -> list[LatticeSite]:
+    def sites_by_name(self, name) -> list[Site]:
         """ Get sites where name matches regex"""
         return [site for site in self._sites if site.name.lower().startswith(name.lower())]
 
@@ -343,7 +343,7 @@ class Structure(SPWSerialisable):
         else:
             return found[0]
 
-    def sites_by_element(self, element: str | None) -> list[LatticeSite]:
+    def sites_by_element(self, element: str | None) -> list[Site]:
         """ Get list of sites with the specified element in the metadata"""
         if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"{element} is not a known element")
@@ -383,11 +383,11 @@ class Structure(SPWSerialisable):
         print(self.text_summary)
 
     def all_neighbours(self,
-                       site: LatticeSite,
+                       site: Site,
                        n=1,
                        element: str | None = None,
                        direction_filter: DirectionalityFilter | None = None) \
-            -> list[list[tuple[LatticeSite, CellOffset]]]:
+            -> list[list[tuple[Site, CellOffset]]]:
         """ Get list-of-lists containing (i<=n)-th nearest neighbours along with their cell offsets
 
         :param n: maximum n for n-th nearest neighbour
@@ -400,7 +400,7 @@ class Structure(SPWSerialisable):
             raise ValueError(f"{element} is not an element")
 
         # Get a list of sites we want to check
-        sites_to_check: list[LatticeSite] = []
+        sites_to_check: list[Site] = []
         for test_site in self.sites:
 
             # Filter out sites without the specified element
@@ -452,7 +452,7 @@ class Structure(SPWSerialisable):
 
 
     def neighbours(self,
-                   site: LatticeSite,
+                   site: Site,
                    n=1,
                    element: str | None = None,
                    direction_filter: DirectionalityFilter | None = None):
@@ -473,7 +473,7 @@ class Structure(SPWSerialisable):
         return all_neighbors[-1]
 
     def one_neighbour(self,
-                      site: LatticeSite,
+                      site: Site,
                       n=1,
                       element: str | None = None,
                       direction_filter: DirectionalityFilter | None = None):
@@ -497,7 +497,7 @@ class Structure(SPWSerialisable):
         return neighbors[0]
 
 
-    def symmetry_related(self, site: LatticeSite) -> list[tuple[LatticeSite, set[SpaceOperation]]]:
+    def symmetry_related(self, site: Site) -> list[tuple[Site, set[SpaceOperation]]]:
         """ Get a list of sites related to the specified site by symmetry, including the original site"""
         symmetry_related = []
         for other_site in self._sites:
@@ -558,7 +558,7 @@ class Structure(SPWSerialisable):
         self._build_sites()
 
     def updated(self,
-                sites: list[LatticeSite] | None = None,
+                sites: list[Site] | None = None,
                 unit_cell: UnitCell | None = None,
                 spacegroup: SymmetryGroup | None = None,
                 supercell: Supercell | None = None):
@@ -577,8 +577,8 @@ class Structure(SPWSerialisable):
             )
 
     def exchange_constraints(self,
-                             site_1: LatticeSite | str | ArrayLike,
-                             site_2: LatticeSite | str | ArrayLike,
+                             site_1: Site | str | ArrayLike,
+                             site_2: Site | str | ArrayLike,
                              do_print=True):
         """ Get the constraints for the exchange matrix between two sites """
         if isinstance(site_1, str):
@@ -587,21 +587,21 @@ class Structure(SPWSerialisable):
         if isinstance(site_2, str):
             site_2 = self.site_by_name(site_2)
 
-        if not isinstance(site_1, LatticeSite):
+        if not isinstance(site_1, Site):
             try:
-                site_1 = LatticeSite(i=float(site_1[0]),
-                                     j=float(site_1[1]),
-                                     k=float(site_1[2]),
-                                     name="tmp_site_1")
+                site_1 = Site(i=float(site_1[0]),
+                              j=float(site_1[1]),
+                              k=float(site_1[2]),
+                              name="tmp_site_1")
             except Exception as e:
                 raise TypeError("Expected `site_1` to be a LatticeSite, vector or a name") from e
 
-        if not isinstance(site_2, LatticeSite):
+        if not isinstance(site_2, Site):
             try:
-                site_2 = LatticeSite(i=float(site_2[0]),
-                                     j=float(site_2[1]),
-                                     k=float(site_2[2]),
-                                     name="tmp_site_1")
+                site_2 = Site(i=float(site_2[0]),
+                              j=float(site_2[1]),
+                              k=float(site_2[2]),
+                              name="tmp_site_1")
             except Exception as e:
                 raise TypeError("Expected `site_2` to be a LatticeSite, vector or a name") from e
 
@@ -609,18 +609,18 @@ class Structure(SPWSerialisable):
 
 
     def anisotropy_constraints(self,
-                               site: LatticeSite | str | ArrayLike,
+                               site: Site | str | ArrayLike,
                                do_print=True):
         """ Get the constraints on anisotropies for a given site """
         if isinstance(site, str):
             site = self.site_by_name(site)
 
-        if not isinstance(site, LatticeSite):
+        if not isinstance(site, Site):
             try:
-                site = LatticeSite(i=float(site[0]),
-                                     j=float(site[1]),
-                                     k=float(site[2]),
-                                     name="tmp_site_1")
+                site = Site(i=float(site[0]),
+                            j=float(site[1]),
+                            k=float(site[2]),
+                            name="tmp_site_1")
             except Exception as e:
                 raise TypeError("Expected `site` to be a LatticeSite, vector or a name") from e
 
@@ -638,7 +638,7 @@ class Structure(SPWSerialisable):
     @staticmethod
     @expects_keys("input_sites, unit_cell, spacegroup, supercell, symmetric_sites")
     def _deserialise(json: dict, context: SPWDeserialisationContext):
-        return Structure(sites=[LatticeSite._deserialise(s, context) for s in json["input_sites"]],
+        return Structure(sites=[Site._deserialise(s, context) for s in json["input_sites"]],
                          unit_cell=UnitCell._deserialise(json["unit_cell"], context),
                          spacegroup=SpaceGroup._deserialise(json["spacegroup"], context),
                          supercell=Supercell._deserialise(json["supercell"], context),
@@ -646,7 +646,7 @@ class Structure(SPWSerialisable):
                          show_unit_cell_warning=False,
                          assume_symmetric_sites_are_provided=True,
                          cooerce_spin_data_to_match_supercell=False,
-                         symmetric_sites=[LatticeSite._deserialise(s, context) for s in json["symmetric_sites"]])
+                         symmetric_sites=[Site._deserialise(s, context) for s in json["symmetric_sites"]])
 
     def __repr__(self):
 

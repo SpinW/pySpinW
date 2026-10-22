@@ -11,7 +11,7 @@ from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, ExchangeGroup, \
     BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structure import Structure
 from pyspinw.symmetry.group import database, NoSuchGroup, ExactMatch, PartialMatch
 from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagationVector, RotationTransform, \
@@ -85,7 +85,7 @@ def _check_positions_spins_shape(positions: ArrayLike,
 
 def generate_sites(positions: ArrayLike,
                    spins: ArrayLike | None = None,
-                   names: list[str] | None=None) -> list[LatticeSite]:
+                   names: list[str] | None=None) -> list[Site]:
     """ Create a list of lattice sites
 
     :param positions: positions of the sites
@@ -102,7 +102,7 @@ def generate_sites(positions: ArrayLike,
     for i in range(n_sites):
         position = positions[i, :]
 
-        out.append(LatticeSite(
+        out.append(Site(
             i = position[0],
             j = position[1],
             k = position[2],
@@ -300,7 +300,7 @@ def summation_supercell(
 # Spacegroup methods
 #
 
-def spacegroup(search_string: str):
+def get_spacegroup(search_string: str):
     """ Get a spacegroup by name or symmetry operations
 
     The searches are whitespace and case insensitive.
@@ -379,7 +379,7 @@ def filter(direction: ArrayLike,
             return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
 
-def generate_exchanges(sites: list[LatticeSite] | Structure,
+def generate_exchanges(sites: list[Site] | Structure,
                        unit_cell: UnitCell | None = None,
                        exchange_type: type[Exchange] = HeisenbergExchange,
                        bond: int = 0,
@@ -487,7 +487,7 @@ def generate_exchanges(sites: list[LatticeSite] | Structure,
 
 @check_sizes(axis=(3, ), force_numpy=True)
 def axis_anisotropies(
-        sites: list[LatticeSite] | Structure,
+        sites: list[Site] | Structure,
         a: float,
         axis: ArrayLike = [0, 0, 1],
         name: str = ""):
@@ -499,7 +499,7 @@ def axis_anisotropies(
 
 @check_sizes(matrix=(3,3), force_numpy=True)
 def matrix_anisotropies(
-        sites: list[LatticeSite] | Structure,
+        sites: list[Site] | Structure,
         matrix: ArrayLike,
         name: str = ""):
     """ Create anisotropy objects specified by a matrix, the same for each site """

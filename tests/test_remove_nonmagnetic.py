@@ -1,14 +1,14 @@
 """ Tests for the removal of nonmagnetic sites """
 import numpy as np
-from pyspinw import UnitCell, LatticeSite, Structure, HeisenbergExchange, AxisMagnitudeAnisotropy, Hamiltonian
+from pyspinw import UnitCell, Site, Structure, HeisenbergExchange, AxisMagnitudeAnisotropy, Hamiltonian
 
 
 def test_without_nonmagnetic_structure():
     """ Check that removing nonmagnetic sites from structures works """
     unit_cell = UnitCell(1,1,1)
 
-    magnetic = LatticeSite(0.1,0,0,0,0,1)
-    nonmagnetic = LatticeSite(0.2,0,0,0,0,0)
+    magnetic = Site(0.1, 0, 0, 0, 0, 1)
+    nonmagnetic = Site(0.2, 0, 0, 0, 0, 0)
 
     structure = Structure([magnetic, nonmagnetic], unit_cell=unit_cell)
 
@@ -25,8 +25,8 @@ def test_without_nonmagnetic_hamiltonian():
     """
     unit_cell = UnitCell(1, 1, 1)
 
-    magnetic = LatticeSite(0.1, 0, 0, 0, 0, 1)
-    nonmagnetic = LatticeSite(0.2, 0, 0, 0, 0, 0)
+    magnetic = Site(0.1, 0, 0, 0, 0, 1)
+    nonmagnetic = Site(0.2, 0, 0, 0, 0, 0)
 
     exchanges = [
         HeisenbergExchange(magnetic, magnetic, j=1),

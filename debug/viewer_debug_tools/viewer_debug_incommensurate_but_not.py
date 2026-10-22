@@ -6,13 +6,13 @@ from pyspinw import RotationSupercell
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.gui.viewer import show_object
 from pyspinw.hamiltonian import Hamiltonian
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.structures import Structure
 from pyspinw.symmetry.unitcell import UnitCell
 
 unit_cell = UnitCell(1,1,1)
 
-site = LatticeSite(0.5, 0.5, 0.5, 1, 0, 0, name="origin")
+site = Site(0.5, 0.5, 0.5, 1, 0, 0, name="origin")
 
 supercell = RotationSupercell(
     np.array([0,1,0]),

@@ -2,19 +2,19 @@
 import numpy as np
 import pytest
 
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import Site, ImpliedLatticeSite
 
 def test_serialisation():
     """ Check that the serialisation for lattice sites works with a few examples"""
-    s1 = LatticeSite(1,2,3, 4, 5, 6, name="s1")
-    s2 = LatticeSite(3, 4, 5, supercell_spins=[[7, 8, 9], [10, 11, 12]], name="s2", g=2-np.eye(1))
+    s1 = Site(1, 2, 3, 4, 5, 6, name="s1")
+    s2 = Site(3, 4, 5, supercell_spins=[[7, 8, 9], [10, 11, 12]], name="s2", g=2 - np.eye(1))
     s3 = ImpliedLatticeSite(s1, 4,5,6,7,8,9)
 
     # Even though this doesn't make sense, it should serialise correctly
     s4 = ImpliedLatticeSite(s2, 2, 3, 4, supercell_spins=[1, 2, 3])
 
     for site in [s1, s2, s3, s4]:
-        deserialised = LatticeSite.deserialise(site.serialise())
+        deserialised = Site.deserialise(site.serialise())
 
         assert site.i == deserialised.i
         assert site.j == deserialised.j
@@ -26,7 +26,7 @@ def test_serialisation():
         assert site.name == deserialised.name
 
     for site, parent in [(s3, s1), (s4, s2)]:
-        deserialised = LatticeSite.deserialise(site.serialise())
+        deserialised = Site.deserialise(site.serialise())
 
         assert site.parent_site.name == deserialised.parent_site.name
         assert parent.name == deserialised.parent_site.name

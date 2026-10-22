@@ -13,7 +13,7 @@ from pyspinw.serialisation import (
     numpy_deserialise,
     SPWDeserialisationContext, expects_keys,
 )
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.symmetry.operations import SpaceOperation
 from pyspinw.tolerances import tolerances
 
@@ -49,7 +49,7 @@ class Anisotropy(SPWSerialisable):
     scalar_parameters = []
 
     @check_sizes(anisotropy_matrix=(3, 3), force_numpy=True)
-    def __init__(self, site: LatticeSite, anisotropy_matrix: ArrayLike, name: str = ""):
+    def __init__(self, site: Site, anisotropy_matrix: ArrayLike, name: str = ""):
         self._site = site
         self._anisotropy_matrix = np.array(anisotropy_matrix)
         self._unique_id = _generate_unique_anisotropy_id()
@@ -102,7 +102,7 @@ class Anisotropy(SPWSerialisable):
 
     def symmetry_copy(self,
                       structure: "Structure",
-                      site: LatticeSite):
+                      site: Site):
         """ Copy this anisotropy using symmetry operations """
         # We want to copy the anisotropy under symmetry operations
         # There might be more than one symmetry operation that maps the pair of sites
@@ -218,7 +218,7 @@ class Anisotropy(SPWSerialisable):
     @staticmethod
     @expects_keys("site, anisotropy_matrix, name")
     def _anisotropy_deserialise(json: dict, context: SPWDeserialisationContext):
-        site = LatticeSite._deserialise(json["site"], context)
+        site = Site._deserialise(json["site"], context)
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
         return Anisotropy(site, anisotropy_matrix, json["name"])
 
@@ -236,7 +236,7 @@ class Anisotropy(SPWSerialisable):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.name}', {self.site.name}, {self.parameter_string})"
 
-    def updated(self, site: LatticeSite | None = None, anisotropy_matrix: ArrayLike | None = None, name: str = ""):
+    def updated(self, site: Site | None = None, anisotropy_matrix: ArrayLike | None = None, name: str = ""):
         """Return a copy of this anisotropy term with variables replaced.
 
         Parameters
@@ -295,7 +295,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @check_sizes(direction=(3,), force_numpy=True)
     def __init__(self,
-                 site: LatticeSite,
+                 site: Site,
                  a: float,
                  direction: ArrayLike = np.array([0, 0, 1]),
                  name: str = ""):
@@ -344,13 +344,13 @@ class AxisMagnitudeAnisotropy(Anisotropy):
     @expects_keys("site, a, direction, name")
     def _anisotropy_deserialise(json: dict, context: SPWDeserialisationContext):
         return AxisMagnitudeAnisotropy(
-            LatticeSite._deserialise(json["site"], context),
+            Site._deserialise(json["site"], context),
             json["a"],
             numpy_deserialise(json["direction"]),
             json["name"],
         )
 
-    def updated(self, site: LatticeSite | None = None,
+    def updated(self, site: Site | None = None,
                 a: float | None = None,
                 direction: ArrayLike | None = None,
                 name: str | None = None):

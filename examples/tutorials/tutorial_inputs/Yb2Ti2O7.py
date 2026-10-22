@@ -3,16 +3,16 @@ from pyspinw import *
 
 symmetries = '-z, y+3/4, x+3/4; z+3/4, -y, x+3/4; z+3/4, y+3/4, -x; y+3/4, x+3/4, -z; x+3/4, -z, y+3/4; -z, x+3/4, y+3/4'
 
-sg = spacegroup(symmetries) # Gives spacegroup F 4_1/d -3 2/m, second setting, hall=526
+sg = get_spacegroup(symmetries) # Gives spacegroup F 4_1/d -3 2/m, second setting, hall=526
 print(sg)
 
 a = 10.0307
 unit_cell = UnitCell(a, a, a)
 
-yb = LatticeSite(1/2, 1/2, 1/2, 0,0,1/2, name="Yb 3+")
-ti = LatticeSite(0,0,0, name="Ti 4+")
-o1 = LatticeSite(0.3318, 1/8, 1/8, name="O 2-")
-o2 = LatticeSite(3/8, 3/8, 3/8, name="O 2- ")
+yb = Site(1 / 2, 1 / 2, 1 / 2, 0, 0, 1 / 2, name="Yb 3+")
+ti = Site(0, 0, 0, name="Ti 4+")
+o1 = Site(0.3318, 1 / 8, 1 / 8, name="O 2-")
+o2 = Site(3 / 8, 3 / 8, 3 / 8, name="O 2- ")
 
 sites = [yb, ti, o1, o2]
 

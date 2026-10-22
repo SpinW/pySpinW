@@ -1,5 +1,5 @@
 import pytest
-from pyspinw import SiteMetadata, LatticeSite
+from pyspinw import SiteMetadata, Site
 import numpy as np
 
 element_list = [None, "C", "B", "Na", "Fe"]
@@ -26,11 +26,11 @@ def test_site_metadata_serialisation(element, color, radius):
 @pytest.mark.parametrize("name", name_list)
 def test_site_serialisation_with_implied_metadata(name):
     """ Check site serialisation with metadata implied by name """
-    site = LatticeSite(1/2, 1/2, 1/2, name=name)
+    site = Site(1 / 2, 1 / 2, 1 / 2, name=name)
     json = site.serialise()
-    deserialised = LatticeSite.deserialise(json)
+    deserialised = Site.deserialise(json)
 
-    assert isinstance(deserialised, LatticeSite)
+    assert isinstance(deserialised, Site)
 
     assert site.name == deserialised.name
     assert site.metadata.element == deserialised.metadata.element
@@ -41,11 +41,11 @@ def test_site_serialisation_with_implied_metadata(name):
 @pytest.mark.parametrize("color", color_list)
 def test_site_serialisation_with_color(name, color):
     """ Check site serialisation with metadata implied by name and color keyword """
-    site = LatticeSite(1/2, 1/2, 1/2, name=name, color=color)
+    site = Site(1 / 2, 1 / 2, 1 / 2, name=name, color=color)
     json = site.serialise()
-    deserialised = LatticeSite.deserialise(json)
+    deserialised = Site.deserialise(json)
 
-    assert isinstance(deserialised, LatticeSite)
+    assert isinstance(deserialised, Site)
 
     assert site.name == deserialised.name
     assert site.metadata.element == deserialised.metadata.element
@@ -62,11 +62,11 @@ def test_site_serialisation_with_metadata(name, element, color, radius):
 
     meta = SiteMetadata(element=element, radius=radius, color=color)
 
-    site = LatticeSite(1/2, 1/2, 1/2, name=name, metadata=meta)
+    site = Site(1 / 2, 1 / 2, 1 / 2, name=name, metadata=meta)
     json = site.serialise()
-    deserialised = LatticeSite.deserialise(json)
+    deserialised = Site.deserialise(json)
 
-    assert isinstance(deserialised, LatticeSite)
+    assert isinstance(deserialised, Site)
 
     assert site.name == deserialised.name
     assert site.metadata.element == deserialised.metadata.element

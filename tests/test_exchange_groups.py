@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.exchangegroup import ExchangeGroup, DirectionalityFilter, InDirectionFilter, InPlaneFilter
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.symmetry.unitcell import UnitCell
@@ -9,7 +9,7 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 @pytest.mark.parametrize("lower, upper", [(0, 1), (1, 2), (2, 3), (0, 3)])
 def test_simple_exchange_group(lower, upper):
-    sites = [LatticeSite(name="X", i=0.5, j=0.5, k=0.5)]
+    sites = [Site(name="X", i=0.5, j=0.5, k=0.5)]
 
     cell = UnitCell(1, 1, 1)
 
@@ -42,7 +42,7 @@ def test_simple_exchange_group(lower, upper):
 
 
 def test_exchange_group_direction_filtered():
-    sites = [LatticeSite(name="X", i=0.5, j=0.5, k=0.5)]
+    sites = [Site(name="X", i=0.5, j=0.5, k=0.5)]
 
     cell = UnitCell(1, 1, 1)
 
@@ -68,7 +68,7 @@ def test_exchange_group_direction_filtered():
 
 
 def test_exchange_group_plane_filtered():
-    sites = [LatticeSite(name="X", i=0.5, j=0.5, k=0.5)]
+    sites = [Site(name="X", i=0.5, j=0.5, k=0.5)]
 
     cell = UnitCell(1, 1, 1)
 
@@ -93,7 +93,7 @@ def test_exchange_group_plane_filtered():
 
 
 def test_exchange_bond_index():
-    sites = [LatticeSite(name="X", i=0., j=0., k=0.)]
+    sites = [Site(name="X", i=0., j=0., k=0.)]
 
     cell = UnitCell(1, 1, 2, gamma=120.)
 

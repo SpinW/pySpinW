@@ -7,11 +7,11 @@ from pyspinw import *
 def test_hamiltonian_serialisation():
 
     sites = [
-        LatticeSite(0.1, 0.2, 0.3, 0, 0, 1, name="A"),
-        LatticeSite(0.5, 0.5, 0, 1, 0, 0, name="B")
+        Site(0.1, 0.2, 0.3, 0, 0, 1, name="A"),
+        Site(0.5, 0.5, 0, 1, 0, 0, name="B")
     ]
 
-    sg = spacegroup("P4/mmm")
+    sg = get_spacegroup("P4/mmm")
     unit_cell = UnitCell(1,1,1)
     supercell = TiledSupercell(scaling=(2,3,5))
 

@@ -5,7 +5,7 @@ magnetic structures and excitations
 """
 
 
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.sitemeta import SiteMetadata
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
@@ -16,7 +16,7 @@ from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.exchangegroup import NoDirectionalityFilter, InPlaneFilter, InDirectionFilter, BiDirectionFilter
 
 from pyspinw.interface import (
-    generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, spacegroup,
+    generate_sites, propagation_vectors, rotation_supercell, helical_supercell, summation_supercell, get_spacegroup,
     filter, generate_exchanges, axis_anisotropies, matrix_anisotropies, generate_helical_structure, generate_structure,
     load_tb2j)
 
@@ -43,7 +43,7 @@ from pyspinw.demo import run_demos as demos
 
 __all__ = [
     # site
-    "LatticeSite",
+    "Site",
     "SiteMetadata",
 
     # anisotropy
@@ -86,7 +86,7 @@ __all__ = [
     "rotation_supercell",
     "helical_supercell",
     "summation_supercell",
-    "spacegroup",
+    "get_spacegroup",
     "filter",
     "generate_exchanges",
     "axis_anisotropies",

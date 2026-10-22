@@ -7,7 +7,7 @@ import numpy as np
 from numpy._typing import ArrayLike
 
 from pyspinw.checks import check_sizes
-from pyspinw.site import LatticeSite
+from pyspinw.site import Site
 from pyspinw.tolerances import tolerances
 
 
@@ -31,8 +31,8 @@ def demo_triple_product_matrix():
     m = triple_product_matrix(v)
     print(m)
 
-def problematic_sites(sites: list[LatticeSite],
-                      implied_sites: list[LatticeSite],
+def problematic_sites(sites: list[Site],
+                      implied_sites: list[Site],
                       site_to_implied_site: list[list[int]]):
     """ Find sites that are contradictory in terms of magnetism
 

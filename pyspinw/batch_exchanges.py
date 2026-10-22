@@ -9,7 +9,7 @@ import numpy as np
 
 from pyspinw.lattice_distances import find_relative_positions
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import Site, ImpliedLatticeSite
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.tolerances import tolerances
 
@@ -19,8 +19,8 @@ class AbstractExchange:
     """ Used to internally represent some exchange properties, and some properties that are only needed internally"""
 
     name: str
-    site_1: LatticeSite
-    site_2: LatticeSite
+    site_1: Site
+    site_2: Site
     cell_offset: CellOffset
     distance: float
     order: int
@@ -82,7 +82,7 @@ def apply_naming_convention(naming_pattern: str,
 
 default_naming_pattern = "[type][order]:[site1]-[site2]" #[type]_[order]([site1], [site2])"
 
-def batch_exchanges(sites: list[LatticeSite],
+def batch_exchanges(sites: list[Site],
                     unit_cell: UnitCell,
                     max_distance: float,
                     naming_pattern: str=default_naming_pattern,

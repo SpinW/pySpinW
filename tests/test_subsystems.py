@@ -1,6 +1,6 @@
 """ Tests for the decomposition into subsystems"""
 
-from pyspinw.site import LatticeSite, ImpliedLatticeSite
+from pyspinw.site import Site, ImpliedLatticeSite
 from pyspinw.exchange import HeisenbergExchange
 
 from pyspinw.subsystems import find_components
@@ -8,9 +8,9 @@ from pyspinw.subsystems import find_components
 
 def test_no_exchanges_no_parenting():
     """ Check completely unconnected case returns singletons """
-    sites = [LatticeSite(0,0,0),
-             LatticeSite(0,0,0),
-             LatticeSite(0,0,0)]
+    sites = [Site(0, 0, 0),
+             Site(0, 0, 0),
+             Site(0, 0, 0)]
 
     components = find_components(sites, [])
 
@@ -20,8 +20,8 @@ def test_no_exchanges_no_parenting():
 def test_no_exchanges_some_parenting():
     """ Check that parented sites get put in same group"""
     # Use the i component to identify two groups
-    sites = [LatticeSite(0,0,0),
-             LatticeSite(1,0,0)]
+    sites = [Site(0, 0, 0),
+             Site(1, 0, 0)]
 
     sites += [ImpliedLatticeSite(parent, parent.i, 0, 0) for parent in sites]
 
@@ -41,10 +41,10 @@ def test_two_systems():
     """ Two subsystems defined by exchanges with no parenting going on"""
     # expected group encoded in j
     # site within group encoded in i
-    sites = [LatticeSite(0,0,0),
-             LatticeSite(1,0,0),
-             LatticeSite(0,1,0),
-             LatticeSite(1,1,0)]
+    sites = [Site(0, 0, 0),
+             Site(1, 0, 0),
+             Site(0, 1, 0),
+             Site(1, 1, 0)]
 
     exchanges = [
         HeisenbergExchange(sites[0], sites[1], 1),
@@ -72,8 +72,8 @@ def test_parenting_connected_two_systems():
     """ Same as the two system test, except the non-coupled sites are connected by parentage,
     therefore there should only be a single group
     """
-    sites = [LatticeSite(0, 0, 0),
-             LatticeSite(1, 0, 0)]
+    sites = [Site(0, 0, 0),
+             Site(1, 0, 0)]
 
     sites += [ImpliedLatticeSite(parent, parent.i, 0, 0) for parent in sites]
 
