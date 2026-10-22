@@ -1,12 +1,12 @@
 import pytest
-from pyspinw import load, save, Site, Structure, UnitCell, Hamiltonian, SingleCrystal, spacegroup, load_spw
+from pyspinw import load, save, Site, Structure, UnitCell, Hamiltonian, SingleCrystal, get_spacegroup, load_spw
 
 @pytest.mark.parametrize("add_extension", [True, False], ids=["with extension", "without extension"])
 def test_load_save(tmp_path, add_extension):
     """ Check that loading and saving of internal structures works """
 
     site = Site(1 / 2, 1 / 2, 1 / 2, name="test_site")
-    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroup=spacegroup("p4mm"))
+    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroup=get_spacegroup("p4mm"))
     hamiltonian = Hamiltonian(structure, [])
     sample = SingleCrystal(hamiltonian)
 
@@ -29,7 +29,7 @@ def test_load_save_alt_extension(tmp_path):
     """ Check that loading and saving of internal structures works """
 
     site = Site(1 / 2, 1 / 2, 1 / 2, name="test_site")
-    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroup=spacegroup("p4mm"))
+    structure = Structure([site], unit_cell=UnitCell(1, 1, 2), spacegroup=get_spacegroup("p4mm"))
     hamiltonian = Hamiltonian(structure, [])
     sample = SingleCrystal(hamiltonian)
 

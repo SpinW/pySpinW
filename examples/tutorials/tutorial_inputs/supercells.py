@@ -65,7 +65,7 @@ supercell = TiledSupercell(scaling=(3,5,2))
 structure = Structure(
     [Site(0.5, 0.5, 0.5, 0, 0, 1)],
     UnitCell(1, 1, 1),
-    spacegroup("p1"),
+    get_spacegroup("p1"),
     supercell=supercell)
 ## skip
 view(structure)
@@ -178,7 +178,7 @@ supercell = TransformationSupercell([
 structure = Structure(
     [site],
     UnitCell(1, 1, 1),
-    spacegroup("p1"),
+    get_spacegroup("p1"),
     supercell=supercell)
 
 ## skip
@@ -214,7 +214,7 @@ supercell = RotationSupercell([0,0,1], PropagationVector(0,0,1/np.sqrt(101)))
 structure = Structure(
     [site],
     UnitCell(1, 1, 1),
-    spacegroup("p1"),
+    get_spacegroup("p1"),
     supercell=supercell)
 
 ## skip
@@ -235,7 +235,7 @@ approximant_supercell = supercell.approximant(100)
 structure = Structure(
     [site],
     UnitCell(1, 1, 1),
-    spacegroup("p1"),
+    get_spacegroup("p1"),
     supercell=approximant_supercell)
 
 # With a `max_denominator` of 100, we see that it has approximated the period $\sqrt{101}$ ($\approx 10.04987562...$)

@@ -12,7 +12,7 @@ from pyspinw.symmetry.magnetic_group import MagneticSpaceGroup
 from pyspinw.symmetry.operations import MagneticOperation
 from pyspinw.symmetry.supercell import Supercell
 from pyspinw.symmetry.unitcell import UnitCell
-from pyspinw.interface import spacegroup
+from pyspinw.interface import get_spacegroup
 
 
 
@@ -70,7 +70,7 @@ def load_cif(filename: str | pathlib.Path,
                 print(f"Failed to find space group entry in '{name}'")
             continue
 
-        sg = spacegroup(spacegroup_name)
+        sg = get_spacegroup(spacegroup_name)
 
         a = parse_float_entry(data["_cell_length_a"])
         b = parse_float_entry(data["_cell_length_b"])

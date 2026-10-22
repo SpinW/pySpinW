@@ -3,7 +3,7 @@ from pyspinw import *
 
 symmetries = '-z, y+3/4, x+3/4; z+3/4, -y, x+3/4; z+3/4, y+3/4, -x; y+3/4, x+3/4, -z; x+3/4, -z, y+3/4; -z, x+3/4, y+3/4'
 
-sg = spacegroup(symmetries) # Gives spacegroup F 4_1/d -3 2/m, second setting, hall=526
+sg = get_spacegroup(symmetries) # Gives spacegroup F 4_1/d -3 2/m, second setting, hall=526
 print(sg)
 
 a = 10.0307

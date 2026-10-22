@@ -300,7 +300,7 @@ def summation_supercell(
 # Spacegroup methods
 #
 
-def spacegroup(search_string: str):
+def get_spacegroup(search_string: str):
     """ Get a spacegroup by name or symmetry operations
 
     The searches are whitespace and case insensitive.

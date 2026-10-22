@@ -3,7 +3,7 @@ import pytest
 
 from pyspinw.calculations.energy_minimisation import ClassicalEnergyMinimisation
 from pyspinw.cell_offsets import CellOffset
-from pyspinw.interface import generate_exchanges, spacegroup
+from pyspinw.interface import generate_exchanges, get_spacegroup
 from pyspinw.exchange import HeisenbergExchange
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import Site
@@ -205,7 +205,7 @@ def test_rotation_supercell_error():
     structure = Structure(
         [site],
         UnitCell(1, 1, 1),
-        spacegroup("p1"),
+        get_spacegroup("p1"),
         supercell=supercell)
 
     hamiltonian = Hamiltonian(structure, [])
