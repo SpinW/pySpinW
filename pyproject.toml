@@ -45,7 +45,7 @@ universal2 = true  # produces arm64 + x86_64 macOS wheels
 version = {attr = "pyspinw.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/spinw/pyspinw"
+Homepage = "https://spinw.org/pyspinw"
 Repository = "https://github.com/spinw/pyspinw"
 "Bug Tracker" = "https://github.com/spinw/pyspinw/issues"
 
