@@ -65,11 +65,7 @@ Here's a summary of the main changes:
    * Multiple copies of the viewer can run at the same time 
    * Non-interactive `snapshot` function
  * Improvements to
- * Loading and saving: 
-   * CIF
-   * TB2J
-   * pyspinw native format (.spw)
-   * mCIF (currently limited support)
+ * Loading and saving: CIF, TB2J, pyspinw native format (.spw), mCIF (currently limited support)
  * A new website, with new tutorials
  * Various performance improvements
  * Bugfixes:
