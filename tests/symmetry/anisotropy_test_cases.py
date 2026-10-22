@@ -1,7 +1,7 @@
 """ Test cases for anisotropy symmetry stuff """
 import numpy as np
 
-from pyspinw import UnitCell, spacegroup, LatticeSite, Structure, Hamiltonian, Anisotropy
+from pyspinw import UnitCell, get_spacegroup, LatticeSite, Structure, Hamiltonian, Anisotropy
 from pyspinw.interface import view
 from pyspinw.symmetry.symbolic import evaluate
 
@@ -9,7 +9,7 @@ def anisotropy_test_system():
     """ Test system with only symmetry unrelated sites, covering all Wyckoff positions """
 
     unit_cell = UnitCell(1, 1, 2)
-    sg = spacegroup("P4mm")
+    sg = get_spacegroup("P4mm")
 
     anisotropy_matrix_values = {letter: number for number, letter in enumerate("abcdef", start=1)}
 

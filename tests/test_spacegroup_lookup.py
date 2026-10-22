@@ -1,5 +1,5 @@
 import pytest
-from pyspinw.interface import spacegroup
+from pyspinw.interface import get_spacegroup
 from pyspinw.symmetry.group import NoSuchGroup
 
 expected_lookups = [
@@ -13,7 +13,7 @@ expected_lookups = [
 @pytest.mark.parametrize("search_string, number, full_name, choice", expected_lookups)
 def test_expected_lookups(search_string, number, full_name, choice):
     """ Check that the lookup works for some examples"""
-    group = spacegroup(search_string)
+    group = get_spacegroup(search_string)
 
     assert group.number == number
     assert group.symbol == full_name
@@ -34,7 +34,7 @@ def test_expected_errors(search_string, required_suggestions):
     if expected_errors:
         for term in required_suggestions:
             with pytest.raises(NoSuchGroup, match=term):
-                spacegroup(search_string)
+                get_spacegroup(search_string)
     else:
         with pytest.raises(NoSuchGroup):
-            spacegroup(search_string)
+            get_spacegroup(search_string)

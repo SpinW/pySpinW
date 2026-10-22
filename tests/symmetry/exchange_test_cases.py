@@ -9,7 +9,7 @@ from pyspinw import HeisenbergExchange
 def heisenberg_case_1():
     """ Test case, cubic unit cell """
 
-    sg = spacegroup("p4mm")
+    sg = get_spacegroup("p4mm")
 
     s = LatticeSite(0.25,0.25,0.25,0,0,1, name="X")
 
@@ -29,7 +29,7 @@ def heisenberg_case_1():
 def heisenberg_case_2():
     """ Test case, rhombic unit cell """
 
-    sg = spacegroup("p6mm")
+    sg = get_spacegroup("p6mm")
 
     a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
     b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")
@@ -56,7 +56,7 @@ def heisenberg_case_2():
 def diagonal_case_1():
     """ Test case, cubic unit cell """
 
-    sg = spacegroup("p4mm")
+    sg = get_spacegroup("p4mm")
 
     s = LatticeSite(0.25,0.25,0.25,0,0,1, name="X")
 
@@ -76,7 +76,7 @@ def diagonal_case_1():
 def diagonal_case_2():
     """ Test case, rhombic unit cell """
 
-    sg = spacegroup("p6mm")
+    sg = get_spacegroup("p6mm")
 
     a = LatticeSite(0, 0, 0, 0, 0, 1, name="a")
     b = LatticeSite(0.2, 0, 0, 0, 0, 1, name="b")

@@ -1,10 +1,10 @@
-from pyspinw import spacegroup, UnitCell, LatticeSite, Structure
+from pyspinw import get_spacegroup, UnitCell, LatticeSite, Structure
 from pyspinw.interface import view
 
 
 def case_1() -> Structure:
     unit_cell = UnitCell(1,1,2)
-    sg = spacegroup("P4mm")
+    sg = get_spacegroup("P4mm")
 
     # Pick sites at wyckoff positions in particular
     sites = [
