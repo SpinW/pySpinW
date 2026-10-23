@@ -18,7 +18,8 @@ with open(tutorial_output_dir / "index.md", 'w') as file:
     file.write(":maxdepth: 2\n")
     file.write(":hidden:\n")
     file.write(":glob:\n\n")
-    file.write("tutorials/*/*\n")
+    for filename in filenames:
+        file.write(f'tutorials/{filename[:-3]}/index.md\n')
     file.write("```\n\n")
 
     for index, (filename, text) in enumerate(zip(filenames, text)):
