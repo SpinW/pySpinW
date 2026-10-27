@@ -1,4 +1,4 @@
-""" Shader for most of the objects in the viewer"""
+"""Shader for most of the objects in the viewer."""
 
 import numpy as np
 from OpenGL.GL import *
@@ -8,7 +8,25 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class AnisotropyShader(Shader):
-    """ Shader for most of the objects in the viewer"""
+    """Shader for most of the objects in the viewer.
+
+    Attributes
+    ----------
+    vertex_shader : str
+        Name of the vertex shader resource.
+    fragment_shader : str
+        Name of the fragment shader resource.
+    model_matrix : (4, 4) numpy.ndarray
+        Model transformation matrix.
+    projection_view : (4, 4) numpy.ndarray
+        Combined projection-view matrix.
+    view : (4, 4) numpy.ndarray
+        View transformation matrix.
+    view_position : tuple of (float, float, float)
+        Position of the camera in world coordinates.
+    object_color : tuple of (float, float, float)
+        RGB color of the rendered anisotropy object.
+    """
 
     vertex_shader = "object_vertex"
     fragment_shader = "fresnel_fragment"
@@ -36,12 +54,12 @@ class AnisotropyShader(Shader):
 
     @property
     def camera(self):
-        """ Get the current camera"""
+        """Current camera used by the shader."""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
-        """ Set the camera and associated matrices """
+        """Set the camera and associated matrices."""
         self._camera = camera
 
         self.view = self.camera.view_matrix()
@@ -58,5 +76,3 @@ class AnisotropyShader(Shader):
         glUniform3f(self._view_pos_loc, *self.view_position)
 
         glUniform3f(self._object_color_loc, *self.object_color)
-
-
