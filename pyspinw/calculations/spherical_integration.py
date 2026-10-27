@@ -1,4 +1,4 @@
-""" Support for spherical integration """
+"""Support for spherical integration."""
 
 from enum import Enum
 
@@ -8,7 +8,17 @@ from pyspinw.calculations.fibonacci import Fibonacci
 from pyspinw.calculations.geodesic import Geodesic
 
 class SphericalPointGenerator:
-    """ Base classes for methods of generating points on spheres"""
+    """Base classes for methods of generating points on spheres.
+
+    Parameters
+    ----------
+    n_points_minimum : int
+        Minimum number of sample points requested on the sphere.
+    *args : tuple
+        Additional positional arguments.
+    **kwargs : dict
+        Additional keyword arguments.
+    """
 
     method_name = "<base class>"
 
@@ -20,26 +30,34 @@ class SphericalPointGenerator:
 
     @property
     def actual_n_points(self) -> int:
-        """ Actual number of points produced, always at least as many as requested"""
+        """Actual number of points produced, always at least as many as requested."""
         return self._actual_n_points
 
     @property
     def requested_n_points(self) -> int:
-        """ Number of points requested """
+        """Number of points requested."""
         return self._requested_n_points
 
     @property
     def points(self) -> np.ndarray:
-        """ 3D Cartesian coordinates of points on sphere"""
+        """3D Cartesian coordinates of points on sphere."""
         return self._points
 
     @property
     def weights(self) -> np.ndarray:
-        """ weights (dOmega) associated with each point, for integration"""
+        """Weights (dOmega) associated with each point, for integration."""
         return self._weights
 
     def show_points_lambert(self, new_fig=True, do_show=True):
-        """ Show the sample points in the Lambert equal area projection """
+        """Show the sample points in the Lambert equal area projection.
+
+        Parameters
+        ----------
+        new_fig : bool, optional
+            If ``True``, create a new Matplotlib figure. Default is ``True``.
+        do_show : bool, optional
+            If ``True``, call ``plt.show()``. Default is ``True``.
+        """
         import matplotlib.pyplot as plt
 
         if new_fig:
@@ -74,7 +92,15 @@ class SphericalPointGenerator:
 
 
     def show_points_3d(self, new_fig=True, do_show=True):
-        """ Show sample points in 3D"""
+        """Show sample points in 3D.
+
+        Parameters
+        ----------
+        new_fig : bool, optional
+            If ``True``, create a new Matplotlib figure. Default is ``True``.
+        do_show : bool, optional
+            If ``True``, call ``plt.show()``. Default is ``True``.
+        """
         import matplotlib.pyplot as plt
 
         if new_fig:
@@ -99,17 +125,28 @@ class SphericalPointGenerator:
 
 
 class SphericalPointGeneratorType(Enum):
-    """ Different kinds of point generators for spherical integration """
+    """Different kinds of point generators for spherical integration."""
 
     FIBONACCI = "fibonacci"
     RANDOM = "random"
     GEODESIC = "geodesic"
 
 class FibonacciSphericalPointGenerator(SphericalPointGenerator):
-    """ Generate points on sphere using the Fibonacci method
+    """Generate points on sphere using the Fibonacci method.
 
-    See: J H Hannay and J F Nye 2004 J. Phys. A: Math. Gen. 37 11591
-    DOI: 10.1088/0305-4470/37/48/005
+    Parameters
+    ----------
+    n_points_minimum : int
+        Minimum number of sample points requested on the sphere.
+    *args : tuple
+        Additional positional arguments.
+    **kwargs : dict
+        Additional keyword arguments.
+
+    References
+    ----------
+    .. [1] J. H. Hannay and J. F. Nye, J. Phys. A: Math. Gen. 37, 11591 (2004).
+       DOI: 10.1088/0305-4470/37/48/005
     """
 
     method_name = SphericalPointGeneratorType.FIBONACCI.value.capitalize()
@@ -123,7 +160,19 @@ class FibonacciSphericalPointGenerator(SphericalPointGenerator):
 
 
 class RandomSphericalPointGenerator(SphericalPointGenerator):
-    """ Random points on sphere """
+    """Random points on sphere.
+
+    Parameters
+    ----------
+    n_points_minimum : int
+        Minimum number of sample points requested on the sphere.
+    *args : tuple
+        Additional positional arguments.
+    seed : int or None, optional
+        Random seed for point generation. Default is ``None``.
+    **kwargs : dict
+        Additional keyword arguments.
+    """
 
     method_name = SphericalPointGeneratorType.RANDOM.value.capitalize()
 
@@ -139,7 +188,17 @@ class RandomSphericalPointGenerator(SphericalPointGenerator):
 
 
 class GeodesicSphericalPointGenerator(SphericalPointGenerator):
-    """ Generate points on sphere based on a geodesic geometry"""
+    """Generate points on sphere based on a geodesic geometry.
+
+    Parameters
+    ----------
+    n_points_minimum : int
+        Minimum number of sample points requested on the sphere.
+    *args : tuple
+        Additional positional arguments.
+    **kwargs : dict
+        Additional keyword arguments.
+    """
 
     method_name = SphericalPointGeneratorType.GEODESIC.value.capitalize()
 
@@ -159,13 +218,37 @@ _spherical_point_generator_lookup = {
 
 
 def _names_string():
-    """ Formatted names """
+    """Format available spherical point generator names.
+
+    Returns
+    -------
+    str
+        Human-readable list of valid generator names.
+    """
     all_names = [f"'{name}'" for name in _spherical_point_generator_lookup.keys()]
     return ", ".join(all_names[:-1]) + f" or {all_names[-1]}"
 
 
 def point_generator(name: SphericalPointGeneratorType | str):
-    """ Get a point generator by name / enum value"""
+    """Get a point generator by name / enum value.
+
+    Parameters
+    ----------
+    name : SphericalPointGeneratorType or str
+        Generator type enum or name string.
+
+    Returns
+    -------
+    type of SphericalPointGenerator
+        Spherical point generator class corresponding to `name`.
+
+    Raises
+    ------
+    ValueError
+        If `name` is a string that does not match a known generator.
+    TypeError
+        If `name` is neither a ``SphericalPointGeneratorType`` nor a ``str``.
+    """
     if isinstance(name, SphericalPointGeneratorType):
         return _spherical_point_generator_lookup[name.value.lower()]
 
