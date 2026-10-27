@@ -37,6 +37,10 @@ def _generate_unique_anisotropy_id():
 class Anisotropy(SPWSerialisable):
     """Represent the anisotropy term at a given site.
 
+    The anisotropy matrix is defined in spinW style cartesian coordinates
+    (orthogonal but lattice aligned as best as possible).
+    Assuming spins are understood to be quantum numbers, units are energy.
+
     Parameters
     ----------
     site : Site
@@ -188,8 +192,7 @@ class Anisotropy(SPWSerialisable):
 
     def symmetry_fill(self,
                       structure: "Structure",
-                      include_original=False,
-                      specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT):
+                      include_original=False):
         """Make multiple copies of this anisotropy so that symmetry is satisfied.
 
         Parameters
@@ -199,9 +202,6 @@ class Anisotropy(SPWSerialisable):
         include_original : bool, optional
             Whether to include the original anisotropy in the returned list.
             Default is ``False``.
-        specialisation_rounding_exponent : int or None, optional
-            Rounding exponent for specialising generated anisotropies. Default is
-            ``tolerances.SPECIALISE_ROUNDING_EXPONENT``.
 
         Returns
         -------
@@ -410,7 +410,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
     site : Site
         Lattice site to which the anisotropy term applies.
     a : float
-        Anisotropy constant.
+        Anisotropy constant, a > 0 is easy-plane, a < 0 is easy-axis
     direction : array_like, optional
         Principal anisotropy direction. The vector is normalized before use.
         Default is ``np.array([0, 0, 1])``.
@@ -612,7 +612,7 @@ _all_anisotropies = [AxisMagnitudeAnisotropy, Anisotropy]
 _anisotropy_lookup = {cls._anisotropy_serialisation_name: cls for cls in _all_anisotropies}
 
 def specialise_anisotropy(anisotropy: Anisotropy) -> Anisotropy:
-    """Find the narrowest anisotropy subclass to fit the exchange.
+    """Find the narrowest anisotropy subclass to fit the anisotropy.
 
     Parameters
     ----------
