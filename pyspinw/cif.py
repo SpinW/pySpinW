@@ -1,4 +1,4 @@
-""" CIF File Loading """
+"""CIF File Loading."""
 import numpy as np
 from CifFile import ReadCif
 import pathlib
@@ -18,20 +18,58 @@ from pyspinw.interface import get_spacegroup
 
 
 def parse_float_entry(s: str):
-    """ Parse a float entry, they can have brackets for values that go beyond the specified precision"""
+    """Parse a float entry, they can have brackets for values that go beyond the specified precision.
+
+    Parameters
+    ----------
+    s : str
+        String representation of a floating-point number, optionally containing
+        parenthesised uncertainty digits.
+
+    Returns
+    -------
+    float
+        Parsed floating-point value.
+    """
     s = s.replace("(", "")
     s = s.replace(")", "")
 
     return float(s)
 
 class LoadError(Exception):
-    """ Error thrown when loading fails"""
+    """Error thrown when loading fails."""
 
 def load_cif(filename: str | pathlib.Path,
              supercell: Supercell = TiledSupercell(),
              entry_index: int=0,
              verbose=False) -> Structure:
-    """ Load a CIF file in as a structure """
+    """Load a CIF file in as a structure.
+
+    Parameters
+    ----------
+    filename : str or pathlib.Path
+        Path to the CIF file to load.
+    supercell : Supercell, optional
+        Supercell specification for the loaded structure. Default is
+        ``TiledSupercell()``.
+    entry_index : int, optional
+        Index of the CIF data block entry to start searching from. Default is ``0``.
+    verbose : bool, optional
+        If ``True``, print diagnostic information while reading entries.
+        Default is ``False``.
+
+    Returns
+    -------
+    Structure
+        Loaded crystal structure.
+
+    Raises
+    ------
+    ValueError
+        If ``entry_index`` is out of range.
+    LoadError
+        If no valid structure entries are found in the CIF file.
+    """
     # Get the right bit of data
 
     cif = ReadCif(str(filename), grammar=None, permissive=True)
@@ -121,7 +159,30 @@ def load_cif(filename: str | pathlib.Path,
     raise LoadError("No entries in CIF file")
 
 def load_mcif(filename: str | pathlib.Path, entry_index: int=0, verbose: bool=False) -> Structure:
-    """ Load a mCIF file in as a structure """
+    """Load a mCIF file in as a structure.
+
+    Parameters
+    ----------
+    filename : str or pathlib.Path
+        Path to the mCIF file to load.
+    entry_index : int, optional
+        Index of the CIF data block entry to start searching from. Default is ``0``.
+    verbose : bool, optional
+        If ``True``, print diagnostic information while reading entries.
+        Default is ``False``.
+
+    Returns
+    -------
+    Structure
+        Loaded magnetic crystal structure.
+
+    Raises
+    ------
+    ValueError
+        If ``entry_index`` is out of range or magnetic moment fields cannot be read.
+    LoadError
+        If no valid structure entries are found in the mCIF file.
+    """
     cif = ReadCif(str(filename), grammar=None, permissive=True)
 
     names = [key for key in cif.keys()]
