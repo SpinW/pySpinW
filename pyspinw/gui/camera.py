@@ -1,10 +1,49 @@
-""" Camera model """
+"""Camera model."""
 
 import numpy as np
 
 
 class Camera:
-    """ Data defining a camera """
+    """Data defining a camera.
+
+    Parameters
+    ----------
+    position : tuple of (float, float, float), optional
+        Camera position in world coordinates. Default is ``(-10, 0, 0)``.
+    look_at : tuple of (float, float, float), optional
+        Target point the camera looks at in world coordinates. Default is ``(0, 0, 0)``.
+    up : tuple of (float, float, float), optional
+        Up direction vector of the camera. Default is ``(0, 0, 1)``.
+    fov_deg : float, optional
+        Field of view in degrees. Default is ``50.0``.
+    horizontal_pixels : int, optional
+        Viewport width in pixels. Default is ``800``.
+    vertical_pixels : int, optional
+        Viewport height in pixels. Default is ``600``.
+    orthographic : bool, optional
+        Whether to use orthographic projection instead of perspective. Default is ``True``.
+
+    Attributes
+    ----------
+    position : tuple of (float, float, float)
+        Camera position in world coordinates.
+    look_at : tuple of (float, float, float)
+        Target point the camera looks at in world coordinates.
+    up : tuple of (float, float, float)
+        Up direction vector of the camera.
+    fov_deg : float
+        Field of view in degrees.
+    horizontal_pixels : int
+        Viewport width in pixels.
+    vertical_pixels : int
+        Viewport height in pixels.
+    orthographic : bool
+        Whether to use orthographic projection instead of perspective.
+    fixed_size : float or None
+        Fixed height for orthographic projection, or ``None`` to compute from distance.
+    axes_target : (3,) numpy.ndarray
+        Target position used when computing the orientation axes view matrix.
+    """
 
     def __init__(self,
         position: tuple[float, float, float] = (-10, 0, 0),
@@ -26,21 +65,28 @@ class Camera:
 
     @property
     def aspect_ratio(self) -> float:
-        """ Aspect ratio of this camera """
+        """Aspect ratio of this camera."""
         return self.horizontal_pixels / self.vertical_pixels
 
     @property
     def distance(self) -> float:
-        """ Distance from camera to view origin """
+        """Distance from camera to view origin."""
         return float(np.sqrt(np.sum((np.array(self.position) - np.array(self.look_at))**2)))
 
     def projection_matrix(self, near: float = 0.01, far: float = 100):
-        """ Get the projection matrix (orthographic/perspective based on options)
+        """Get the projection matrix (orthographic/perspective based on options).
 
-        :param near: near clipping plane distance
-        :param far: far clipping plane distance
+        Parameters
+        ----------
+        near : float, optional
+            Near clipping plane distance. Default is ``0.01``.
+        far : float, optional
+            Far clipping plane distance. Default is ``100``.
 
-        :return: 4x4 float32 frustum matrix
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` frustum matrix.
         """
         if self.orthographic:
             return self.orthographic_matrix(near, far)
@@ -48,12 +94,19 @@ class Camera:
             return self.perspective_matrix(near, far)
 
     def perspective_matrix(self, near: float = 0.01, far: float = 100):
-        """ Get the perspective projection matrix for GL
+        """Get the perspective projection matrix for GL.
 
-        :param near: near clipping plane distance
-        :param far: far clipping plane distance
+        Parameters
+        ----------
+        near : float, optional
+            Near clipping plane distance. Default is ``0.01``.
+        far : float, optional
+            Far clipping plane distance. Default is ``100``.
 
-        :return: 4x4 float32 frustum matrix
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` frustum matrix.
         """
         f = 1.0 / np.tan(np.radians(self.fov_deg) / 2)
         m = np.zeros((4, 4), dtype=np.float32)
@@ -67,12 +120,19 @@ class Camera:
         return m
 
     def orthographic_matrix(self, near: float = 0.01, far: float = 100):
-        """ Get the orthographic projection matrix for GL
+        """Get the orthographic projection matrix for GL.
 
-        :param near: near clipping plane distance
-        :param far: far clipping plane distance
+        Parameters
+        ----------
+        near : float, optional
+            Near clipping plane distance. Default is ``0.01``.
+        far : float, optional
+            Far clipping plane distance. Default is ``100``.
 
-        :return: 4x4 float32 frustum matrix
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` frustum matrix.
         """
         if self.fixed_size is None:
             height = 2.0 * self.distance * np.tan(np.radians(self.fov_deg) / 2)
@@ -89,7 +149,13 @@ class Camera:
         ], dtype=np.float32)
 
     def view_matrix(self):
-        """Transform from world position to camera relative """
+        """Transform from world position to camera relative.
+
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` view transformation matrix.
+        """
         eye = np.array(self.position, dtype=np.float32)
         target = np.array(self.look_at, dtype=np.float32)
         up = np.array(self.up, dtype=np.float32)
@@ -116,7 +182,13 @@ class Camera:
 
     axes_target = np.ones((3, ), dtype=np.float32) / 2
     def axes_view_matrix(self):
-        """View matrix for axes"""
+        """View matrix for axes.
+
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` view transformation matrix for the orientation axes.
+        """
         eye = np.array(self.position, dtype=np.float32)
         eye_mag = np.sqrt(np.sum(eye ** 2))
         eye *= 3 / eye_mag
