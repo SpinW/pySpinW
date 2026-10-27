@@ -1,4 +1,4 @@
-""" Shader used for highlighting """
+"""Shader used for highlighting."""
 
 import numpy as np
 from OpenGL.GL import *
@@ -9,7 +9,27 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class SelectionShader(Shader):
-    """ Used for rendering the selection highlighting """
+    """Used for rendering the selection highlighting.
+
+    Attributes
+    ----------
+    vertex_shader : str
+        Name of the vertex shader resource.
+    fragment_shader : str
+        Name of the fragment shader resource.
+    mode : SelectionMode
+        Current selection highlighting state.
+    model_matrix : (4, 4) numpy.ndarray
+        Model transformation matrix.
+    projection_view : (4, 4) numpy.ndarray
+        Combined projection-view matrix.
+    selected_color : tuple of (float, float, float)
+        RGB highlight color for selected objects.
+    hover_color : tuple of (float, float, float)
+        RGB highlight color for hovered objects.
+    selected_hover_color : tuple of (float, float, float)
+        RGB highlight color for objects that are both selected and hovered.
+    """
 
     vertex_shader = "simple_vertex"
     fragment_shader = "emission_fragment"
@@ -37,12 +57,12 @@ class SelectionShader(Shader):
 
     @property
     def camera(self):
-        """ Get the current camera"""
+        """Current camera used by the shader."""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
-        """ Set the camera associated matrices"""
+        """Set the camera associated matrices."""
         self._camera = camera
 
         view = self.camera.view_matrix()
@@ -50,7 +70,7 @@ class SelectionShader(Shader):
         self.projection_view = proj @ view
 
     def _set_uniforms(self):
-        """ Set the shader uniforms for render"""
+        """Set the shader uniforms for render."""
         glUniformMatrix4fv(self._model_loc, 1, GL_TRUE, np.array(self.model_matrix, dtype=np.float32))
         glUniformMatrix4fv(self._projection_view_loc, 1, GL_TRUE, np.array(self.projection_view, dtype=np.float32))
 
