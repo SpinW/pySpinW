@@ -1,4 +1,4 @@
-""" Representation of the Hamiltonian that has lots of precalculated stuff needed for rendering it"""
+"""Representation of the Hamiltonian that has lots of precalculated stuff needed for rendering it."""
 import warnings
 from collections import defaultdict
 from fractions import Fraction
@@ -18,13 +18,27 @@ from pyspinw.util import rotation_from_z
 
 
 class Component:
-    """ Base class for components """
+    """Base class for components.
+
+    Parameters
+    ----------
+    model_matrix : (4, 4) numpy.ndarray
+        4x4 model transformation matrix.
+    """
 
     def __init__(self, model_matrix: np.ndarray):
         self.model_matrix = model_matrix
 
 class Selectable(Component):
-    """ Components that can be selected in the viewer """
+    """Components that can be selected in the viewer.
+
+    Parameters
+    ----------
+    render_id : int
+        Unique integer identifier used for selection rendering.
+    model_matrix : (4, 4) numpy.ndarray
+        4x4 model transformation matrix.
+    """
 
     def __init__(self, render_id: int, model_matrix: np.ndarray):
         super().__init__(model_matrix)
@@ -33,11 +47,38 @@ class Selectable(Component):
 
 
 class RenderSite(Selectable):
-    """ Render information for each site """
+    """Render information for each site.
+
+    Parameters
+    ----------
+    render_id : int
+        Unique integer identifier used for selection rendering.
+    site : Site
+        Magnetic or atomic site to render.
+    unit_cell : UnitCell
+        Unit cell used for coordinate conversion.
+    offset : tuple of (int, int, int) or None
+        Cell offset of the site in the supercell expansion.
+    """
 
     @staticmethod
     def site_model_matrix(position, spin, unit_cell):
-        """ Model matrix for a site """
+        """Model matrix for a site.
+
+        Parameters
+        ----------
+        position : array_like
+            Fractional coordinates of the site.
+        spin : array_like
+            Spin vector of the site.
+        unit_cell : UnitCell
+            Unit cell used to convert fractional coordinates to Cartesian.
+
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` model transformation matrix.
+        """
         rotation = rotation_from_z(spin)
         translation = unit_cell.lattice_units_to_cartesian(position)
 
@@ -67,7 +108,18 @@ class RenderSite(Selectable):
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
-        """ Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries """
+        """Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries.
+
+        Parameters
+        ----------
+        pretty : bool
+            Whether to include periodic boundary duplicate matrices.
+
+        Returns
+        -------
+        list of (4, 4) numpy.ndarray
+            List of 4x4 model transformation matrices.
+        """
         if pretty:
             return self.pretty_render_model_matrices
         else:
@@ -75,11 +127,36 @@ class RenderSite(Selectable):
 
 
 class RenderExchange(Selectable):
-    """ Render information for each exchange """
+    """Render information for each exchange.
+
+    Parameters
+    ----------
+    render_id : int
+        Unique integer identifier used for selection rendering.
+    exchange : Exchange
+        Exchange interaction to render.
+    unit_cell : UnitCell
+        Unit cell used for coordinate conversion.
+    """
 
     @staticmethod
     def segment_model_matrix(a, b, unit_cell):
-        """ Model matrix for a line segment """
+        """Model matrix for a line segment.
+
+        Parameters
+        ----------
+        a : array_like
+            Start point of the segment in fractional coordinates.
+        b : array_like
+            End point of the segment in fractional coordinates.
+        unit_cell : UnitCell
+            Unit cell used to convert fractional coordinates to Cartesian.
+
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` model transformation matrix.
+        """
         # The model this is designed for is a tube that goes from (0,0,0) to (0,0,1)
 
         translation = unit_cell.lattice_units_to_cartesian(a)
@@ -116,7 +193,18 @@ class RenderExchange(Selectable):
         self.split_model_matrices = [self.segment_model_matrix(s1, s2, unit_cell) for s1, s2 in sections]
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
-        """Either the default matrix in a list, or a list of the prettified matrices"""
+        """Either the default matrix in a list, or a list of the prettified matrices.
+
+        Parameters
+        ----------
+        pretty : bool
+            Whether to return wrapped and boundary-duplicated segment matrices.
+
+        Returns
+        -------
+        list of (4, 4) numpy.ndarray
+            List of 4x4 model transformation matrices.
+        """
         if pretty:
             return self.split_model_matrices
         else:
@@ -124,7 +212,17 @@ class RenderExchange(Selectable):
 
 
 class RenderAnisotropy(Component):
-    """ Render information for anisotropies"""
+    """Render information for anisotropies.
+
+    Parameters
+    ----------
+    anisotropy : Anisotropy
+        Single-ion anisotropy term to render.
+    unit_cell : UnitCell
+        Unit cell used for coordinate conversion.
+    scale : float
+        Global eigenvalue range scaling factor.
+    """
 
     # Don't subclass selectable as we don't want to select anisotropies from the viewer
 
@@ -135,7 +233,24 @@ class RenderAnisotropy(Component):
                                anisotropy: Anisotropy,
                                unit_cell: UnitCell,
                                scale: float):
-        """ Gets the model matrix for the anisotropy (see dev docs 'anisotropy_representions')"""
+        """Gets the model matrix for the anisotropy (see dev docs 'anisotropy_representions').
+
+        Parameters
+        ----------
+        position : array_like
+            Fractional coordinates of the site.
+        anisotropy : Anisotropy
+            Single-ion anisotropy term.
+        unit_cell : UnitCell
+            Unit cell used to convert fractional coordinates to Cartesian.
+        scale : float
+            Global eigenvalue range scaling factor.
+
+        Returns
+        -------
+        (4, 4) numpy.ndarray
+            4x4 ``float32`` model transformation matrix.
+        """
         symmetrised = -0.5 * (anisotropy.anisotropy_matrix + anisotropy.anisotropy_matrix.T)
 
         min_eig = np.min(np.linalg.eigvals(symmetrised))
@@ -172,14 +287,47 @@ class RenderAnisotropy(Component):
 
 
     def model_matrices(self, pretty: bool) -> list[np.ndarray]:
-        """ Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries """
+        """Get list of model matrices, pretty flag control whether to include duplicates for cell boundaries.
+
+        Parameters
+        ----------
+        pretty : bool
+            Whether to include periodic boundary duplicate matrices.
+
+        Returns
+        -------
+        list of (4, 4) numpy.ndarray
+            List of 4x4 model transformation matrices.
+        """
         if pretty:
             return self.pretty_render_model_matrices
         else:
             return [self.model_matrix]
 
 class RenderModel:
-    """ Model of the hamiltonian, contains lots of derived information for rendering and text representation"""
+    """Model of the hamiltonian, contains lots of derived information for rendering and text representation.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Hamiltonian to build the render model from.
+    copies : tuple of (int, int, int), optional
+        Additional supercell scaling along each lattice vector. Default is
+        ``(1, 1, 1)``.
+    rotation_supercell_expansion_max : tuple of (int, int, int), optional
+        Maximum denominator along each axis when approximating a
+        ``RotationSupercell`` propagation vector as a commensurate cell.
+        Default is ``(10, 10, 10)``.
+    propagation_vector_tolerance : float, optional
+        Tolerance for matching a propagation vector component to a rational
+        fraction. Default is ``1e-4``.
+
+    Raises
+    ------
+    TypeError
+        If the Hamiltonian supercell is neither a ``RotationSupercell`` nor a
+        ``CommensurateSupercell``.
+    """
 
     def __init__(self,
                  hamiltonian: Hamiltonian,
@@ -347,6 +495,12 @@ class RenderModel:
             self.unit_cell_axes_transforms.append(rotation_matrix @ translation_matrix)
 
     def cells(self):
-        """ Generator for cell offsets for each of the displayed cells"""
+        """Generator for cell offsets for each of the displayed cells.
+
+        Returns
+        -------
+        Iterator[CellOffset]
+            Generator of ``CellOffset`` instances for the expanded supercell.
+        """
         return cell_offset_generator(*self.expansion_size)
 
