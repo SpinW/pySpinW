@@ -1,4 +1,4 @@
-""" Loading files in general """
+"""Loading files in general."""
 import pathlib
 
 from pyspinw.symmetry.supercell import TiledSupercell
@@ -12,13 +12,37 @@ def load(filename: str | pathlib.Path,
          cif_supercell: Supercell | None = None,
          cif_entry_index: int | None = None,
          verbose: bool = False):
-    """ Loading of data from a file, infers from extension
+    """Loading of data from a file, infers from extension.
 
-    Extension:
-      .spw: loads as pySpinW internal format
-      .cif: loads as Crystallographic Interchange Format
+    Supported formats:
 
-    For TB2J, providing a directory containing `tb2j.pickle` and `exchange.out`
+    - ``.spw``: loads as pySpinW internal format.
+    - ``.cif``: loads as Crystallographic Interchange Format.
+    - For TB2J, provide a directory containing ``tb2j.pickle`` or ``exchange.out``.
+
+    Parameters
+    ----------
+    filename : str or pathlib.Path
+        Path to the file or TB2J directory to load.
+    cif_supercell : Supercell or None, optional
+        Supercell specification when loading a ``.cif`` file. Defaults to
+        ``TiledSupercell()`` if ``None``.
+    cif_entry_index : int or None, optional
+        Entry index when loading a ``.cif`` file. Defaults to ``0`` if ``None``.
+    verbose : bool, optional
+        If ``True``, print diagnostic information when loading a ``.cif`` file.
+        Default is ``False``.
+
+    Returns
+    -------
+    Any
+        Deserialised pySpinW object, `Structure`, or `Hamiltonian` depending on
+        the input format.
+
+    Raises
+    ------
+    ValueError
+        If the file has no extension or an unknown extension.
     """
     # Check for TB2J
     filename_path = pathlib.Path(filename)
