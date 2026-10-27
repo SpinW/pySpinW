@@ -1,4 +1,4 @@
-""" Helper functions for python interface """
+"""Helper functions for python interface."""
 import math
 
 import numpy as np
@@ -24,12 +24,35 @@ try:
     from pyspinw.gui.viewer import show_object
 except ModuleNotFoundError:
     def show_hamiltonian(*args, **kwargs):
-        """ Show a Hamiltonian in the viewer"""
+        """Show a Hamiltonian in the viewer."""
         raise RuntimeError('PySide or OpenGL not installed')
 
 def _check_positions_spins_shape(positions: ArrayLike,
                                    spins: ArrayLike | None = None) -> tuple[ArrayLike, ArrayLike]:
-    """ Checks position and spin arrays and put them into canonical shape """
+    """Check position and spin arrays and put them into canonical shape.
+
+    Parameters
+    ----------
+    positions : array_like
+        Atomic site positions as a length-3 vector or ``(n_sites, 3)`` array.
+    spins : array_like, optional
+        Site spin vectors as a length-3 vector, ``(n_sites, 3)`` array, or
+        ``(n_sites, m, 3)`` array. If ``None``, all spins are initialised to zero.
+        Default is ``None``.
+
+    Returns
+    -------
+    positions : (n_sites, 3) numpy.ndarray
+        Canonical 2D array of site positions.
+    spins : numpy.ndarray
+        Canonical 3D array of site spin components.
+
+    Raises
+    ------
+    ValueError
+        If ``positions`` or ``spins`` do not have valid dimensions or matching
+        site counts.
+    """
     # check the positions are n-by-3, or 1d
     positions = np.array(positions, dtype=float)
     match len(positions.shape):
@@ -86,11 +109,22 @@ def _check_positions_spins_shape(positions: ArrayLike,
 def generate_sites(positions: ArrayLike,
                    spins: ArrayLike | None = None,
                    names: list[str] | None=None) -> list[Site]:
-    """ Create a list of lattice sites
+    """Create a list of lattice sites.
 
-    :param positions: positions of the sites
-    :param spins: spins of the sites, if not specified, they will be set to zero
-    :param names: (optional) a list of names for sites
+    Parameters
+    ----------
+    positions : array_like
+        Positions of the sites in fractional lattice coordinates.
+    spins : array_like, optional
+        Spins of the sites; if not specified, they will be set to zero.
+        Default is ``None``.
+    names : list of str, optional
+        A list of names for sites. Default is ``None``.
+
+    Returns
+    -------
+    list of Site
+        Created ``Site`` objects.
     """
     positions, spins = _check_positions_spins_shape(positions, spins)
 
@@ -119,7 +153,34 @@ def _transform_site(unit_cell: UnitCell,
                     magnitudes: ArrayLike | None,
                     positions_unit: CoordsUnits | str,
                     spins_unit: CoordsUnits | str) -> tuple:
-    """ Converts site data into default units """
+    """Convert site data into default units.
+
+    Parameters
+    ----------
+    unit_cell : UnitCell
+        Unit cell used for coordinate conversions.
+    positions : array_like
+        Positions of the sites.
+    spins : array_like
+        Spin vectors of the sites.
+    names : list of str or None
+        Names for the sites.
+    magnitudes : array_like or None
+        Target spin magnitudes for each site.
+    positions_unit : CoordsUnits or str
+        Coordinate unit of ``positions`` (``'lu'`` or ``'xyz'``).
+    spins_unit : CoordsUnits or str
+        Coordinate unit of ``spins`` (``'lu'`` or ``'xyz'``).
+
+    Returns
+    -------
+    positions : numpy.ndarray
+        Site positions in fractional lattice units.
+    spins : numpy.ndarray
+        Site spin vectors in Cartesian coordinates scaled to ``magnitudes``.
+    names : list of str or None
+        Names for the sites.
+    """
     positions, spins = _check_positions_spins_shape(positions, spins)
     # check units
     positions_unit = CoordsUnits(positions_unit)
@@ -147,25 +208,34 @@ def generate_structure(unit_cell: UnitCell,
                        magnitudes: ArrayLike | None = None,
                        positions_unit: CoordsUnits | str = 'lu',
                        spins_unit: CoordsUnits | str = 'xyz') -> Structure:
-    """ Creates a magnetic structure from a list of positions and spins
+    """Create a magnetic structure from a list of positions and spins.
 
-    :param unit_cell: a UnitCell object
-    :param positions: positions of the sites
-    :param spins: spins of the sites
-    :param perpendicular: vector perpendicular to helix plane of rotation
-    :param propagation_vectors: the propagation vector(s)
-    :param names: (optional) a list of names for sites
-    :param magnitudes: (optional) a list of spin magnitudes (spin length S)
-                       If not specified, the norm of the spins vectors will be used as the spin length
-    :param positions_units: the units for atomic positions; either 'lu' or 'xyz'
-                            (default: 'lu', lattice units)
-    :param spins_units: the units for the magnetic spin directions; either 'lu' or 'xyz'
-                          (default: 'xyz', Cartesian axis with x||a)
-    :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
-                                 spins_units is not 'xyz' and allows conversion from those units
-                                 to the default used in LatticeSite.
-                                 (see `pyspinw.UnitCell.spin_fractional_to_cartesian and
-                                 `pyspinw.UnitCell.spin_cartesian_to_fractional`)
+    Parameters
+    ----------
+    unit_cell : UnitCell
+        A ``UnitCell`` object.
+    positions : array_like
+        Positions of the sites.
+    spins : array_like
+        Spins of the sites.
+    propagation_vectors : array_like, optional
+        The propagation vector(s). Default is ``None``.
+    names : list of str, optional
+        A list of names for sites. Default is ``None``.
+    magnitudes : array_like, optional
+        A list of spin magnitudes (spin length ``S``). If not specified, the norm
+        of the spin vectors will be used as the spin length. Default is ``None``.
+    positions_unit : CoordsUnits or str, optional
+        The units for atomic positions; either ``'lu'`` or ``'xyz'``. Default is
+        ``'lu'`` (lattice units).
+    spins_unit : CoordsUnits or str, optional
+        The units for the magnetic spin directions; either ``'lu'`` or ``'xyz'``.
+        Default is ``'xyz'`` (Cartesian axis with ``x || a``).
+
+    Returns
+    -------
+    Structure
+        Constructed magnetic ``Structure``.
     """
     s = generate_sites(*_transform_site(unit_cell, positions, spins, names, magnitudes, positions_unit, spins_unit))
     if propagation_vectors is not None:
@@ -185,25 +255,36 @@ def generate_helical_structure(unit_cell: UnitCell,
                                magnitudes: ArrayLike | None = None,
                                positions_unit: CoordsUnits | str = 'lu',
                                spins_unit: CoordsUnits | str = 'xyz') -> Structure:
-    """ Creates a helical structure with a propagation vector and plane normal
+    """Create a helical structure with a propagation vector and plane normal.
 
-    :param unit_cell: a UnitCell object
-    :param positions: positions of the sites
-    :param spins: spins of the sites
-    :param perpendicular: vector perpendicular to helix plane of rotation
-    :param propagation_vector: the propagation vector
-    :param names: (optional) a list of names for sites
-    :param magnitudes: (optional) a list of spin magnitudes (spin length S)
-                       If not specified, the norm of the spins vectors will be used as the spin length
-    :param positions_units: the units for atomic positions; either 'lu' or 'xyz'
-                            (default: 'lu', lattice units)
-    :param spins_units: the units for the magnetic spin directions; either 'lu' or 'xyz'
-                          (default: 'xyz', Cartesian axis with x||a)
-    :param convert_to_cell_with: (optional) Must be specified if positions_units is not 'lu' and
-                                 spins_units is not 'xyz' and allows conversion from those units
-                                 to the default used in LatticeSite.
-                                 (see `pyspinw.UnitCell.spin_fractional_to_cartesian and
-                                 `pyspinw.UnitCell.spin_cartesian_to_fractional`)
+    Parameters
+    ----------
+    unit_cell : UnitCell
+        A ``UnitCell`` object.
+    positions : array_like
+        Positions of the sites.
+    spins : array_like
+        Spins of the sites.
+    perpendicular : array_like
+        Vector perpendicular to the helix plane of rotation.
+    propagation_vector : array_like
+        The propagation vector.
+    names : list of str, optional
+        A list of names for sites. Default is ``None``.
+    magnitudes : array_like, optional
+        A list of spin magnitudes (spin length ``S``). If not specified, the norm
+        of the spin vectors will be used as the spin length. Default is ``None``.
+    positions_unit : CoordsUnits or str, optional
+        The units for atomic positions; either ``'lu'`` or ``'xyz'``. Default is
+        ``'lu'`` (lattice units).
+    spins_unit : CoordsUnits or str, optional
+        The units for the magnetic spin directions; either ``'lu'`` or ``'xyz'``.
+        Default is ``'xyz'`` (Cartesian axis with ``x || a``).
+
+    Returns
+    -------
+    Structure
+        Constructed helical ``Structure``.
     """
     s = generate_sites(*_transform_site(unit_cell, positions, spins, names, magnitudes, positions_unit, spins_unit))
     return Structure(s, unit_cell, supercell=RotationSupercell(perpendicular, propagation_vector))
@@ -217,11 +298,21 @@ def propagation_vectors(
         directions: np.ndarray,
         phases: np.ndarray | None = None,
         incommensurate: bool=False) -> list[PropagationVector]:
-    """ Create list of propagation vectors
+    """Create list of propagation vectors.
 
-    :param directions: n-by-3 matrix of directions (in lattice units)
-    :param phases: n vector of phases
-    :param incommensurate: Whether or not to set them to be incommensuate
+    Parameters
+    ----------
+    directions : (n, 3) numpy.ndarray
+        ``n``-by-3 matrix of directions (in lattice units).
+    phases : (n,) numpy.ndarray, optional
+        Length-``n`` vector of phases. Default is ``None``.
+    incommensurate : bool, optional
+        Whether or not to set them to be incommensurate. Default is ``False``.
+
+    Returns
+    -------
+    list of PropagationVector
+        Created propagation vectors.
     """
     if phases is None:
         phases = [0.0 for _ in range(directions.shape[0])]
@@ -246,11 +337,20 @@ def propagation_vectors(
 
 @check_sizes(perpendicular=(3,), propagation=(3,))
 def helical_supercell(perpendicular: ArrayLike, propagation: ArrayLike):
-    """ Generate a helical supercell
+    """Generate a helical supercell.
 
-    :param perpendicular: (3-vector) Direction perpendicular to propagation vector, needed to specify "start" cell
-    :param propagation: (3-vector) Propagation vector
+    Parameters
+    ----------
+    perpendicular : (3,) array_like
+        Direction perpendicular to propagation vector, needed to specify "start"
+        cell.
+    propagation : (3,) array_like
+        Propagation vector.
 
+    Returns
+    -------
+    RotationSupercell
+        Generated helical supercell.
     """
     return RotationSupercell(perpendicular=perpendicular, propagation_vector=propagation)
 
@@ -260,13 +360,26 @@ def rotation_supercell(
         axes: ArrayLike,
         phases: ArrayLike | None = None,
         scaling: tuple[int, int, int]=(1,1,1)):
-    """ Create a supercell that rotates spins as we move along the propagation vector
+    """Create a supercell that rotates spins as we move along the propagation vector.
 
-    :param directions: propagation vector directions
-    :param axes: rotation axes for each propagation vector,
-                 or if only a single axis is specified, apply it to all of them
-    :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
-    :param scaling: Make a larger supercell by tiling the result this many times in each axis
+    Parameters
+    ----------
+    directions : (n, 3) array_like
+        Propagation vector directions.
+    axes : (n, 3) array_like
+        Rotation axes for each propagation vector, or if only a single axis is
+        specified, apply it to all of them.
+    phases : (n,) array_like, optional
+        Phases of the propagation vectors; ``0.0`` means starting with the spin as
+        specified on the site. Default is ``None``.
+    scaling : tuple of (int, int, int), optional
+        Make a larger supercell by tiling the result this many times in each axis.
+        Default is ``(1, 1, 1)``.
+
+    Returns
+    -------
+    TransformationSupercell
+        Supercell applying the specified spin rotations.
     """
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
     vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
@@ -283,13 +396,25 @@ def summation_supercell(
         directions: np.ndarray,
         phases: np.ndarray | None = None,
         scaling: tuple[int, int, int]=(1,1,1)):
-    """ Create a supercell based on the propagation vectors and partial spins
+    r"""Create a supercell based on the propagation vectors and partial spins.
 
-    i.e. $m = \\sum_j mu_j exp(2 \\pi i d_j.r + \\phi_j)$
+    Specifically, :math:`m = \sum_j \mu_j \exp(2 \pi i d_j \cdot r + \phi_j)`.
 
-    :param directions: propagation vector directions
-    :param phases: Phases of the propagation vectors, 0.0 means starting with the spin as specified on the site
-    :param scaling: Make a larger supercell by tiling the result this many times in each axis
+    Parameters
+    ----------
+    directions : (n, 3) numpy.ndarray
+        Propagation vector directions.
+    phases : (n,) numpy.ndarray, optional
+        Phases of the propagation vectors; ``0.0`` means starting with the spin as
+        specified on the site. Default is ``None``.
+    scaling : tuple of (int, int, int), optional
+        Make a larger supercell by tiling the result this many times in each axis.
+        Default is ``(1, 1, 1)``.
+
+    Returns
+    -------
+    SummationSupercell
+        Supercell summing partial spin components over the propagation vectors.
     """
     # Type of vectors will be assured to be list[CommensuratePropagationVector] as long as incommensurate is False
     vectors: list[CommensuratePropagationVector] = propagation_vectors(directions, phases, incommensurate=False)
@@ -301,32 +426,49 @@ def summation_supercell(
 #
 
 def get_spacegroup(search_string: str):
-    """ Get a spacegroup by name or symmetry operations
+    """Get a spacegroup by name or symmetry operations.
 
     The searches are whitespace and case insensitive.
 
-    Examples:
-        The following are equivalent:
-            spacegroup("P1")
-            spacegroup("p1")
-            spacegroup("x,y,z")
+    Parameters
+    ----------
+    search_string : str
+        Spacegroup symbol or semicolon-separated symmetry operations string.
 
-        The following are equivalent:
-            spacegroup("P-1")
-            spacegroup("p-1")
-            spacegroup("x,y,z; -x,-y,-z")
+    Returns
+    -------
+    SpaceGroup
+        Matching spacegroup from the symmetry database.
 
-        Spacegroups with multiple settings sometimes need to have it specified, but some don't:
-            spacegroup("R3")  **fails**
-            spacegroup("R3H")  **hexagonal setting**
-            spacegroup("R3R")  **rhombohedral setting**
+    Raises
+    ------
+    NoSuchGroup
+        If no matching spacegroup is found or multiple ambiguous matches exist.
+    ValueError
+        If the database lookup returns an unexpected match result type.
 
-            spacegroup("B2/m") **this setting of C2/m**
-            spacegroup("B 1 2/m 1") **another way for the same group**
+    Examples
+    --------
+    The following are equivalent::
 
-            spacegroup("P 4/n 2/b 2/m : 1") **setting 1**
-            spacegroup("P 4/n 2/b 2/m : 1") **setting 2**
+        get_spacegroup("P1")
+        get_spacegroup("p1")
+        get_spacegroup("x,y,z")
 
+    The following are equivalent::
+
+        get_spacegroup("P-1")
+        get_spacegroup("p-1")
+        get_spacegroup("x,y,z; -x,-y,-z")
+
+    Spacegroups with multiple settings sometimes need to have it specified::
+
+        get_spacegroup("R3H")  # hexagonal setting
+        get_spacegroup("R3R")  # rhombohedral setting
+        get_spacegroup("B2/m")  # this setting of C2/m
+        get_spacegroup("B 1 2/m 1")  # another way for the same group
+        get_spacegroup("P 4/n 2/b 2/m : 1")  # setting 1
+        get_spacegroup("P 4/n 2/b 2/m : 2")  # setting 2
     """
     if 'x' in search_string and 'y' in search_string and 'z' in search_string:
         # Not a spacegroup name, but might be a list of symmetry operations
@@ -360,15 +502,27 @@ def filter(direction: ArrayLike,
            perpendicular: bool=False,
            symmetric: bool=False,
            max_dev_angle_deg: float=0.01) -> DirectionalityFilter:
-    """ Create a filter for directions (helper method for exchanges)
+    """Create a filter for directions (helper method for exchanges).
 
-    :param direction: If not perpendicular, allowed direction of exchange
-                      If perpendicular, normal to plane containing exchange
-    :param perpendicular: Constrain to a line (perpendicular=False) or a plane (perpendicular=True)
-    :param symmetric: In the not perpendicular case, symmetric True generates exchanges in both directions
-    :param max_dev_angle_deg: Angular tolerance for the direction/normal in degrees
+    Parameters
+    ----------
+    direction : (3,) array_like
+        If not perpendicular, allowed direction of exchange. If perpendicular,
+        normal to plane containing exchange.
+    perpendicular : bool, optional
+        Constrain to a line (``perpendicular=False``) or a plane
+        (``perpendicular=True``). Default is ``False``.
+    symmetric : bool, optional
+        In the non-perpendicular case, ``symmetric=True`` generates exchanges in
+        both directions. Default is ``False``.
+    max_dev_angle_deg : float, optional
+        Angular tolerance for the direction/normal in degrees. Default is ``0.01``.
 
-    :returns: A DirectionalityFilter object that can be used to select exchanges in particular directions
+    Returns
+    -------
+    DirectionalityFilter
+        A ``DirectionalityFilter`` object that can be used to select exchanges in
+        particular directions.
     """
     if perpendicular:
         return InPlaneFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
@@ -398,30 +552,72 @@ def generate_exchanges(sites: list[Site] | Structure,
                        exchange_parameters: dict | None = None,
                        naming_pattern: str | None = None,
                        color: tuple[float, float, float] | None = None):
-    """ Automatically creates a list of exchanges
+    """Automatically create a list of exchanges.
 
-    :param sites: *required* List of sites to make exchanges between or a Structure object
-    :param unit_cell: Unit cell (needed if first argument is a list of sites)
-    :param exchange_type: Type of exchange (defaults to HeisenbergExchange)
-    :param bond: The bond index (If this is given the _distance parameters are ignored)
-    :param max_distance: Maximum Cartesian distance (in Angstrom) at which exchanges are made
-    :param min_distance: Minimum Cartesian distance (in Angstrom) at which exchanges are made
-    :param direction_filter: Supply a DirectionalityFilter object (e.g. using ``filter``)
-                             to only create exchanges in certain directions
-    :param max_order: Maximum "order" of exchanges
-    :param j: Constant for scalar valued Heisenberg exchanges (only needed for Heisenberg)
-    :param j_x: Constant for x component of Heisenberg-like exchanges (only needed for Diagonal)
-    :param j_y: Constant for y component of Heisenberg-like exchanges (only needed for Diagonal)
-    :param j_z: Constant for z component of Heisenberg-like exchanges (only needed for Diagonal, Ising and XY)
-    :param j_xy: Constant for x and y components of Heisenberg-like exchanges (only needed for XY and XXZ)
-    :param d_x: Constant for x component of Dzyaloshinskii-Moriya exchange (DM)
-    :param d_y: Constant for y component of Dzyaloshinskii-Moriya exchange (DM)
-    :param d_z: Constant for z component of Dzyaloshinskii-Moriya exchange (DM)
-    :param exchange_parameters: Parameters can be supplied in a dictionary instead
-    :param naming_pattern: String used to assign names to exchanges, see ``apply_naming_convention``
-    :param color: Colour to draw the exchange with
+    Parameters
+    ----------
+    sites : list of Site or Structure
+        List of sites to make exchanges between or a ``Structure`` object.
+    unit_cell : UnitCell, optional
+        Unit cell (needed if first argument is a list of sites). Default is ``None``.
+    exchange_type : type of Exchange, optional
+        Type of exchange. Default is ``HeisenbergExchange``.
+    bond : int, optional
+        The bond index (if this is given the ``*_distance`` parameters are ignored).
+        Default is ``0``.
+    max_distance : float, optional
+        Maximum Cartesian distance (in Angstrom) at which exchanges are made.
+        Default is ``0.0``.
+    min_distance : float, optional
+        Minimum Cartesian distance (in Angstrom) at which exchanges are made.
+        Default is ``0.0``.
+    direction_filter : DirectionalityFilter, optional
+        Supply a ``DirectionalityFilter`` object (e.g. using ``filter``) to only
+        create exchanges in certain directions. Default is ``None``.
+    max_order : int, optional
+        Maximum "order" of exchanges. Default is ``None``.
+    j : float, optional
+        Constant for scalar valued Heisenberg exchanges (only needed for
+        Heisenberg). Default is ``None``.
+    j_x : float, optional
+        Constant for x component of Heisenberg-like exchanges (only needed for
+        Diagonal). Default is ``None``.
+    j_y : float, optional
+        Constant for y component of Heisenberg-like exchanges (only needed for
+        Diagonal). Default is ``None``.
+    j_xy : float, optional
+        Constant for x and y components of Heisenberg-like exchanges (only needed
+        for XY and XXZ). Default is ``None``.
+    j_z : float, optional
+        Constant for z component of Heisenberg-like exchanges (only needed for
+        Diagonal, Ising and XY). Default is ``None``.
+    d_x : float, optional
+        Constant for x component of Dzyaloshinskii-Moriya exchange (DM). Default is
+        ``None``.
+    d_y : float, optional
+        Constant for y component of Dzyaloshinskii-Moriya exchange (DM). Default is
+        ``None``.
+    d_z : float, optional
+        Constant for z component of Dzyaloshinskii-Moriya exchange (DM). Default is
+        ``None``.
+    exchange_parameters : dict, optional
+        Parameters can be supplied in a dictionary instead. Default is ``None``.
+    naming_pattern : str, optional
+        String used to assign names to exchanges; see ``apply_naming_convention``.
+        Default is ``None``.
+    color : tuple of (float, float, float), optional
+        Colour to draw the exchange with. Default is ``None``.
 
-    :returns: list of exchanges
+    Returns
+    -------
+    list of Exchange
+        Generated list of exchanges.
+
+    Raises
+    ------
+    RuntimeError
+        If ``sites`` is not a ``Structure`` and ``unit_cell`` is ``None``, or if
+        neither ``bond`` nor distance bounds are specified.
     """
     if isinstance(sites, Structure):
         unit_cell = sites.unit_cell
@@ -491,7 +687,24 @@ def axis_anisotropies(
         a: float,
         axis: ArrayLike = [0, 0, 1],
         name: str = ""):
-    """ Create anisotropy objects with magnitude `a` in direction `axis` for each site """
+    """Create anisotropy objects with magnitude ``a`` in direction ``axis`` for each site.
+
+    Parameters
+    ----------
+    sites : list of Site or Structure
+        Sites or ``Structure`` to attach anisotropies to.
+    a : float
+        Anisotropy magnitude.
+    axis : (3,) array_like, optional
+        Anisotropy axis direction. Default is ``[0, 0, 1]``.
+    name : str, optional
+        Name for the created anisotropy terms. Default is ``""``.
+
+    Returns
+    -------
+    list of AxisMagnitudeAnisotropy
+        Created axis-magnitude anisotropy objects for each site.
+    """
     if isinstance(sites, Structure):
         sites = sites.sites
     return [AxisMagnitudeAnisotropy(site, a, axis, name) for site in sites]
@@ -502,15 +715,47 @@ def matrix_anisotropies(
         sites: list[Site] | Structure,
         matrix: ArrayLike,
         name: str = ""):
-    """ Create anisotropy objects specified by a matrix, the same for each site """
+    """Create anisotropy objects specified by a matrix, the same for each site.
+
+    Parameters
+    ----------
+    sites : list of Site or Structure
+        Sites or ``Structure`` to attach anisotropies to.
+    matrix : (3, 3) array_like
+        3x3 anisotropy matrix applied to each site.
+    name : str, optional
+        Name for the created anisotropy terms. Default is ``""``.
+
+    Returns
+    -------
+    list of Anisotropy
+        Created anisotropy objects for each site.
+    """
     if isinstance(sites, Structure):
         sites = sites.sites
     return [Anisotropy(site, matrix, name) for site in sites]
 
 def view(hamiltonian: Hamiltonian):
-    """ Show the current Hamiltonian in the viewer"""
+    """Show the current Hamiltonian in the viewer.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Hamiltonian object to display in the 3D viewer.
+    """
     show_object(hamiltonian)
 
 def load_tb2j(inputfile):
-    """ Loads a TB2J output file and converts to a SpinW Hamiltonian object """
+    """Load a TB2J output file and convert to a SpinW Hamiltonian object.
+
+    Parameters
+    ----------
+    inputfile : str or os.PathLike
+        Path to the TB2J output file.
+
+    Returns
+    -------
+    Hamiltonian
+        Converted ``Hamiltonian`` instance.
+    """
     return TB2J_Input(inputfile).to_hamiltonian()
