@@ -1,4 +1,4 @@
-"""Tools for checking input shapes"""
+"""Tools for checking input shapes."""
 
 import functools
 import inspect
@@ -10,26 +10,49 @@ import numpy as np
 
 
 class DimensionalityError(ValueError):
-    """The dimensions of a numpy array don't match the specification"""
+    """The dimensions of a numpy array don't match the specification."""
 
 
 def check_sizes(force_numpy: bool = False, allow_nones: bool = False, **kwargs):
-    """Decorator to check the dimensionality of a given vector
+    """Decorator to check the dimensionality of a given vector.
 
-    Example usage:
-        check that a function has an n-by-3 vector input called `a`, and
-        a 2-by-n-by-whatever input called 'b'
+    Limitations: can only check dimensions are the same, can't check things like
+    whether sizes are related by some arbitrary formula.
 
-        @dimensionality_check(a=('n',3), b=(2,'n',-1))
+    Parameters
+    ----------
+    force_numpy : bool, optional
+        Convert the named arrays into numpy form if they are not already.
+        Default is ``False``.
+    allow_nones : bool, optional
+        Allow ``None`` to be given for values. Default is ``False``.
+    **kwargs : tuple of (int or str)
+        Mapping from parameter name to expected shape specification tuple, where
+        non-negative integers specify fixed dimension sizes, ``-1`` specifies an
+        unconstrained dimension size, and strings specify symbolic dimensions
+        that must match across arguments.
+
+    Returns
+    -------
+    Callable
+        Decorator function that validates array shapes before calling the
+        wrapped function.
+
+    Raises
+    ------
+    TypeError
+        If a size constraint is not a tuple of ``int`` or ``str``.
+    ValueError
+        If a prescribed integer array size is less than ``-1``.
+
+    Examples
+    --------
+    Check that a function has an n-by-3 vector input called ``a``, and a
+    2-by-n-by-whatever input called ``b``::
+
+        @check_sizes(a=('n', 3), b=(2, 'n', -1))
         def my_function(a, b):
             ...
-
-        Limitations: can only check dimensions are the same, can't check things like whether sizes are related by
-                     some arbitrary formula.
-
-    :param force_numpy: default=False, Convert the named arrays into numpy form if they are not already
-    :param allow_nones: default=False, Allow None to be given for values
-
     """
     # If assertions are not enabled, give a decorator that just return the function as is
     if not __debug__:
