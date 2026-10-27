@@ -1,4 +1,4 @@
-"""Shader for most of the objects in the viewer."""
+"""Shader for anisotropies."""
 
 import numpy as np
 from OpenGL.GL import *
@@ -8,7 +8,7 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class AnisotropyShader(Shader):
-    """Shader for most of the objects in the viewer.
+    """Shader for anisotropies.
 
     Attributes
     ----------
