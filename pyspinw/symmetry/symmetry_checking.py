@@ -261,7 +261,7 @@ class MatrixConstraints:
         return ""
 
     def print_summary(self, simplify_output=True, unicode=True):
-        """Print out a summary of the exchange properties.
+        """Print out a summary of the constraint properties.
 
         Parameters
         ----------
@@ -431,7 +431,7 @@ class AnisotropyMatrixConstraints(MatrixConstraints):
 
 
     def text_summary(self, simplify_output=True, unicode=True):
-        """Textual summary of symmetry allowed exchange properties.
+        """Textual summary of symmetry allowed anisotropy properties.
 
         Parameters
         ----------

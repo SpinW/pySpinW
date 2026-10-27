@@ -41,7 +41,7 @@ QSurfaceFormat.setDefaultFormat(_fmt)
 
 _unique_id_counter = -1
 def _generate_unique_id():
-    """Generate a unique ID for each site currently loaded.
+    """Generate a unique ID for each viewer.
 
     Returns
     -------

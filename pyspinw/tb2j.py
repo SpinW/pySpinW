@@ -214,7 +214,7 @@ class TB2J_Input:
         NotImplementedError
             Always raised as symmetry reduction is not yet implemented.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @classmethod
     def from_exchange_out(cls, filename: pathlib.Path | str):

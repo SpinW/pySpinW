@@ -292,7 +292,7 @@ class Triclinic(LatticeSystem):
 
 
 class MonoclinicB(LatticeSystem):
-    """Monoclinic lattice system."""
+    """Monoclinic lattice system (unique axis B)."""
 
     name = "MonoclinicB"
     letter = "m"
@@ -344,7 +344,7 @@ class MonoclinicB(LatticeSystem):
         return cell
 
 class MonoclinicA(LatticeSystem):
-    """Monoclinic lattice system."""
+    """Monoclinic lattice system (unique axis A)."""
 
     name = "MonoclinicA"
     letter = "ma"
@@ -396,7 +396,7 @@ class MonoclinicA(LatticeSystem):
         return cell
 
 class MonoclinicC(LatticeSystem):
-    """Monoclinic lattice system."""
+    """Monoclinic lattice system (unique axis C)."""
 
     name = "MonoclinicC"
     letter = "mc"
@@ -708,7 +708,7 @@ lattice_system_name_lookup = {lattice.name: lattice for lattice in lattice_syste
 lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_systems if len(lattice.letter) < 2}
 
 def find_unit_cell_type(unit_cell: UnitCell) -> list[LatticeSystem]:
-    """Find the lattice system for a unit cell; it should be a length zero or one list, but it might not be.
+    """Find the lattice system for a unit cell; it should be a length zero or one list.
 
     Parameters
     ----------

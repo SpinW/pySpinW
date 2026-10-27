@@ -873,7 +873,7 @@ class DirectSupercell(CommensurateSupercell):
     The spin_data field for spins must be an n_cells x 3 matrix or a 1x3 matrix, and
     in the former it is assumed the order of spins matches ``np.reshape``.
 
-    There is an extra method on this class, ``spins_for(LatticeSite)``,
+    There is an extra method on this class, ``spins_for(Site)``,
     that should make assigning spins easier.
 
     Parameters
@@ -934,7 +934,7 @@ class DirectSupercell(CommensurateSupercell):
         return spin_data[index, :]
 
     def spins_for(self, site: Site):
-        """Use <supercell>.spins_for(<site>).spin[<a>,<b>,<c>] = <x>, <y>, <z> to set spins in a convenient way.
+        """Use <supercell>.spins_for(<site>)[<a>,<b>,<c>] = <x>, <y>, <z> to set spins in a convenient way.
 
         Parameters
         ----------
