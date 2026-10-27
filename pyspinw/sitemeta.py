@@ -1,4 +1,4 @@
-""" Metadata for sites """
+"""Metadata for sites."""
 
 import re
 
@@ -10,7 +10,14 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 
 
 def _build_regex():
-    """ Makes the regex for matching elements"""
+    """Make the regex for matching elements.
+
+    Returns
+    -------
+    re.Pattern
+        Compiled regular expression matching chemical element symbols at the
+        start of a string.
+    """
     # Sort so 2-letter symbols come before 1-letter ones
     symbols_sorted = sorted(chemical_symbols[1:], key=lambda x: (-len(x), x))
 
@@ -22,7 +29,26 @@ def _build_regex():
 _chemical_pattern = _build_regex()
 
 class SiteMetadata(SPWSerialisable):
-    """ Metadata about the element in the site """
+    """Metadata about the element in the site.
+
+    Parameters
+    ----------
+    element : str or None, optional
+        Chemical element symbol (e.g. ``"Fe"``). Default is ``None``.
+    radius : float or None, optional
+        Atomic radius used for rendering. Default is ``None``.
+    color : tuple of (float, float, float) or None, optional
+        RGB colour tuple used for rendering. Default is ``None``.
+
+    Attributes
+    ----------
+    element : str or None
+        Chemical element symbol.
+    radius : float or None
+        Atomic radius used for rendering.
+    color : tuple of (float, float, float) or None
+        RGB colour tuple used for rendering.
+    """
 
     serialisation_name = "site_metadata"
 
@@ -43,12 +69,31 @@ class SiteMetadata(SPWSerialisable):
         return f"SiteMetadata(element={self.element}, radius={self.radius}, color={self.color})"
 
     def copy(self):
-        """ Make a copy of this metadata"""
+        """Make a copy of this metadata.
+
+        Returns
+        -------
+        SiteMetadata
+            Copy of this ``SiteMetadata`` instance.
+        """
         return SiteMetadata(self.element, self.radius, self.color)
 
     @staticmethod
     def extract_element(string: str):
-        """ Get a chemical element from a string """
+        """Get a chemical element from a string.
+
+        Parameters
+        ----------
+        string : str
+            Input string (such as a site name) from which to extract a
+            chemical symbol.
+
+        Returns
+        -------
+        str or None
+            Matched chemical element symbol, or ``None`` if no valid element
+            prefix is found.
+        """
         match_result = _chemical_pattern.match(string)
 
         if match_result:
@@ -59,7 +104,18 @@ class SiteMetadata(SPWSerialisable):
 
     @staticmethod
     def metadata_from_name(name: str | None):
-        """ Extract metadata based on name"""
+        """Extract metadata based on name.
+
+        Parameters
+        ----------
+        name : str or None
+            Site name from which to infer element, radius, and colour.
+
+        Returns
+        -------
+        SiteMetadata
+            Inferred metadata for the given site name.
+        """
         if name is None:
             return SiteMetadata()
 
