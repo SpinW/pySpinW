@@ -1,23 +1,31 @@
-""" Description of measurements """
+"""Description of measurements."""
 
 from pyspinw.path import Path
 
 class Measurement:
-    """ Provides the q and E parameters specific to a given measurement """
+    """Provides the q and E parameters specific to a given measurement."""
 
     def q_points(self):
-        """ Q positions """
+        """Q positions."""
 
     def q_energy_centroids(self):
-        """ Centres of the bins in q-Energy space"""
+        """Centres of the bins in q-Energy space."""
 
 
 
 class Slice(Measurement):
-    """ A slice in 4D space"""
+    """A slice in 4D space."""
 
 class OrthogonalSlice(Slice):
-    """ A slice in 4D space with energy and q independent """
+    """A slice in 4D space with energy and q independent.
+
+    Parameters
+    ----------
+    path : Path
+        Reciprocal-space path defining the q coordinates of the slice.
+    energies : array_like
+        Energy values or bin boundaries along the energy axis.
+    """
 
     def __init__(self, path: Path, energies):
         pass
