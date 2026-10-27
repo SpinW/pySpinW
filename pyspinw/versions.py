@@ -1,11 +1,17 @@
-""" Information about versions """
+"""Information about versions."""
 
 from importlib.metadata import PackageNotFoundError, version
 import tomllib
 from pathlib import Path
 
 def get_version():
-    """ Get the current version of pyspinw"""
+    """Get the current version of pyspinw.
+
+    Returns
+    -------
+    str
+        Version string of ``pyspinw``.
+    """
     try:
         v = version("pyspinw")
     except PackageNotFoundError:
