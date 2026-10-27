@@ -1,7 +1,7 @@
-"""pySpinW: Spin Hamiltonian calculations in Python
+"""pySpinW: Spin Hamiltonian calculations in Python.
 
 SpinW is a Python library that can plot and numerically simulate
-magnetic structures and excitations
+magnetic structures and excitations.
 """
 
 
