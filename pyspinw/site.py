@@ -1,4 +1,4 @@
-""" Representation of sites (e.g. magnetic atoms) within a magnetic system"""
+"""Representation of sites (e.g. magnetic atoms) within a magnetic system."""
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -11,23 +11,50 @@ from pyspinw.symmetry.operations import SpaceOperation
 
 _unique_id_counter = -1
 def _generate_unique_id():
-    """ Generate a unique ID for each site currently loaded"""
+    """Generate a unique ID for each site currently loaded.
+
+    Returns
+    -------
+    int
+        Unique integer identifier for a site instance.
+    """
     global _unique_id_counter # noqa: PLW0603
     _unique_id_counter += 1
     return _unique_id_counter
 
 class Site(SPWSerialisable):
-    """A spin site within a lattice
+    """A spin site within a lattice.
 
-    :param i,j,k: *required* Fractional coordinates within unit cell
-    :param sx, sy, sz: Spin components in the Cartesian directions defined by x||a, z perpendicular to a-b
-    :param supercell_spins: - Spin for each propagation vector
-    :param g: - g-tensor (3x3)
-    :param name:
-    :param metadata: Object containing metadata for this site (can be inferred from the name)
-    :param color: Colour to use for rendering (can be inferred from the name, overrides other metadata)
-    :param radius: Atomic radius to use for rendering (can be inferred from the name, overrides other metadata)
-    :param element: String containing the atomic symbol (can be inferred from the name, overrides other metadata)
+    Parameters
+    ----------
+    i, j, k : float
+        Fractional coordinates within unit cell.
+    sx, sy, sz : float or None, optional
+        Spin components in the Cartesian directions defined by x||a,
+        z perpendicular to a-b. Default is ``None``.
+    supercell_spins : array_like or None, optional
+        Spin for each propagation vector. Default is ``None``.
+    g : array_like or None, optional
+        g-tensor (3x3), vector of length 3, or scalar. Default is ``None``.
+    name : str, optional
+        Name given to this site. Default is ``""``.
+    metadata : SiteMetadata or None, optional
+        Object containing metadata for this site (can be inferred from the
+        name). Default is ``None``.
+    color : tuple of (float, float, float) or None, optional
+        Colour to use for rendering (can be inferred from the name, overrides
+        other metadata). Default is ``None``.
+    radius : float or None, optional
+        Atomic radius to use for rendering (can be inferred from the name,
+        overrides other metadata). Default is ``None``.
+    element : str or None, optional
+        String containing the atomic symbol (can be inferred from the name,
+        overrides other metadata). Default is ``None``.
+
+    Attributes
+    ----------
+    metadata : SiteMetadata
+        Metadata associated with this site.
     """
 
     serialisation_name = "site"
@@ -125,47 +152,53 @@ class Site(SPWSerialisable):
         self._unique_id = _generate_unique_id()
 
     def n_components(self):
-        """ Number of spin components for this site """
+        """Number of spin components for this site.
+
+        Returns
+        -------
+        int
+            Number of spin components for this site.
+        """
         return self.spin_data.shape[0]
 
     @property
     def unique_id(self):
-        """ Unique ID for this site """
+        """Unique ID for this site."""
         return self._unique_id
 
     @property
     def name(self):
-        """ Name given to this site """
+        """Name given to this site."""
         return self._name
 
     @property
     def i(self):
-        """ Fractional position along first unit cell axis """
+        """Fractional position along first unit cell axis."""
         return self._i
 
     @property
     def j(self):
-        """ Fractional position along second unit cell axis """
+        """Fractional position along second unit cell axis."""
         return self._j
 
     @property
     def k(self):
-        """ Fractional position along third unit cell axis """
+        """Fractional position along third unit cell axis."""
         return self._k
 
     @property
     def ijk(self):
-        """ ijk values as a numpy array"""
+        """ijk values as a numpy array."""
         return self._ijk
 
     @property
     def base_spin(self):
-        """spins as numpy array"""
+        """Spins as numpy array."""
         return np.sum(self._spin_data, axis=0)
 
     @property
     def spin_data(self):
-        """ Get all the spin data"""
+        """Get all the spin data."""
         return self._spin_data
 
     @spin_data.setter
@@ -182,12 +215,11 @@ class Site(SPWSerialisable):
 
     @property
     def spin(self) -> np.ndarray:
-        """ Get the base spin """
+        """Get the base spin."""
         return self._base_spin
 
     @spin.setter
     def spin(self, spin_values: ArrayLike):
-        """ Set the base spin"""
         spin_data = np.array(spin_values, dtype=float)
 
         if self.spin_data.shape[0] != 1:
@@ -201,22 +233,35 @@ class Site(SPWSerialisable):
 
     @property
     def g(self) -> np.ndarray:
-        """ Magnetic g-factor, a 3x3 matrix/tensor """
+        """Magnetic g-factor, a 3x3 matrix/tensor."""
         return self._g
 
     @property
     def values(self):
-        """ ijk and spins as a numpy 6-vector"""
+        """ijk and spins as a numpy 6-vector."""
         return self._values
 
     @property
     def parent_site(self):
-        """ Get the parent site (just itself for non-implied sites)"""
+        """Get the parent site (just itself for non-implied sites)."""
         return self
 
     @staticmethod
     def from_coordinates(coordinates: np.ndarray, name: str = ""):
-        """ Create from an array of values """
+        """Create from an array of values.
+
+        Parameters
+        ----------
+        coordinates : numpy.ndarray
+            Array of length 6 containing ``(i, j, k, sx, sy, sz)``.
+        name : str, optional
+            Name given to the site. Default is ``""``.
+
+        Returns
+        -------
+        Site
+            Created site instance.
+        """
         return Site(
             i=float(coordinates[0]),
             j=float(coordinates[1]),
@@ -227,7 +272,20 @@ class Site(SPWSerialisable):
             name=name)
 
     def symmetry_transformed(self, operation: SpaceOperation, unit_cell: "UnitCell"):
-        """ Transform site using a symmetry operation """
+        """Transform site using a symmetry operation.
+
+        Parameters
+        ----------
+        operation : SpaceOperation
+            Space group symmetry operation to apply.
+        unit_cell : UnitCell
+            Unit cell defining the coordinate system.
+
+        Returns
+        -------
+        Site
+            Transformed site instance.
+        """
         new_ijk = operation.transform_positions(self.ijk.reshape(1, 3)).reshape(-1)
 
         # Transform spin, make sure it has same magnitude
@@ -320,7 +378,32 @@ class Site(SPWSerialisable):
 
 
 class ImpliedLatticeSite(Site):
-    """ Lattice site that is implied by symmetry by a specified site"""
+    """Lattice site that is implied by symmetry by a specified site.
+
+    Parameters
+    ----------
+    parent_site : Site
+        Parent site from which this site is implied by symmetry.
+    i, j, k : float
+        Fractional coordinates within unit cell.
+    sx, sy, sz : float or None, optional
+        Spin components in the Cartesian directions defined by x||a,
+        z perpendicular to a-b. Default is ``None``.
+    supercell_spins : numpy.ndarray or None, optional
+        Spin for each propagation vector. Default is ``None``.
+    name : str or None, optional
+        Name given to this site. Default is ``None``.
+    g : array_like or None, optional
+        g-tensor (3x3), vector of length 3, or scalar. Default is ``None``.
+    metadata : SiteMetadata or None, optional
+        Object containing metadata for this site. Default is ``None``.
+    color : tuple of (float, float, float) or None, optional
+        Colour to use for rendering. Default is ``None``.
+    radius : float or None, optional
+        Atomic radius to use for rendering. Default is ``None``.
+    element : str or None, optional
+        String containing the atomic symbol. Default is ``None``.
+    """
 
     def __init__(self,
                  parent_site: Site,
@@ -350,7 +433,7 @@ class ImpliedLatticeSite(Site):
 
     @property
     def parent_site(self):
-        """ Get the parent of this site """
+        """Get the parent of this site."""
         return self._parent_site
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
@@ -375,7 +458,22 @@ class ImpliedLatticeSite(Site):
 
     @staticmethod
     def from_coordinates(parent_site: Site, coordinates: np.ndarray, name: str = ""):
-        """ Create ImpliedLatticeSite from coordinates"""
+        """Create ImpliedLatticeSite from coordinates.
+
+        Parameters
+        ----------
+        parent_site : Site
+            Parent site from which this site is implied.
+        coordinates : numpy.ndarray
+            Array of length 6 containing ``(i, j, k, sx, sy, sz)``.
+        name : str, optional
+            Name given to the site. Default is ``""``.
+
+        Returns
+        -------
+        ImpliedLatticeSite
+            Created implied lattice site instance.
+        """
         return ImpliedLatticeSite(
             parent_site=parent_site,
             i=float(coordinates[0]),
