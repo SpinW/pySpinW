@@ -12,8 +12,6 @@ from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.structure import Structure
 import sys
 
-from pyspinw.debug_plot import debug_plot
-
 unit_cell = UnitCell(3, 8, 8)
 
 x = Site(0, 0, 0, 0, 1, 0, name="X")
