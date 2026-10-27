@@ -1,4 +1,4 @@
-""" Classes for working with spacegroup settings """
+"""Classes for working with spacegroup settings."""
 
 import re
 from dataclasses import dataclass
@@ -6,13 +6,13 @@ from enum import Enum
 
 
 class RhombohedralOrHexagonal(Enum):
-    """ Rhombohedral or hexagonal choice """
+    """Rhombohedral or hexagonal choice."""
 
     RHOMBOHEDRAL = "R"
     HEXAGONAL = "H"
 
 class CrystalAxis(Enum):
-    """ A crystal axis"""
+    """A crystal axis."""
 
     A = "a"
     B = "b"
@@ -20,20 +20,45 @@ class CrystalAxis(Enum):
 
 @dataclass
 class UniqueAxis:
-    """ Description of the unique axis of spacegroup"""
+    """Description of the unique axis of spacegroup.
+
+    Parameters
+    ----------
+    axis : CrystalAxis
+        The crystal axis designated as unique.
+    negated : bool, optional
+        Whether the unique axis is negated. Default is ``False``.
+    """
 
     axis: CrystalAxis
     negated: bool = False
 
     def to_string(self):
-        """ Convert to spglib type string """
+        """Convert to spglib type string.
+
+        Returns
+        -------
+        str
+            String representation of the unique axis (e.g. ``"b"`` or ``"-b"``).
+        """
         s = "-" if self.negated else ""
         s += self.axis.value
         return s
 
     @staticmethod
     def from_string(string: str):
-        """ Create from spglib type string"""
+        """Create from spglib type string.
+
+        Parameters
+        ----------
+        string : str
+            String representation of the unique axis (e.g. ``"b"`` or ``"-b"``).
+
+        Returns
+        -------
+        UniqueAxis
+            Parsed unique axis descriptor.
+        """
         negated = string.startswith("-")
 
         axis_string = string[1] if negated else string[0]
@@ -45,7 +70,22 @@ class UniqueAxis:
 
 
 class AxisPermutation:
-    """ Description of a permutation of a unit cell """
+    """Description of a permutation of a unit cell.
+
+    Parameters
+    ----------
+    first_axis : CrystalAxis
+        First axis in the permutation.
+    second_axis : CrystalAxis
+        Second axis in the permutation (must differ from ``first_axis``).
+    flip_c : bool, optional
+        Whether the c-axis is inverted. Default is ``False``.
+
+    Raises
+    ------
+    ValueError
+        If ``first_axis`` and ``second_axis`` are the same.
+    """
 
     def __init__(self,
                  first_axis: CrystalAxis,
@@ -67,7 +107,13 @@ class AxisPermutation:
         self.flip_c = flip_c
 
     def to_string(self):
-        """ Convert permutation to string """
+        """Convert permutation to string.
+
+        Returns
+        -------
+        str
+            String representation of the axis permutation (e.g. ``"b-ca"``).
+        """
         s = ""
         for axis in [self.first_axis, self.second_axis, self.third_axis]:
             if axis == CrystalAxis.C and self.flip_c:
@@ -78,7 +124,23 @@ class AxisPermutation:
 
     @staticmethod
     def from_string(string: str):
-        """ Convert a string e.g. "b-ca" to a permutation representation """
+        """Convert a string e.g. "b-ca" to a permutation representation.
+
+        Parameters
+        ----------
+        string : str
+            Axis permutation string containing ``'a'``, ``'b'``, ``'c'``, and optionally ``'-'``.
+
+        Returns
+        -------
+        AxisPermutation
+            Parsed axis permutation.
+
+        Raises
+        ------
+        ValueError
+            If the string contains invalid characters or is malformed.
+        """
         axes = []
         flip = False
         # Parse the string
@@ -104,7 +166,19 @@ class AxisPermutation:
 
 @dataclass
 class Setting:
-    """ Spacegroup setting descriptor in a form that can be easily worked with """
+    """Spacegroup setting descriptor in a form that can be easily worked with.
+
+    Parameters
+    ----------
+    choice_number : int or None, optional
+        Origin or cell choice number. Default is ``None``.
+    permutation : AxisPermutation or None, optional
+        Axis permutation descriptor. Default is ``None``.
+    unique_axis : UniqueAxis or None, optional
+        Unique axis descriptor. Default is ``None``.
+    rhombohedral_or_hexagonal : RhombohedralOrHexagonal or None, optional
+        Rhombohedral or hexagonal axis choice. Default is ``None``.
+    """
 
     _re_pattern = (
         r'^(?P<rhombhex>[RH])?'  # Rhombohedral or Hexagonal
@@ -120,7 +194,18 @@ class Setting:
 
     @staticmethod
     def from_optional_string(string: str | None):
-        """ Convert from spglib database string, or default setting if None"""
+        """Convert from spglib database string, or default setting if None.
+
+        Parameters
+        ----------
+        string : str or None
+            Setting string from the spglib database, or ``None`` for the default setting.
+
+        Returns
+        -------
+        Setting
+            Parsed spacegroup setting.
+        """
         if string is None:
             return Setting()
         else:
@@ -128,7 +213,23 @@ class Setting:
 
     @staticmethod
     def from_string(string: str):
-        """ Convert from spglib database string"""
+        """Convert from spglib database string.
+
+        Parameters
+        ----------
+        string : str
+            Setting string from the spglib database.
+
+        Returns
+        -------
+        Setting
+            Parsed spacegroup setting.
+
+        Raises
+        ------
+        ValueError
+            If ``string`` is not a valid setting string.
+        """
         m = re.match(Setting._re_pattern, string)
 
         if not m:
@@ -142,9 +243,16 @@ class Setting:
         return Setting(choice, permutation, unique, rhombohedral_or_hexagonal=rhombhex)
 
     def to_string(self):
-        """ Convert this setting to a string like it is in the spglib database """
+        """Convert this setting to a string like it is in the spglib database.
+
+        Returns
+        -------
+        str
+            String representation of the setting matching the spglib database format.
+        """
         s = "" if self.rhombohedral_or_hexagonal is None else self.rhombohedral_or_hexagonal.value
         s += "" if self.unique_axis is None else self.unique_axis.to_string()
         s += "" if self.choice_number is None else str(self.choice_number)
         s += "" if self.permutation is None else self.permutation.to_string()
         return s
+
