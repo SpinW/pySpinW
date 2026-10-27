@@ -1,4 +1,4 @@
-""" Text based display of the system """
+"""Text based display of the system."""
 
 from collections import defaultdict
 
@@ -12,7 +12,15 @@ from pyspinw.gui.rendermodel import RenderModel, RenderExchange
 
 
 class DisplayItem(QStandardItem):
-    """ Slightly modified display item"""
+    """Slightly modified display item.
+
+    Parameters
+    ----------
+    text : str
+        Text label for the item.
+    ids : list of int
+        Render IDs associated with this item.
+    """
 
     def __init__(self, text: str, ids: list[int]):
         super().__init__(text)
@@ -20,23 +28,67 @@ class DisplayItem(QStandardItem):
 
 
 def format_triple(triple):
-    """ Rendering for numeric triples"""
+    """Rendering for numeric triples.
+
+    Parameters
+    ----------
+    triple : tuple or array_like of float
+        Sequence of three numeric values.
+
+    Returns
+    -------
+    str
+        Formatted string representation ``"(a, b, c)"``.
+    """
     a,b,c = triple
     return f"({a:.3g}, {b:.3g}, {c:.3g})"
 
 def format_spin_data(spin_data):
-    """ Rendering for spin data"""
+    """Rendering for spin data.
+
+    Parameters
+    ----------
+    spin_data : numpy.ndarray
+        2D array of shape ``(n, 3)`` containing spin vectors.
+
+    Returns
+    -------
+    str
+        Comma-separated string of formatted spin triples.
+    """
     return ", ".join([format_triple(spin_data[i, :]) for i in range(spin_data.shape[0])])
 
 def format_anisotropies(anisotropies: list[Anisotropy]):
-    """ Formatting for the anisotropies column"""
+    """Formatting for the anisotropies column.
+
+    Parameters
+    ----------
+    anisotropies : list of Anisotropy
+        List of anisotropy terms associated with a site.
+
+    Returns
+    -------
+    str
+        Semicolon-separated parameter strings, or ``"None"`` if empty.
+    """
     if anisotropies:
         return "; ".join([a.parameter_string for a in anisotropies])
     else:
         return "None"
 
 def format_g(g_matrix: np.ndarray):
-    """ Formatting for g-factors"""
+    """Formatting for g-factors.
+
+    Parameters
+    ----------
+    g_matrix : (3, 3) numpy.ndarray
+        3x3 g-tensor matrix.
+
+    Returns
+    -------
+    str
+        Compact string representation of the g-tensor.
+    """
     diag = np.diagonal(g_matrix)
     if np.all(g_matrix == np.diag(diag)):
         a,b,c = diag
@@ -52,7 +104,13 @@ def format_g(g_matrix: np.ndarray):
                 f" [{m[6]:.3g}, {m[7]:.3g}, {m[8]:.3g}]]")
 
 class ParameterTable(QTreeView):
-    """ Derivative class for both the text based site viewer and text based exchange viewer """
+    """Derivative class for both the text based site viewer and text based exchange viewer.
+
+    Parameters
+    ----------
+    parent : QWidget or None, optional
+        Parent widget. Default is ``None``.
+    """
 
     hoverChanged = Signal()
 
@@ -74,7 +132,13 @@ class ParameterTable(QTreeView):
 
 
     def on_item_hovered(self, index):
-        """ Called when item is hovered over"""
+        """Called when item is hovered over.
+
+        Parameters
+        ----------
+        index : QModelIndex
+            Model index of the hovered item.
+        """
         if index.isValid():
 
             self.hover_ids = self.model().itemFromIndex(index).ids
@@ -82,7 +146,7 @@ class ParameterTable(QTreeView):
             self.hoverChanged.emit()
 
     def leaveEvent(self, event):
-        """ Qt override, mouse leaves widget"""
+        """Qt override, mouse leaves widget."""
         self.hover_ids = []
         self.hoverChanged.emit()
 
@@ -91,7 +155,16 @@ class ParameterTable(QTreeView):
 
 
 class TextDisplay(QWidget):
-    """ Display of items in text form """
+    """Display of items in text form.
+
+    Parameters
+    ----------
+    render_model : RenderModel
+        Render model containing the sites, exchanges, and anisotropies to
+        display.
+    parent : QWidget or None, optional
+        Parent widget. Default is ``None``.
+    """
 
     hoverChanged = Signal()
     selectionChanged = Signal()
@@ -312,12 +385,12 @@ class TextDisplay(QWidget):
         self.exchange_tree.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def on_hover_changed(self):
-        """ Called when items are hovered """
+        """Called when items are hovered."""
         self.hover_ids = self.site_tree.hover_ids # + other one
         self.hoverChanged.emit()
 
     def on_selection_changed(self):
-        """ Called when selection on either of the trees changes"""
+        """Called when selection on either of the trees changes."""
         #
         # Build a list of render ids
         #
@@ -346,7 +419,18 @@ class TextDisplay(QWidget):
 
     @staticmethod
     def _get_row_items(item: QStandardItem):
-        """ Get items in a row """
+        """Get items in a row.
+
+        Parameters
+        ----------
+        item : QStandardItem
+            An item belonging to the target row.
+
+        Returns
+        -------
+        list of QStandardItem
+            All items in the same row as ``item``.
+        """
         parent = item.parent()  # None if top-level
         row = item.row()
 
@@ -359,7 +443,15 @@ class TextDisplay(QWidget):
             return [parent.child(row, col) for col in range(column_count)]
 
     def set_row_boldness(self, item: QStandardItem, is_bold: bool):
-        """ Set the boldness of the font for a given row"""
+        """Set the boldness of the font for a given row.
+
+        Parameters
+        ----------
+        item : QStandardItem
+            An item in the row to update.
+        is_bold : bool
+            Whether the row font should be bold.
+        """
         for item in TextDisplay._get_row_items(item):
 
             if is_bold:
@@ -369,7 +461,13 @@ class TextDisplay(QWidget):
 
 
     def set_hover(self, render_ids: list[int]):
-        """ Set the hover state for specified render_ids"""
+        """Set the hover state for specified render_ids.
+
+        Parameters
+        ----------
+        render_ids : list of int
+            Render IDs of currently hovered elements.
+        """
         for items in self.site_render_id_to_row_item.values():
             for item in items:
                 self.set_row_boldness(item, False)
@@ -387,7 +485,13 @@ class TextDisplay(QWidget):
                 self.set_row_boldness(item, True)
 
     def set_selection(self, render_ids: list[int]):
-        """ Set the selection based on render IDs"""
+        """Set the selection based on render IDs.
+
+        Parameters
+        ----------
+        render_ids : list of int
+            Render IDs of elements to select in the tree views.
+        """
         # print("Set selection:", render_ids)
 
         #
