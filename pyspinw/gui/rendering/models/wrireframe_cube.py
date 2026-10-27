@@ -1,4 +1,4 @@
-""" Geometry for a wireframe cube"""
+"""Geometry for a wireframe cube."""
 
 import numpy as np
 
@@ -6,7 +6,15 @@ from OpenGL.GL import *
 
 
 class WireframeCube:
-    """ Geometry data for a wireframe cube"""
+    """Geometry data for a wireframe cube.
+
+    Attributes
+    ----------
+    vao : int
+        OpenGL vertex array object handle.
+    vbo : int
+        OpenGL vertex buffer object handle.
+    """
 
     def __init__(self):
         edges = np.array([
@@ -38,7 +46,7 @@ class WireframeCube:
         glBindVertexArray(0)
 
     def render_wireframe(self):
-        """ Render the wireframe using GL_LINES"""
+        """Render the wireframe using GL_LINES."""
         glBindVertexArray(self.vao)
         glLineWidth(1.0)
         glDrawArrays(GL_LINES, 0, 24) # 24 vertices
