@@ -1,4 +1,4 @@
-"""Spinwave Calculations"""
+"""Spinwave Calculations."""
 import logging
 import multiprocessing
 import platform
@@ -24,7 +24,19 @@ logger = logging.getLogger("spinwave")
 
 @dataclass
 class Coupling:
-    """Temporary description of the coupling between atoms"""
+    """Temporary description of the coupling between atoms.
+
+    Parameters
+    ----------
+    index1 : int
+        Index of the first coupled site.
+    index2 : int
+        Index of the second coupled site.
+    matrix : (3, 3) numpy.ndarray
+        Exchange or anisotropy coupling matrix.
+    inter_site_vector : (3,) numpy.ndarray
+        Displacement vector between the two sites in fractional coordinates.
+    """
 
     index1: int
     index2: int
@@ -38,7 +50,15 @@ class Coupling:
 
 @dataclass
 class MagneticField:
-    """Description of an external magnetic field."""
+    """Description of an external magnetic field.
+
+    Parameters
+    ----------
+    vector : (3,) numpy.ndarray
+        Magnetic field vector in Tesla.
+    g_tensors : list of (3, 3) numpy.ndarray
+        List of g-tensors for each site.
+    """
 
     vector: np.ndarray
     g_tensors: list[np.ndarray]
@@ -46,7 +66,20 @@ class MagneticField:
 
 @dataclass
 class SpinwaveResult:
-    """Results from a spinwave calculation"""
+    r"""Results from a spinwave calculation.
+
+    Parameters
+    ----------
+    q_vectors : (N_q, 3) numpy.ndarray
+        Reciprocal-space wavevectors at which spinwaves were calculated.
+    raw_energies : numpy.ndarray
+        Calculated spinwave mode energies.
+    intensities : numpy.ndarray or None, optional
+        Perpendicular neutron scattering intensities. Default is ``None``.
+    sab : numpy.ndarray or None, optional
+        Spin-spin correlation tensor $S^{\alpha\beta}(\mathbf{q}, \omega)$.
+        Default is ``None``.
+    """
 
     q_vectors: np.ndarray
     raw_energies: np.ndarray
@@ -58,10 +91,34 @@ def _calc_q_independent(
         magnitudes: np.ndarray,
         couplings: list[Coupling],
         field: MagneticField | None = None):
-    """Calculate the q-independent matrices for the spinwave calculation.
+    r"""Calculate the q-independent matrices for the spinwave calculation.
 
     Returns the C matrix, the z-components of rotations, the spin coefficients matrix,
     and Zeeman term if relevant.
+
+    Parameters
+    ----------
+    rotations : list of (3, 3) numpy.ndarray
+        Local spin-frame rotation matrices for each site.
+    magnitudes : (N_sites,) numpy.ndarray
+        Spin magnitudes for each site.
+    couplings : list of Coupling
+        List of pairwise and single-ion couplings.
+    field : MagneticField or None, optional
+        External magnetic field specification. Default is ``None``.
+
+    Returns
+    -------
+    C : (N_sites, N_sites) numpy.ndarray
+        Diagonal q-independent matrix $C$ in the spinwave Hamiltonian.
+    z : (N_sites, 3) numpy.ndarray
+        Complex local transverse basis vectors $\mathbf{z}_i = \mathbf{R}_{i,0} + i \mathbf{R}_{i,1}$.
+    spin_coefficients : (N_sites, N_sites) numpy.ndarray
+        Matrix of spin magnitude prefactors $\sqrt{S_i S_j} / 2$.
+    Az : (N_sites, N_sites) numpy.ndarray or None
+        Diagonal Zeeman matrix contribution, or ``None`` if `field` is ``None``.
+    sab_blocks : (3, 3) numpy.ndarray
+        Precalculated q-independent block matrices for the spin-spin correlation tensor.
     """
     rotations = np.array(rotations)
     n_sites = rotations.shape[0]
@@ -130,7 +187,30 @@ def _calc_spin_hamiltonian(
         spin_coefficients: np.ndarray,
         couplings: list[Coupling],
         Az: np.ndarray | None = None):
-    """Calculate the square root of the 'Hamiltonian' h(q) for a single q-value."""
+    r"""Calculate the square root of the 'Hamiltonian' h(q) for a single q-value.
+
+    Parameters
+    ----------
+    q : (3,) numpy.ndarray
+        Wavevector in reciprocal lattice units.
+    C : (N_sites, N_sites) numpy.ndarray
+        Diagonal q-independent Hamiltonian matrix term.
+    n_sites : int
+        Number of magnetic sites.
+    z : (N_sites, 3) numpy.ndarray
+        Complex local transverse basis vectors for each site.
+    spin_coefficients : (N_sites, N_sites) numpy.ndarray
+        Matrix of spin prefactors $\sqrt{S_i S_j} / 2$.
+    couplings : list of Coupling
+        List of magnetic couplings.
+    Az : (N_sites, N_sites) numpy.ndarray or None, optional
+        Diagonal Zeeman contribution matrix. Default is ``None``.
+
+    Returns
+    -------
+    (2*N_sites, 2*N_sites) numpy.ndarray
+        Bosonic spinwave Hamiltonian matrix $h(\mathbf{q})$.
+    """
     A = np.zeros((n_sites, n_sites), dtype=complex)
     A_minus_q = np.zeros((n_sites, n_sites), dtype=complex)  # A(-q), which differs from A(q) if non-reciprocal
     B = np.zeros((n_sites, n_sites), dtype=complex)
@@ -161,20 +241,37 @@ def _calc_spin_hamiltonian(
 
 
 def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
-    # We need to enforce the bosonic commutation properties, we do this
-    # by finding the 'square root' of the matrix (i.e. finding K such that KK^dagger = H)
-    # and then negating the second half.
-    #
-    # In matrix form we do
-    #
-    #     M = K^dagger C K
-    #
-    # where C is a diagonal matrix of length 2n, with the first n entries being 1, and the
-    # remaining entries being -1. Note the adjoint is on the other side to the definition in
-    # of the decomposition
-    #
-    # We can also do this via an LDL decomposition, but the method is very slightly different
+    r"""Solve the bosonic spinwave Hamiltonian using Cholesky or LDL decomposition.
 
+    Parameters
+    ----------
+    hamiltonian_matrix : (2*n_sites, 2*n_sites) numpy.ndarray
+        Hermitian bosonic spinwave Hamiltonian matrix $h(\mathbf{q})$.
+    n_sites : int
+        Number of magnetic sites.
+
+    Returns
+    -------
+    eigvals : (2*n_sites,) numpy.ndarray
+        Spinwave mode eigenvalues.
+    T : (2*n_sites, 2*n_sites) numpy.ndarray
+        Bogoliubov transformation matrix for the spin-spin correlation function.
+
+    Notes
+    -----
+    We enforce the bosonic commutation properties by finding the 'square root'
+    of the matrix (i.e. finding $K$ such that $K K^\dagger = H$) and then
+    negating the second half. In matrix form:
+
+    .. math::
+
+        M = K^\dagger C K
+
+    where $C$ is a diagonal matrix of length $2n$, with the first $n$ entries
+    being $1$ and the remaining entries being $-1$. Note the adjoint is on the
+    other side to the definition in the decomposition. We can also do this via
+    an LDL decomposition if Cholesky decomposition fails.
+    """
     try:
         sqrt_hamiltonian = np.linalg.cholesky(hamiltonian_matrix)
     except np.linalg.LinAlgError:  # Catch postive definiteness errors
@@ -213,6 +310,22 @@ def _solve_ham_hermitian(hamiltonian_matrix: np.ndarray, n_sites: int):
 
 
 def _solve_ham_nonherm(hamiltonian_matrix: np.ndarray, n_sites:int):
+    r"""Solve the bosonic spinwave Hamiltonian via general non-Hermitian diagonalisation.
+
+    Parameters
+    ----------
+    hamiltonian_matrix : (2*n_sites, 2*n_sites) numpy.ndarray
+        Bosonic spinwave Hamiltonian matrix $h(\mathbf{q})$.
+    n_sites : int
+        Number of magnetic sites.
+
+    Returns
+    -------
+    eigvals : (2*n_sites,) numpy.ndarray
+        Spinwave mode eigenvalues.
+    T : (2*n_sites, 2*n_sites) numpy.ndarray
+        Normalised eigenvector transformation matrix.
+    """
     hamiltonian_matrix[n_sites:, :] *= -1  # gComm * ham
     eigvals, eigvecs = np.linalg.eig(hamiltonian_matrix)
     gV = eigvecs.copy()
@@ -225,12 +338,32 @@ def _solve_ham_nonherm(hamiltonian_matrix: np.ndarray, n_sites:int):
 
 
 def _get_q_chunks(q_vectors: np.ndarray, n_proc: int):
+    """Split an array of q-vectors into chunks for parallel processing.
+
+    Parameters
+    ----------
+    q_vectors : (N_q, 3) numpy.ndarray
+        Array of reciprocal-space wavevectors.
+    n_proc : int
+        Number of chunks (processes/threads) to split into.
+
+    Returns
+    -------
+    list of numpy.ndarray
+        List of `n_proc` sub-arrays of `q_vectors`.
+    """
     nq = int(np.floor(q_vectors.shape[0] / n_proc))
     return [q_vectors[i * nq : (i + 1) * nq] for i in range(n_proc - 1)] + [q_vectors[(n_proc - 1) * nq :]]
 
 
 def get_Executor():
-    """ Get an Executor appropriate for the current system """
+    """Get an Executor appropriate for the current system.
+
+    Returns
+    -------
+    type of concurrent.futures.Executor
+        ``ThreadPoolExecutor`` on Windows, or ``ProcessPoolExecutor`` on other platforms.
+    """
     if platform.system() == "Windows":
         return ThreadPoolExecutor
 
@@ -247,7 +380,46 @@ def spinwave_calculation(
         rotating_frame: list[np.ndarray] | None = None,
         save_sab: bool = False,
         save_wavefunctions: bool = False) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
-    """Calculate the energies and spin-spin correlation for a set of q-vectors."""
+    r"""Calculate the energies and spin-spin correlation for a set of q-vectors.
+
+    Parameters
+    ----------
+    rotations : list of (3, 3) numpy.ndarray
+        Local spin-frame rotation matrices for each magnetic site.
+    magnitudes : (N_sites,) numpy.ndarray
+        Spin magnitudes for each site.
+    q_vectors : (N_q, 3) numpy.ndarray
+        Reciprocal-space wavevectors at which to evaluate the spinwaves.
+    couplings : list of Coupling
+        List of magnetic couplings between sites.
+    positions : list of (3,) numpy.ndarray
+        Fractional coordinates of the magnetic sites.
+    rlu_to_cart : (3, 3) numpy.ndarray, optional
+        Transformation matrix from reciprocal lattice units to Cartesian coordinates.
+        Default is ``np.eye(3)``.
+    field : MagneticField or None, optional
+        External magnetic field specification. Default is ``None``.
+    rotating_frame : list of numpy.ndarray or None, optional
+        Propagation vector and rotation axis ``[km, nvec]`` for a rotating frame
+        calculation. Default is ``None``.
+    save_sab : bool, optional
+        If ``True``, return the full spin-spin correlation tensor. Default is ``False``.
+    save_wavefunctions : bool, optional
+        If ``True``, return the Bogoliubov transformation matrices (wavefunctions).
+        Default is ``False``.
+
+    Returns
+    -------
+    energies : numpy.ndarray
+        Calculated spinwave mode energies for each q-vector.
+    intensities : numpy.ndarray
+        Perpendicular spin-spin correlation intensities $S_\perp(\mathbf{q}, \omega)$.
+    sab : numpy.ndarray or None
+        Spin-spin correlation tensor if `save_sab` is ``True``, otherwise ``None``.
+    wavefunctions : list of numpy.ndarray or None
+        Transformation matrices for each q-vector if `save_wavefunctions` is ``True``,
+        otherwise ``None``.
+    """
     if rotating_frame is not None:
         km, nvec = tuple(rotating_frame)
         # Computes the transformation matrices for Sab after Toth & Lake, eq (39)
@@ -320,7 +492,51 @@ def _calc_chunk_spinwave(
         save_sab: bool = False,
         save_wavefunctions: bool=False) \
             -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-    """Calculate the energies and S'^alpha,beta for a chunk of q-values."""
+    r"""Calculate the energies and S'^alpha,beta for a chunk of q-values.
+
+    Parameters
+    ----------
+    q_vectors : (N_chunk, 3) numpy.ndarray
+        Subset of reciprocal-space wavevectors to evaluate.
+    C : (N_sites, N_sites) numpy.ndarray
+        Diagonal q-independent Hamiltonian matrix term.
+    n_sites : int
+        Number of magnetic sites.
+    z : (N_sites, 3) numpy.ndarray
+        Complex local transverse basis vectors for each site.
+    spin_coefficients : (N_sites, N_sites) numpy.ndarray
+        Matrix of spin prefactors $\sqrt{S_i S_j} / 2$.
+    couplings : list of Coupling
+        List of magnetic couplings.
+    positions : list of (3,) numpy.ndarray
+        Fractional positions of the magnetic sites.
+    sab_blocks : (3, 3) numpy.ndarray
+        Precalculated q-independent block matrices for the correlation tensor.
+    rlu_to_cart : (3, 3) numpy.ndarray
+        Transformation matrix from reciprocal lattice units to Cartesian coordinates.
+    rotating_frame : tuple or list of numpy.ndarray or None, optional
+        Rotating frame transformation data ``(nmat, R1, R2, km)``. Default is ``None``.
+    Az : (N_sites, N_sites) numpy.ndarray or None, optional
+        Diagonal Zeeman contribution matrix. Default is ``None``.
+    save_sab : bool, optional
+        If ``True``, return the correlation tensors for this chunk. Default is ``False``.
+    save_wavefunctions : bool, optional
+        If ``True``, return the transformation matrices for this chunk.
+        Default is ``False``.
+
+    Returns
+    -------
+    energies : list of numpy.ndarray
+        Calculated spinwave energies for each q-vector in the chunk.
+    intensities : list of numpy.ndarray
+        Perpendicular scattering intensities for each q-vector in the chunk.
+    sabs_out : numpy.ndarray or None
+        Spin-spin correlation tensor for the chunk if `save_sab` is ``True``,
+        otherwise ``None``.
+    wavefunctions : list of numpy.ndarray or None
+        Transformation matrices for the chunk if `save_wavefunctions` is ``True``,
+        otherwise ``None``.
+    """
     energies = []
     intensities = []
 
