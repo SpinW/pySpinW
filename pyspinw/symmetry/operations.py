@@ -1,4 +1,4 @@
-""" Operations are the members of space groups and magnetic space groups"""
+"""Operations are the members of space groups and magnetic space groups."""
 
 from fractions import Fraction
 
@@ -19,18 +19,70 @@ _parsing_variables = {
 }
 
 class Operation:
-    """ Base class for SpaceOperation and MagneticOperation """
+    """Base class for SpaceOperation and MagneticOperation."""
 
     def transform_positions(self, positions: ArrayLike):
-        """ Transform an array of positions with this operation """
+        """Transform an array of positions with this operation.
+
+        Parameters
+        ----------
+        positions : array_like
+            Array of fractional positions to transform.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transformed fractional positions.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised in the base class.
+        """
         raise NotImplementedError("Transformation of position not implemented in base class")
 
     def transform_positions_and_spins(self, positions: ArrayLike, spins: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
-        """ Transform an array of positions and an array of spins with this operation """
+        """Transform an array of positions and an array of spins with this operation.
+
+        Parameters
+        ----------
+        positions : array_like
+            Array of fractional positions to transform.
+        spins : array_like
+            Array of spin vectors to transform.
+
+        Returns
+        -------
+        new_positions : numpy.ndarray
+            Transformed fractional positions.
+        new_spins : numpy.ndarray
+            Transformed spin vectors.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised in the base class.
+        """
         raise NotImplementedError("Transformation of positions and spins not implemented in base class")
 
 class SpaceOperation(Operation):
-    """ Spacegroup Operation """
+    """Spacegroup operation.
+
+    Parameters
+    ----------
+    point_operation : PointOperationType
+        3x3 integer matrix representing the point group operation in lattice coordinates.
+    translation : TranslationType
+        3-tuple of ``Fraction`` values representing the fractional translation in ``[0, 1)``.
+    name : str or None, optional
+        Optional name or label for the operation. Default is ``None``.
+
+    Raises
+    ------
+    ValueError
+        If ``point_operation`` is not invertible or does not consist of 3x3 entries in
+        ``{-1, 0, 1}``, or if ``translation`` does not have 3 values in ``[0, 1)``.
+    """
 
     def __init__(self, point_operation: PointOperationType, translation: TranslationType, name: str | None = None):
         self.name = name
@@ -73,17 +125,15 @@ class SpaceOperation(Operation):
 
     @property
     def symmorphic(self):
-        """ Is this operation symmorphic (i.e. has non-integer translation)"""
+        """Whether this operation is symmorphic (i.e. has non-integer translation)."""
         return self._symmorphic
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
-        """ Less than, implemented to provide a canonical ordering """
         return (self.point_operation, self.translation) < \
             (other.point_operation, other.translation)
 
 
     def __eq__(self, other: "BaseMagneticOperation"):
-        """ Equality, should be exact because we're using integers """
         return (self.point_operation, self.translation) == \
             (other.point_operation, other.translation)
 
@@ -94,7 +144,22 @@ class SpaceOperation(Operation):
     @staticmethod
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray) -> \
                     tuple[PointOperationType, TranslationType]:
-        """ Method that converts numpy float data into ints/fractions """
+        """Convert numpy float data into ints and fractions.
+
+        Parameters
+        ----------
+        point_operation : numpy.ndarray
+            3x3 float array representing the point operation.
+        translation : numpy.ndarray
+            Length-3 float array representing the translation vector.
+
+        Returns
+        -------
+        point_operation : PointOperationType
+            3x3 tuple of integers.
+        translation : TranslationType
+            3-tuple of ``Fraction`` objects.
+        """
         point_operation = tuple(tuple(int(round(point_operation[i,j])) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(float(translation[i])).limit_denominator() for i in range(3))
 
@@ -103,7 +168,7 @@ class SpaceOperation(Operation):
 
     @property
     def text_form(self) -> str:
-        """ Represent this operation as a triple of equations in xyz"""
+        """Representation of this operation as a triple of equations in xyz."""
         strings = []
         for i in range(3):
             string = ""
@@ -134,7 +199,23 @@ class SpaceOperation(Operation):
 
     @staticmethod
     def from_text(operation_string: str):
-        """ Parse a string form of an expression, e.g. 'x,x-y,z+1/2' """
+        """Parse a string form of an expression, e.g. 'x,x-y,z+1/2'.
+
+        Parameters
+        ----------
+        operation_string : str
+            Comma-separated coordinate transformation string in ``x, y, z``.
+
+        Returns
+        -------
+        SpaceOperation
+            Parsed space operation.
+
+        Raises
+        ------
+        ValueError
+            If ``operation_string`` does not contain three comma-separated expressions.
+        """
         parts = [part.strip() for part in operation_string.split(",")]
         if len(parts) != 3:
             raise ValueError(f"Expected three comma separated values, e.g. 'x,y,z', got {operation_string}")
@@ -153,12 +234,25 @@ class SpaceOperation(Operation):
 
 
     def and_then(self, other: "SpaceOperation"):
-        """ Composition of operations """
-        # Notationally, it is common in group theory to use implicit
-        #  multiplication for left composition, and dot for right composition elsewhere.
-        # This means would be ambiguous to use __mul__ in this case. and_then makes
-        #  the order of application clear
+        """Compose this operation with another operation.
 
+        Parameters
+        ----------
+        other : SpaceOperation
+            Operation to apply after this operation.
+
+        Returns
+        -------
+        SpaceOperation
+            Composite operation representing ``self`` followed by ``other``.
+
+        Notes
+        -----
+        Notationally, it is common in group theory to use implicit multiplication
+        for left composition, and dot for right composition elsewhere. Because
+        ``__mul__`` would be ambiguous, ``and_then`` makes the order of
+        application explicit.
+        """
         # Is this going to be slower than converting to matrices and back? Maybe
         new_point_operation = [[0,0,0],[0,0,0],[0,0,0]]
         for i in range(3):
@@ -183,7 +277,22 @@ class SpaceOperation(Operation):
 
     @staticmethod
     def from_numpy(point_operation: np.ndarray, translation: np.ndarray, name: str | None = None) -> "SpaceOperation":
-        """Create from a description in terms of numpy float array"""
+        """Create from a description in terms of numpy float array.
+
+        Parameters
+        ----------
+        point_operation : numpy.ndarray
+            3x3 array representing the point operation.
+        translation : numpy.ndarray
+            Length-3 array representing the translation vector.
+        name : str or None, optional
+            Optional name for the operation. Default is ``None``.
+
+        Returns
+        -------
+        SpaceOperation
+            Constructed space operation.
+        """
         point_operation, translation = \
             SpaceOperation._from_numpy(point_operation, translation)
 
@@ -193,7 +302,20 @@ class SpaceOperation(Operation):
 
     @staticmethod
     def from_transformation_matrix(matrix: np.ndarray, name: str | None = None):
-        """ Get operation from a 4x4 transformation matrix (currently unused, but useful for debugging)"""
+        """Get operation from a 4x4 transformation matrix (currently unused, but useful for debugging).
+
+        Parameters
+        ----------
+        matrix : numpy.ndarray
+            4x4 augmented transformation matrix.
+        name : str or None, optional
+            Optional name for the operation. Default is ``None``.
+
+        Returns
+        -------
+        SpaceOperation
+            Constructed space operation.
+        """
         point_operation = tuple(tuple(int(matrix[j, i]) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(matrix[i, 3]).limit_denominator(100) % 1 for i in range(3))
 
@@ -203,7 +325,18 @@ class SpaceOperation(Operation):
             name=name)
 
     def apply_without_mod(self, points):
-        """ Apply this operation to a list of points without moving back to the unit cell"""
+        """Apply this operation to a list of points without moving back to the unit cell.
+
+        Parameters
+        ----------
+        points : array_like
+            Array of fractional coordinates of shape ``(N, 3)``.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transformed fractional coordinates without modulo wrapping.
+        """
         point_operation = np.array(self.point_operation, dtype=float)
         translation = np.array([float(f) for f in self.translation]).reshape(-1, 1)
 
@@ -214,12 +347,34 @@ class SpaceOperation(Operation):
         return new_points
 
     def point_operation_in_cartesian(self, cell: "UnitCell"):
-        """ Get the point group in cartesian coordinates"""
+        """Get the point group in cartesian coordinates.
+
+        Parameters
+        ----------
+        cell : UnitCell
+            Unit cell defining the coordinate transformation.
+
+        Returns
+        -------
+        numpy.ndarray
+            3x3 point operation matrix in Cartesian coordinates.
+        """
         return cell._xyz.T @ self.point_operation @ cell._xyz_inv.T
 
 
     def transform_positions(self, positions: ArrayLike) -> np.ndarray:
-        """ Apply this operation to a list of points """
+        """Apply this operation to a list of points.
+
+        Parameters
+        ----------
+        positions : array_like
+            Array of fractional coordinates to transform.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transformed fractional coordinates wrapped into ``[0, 1)``.
+        """
         positions = np.array(positions)
 
         point_operation = self.point_operation_matrix
@@ -230,9 +385,23 @@ class SpaceOperation(Operation):
         return new_positions % 1
 
     def transform_positions_and_spins(self, positions: ArrayLike, spins: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
-        """ Apply this operation to a list of points and spins
+        """Apply this operation to a list of points and spins.
 
-        IMPORTANT: This expects spins to be in lattice coordinates (but with preserved magnitude)
+        IMPORTANT: This expects spins to be in lattice coordinates (but with preserved magnitude).
+
+        Parameters
+        ----------
+        positions : array_like
+            Array of fractional coordinates to transform.
+        spins : array_like
+            Array of spin vectors in lattice coordinates.
+
+        Returns
+        -------
+        new_positions : numpy.ndarray
+            Transformed fractional coordinates wrapped into ``[0, 1)``.
+        new_spins : numpy.ndarray
+            Transformed spin vectors.
         """
         positions = np.array(positions, dtype=float).reshape(-1, 3)
         spins = np.array(spins, dtype=float).reshape(-1, 3)
@@ -253,7 +422,25 @@ class SpaceOperation(Operation):
 
 
 class MagneticOperation(Operation):
-    """ Magnetic Operation """
+    """Magnetic operation.
+
+    Parameters
+    ----------
+    point_operation : PointOperationType
+        3x3 integer matrix representing the point group operation in lattice coordinates.
+    translation : TranslationType
+        3-tuple of ``Fraction`` values representing the fractional translation in ``[0, 1)``.
+    time_reversal : int
+        Time reversal factor, either ``1`` or ``-1``.
+    name : str or None, optional
+        Optional name or label for the operation. Default is ``None``.
+
+    Raises
+    ------
+    ValueError
+        If ``time_reversal`` is not ``1`` or ``-1``, ``point_operation`` does not consist
+        of 3x3 entries in ``{-1, 0, 1}``, or ``translation`` does not have 3 values in ``[0, 1)``.
+    """
 
     def __init__(self,
                 point_operation: PointOperationType,
@@ -294,13 +481,11 @@ class MagneticOperation(Operation):
 
 
     def __lt__(self, other: "BaseMagneticOperation") -> bool:
-        """ Less than, implemented to provide a canonical ordering """
         return (self.point_operation, self.translation, self.time_reversal) < \
             (other.point_operation, other.translation, other.time_reversal)
 
 
     def __eq__(self, other: "BaseMagneticOperation"):
-        """ Equality, should be exact because we're using integers """
         return (self.point_operation, self.translation, self.time_reversal) == \
             (other.point_operation, other.translation, other.time_reversal)
 
@@ -308,7 +493,26 @@ class MagneticOperation(Operation):
     @staticmethod
     def _from_numpy(point_operation: np.ndarray, translation: np.ndarray, time_reversal: np.ndarray) -> \
                     tuple[PointOperationType, TranslationType, int]:
-        """ Method that converts numpy float data into ints/fractions """
+        """Convert numpy float data into ints and fractions.
+
+        Parameters
+        ----------
+        point_operation : numpy.ndarray
+            3x3 float array representing the point operation.
+        translation : numpy.ndarray
+            Length-3 float array representing the translation vector.
+        time_reversal : numpy.ndarray or int or float
+            Time reversal factor (``1`` or ``-1``).
+
+        Returns
+        -------
+        point_operation : PointOperationType
+            3x3 tuple of integers.
+        translation : TranslationType
+            3-tuple of ``Fraction`` objects.
+        time_reversal : int
+            Time reversal integer (``1`` or ``-1``).
+        """
         point_operation = tuple(tuple(int(point_operation[i,j]) for i in range(3)) for j in range(3))
         translation = tuple(Fraction(float(translation[i])).limit_denominator() for i in range(3))
         time_reversal = int(time_reversal)
@@ -318,7 +522,7 @@ class MagneticOperation(Operation):
 
     @property
     def text_form(self) -> str:
-        """ Represent this generator as a triple of equations in xyz"""
+        """Representation of this generator as a triple of equations in xyz."""
         strings = []
         for i in range(3):
             string = ""
@@ -352,12 +556,25 @@ class MagneticOperation(Operation):
 
 
     def and_then(self, other: "MagneticOperation"):
-        """ Composition of operations """
-        # Notationally, it is common in group theory to use implicit
-        #  multiplication for left composition, and dot for right composition elsewhere.
-        # This means would be ambiguous to use __mul__ in this case. and_then makes
-        #  the order of application clear
+        """Compose this operation with another operation.
 
+        Parameters
+        ----------
+        other : MagneticOperation
+            Operation to apply after this operation.
+
+        Returns
+        -------
+        MagneticOperation
+            Composite operation representing ``self`` followed by ``other``.
+
+        Notes
+        -----
+        Notationally, it is common in group theory to use implicit multiplication
+        for left composition, and dot for right composition elsewhere. Because
+        ``__mul__`` would be ambiguous, ``and_then`` makes the order of
+        application explicit.
+        """
         # Is this going to be slower than converting to matrices and back? Maybe
         new_point_operation = [[0,0,0],[0,0,0],[0,0,0]]
         for i in range(3):
@@ -385,7 +602,24 @@ class MagneticOperation(Operation):
     @staticmethod
     def from_numpy(point_operation: np.ndarray, translation: np.ndarray,
                    time_reversal: np.ndarray | float | int, name: str | None = None) -> "MagneticOperation":
-        """ Create magnetic operation from data as numpy arrays"""
+        """Create magnetic operation from data as numpy arrays.
+
+        Parameters
+        ----------
+        point_operation : numpy.ndarray
+            3x3 array representing the point operation.
+        translation : numpy.ndarray
+            Length-3 array representing the translation vector.
+        time_reversal : numpy.ndarray or float or int
+            Time reversal factor (``1`` or ``-1``).
+        name : str or None, optional
+            Optional name for the operation. Default is ``None``.
+
+        Returns
+        -------
+        MagneticOperation
+            Constructed magnetic operation.
+        """
         point_operation, translation, time_reversal = \
             MagneticOperation._from_numpy(point_operation, translation, time_reversal)
 
@@ -395,7 +629,18 @@ class MagneticOperation(Operation):
                                  name=name)
 
     def transform_positions(self, positions: ArrayLike):
-        """ Apply this operation to a list of positions """
+        """Apply this operation to a list of positions.
+
+        Parameters
+        ----------
+        positions : array_like
+            Array of fractional coordinates to transform.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transformed fractional coordinates wrapped into ``[0, 1)``.
+        """
         positions = np.array(positions, dtype=float).reshape(-1, 3)
 
         point_operation = np.array(self.point_operation, dtype=float)
@@ -407,7 +652,22 @@ class MagneticOperation(Operation):
 
 
     def transform_positions_and_spins(self, positions: ArrayLike, spins: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
-        """ Apply this operation to a list of positions, and a potentially different sized list of spins"""
+        """Apply this operation to a list of positions, and a potentially different sized list of spins.
+
+        Parameters
+        ----------
+        positions : array_like
+            Array of fractional coordinates to transform.
+        spins : array_like
+            Array of spin vectors to transform.
+
+        Returns
+        -------
+        new_positions : numpy.ndarray
+            Transformed fractional coordinates wrapped into ``[0, 1)``.
+        new_spins : numpy.ndarray
+            Transformed spin vectors including time reversal.
+        """
         positions = np.array(positions, dtype=float).reshape(-1, 3)
         spins = np.array(spins, dtype=float).reshape(-1, 3)
 
@@ -421,7 +681,23 @@ class MagneticOperation(Operation):
 
     @staticmethod
     def from_text(operation_string: str):
-        """ Parse a string form of an expression, e.g. 'x,x-y,z+1/2' """
+        """Parse a string form of an expression, e.g. 'x,x-y,z+1/2'.
+
+        Parameters
+        ----------
+        operation_string : str
+            Comma-separated coordinate transformation string and time reversal factor.
+
+        Returns
+        -------
+        MagneticOperation
+            Parsed magnetic operation.
+
+        Raises
+        ------
+        ValueError
+            If ``operation_string`` does not contain four comma-separated values.
+        """
         parts = [part.strip() for part in operation_string.split(",")]
         if len(parts) != 4:
             raise ValueError(f"Expected three comma separated values, e.g. 'x,y,z', got {operation_string}")
@@ -437,7 +713,13 @@ class MagneticOperation(Operation):
         return MagneticOperation.from_numpy(matrix_components, translation, time_reversal, operation_string)
 
     def space_operation(self):
-        """ Get the corresponding pure space operation for this magnetic operation"""
+        """Get the corresponding pure space operation for this magnetic operation.
+
+        Returns
+        -------
+        SpaceOperation
+            Pure spatial operation without time reversal.
+        """
         return SpaceOperation(self.point_operation, self.translation)
 
     def __repr__(self):
@@ -445,4 +727,5 @@ class MagneticOperation(Operation):
 
     def __hash__(self):
         return hash((self.point_operation, self.translation, self.time_reversal))
+
 
