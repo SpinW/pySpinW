@@ -1,6 +1,6 @@
-""" Lattice systems
+"""Lattice systems.
 
-Classes and data for working with lattice systems
+Classes and data for working with lattice systems.
 """
 
 from abc import ABC, abstractproperty, abstractmethod
@@ -11,12 +11,28 @@ from pyspinw.symmetry.bravais import PRIMITIVE, BASE_CENTERED, BODY_CENTERED, FA
 from pyspinw.symmetry.unitcell import UnitCell
 
 class IncompatibleUnitCell(Exception):
-    """ Exception raised when unit cell does not fit the constraints of the lattice system"""
+    """Exception raised when unit cell does not fit the constraints of the lattice system."""
 
 
 @dataclass
 class FreeParameters:
-    """ Which parameters of the unit cell are free to vary """
+    """Which parameters of the unit cell are free to vary.
+
+    Parameters
+    ----------
+    a : bool, optional
+        Whether lattice parameter ``a`` is free to vary. Default is ``True``.
+    b : bool, optional
+        Whether lattice parameter ``b`` is free to vary. Default is ``True``.
+    c : bool, optional
+        Whether lattice parameter ``c`` is free to vary. Default is ``True``.
+    alpha : bool, optional
+        Whether lattice angle ``alpha`` is free to vary. Default is ``True``.
+    beta : bool, optional
+        Whether lattice angle ``beta`` is free to vary. Default is ``True``.
+    gamma : bool, optional
+        Whether lattice angle ``gamma`` is free to vary. Default is ``True``.
+    """
 
     a: bool = True
     b: bool = True
@@ -28,7 +44,21 @@ class FreeParameters:
 
 @dataclass
 class BravaisOptions:
-    """ Types of Bravias lattices available """
+    """Types of Bravais lattices available.
+
+    Parameters
+    ----------
+    primitive : bool, optional
+        Whether primitive (P) centering is available. Default is ``True``.
+    base_centered : bool, optional
+        Whether base-centered (A, B, or C) centering is available. Default is ``False``.
+    body_centered : bool, optional
+        Whether body-centered (I) centering is available. Default is ``False``.
+    face_centered : bool, optional
+        Whether face-centered (F) centering is available. Default is ``False``.
+    rhombohedral : bool, optional
+        Whether rhombohedral (R) centering is available. Default is ``False``.
+    """
 
     primitive: bool = True
     base_centered: bool = False
@@ -38,7 +68,7 @@ class BravaisOptions:
 
     @property
     def bravias(self):
-        """List all possible uppercase lattice letters"""
+        """List of all possible uppercase lattice letters."""
         out = []
 
         if self.primitive:
@@ -59,7 +89,25 @@ class BravaisOptions:
         return out
 
 class LatticeSystem(ABC):
-    """ Base class for the various lattice systems """
+    """Base class for the various lattice systems.
+
+    Attributes
+    ----------
+    name : str
+        Name of the lattice system.
+    letter : str
+        Symbol letter of the lattice system.
+    positive_constraints : dict of {str: callable or float}
+        Values of parameters that should be fixed when using this lattice type.
+    negative_constraints : dict of {str: callable}
+        Functions that check whether the unit cell parameters are appropriate.
+
+    Notes
+    -----
+    The positive constraints describe what is needed for the unit cell to count
+    as the given type; the negative constraints describe what is needed to not
+    count as a different type instead.
+    """
 
     name: str = ""
     letter: str = ""
@@ -69,19 +117,30 @@ class LatticeSystem(ABC):
     #  describe what is needed to not count as a different type instead.
 
     positive_constraints: dict[str, Callable[[UnitCell], float] | float] = {}
-    """ Values of parameters that should be fixed when using this lattice type """
+    """Values of parameters that should be fixed when using this lattice type."""
 
     negative_constraints: dict[str, Callable[[UnitCell], bool]] = {}
-    """ Functions that check whether the unit cell parameters are appropriate """
+    """Functions that check whether the unit cell parameters are appropriate."""
 
 
     @property
     @abstractmethod
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
 
     def constrain(self, unit_cell: UnitCell) -> UnitCell:
-        """ Constrain the unit cell for this system """
+        """Constrain the unit cell for this system.
+
+        Parameters
+        ----------
+        unit_cell : UnitCell
+            The unit cell to constrain.
+
+        Returns
+        -------
+        UnitCell
+            A new unit cell with positive constraints applied.
+        """
         evaluated = {
             key: value if isinstance(value, (int,float)) else value(unit_cell)
                 for key, value in self.positive_constraints.items()
@@ -91,10 +150,21 @@ class LatticeSystem(ABC):
     @property
     @abstractmethod
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
 
     def violated_negative_constraints(self, unit_cell: UnitCell) -> list[str]:
-        """ Check whether any of the constraints on specific values are violated by this unit cell """
+        """Check whether any of the constraints on specific values are violated by this unit cell.
+
+        Parameters
+        ----------
+        unit_cell : UnitCell
+            The unit cell to check.
+
+        Returns
+        -------
+        list of str
+            Descriptions of the violated negative constraints.
+        """
         out = []
         for name, constraint in self.negative_constraints.items():
             if not constraint(unit_cell):
@@ -102,7 +172,18 @@ class LatticeSystem(ABC):
         return out
 
     def validate(self, unit_cell: UnitCell):
-        """ Raises an exception if the unit cell is not compatible with this system """
+        """Raise an exception if the unit cell is not compatible with this system.
+
+        Parameters
+        ----------
+        unit_cell : UnitCell
+            The unit cell to validate.
+
+        Raises
+        ------
+        IncompatibleUnitCell
+            If the unit cell violates any positive or negative constraints of this system.
+        """
         # Positive constraints
 
         for key, entry in self.positive_constraints.items():
@@ -135,7 +216,13 @@ class LatticeSystem(ABC):
 
 
     def create_unit_cell(self):
-        """ Create a unit cell that matches this lattice system """
+        """Create a unit cell that matches this lattice system.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised in the base class; only available in derived classes.
+        """
         raise NotImplementedError("Create unit cell is only available in derived classes")
 
     def __repr__(self):
@@ -148,7 +235,7 @@ class LatticeSystem(ABC):
 #
 
 class Triclinic(LatticeSystem):
-    """ Triclinic lattice system """
+    """Triclinic lattice system."""
 
     name = "Triclinic"
     letter = "a"
@@ -166,17 +253,38 @@ class Triclinic(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters()
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions()
 
     def create_unit_cell(self, a: float, b: float, c: float,
                          alpha: float, beta: float, gamma: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a``.
+        b : float
+            Lattice parameter ``b``.
+        c : float
+            Lattice parameter ``c``.
+        alpha : float
+            Lattice angle ``alpha`` in degrees.
+        beta : float
+            Lattice angle ``beta`` in degrees.
+        gamma : float
+            Lattice angle ``gamma`` in degrees.
+
+        Returns
+        -------
+        UnitCell
+            Validated triclinic unit cell.
+        """
         cell = UnitCell(a, b, c, alpha, beta, gamma)
         self.validate(cell)
 
@@ -184,7 +292,7 @@ class Triclinic(LatticeSystem):
 
 
 class MonoclinicB(LatticeSystem):
-    """ Monoclinic lattice system """
+    """Monoclinic lattice system."""
 
     name = "MonoclinicB"
     letter = "m"
@@ -203,23 +311,40 @@ class MonoclinicB(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(alpha=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(base_centered=True)
 
     def create_unit_cell(self, a: float, b: float, c: float, beta: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a``.
+        b : float
+            Lattice parameter ``b``.
+        c : float
+            Lattice parameter ``c``.
+        beta : float
+            Lattice angle ``beta`` in degrees.
+
+        Returns
+        -------
+        UnitCell
+            Validated monoclinic (unique axis b) unit cell.
+        """
         cell = UnitCell(a, b, c, 90, beta, 90)
         self.validate(cell)
 
         return cell
 
 class MonoclinicA(LatticeSystem):
-    """ Monoclinic lattice system """
+    """Monoclinic lattice system."""
 
     name = "MonoclinicA"
     letter = "ma"
@@ -238,23 +363,40 @@ class MonoclinicA(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(beta=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(base_centered=True)
 
     def create_unit_cell(self, a: float, b: float, c: float, alpha: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a``.
+        b : float
+            Lattice parameter ``b``.
+        c : float
+            Lattice parameter ``c``.
+        alpha : float
+            Lattice angle ``alpha`` in degrees.
+
+        Returns
+        -------
+        UnitCell
+            Validated monoclinic (unique axis a) unit cell.
+        """
         cell = UnitCell(a, b, c, alpha, 90, 90)
         self.validate(cell)
 
         return cell
 
 class MonoclinicC(LatticeSystem):
-    """ Monoclinic lattice system """
+    """Monoclinic lattice system."""
 
     name = "MonoclinicC"
     letter = "mc"
@@ -273,16 +415,33 @@ class MonoclinicC(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(alpha=False, beta=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(base_centered=True)
 
     def create_unit_cell(self, a: float, b: float, c: float, gamma: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a``.
+        b : float
+            Lattice parameter ``b``.
+        c : float
+            Lattice parameter ``c``.
+        gamma : float
+            Lattice angle ``gamma`` in degrees.
+
+        Returns
+        -------
+        UnitCell
+            Validated monoclinic (unique axis c) unit cell.
+        """
         cell = UnitCell(a, b, c, 90, 90, gamma)
         self.validate(cell)
 
@@ -291,7 +450,7 @@ class MonoclinicC(LatticeSystem):
 
 
 class Orthorhombic(LatticeSystem):
-    """ Orthorhombic lattice system """
+    """Orthorhombic lattice system."""
 
     name = "Orthorhombic"
     letter = "o"
@@ -310,26 +469,41 @@ class Orthorhombic(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(alpha=False, beta=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(
             base_centered=True,
             body_centered=True,
             face_centered=True)
 
     def create_unit_cell(self, a: float, b: float, c: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a``.
+        b : float
+            Lattice parameter ``b``.
+        c : float
+            Lattice parameter ``c``.
+
+        Returns
+        -------
+        UnitCell
+            Validated orthorhombic unit cell.
+        """
         cell = UnitCell(a, b, c, 90, 90, 90)
         self.validate(cell)
 
         return cell
 
 class Tetragonal(LatticeSystem):
-    """ Tetragonal lattice system"""
+    """Tetragonal lattice system."""
 
     name = "Tetragonal"
     letter = "t"
@@ -347,17 +521,30 @@ class Tetragonal(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(b=False, alpha=False, beta=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(body_centered=True)
 
 
     def create_unit_cell(self, a: float, c: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a`` (and ``b``).
+        c : float
+            Lattice parameter ``c``.
+
+        Returns
+        -------
+        UnitCell
+            Validated tetragonal unit cell.
+        """
         cell = UnitCell(a, a, c, 90, 90, 90)
         self.validate(cell)
 
@@ -365,7 +552,7 @@ class Tetragonal(LatticeSystem):
 
 
 class Rhombohedral(LatticeSystem):
-    """ Rhombohedral lattice system """
+    """Rhombohedral lattice system."""
 
     name = "Rhombohedral"
     letter = "h"
@@ -384,23 +571,36 @@ class Rhombohedral(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(b=False, c=False, beta=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(primitive=False, rhombohedral=True)
 
     def create_unit_cell(self, a: float, alpha: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a`` (and ``b``, ``c``).
+        alpha : float
+            Lattice angle ``alpha`` (and ``beta``, ``gamma``) in degrees.
+
+        Returns
+        -------
+        UnitCell
+            Validated rhombohedral unit cell.
+        """
         cell = UnitCell(a, a, a, alpha, alpha, alpha)
         self.validate(cell)
 
         return cell
 
 class Hexagonal(LatticeSystem):
-    """ Hexagonal lattice system """
+    """Hexagonal lattice system."""
 
     name = "Hexagonal"
     letter = "h"
@@ -418,23 +618,36 @@ class Hexagonal(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(b=False, alpha=False, beta=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions()
 
     def create_unit_cell(self, a: float, c: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a`` (and ``b``).
+        c : float
+            Lattice parameter ``c``.
+
+        Returns
+        -------
+        UnitCell
+            Validated hexagonal unit cell.
+        """
         cell = UnitCell(a, a, c, 90, 90, 120)
         self.validate(cell)
 
         return cell
 
 class Cubic(LatticeSystem):
-    """ Cubic lattice system"""
+    """Cubic lattice system."""
 
     name = "Cubic"
     letter = "c"
@@ -451,17 +664,28 @@ class Cubic(LatticeSystem):
 
     @property
     def free_parameters(self) -> FreeParameters:
-        """ List the parameters that should be available to edit"""
+        """Parameters that should be available to edit."""
         return FreeParameters(b=False, c=False, alpha=False, beta=False, gamma=False)
 
     @property
     def bravais_options(self) -> BravaisOptions:
-        """ Bravais lattices consistent with this kind of cell"""
+        """Bravais lattices consistent with this kind of cell."""
         return BravaisOptions(body_centered=True, face_centered=True)
 
 
     def create_unit_cell(self, a: float):
-        """ Create a unit cell for this lattice """
+        """Create a unit cell for this lattice.
+
+        Parameters
+        ----------
+        a : float
+            Lattice parameter ``a`` (and ``b``, ``c``).
+
+        Returns
+        -------
+        UnitCell
+            Validated cubic unit cell.
+        """
         cell = UnitCell(a, a, a, 90, 90, 90)
         self.validate(cell)
 
@@ -484,7 +708,18 @@ lattice_system_name_lookup = {lattice.name: lattice for lattice in lattice_syste
 lattice_system_letter_lookup = {lattice.letter: lattice for lattice in lattice_systems if len(lattice.letter) < 2}
 
 def find_unit_cell_type(unit_cell: UnitCell) -> list[LatticeSystem]:
-    """ Find the lattice system for a unit cell, it should be a length zero or one list, but it might not be """
+    """Find the lattice system for a unit cell; it should be a length zero or one list, but it might not be.
+
+    Parameters
+    ----------
+    unit_cell : UnitCell
+        The unit cell to classify.
+
+    Returns
+    -------
+    list of LatticeSystem
+        Lattice systems compatible with ``unit_cell``.
+    """
     # get potential lattice systems
     potential_systems = [system for system in lattice_systems if system.constrain(unit_cell) == unit_cell]
 
@@ -498,4 +733,3 @@ if __name__ == "__main__":
     for lattice_system in lattice_systems:
         symbols = [lattice_system.letter + bravais.letter for bravais in lattice_system.bravais_options.bravias]
         print(f"{lattice_system.name}: " + ",".join(symbols))
-
