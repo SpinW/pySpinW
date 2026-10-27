@@ -1,4 +1,4 @@
-""" Magnetic Spacegroups"""
+"""Magnetic Spacegroups."""
 
 import logging
 
@@ -9,13 +9,19 @@ from pyspinw.symmetry.operations import MagneticOperation
 logger = logging.getLogger("MagneticSpaceGroup")
 
 class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
-    """ Representation of a magnetic space group"""
+    """Representation of a magnetic space group.
+
+    Parameters
+    ----------
+    operations : list of MagneticOperation
+        Magnetic symmetry operations belonging to this magnetic space group.
+    """
 
     serialisation_name = "magnetic_group"
 
     @property
     def space_operations(self):
-        """ The SpaceOperations for this group """
+        """The SpaceOperations for this group."""
         return self.parent_spacegroup.operations
 
 
@@ -29,23 +35,38 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
                        "these everything is fully implemented.")
 
     def _description(self) -> str:
-        """ Description string for this spacegroup, only used internally """
+        """Description string for this spacegroup, only used internally."""
         parent_string = "Magnetic group based on " + self.parent_spacegroup._description()
         return parent_string + "".join(["\n  " + op.text_form for op in self.operations])
 
     def __repr__(self):
-        """repr"""
         text = "; ".join([op.text_form for op in self.operations])
         return f"MagneticSpaceGroup({text})"
 
     @property
     def lattice_system(self):
-        """ Get the lattice system associated with this spacegroup """
+        """Get the lattice system associated with this spacegroup."""
         return self.parent_spacegroup.lattice_system
 
     @staticmethod
     def _get_spacegroup(operations):
-        """ Get the spacegroup that corresponds to this magnetic group """
+        """Get the spacegroup that corresponds to this magnetic group.
+
+        Parameters
+        ----------
+        operations : list of MagneticOperation
+            List of magnetic symmetry operations.
+
+        Returns
+        -------
+        SpaceGroup
+            Parent crystallographic space group matching the spatial parts of `operations`.
+
+        Raises
+        ------
+        ValueError
+            If no crystallographic space group exactly matches the spatial operations.
+        """
         space_operations = [operation.space_operation().text_form for operation in operations]
 
         match_data = database.spacegroups_with_operations("; ".join(space_operations))
@@ -58,7 +79,20 @@ class MagneticSpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @staticmethod
     def closure(operations: list[MagneticOperation], centerings: list[MagneticOperation]):
-        """ Find the closure of a list of operations, based on the operation/centering convention """
+        """Find the closure of a list of operations, based on the operation/centering convention.
+
+        Parameters
+        ----------
+        operations : list of MagneticOperation
+            Generating magnetic symmetry operations.
+        centerings : list of MagneticOperation
+            Lattice centring magnetic operations.
+
+        Returns
+        -------
+        MagneticSpaceGroup
+            Magnetic space group closed under group multiplication.
+        """
         all_operations = set(centering.and_then(op)
                              for centering in centerings
                               for op in operations)
