@@ -73,7 +73,7 @@ class NoDirectionalityFilter:
         return True
 
 class InDirectionFilter(DirectionalityFilter):
-    """Selects vectors in a given direction.
+    """Selects vectors in a given direction, parallel to the specified direction.
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ class InDirectionFilter(DirectionalityFilter):
 
 
 class BiDirectionFilter(DirectionalityFilter):
-    """Selects vectors in a given direction.
+    """Selects vectors in a given direction, parallel or antiparallel to the specified direction.
 
     Parameters
     ----------

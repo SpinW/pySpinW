@@ -46,8 +46,8 @@ def add_extra_edge_lines(point_pairs: list[tuple[np.ndarray, np.ndarray]], tol=1
 
     * If a line lives on a face an not an edge, i.e. one component in both points are zero, we replace
        two copies, one where the component is zero, the other where it is one.
-    * If a line lives on an edge, i.e. 2 two of the components in both points are zero, we need to make 4 copies
-       with the two components being [0,0], [0,1], [1,0] and [0,0]
+    * If a line lives on an edge, i.e. two of the components in both points are zero, we need to make 4 copies
+       with the two components being [0,0], [0,1], [1,0] and [1,1]
     * Three being zero should not happen, because the line will have length zero
 
     Parameters

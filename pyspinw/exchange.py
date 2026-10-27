@@ -32,6 +32,8 @@ def _generate_unique_exchange_id():
 class ExchangeBaseDeserialisation:
     """Hold basic properties of an exchange term.
 
+    Used during serialisation, not a user facing function
+
     Parameters
     ----------
     name : str
@@ -219,7 +221,7 @@ class Exchange(SPWSerialisable):
         }
 
     def generalise(self):
-        """Convert to most general Exchange class.
+        """Create a new exchange that is the most general kind, (`Exchange`).
 
         Returns
         -------

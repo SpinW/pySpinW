@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class DisplayOptions:
-    """Options for how things should display.
+    """Options for how things should display in the viewer.
 
     Parameters
     ----------
@@ -27,7 +27,7 @@ class DisplayOptions:
         Whether to render non-magnetic sites. Default is ``True``.
     use_atomic_radii : bool, optional
         Whether to scale site spheres by atomic radius. Default is ``True``.
-    show_atoms_not_spins : bool, optional
+    show_spins_not_atoms : bool, optional
         Whether to render magnetic sites as spin arrows rather than spheres.
         Default is ``True``.
     atom_spin_scaling : float, optional
@@ -76,7 +76,7 @@ class DisplayOptions:
 
     show_nonmagnetic_atoms: bool = True
     use_atomic_radii: bool = True
-    show_atoms_not_spins: bool = True
+    show_spins_not_atoms: bool = True
 
     atom_spin_scaling: float = 0.35
     exchange_scaling: float = 0.20

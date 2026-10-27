@@ -84,7 +84,7 @@ Free = FreeConstraint()
 Fixed = FixedConstraint()
 
 class OneFixed(MinimisationConstraintGenerator):
-    """Constraint Generator.
+    """Generates a set on constraints with every site free except for one, which is fixed.
 
     Parameters
     ----------

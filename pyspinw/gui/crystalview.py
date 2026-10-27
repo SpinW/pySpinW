@@ -266,7 +266,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                             else:
                                 mode = SelectionMode.NOT_SELECTED
 
-                        show_arrow = site.is_magnetic and self.display_options.show_atoms_not_spins
+                        show_arrow = site.is_magnetic and self.display_options.show_spins_not_atoms
                         render_object = self.arrow if show_arrow else self.small_sphere
                         selection_render_object = self.selection_arrow if show_arrow else self.selection_small_sphere
 

@@ -342,7 +342,7 @@ class DisplayOptionsToolbar(QWidget):
         self.atom_or_spins = self._add_toggle_button(target=self.bar_1_layout,
                                                      alt_text="Switch between showing atoms and spins",
                                                      icon="momentatoms",
-                                                     value=settings.show_atoms_not_spins)
+                                                     value=settings.show_spins_not_atoms)
 
 
 
@@ -486,7 +486,7 @@ class DisplayOptionsToolbar(QWidget):
             show_anisotropies = self.show_anisotropies.isChecked(),
             show_unit_cell = self.show_cell.isChecked(),
             show_supercell = self.show_supercell.isChecked(),
-            show_atoms_not_spins = self.atom_or_spins.isChecked(),
+            show_spins_not_atoms= self.atom_or_spins.isChecked(),
             show_nonmagnetic_atoms = self.show_nonmagnetic.isChecked(),
             use_atomic_radii = self.scale_atoms.isChecked(),
             atom_spin_scaling= self.spin_scale_slider.value(),
