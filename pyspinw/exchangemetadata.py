@@ -1,10 +1,22 @@
-""" Metadata for exchanges """
+"""Metadata for exchanges."""
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys, \
     rgb_serialise, rgb_deserialise
 
 
 class ExchangeMetadata(SPWSerialisable):
-    """ Metadata for exchanges"""
+    """Metadata for exchanges.
+
+    Parameters
+    ----------
+    color : tuple of (float, float, float) or None, optional
+        RGB color tuple for visualising the exchange, or ``None``.
+        Default is ``None``.
+
+    Attributes
+    ----------
+    color : tuple of (float, float, float) or None
+        RGB color tuple for visualising the exchange, or ``None``.
+    """
 
     serialisation_name = "exchange_metadata"
 
@@ -25,5 +37,11 @@ class ExchangeMetadata(SPWSerialisable):
         return ExchangeMetadata(color=color)
 
     def copy(self):
-        """ Return a copy of this exchange metadata """
+        """Return a copy of this exchange metadata.
+
+        Returns
+        -------
+        ExchangeMetadata
+            New `ExchangeMetadata` instance with the same color.
+        """
         return ExchangeMetadata(self.color)
