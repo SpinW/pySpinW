@@ -1,4 +1,4 @@
-"""Calculates polarised cross-sections from Sab matrix"""
+"""Calculate polarised cross-sections from Sab matrix."""
 import numpy as np
 from numpy._typing import ArrayLike
 from enum import Enum
@@ -6,7 +6,7 @@ import re
 
 # ruff: noqa: E702
 class PolarisationType(Enum):
-    """Types of Polarisation components"""
+    """Types of Polarisation components."""
 
     PXX = 'Pxx'; PXY = 'Pxy'; PXZ = 'Pxz'  # Full polarisation
     PYX = 'Pyx'; PYY = 'Pyy'; PYZ = 'Pyz'
@@ -25,6 +25,23 @@ LC = np.array([[[0, 0, 0], [0, 0, 1], [0, -1, 0]],
                [[0, 1, 0], [-1, 0, 0], [0, 0, 0]]])
 
 def _str_to_vec(in_str):
+    """Parse a bracketed string of 3 numbers into a NumPy vector.
+
+    Parameters
+    ----------
+    in_str : str
+        Bracketed vector string, e.g. ``"[0 1 0]"``.
+
+    Returns
+    -------
+    (3,) numpy.ndarray
+        Parsed 3-component float vector.
+
+    Raises
+    ------
+    RuntimeError
+        If ``in_str`` cannot be parsed as a 3-component vector.
+    """
     ma = re.match(r'\[([0-9]*)\ *([0-9]*)\ *([0-9]*)\]', in_str)
     if ma:
         try:
@@ -34,11 +51,35 @@ def _str_to_vec(in_str):
     raise RuntimeError(f'Could not parse string "{in_str}" as a vector')
 
 def parse_components(components: str, rlu_to_cart: ArrayLike):
-    """Parses a polarised components string
+    """Parse a polarised components string.
 
-    :param components: the component string which is a mathematical expression involving polarisation
-                       components Pab, Pa or Mab, and optionally the horizontal scattering plane
-                       defined after a comma. If not specified, we assume the a-b plane is horizontal.
+    Parameters
+    ----------
+    components : str
+        The component string which is a mathematical expression involving
+        polarisation components ``Pab``, ``Pa`` or ``Mab``, and optionally the
+        horizontal scattering plane defined after a comma. If not specified, we
+        assume the a-b plane is horizontal.
+    rlu_to_cart : (3, 3) array_like
+        Transformation matrix from reciprocal lattice units to Cartesian
+        coordinates.
+
+    Returns
+    -------
+    rv : list of tuple of (float, PolarisationType)
+        Parsed list of ``(prefactor, PolarisationType)`` terms.
+    normal : (3,) numpy.ndarray
+        Unit normal vector to the horizontal scattering plane.
+    return_all : bool
+        ``True`` if ``components == 'all'``, otherwise ``False``.
+
+    Raises
+    ------
+    ValueError
+        If ``components`` cannot be parsed into valid polarisation terms.
+    RuntimeError
+        If incompatible polarisation types or full/half polarisation terms are
+        mixed in ``components``.
     """
     if components == 'all':
         return [], np.array([0., 0., 1.]), True
@@ -78,6 +119,23 @@ def parse_components(components: str, rlu_to_cart: ArrayLike):
     return rv, normal, False
 
 def _sum_components(mat: ArrayLike, components: list[tuple[float, PolarisationType]], nMode: int):
+    """Compute a linear combination of polarisation matrix components across modes.
+
+    Parameters
+    ----------
+    mat : array_like
+        Polarisation vector or tensor at a single q-point with shape ``(3, nMode)``
+        or ``(3, 3, nMode)``.
+    components : list of tuple of (float, PolarisationType)
+        List of ``(prefactor, PolarisationType)`` terms to sum.
+    nMode : int
+        Number of spin-wave modes.
+
+    Returns
+    -------
+    (nMode,) numpy.ndarray
+        Complex summed intensity for each mode.
+    """
     intensity = np.zeros(nMode, dtype=complex)
     if len(components[0][1].value) == 2:
         for comp in components:
@@ -92,27 +150,55 @@ def calculate_polarised_intensity(Sab: ArrayLike,
                                   q_vectors: ArrayLike,
                                   components: str,
                                   rlu_to_cart: ArrayLike):
-    """Calculates the polarised intensity for a given component string from the spin-spin correlation matrix
+    """Calculate the polarised intensity for a given component string from the spin-spin correlation matrix.
 
-    :param Sab: the spin-spin correlation matrices computed previously
-    :param q_vectors: a numpy array of the q-vectors corresponding to the set of Sab inputted
-    :param components: the component string which is a mathematical expression involving polarisation
-                       components Pab, Pa or Mab, and optionally the horizontal scattering plane
-                       defined after a comma. If not specified, we assume the a-b plane is horizontal.
+    ``Pab`` and ``Pa`` indicate the polarised neutron intensity in either full
+    (``Pab``) or half (``Pa``) polarised modes. Here ``ab`` indicate the ``x``,
+    ``y``, or ``z`` directions in the Blume-Maleev Cartesian coordinate system
+    where ``x`` is parallel to ``Q``, ``y`` is perpendicular to ``Q`` in the
+    horizontal plane and ``z`` is vertical. ``Mab`` will return the projection of
+    the ``Sab`` matrix in the Blume-Maleev coordinate system.
 
-    Pab and Pa indicate the polarised neutron intensity in either full (Pab) or half (Pa) polarised modes.
-    Here ab indicate the x, y, or z directions in the Blume-Maleev cartesian coordinate system where
-    x is parallel to Q, y is perpendicular to Q in the horizontal plane and z is vertical.
-    Mab will return the projection of the Sab matrix in the Blume-Maleev coordinate system.
+    The horizontal plane used to define the Blume-Maleev system can be specified
+    after a comma in the component string, either as a perpendicular vector (in
+    the XYZ coordinate system), or two Q-vectors (in the lattice units system)
+    defining the plane. Note that these vectors defining the plane should be
+    delimited by square brackets, and components can be delimited by commas or
+    spaces.
 
-    The horizontal plane used to define the Blume-Maleev system can be specified after a comma in the
-    component string, either as a perpendicular vector (in the XYZ coordinate system), or two Q-vector
-    (in the lattice units system) defining the plane. Note that these vectors defining the plane should
-    be delimited by square brackets, and components can be delimited by commas or spaces
+    Parameters
+    ----------
+    Sab : array_like
+        The spin-spin correlation matrices computed previously, with shape
+        ``(3, 3, n_modes, n_q)``.
+    Sperp : array_like
+        Unpolarised perpendicular spin correlation intensity at each q-point,
+        with shape ``(n_q, n_modes)``.
+    q_vectors : array_like
+        A NumPy array of the q-vectors corresponding to the set of ``Sab``
+        inputted, with shape ``(n_q, 3)``.
+    components : str
+        The component string which is a mathematical expression involving
+        polarisation components ``Pab``, ``Pa`` or ``Mab``, and optionally the
+        horizontal scattering plane defined after a comma. If not specified, we
+        assume the a-b plane is horizontal.
+    rlu_to_cart : (3, 3) array_like
+        Transformation matrix from reciprocal lattice units to Cartesian
+        coordinates.
 
-    Examples: 'Pxy+0.33*Pyz, [0,1,0]'  # y direction is normal (does not necessarily correspond to b-axis)
-              'Mxy, [1 1 0]-[0 0 1]'   # [110]-[001] is defined as horizontal plane, returns projected Sab
-              'Px'                     # a-b plane is horizontal (default), return half-polarised intensity
+    Returns
+    -------
+    numpy.ndarray or tuple of (numpy.ndarray, numpy.ndarray, numpy.ndarray)
+        Calculated polarised intensity array with shape ``(n_q, n_modes)``, or
+        tuple ``(Pab, Pa, Mab)`` if ``components == 'all'``.
+
+    Examples
+    --------
+    Component string examples::
+
+        'Pxy+0.33*Pyz, [0,1,0]'  # y direction is normal (does not necessarily correspond to b-axis)
+        'Mxy, [1 1 0]-[0 0 1]'   # [110]-[001] is defined as horizontal plane, returns projected Sab
+        'Px'                     # a-b plane is horizontal (default), return half-polarised intensity
     """
     Sab, Sperp, q_vectors = (np.array(Sab), np.array(Sperp), np.array(q_vectors))
     components, zdir, return_all = parse_components(components, rlu_to_cart)
