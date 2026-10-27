@@ -1,4 +1,4 @@
-""" Supercell representations"""
+"""Supercell representations."""
 from abc import ABC, abstractmethod
 from fractions import Fraction
 from math import lcm
@@ -16,12 +16,27 @@ from pyspinw.util import rotation_matrix
 
 
 def _coerce_numeric_input(value: Fraction | float, max_denom=1_000):
-    """ Convert floats or fractions into the form needed for a propagation vector"""
+    """Convert floats or fractions into the form needed for a propagation vector.
+
+    Parameters
+    ----------
+    value : Fraction or float
+        Input numeric value to convert.
+    max_denom : int, optional
+        Maximum denominator when approximating floats as fractions. Default is ``1000``.
+
+    Returns
+    -------
+    Fraction
+        Converted fraction, with ``0`` mapped to ``Fraction(1)``.
+
+    Notes
+    -----
+    It is conventional to use 0 rather than 1 for a period-1 supercell (as they
+    are indistinguishable), but mathematically it should be 1.
+    """
     if not isinstance(value, Fraction):
         value = Fraction(value).limit_denominator(max_denominator=max_denom)
-
-    # It's conventional to use 0 rather than one for a period 1 supercell (as they're indistinguishable)
-    # but mathematically, it should be one
 
     if value == 0:
         return Fraction(1)
@@ -30,7 +45,19 @@ def _coerce_numeric_input(value: Fraction | float, max_denom=1_000):
         return value
 
 class PropagationVector(SPWSerialisable):
-    """ Propagation vector"""
+    """Propagation vector.
+
+    Parameters
+    ----------
+    i : Fraction or float
+        Component along the first reciprocal lattice vector.
+    j : Fraction or float
+        Component along the second reciprocal lattice vector.
+    k : Fraction or float
+        Component along the third reciprocal lattice vector.
+    phase : float, optional
+        Phase offset in radians. Default is ``0.0``.
+    """
 
     serialisation_name = "propagation_vector"
 
@@ -50,11 +77,22 @@ class PropagationVector(SPWSerialisable):
 
     @property
     def vector(self):
-        """ As a numpy vector"""
+        """As a numpy vector."""
         return self._vector
 
     def dot(self, cell_offset: CellOffset):
-        """ Dot product with a cell offset"""
+        """Dot product with a cell offset.
+
+        Parameters
+        ----------
+        cell_offset : CellOffset
+            Cell offset to take the dot product with.
+
+        Returns
+        -------
+        float
+            Dot product of the propagation vector and the cell offset vector.
+        """
         return np.dot(self.vector, cell_offset.vector)
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
@@ -83,11 +121,33 @@ class PropagationVector(SPWSerialisable):
         return self.i == other.i and self.j == other.j and self.k == other.k
 
     def uncorrected_phase_position(self, site: Site):
-        """ Get the position of a site along the propagation vector, from (0,0,0), ignoring the phase correction"""
+        """Get the position of a site along the propagation vector, from (0,0,0), ignoring the phase correction.
+
+        Parameters
+        ----------
+        site : Site
+            Magnetic site within the unit cell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Element-wise phase position ``2 * pi * (k * r)`` without phase offset.
+        """
         return 2*np.pi*(self.vector * site.ijk)
 
     def corrected_phase_position(self, site: Site):
-        """ Get the position of a site along the propagation vector, from (0,0,0), including the phase correction"""
+        """Get the position of a site along the propagation vector, from (0,0,0), including the phase correction.
+
+        Parameters
+        ----------
+        site : Site
+            Magnetic site within the unit cell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Element-wise phase position ``2 * pi * (k * r) + phase``.
+        """
         return 2 * np.pi * (self.vector * site.ijk) + self.phase
 
     def __repr__(self):
@@ -97,7 +157,22 @@ class PropagationVector(SPWSerialisable):
             return f"{self.__class__.__name__}({self.i}, {self.j}, {self.k}, phase={self.phase})"
 
 class CommensuratePropagationVector(PropagationVector):
-    """ Propagation vector with rational values"""
+    """Propagation vector with rational values.
+
+    Parameters
+    ----------
+    i : Fraction or float
+        Component along the first reciprocal lattice vector.
+    j : Fraction or float
+        Component along the second reciprocal lattice vector.
+    k : Fraction or float
+        Component along the third reciprocal lattice vector.
+    phase : float, optional
+        Phase offset in radians. Default is ``0.0``.
+    max_denominator : int, optional
+        Maximum denominator used when coercing float components to ``Fraction``.
+        Default is ``1000``.
+    """
 
     def __init__(self,
                  i: Fraction | float,
@@ -129,23 +204,55 @@ class CommensuratePropagationVector(PropagationVector):
         return False
 
 class SupercellTransformation(ABC, SPWSerialisable):
-    """ Base class for supercell transformations """
+    """Base class for supercell transformations."""
 
     serialisation_name = "supercell_transformation"
     transformation_name = "<transform base class>"
 
     @abstractmethod
     def apply(self, spin: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
-        """ Apply this transformation to a spin with a given offset """
+        """Apply this transformation to a spin with a given offset.
+
+        Parameters
+        ----------
+        spin : numpy.ndarray
+            Spin vector to transform.
+        propagation_vector : CommensuratePropagationVector
+            Propagation vector governing the modulation.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transformed spin vector.
+        """
 
     @abstractmethod
     def _serialise_transform(self) -> dict:
-        """ Serialise this transform"""
+        """Serialise this transform.
+
+        Returns
+        -------
+        dict
+            Serialised dictionary representation of the transformation parameters.
+        """
 
     @staticmethod
     @abstractmethod
     def _deserialise_transform(json) -> "SupercellTransformation":
-        """ Deserialise this transform"""
+        """Deserialise this transform.
+
+        Parameters
+        ----------
+        json : dict
+            Serialised dictionary data for the transformation.
+
+        Returns
+        -------
+        SupercellTransformation
+            Deserialised transformation instance.
+        """
 
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
@@ -166,7 +273,7 @@ class SupercellTransformation(ABC, SPWSerialisable):
 
 
 class IdentityTransform(SupercellTransformation):
-    """ Transformation that does nothing """
+    """Transformation that does nothing."""
 
     transformation_name = "identity"
 
@@ -178,14 +285,35 @@ class IdentityTransform(SupercellTransformation):
         return IdentityTransform()
 
     def apply(self, spin: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
-        """ Apply this transformation to a given spin (as it is the identity it does nothing to it)"""
+        """Apply this transformation to a given spin (as it is the identity it does nothing to it).
+
+        Parameters
+        ----------
+        spin : numpy.ndarray
+            Spin vector to transform.
+        propagation_vector : CommensuratePropagationVector
+            Propagation vector governing the modulation.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Unchanged spin vector.
+        """
         return spin
 
     def __repr__(self):
         return "IdentityTransform"
 
 class RotationTransform(SupercellTransformation):
-    """ Rotation transformation in a supercell"""
+    """Rotation transformation in a supercell.
+
+    Parameters
+    ----------
+    axis : (3,) numpy.ndarray or list of float
+        Axis of rotation in Cartesian coordinates.
+    """
 
     transformation_name = "rotation"
 
@@ -202,7 +330,22 @@ class RotationTransform(SupercellTransformation):
         return RotationTransform(axis=numpy_deserialise(json["axis"]))
 
     def apply(self, spin: np.ndarray, propagation_vector: CommensuratePropagationVector, cell_offset: CellOffset):
-        """ Apply this transformation (rotation) to a spin in a specified cell """
+        """Apply this transformation (rotation) to a spin in a specified cell.
+
+        Parameters
+        ----------
+        spin : numpy.ndarray
+            Spin vector to rotate.
+        propagation_vector : CommensuratePropagationVector
+            Propagation vector determining the rotation angle.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Rotated spin vector.
+        """
         angle = -2 * np.pi * propagation_vector.dot(cell_offset) + propagation_vector.phase
         return spin @ rotation_matrix(angle, self._axis)
 
@@ -213,7 +356,19 @@ transform_types = {cls.transformation_name: cls for cls in [IdentityTransform, R
 
 
 class Supercell(ABC, SPWSerialisable):
-    """ Base class for different supercells """
+    """Base class for different supercells.
+
+    Parameters
+    ----------
+    scaling : tuple of (int, int, int) or None, optional
+        Supercell scaling factors along the three lattice axes. Default is ``None``,
+        which corresponds to ``(1, 1, 1)``.
+
+    Raises
+    ------
+    ValueError
+        If any scaling component is less than 1.
+    """
 
     serialisation_name = "supercell"
     supercell_name = "<base supercell>"
@@ -230,32 +385,109 @@ class Supercell(ABC, SPWSerialisable):
 
     @abstractmethod
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
-        """ Get the spin for a given cell, and the specified spin data """
+        """Get the spin for a given cell, and the specified spin data.
+
+        Parameters
+        ----------
+        spin_data : numpy.ndarray
+            Spin definition array for the site.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Calculated 3-component spin vector.
+        """
 
     def spin(self, site: Site, cell_offset: CellOffset):
-        """ Get the spin for a site in a specified cell according to the supercell"""
+        """Get the spin for a site in a specified cell according to the supercell.
+
+        Parameters
+        ----------
+        site : Site
+            Site within the unit cell.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Calculated 3-component spin vector.
+        """
         return self.spin_calculation(site.spin_data, cell_offset)
 
     def cell_position_and_spin(self, site: Site, cell_offset: CellOffset):
-        """ Position within the unit cell, and spin"""
+        """Position within the unit cell, and spin.
+
+        Parameters
+        ----------
+        site : Site
+            Site within the unit cell.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            6-element array containing fractional unit-cell position and spin vector.
+        """
         return np.concatenate((site.ijk, self.spin(site, cell_offset)))
 
     def supercell_position_and_spin(self, site: Site, cell_offset: CellOffset):
-        """ Position within the supercell and spin """
+        """Position within the supercell and spin.
+
+        Parameters
+        ----------
+        site : Site
+            Site within the unit cell.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            6-element array containing supercell position and spin vector.
+        """
         return np.concatenate((site.ijk + cell_offset.vector, self.spin(site, cell_offset)))
 
     @abstractmethod
     def cell_size(self) -> tuple[int, int, int]:
-        """ How big is this supercell """
+        """How big is this supercell.
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            Dimensions of the supercell in unit cells along ``a``, ``b``, and ``c``.
+        """
 
     def cells(self):
-        """ Iterator for cells in supercell """
+        """Iterator for cells in supercell.
+
+        Yields
+        ------
+        CellOffset
+            Offset of each unit cell in the supercell.
+        """
         a, b, c = self.cell_size()
         for cell_offset in cell_offset_generator(a,b,c):
             yield cell_offset
 
     def wrap_sum(self, offset_1: CellOffset, *other_offsets: CellOffset):
-        """ Calculate the sum of cell offsets, wrapped to the supercell, x,y,z % cell_dim"""
+        """Calculate the sum of cell offsets, wrapped to the supercell, x,y,z % cell_dim.
+
+        Parameters
+        ----------
+        offset_1 : CellOffset
+            First cell offset.
+        *other_offsets : CellOffset
+            Additional cell offsets to sum.
+
+        Returns
+        -------
+        CellOffset
+            Wrapped sum of the cell offsets modulo the supercell dimensions.
+        """
         v = offset_1.vector
 
         for other in other_offsets:
@@ -268,7 +500,20 @@ class Supercell(ABC, SPWSerialisable):
                     v[2] % c )
 
     def fractional_in_supercell(self, position_in_cell: ArrayLike, cell_offset: CellOffset):
-        """ Get the fractional position within a supercell """
+        """Get the fractional position within a supercell.
+
+        Parameters
+        ----------
+        position_in_cell : array_like
+            Fractional coordinates within the unit cell.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Fractional coordinates scaled to the supercell.
+        """
         position = cell_offset.vector + np.array(position_in_cell, dtype=float)
         scaling = np.array(self.scaling, dtype=float)
 
@@ -277,12 +522,38 @@ class Supercell(ABC, SPWSerialisable):
 
     @abstractmethod
     def _serialise_supercell(self, context: SPWSerialisationContext):
-        """ Serialise this supercell """
+        """Serialise this supercell.
+
+        Parameters
+        ----------
+        context : SPWSerialisationContext
+            Serialisation context.
+
+        Returns
+        -------
+        dict or list
+            Serialised supercell data.
+        """
 
     @staticmethod
     @abstractmethod
     def _deserialise_supercell(json, scale: tuple[int, int, int], context: SPWDeserialisationContext):
-        """ Deserialise this supercell type """
+        """Deserialise this supercell type.
+
+        Parameters
+        ----------
+        json : dict or list
+            Serialised supercell data.
+        scale : tuple of (int, int, int)
+            Supercell scaling factors.
+        context : SPWDeserialisationContext
+            Deserialisation context.
+
+        Returns
+        -------
+        Supercell
+            Deserialised supercell instance.
+        """
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {
@@ -309,23 +580,48 @@ class Supercell(ABC, SPWSerialisable):
 
     @property
     def scaling(self):
-        """ The scaling triplet for this supercell """
+        """The scaling triplet for this supercell."""
         return self._scaling
 
     @abstractmethod
     def n_components(self) -> int:
-        """ Number of entries expected in the spin definition """
+        """Number of entries expected in the spin definition.
+
+        Returns
+        -------
+        int
+            Number of spin components required per site.
+
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
+        """
         raise NotImplementedError(f"n_components not implemented in {self.__class__.__name__}")
 
     def text_data(self) -> list[str]:
-        """ Lines of text describing this supercell """
+        """Lines of text describing this supercell.
+
+        Returns
+        -------
+        list of str
+            Descriptive text lines for this supercell.
+        """
         return [self.supercell_name.capitalize(), f"size = {self.cell_size()}"]
 
 
 
 
 class CommensurateSupercell(Supercell):
-    """ Base class for a commensurate supercell"""
+    """Base class for a commensurate supercell.
+
+    Parameters
+    ----------
+    propagation_vectors : list of CommensuratePropagationVector
+        Commensurate propagation vectors defining the supercell periodicity.
+    scaling : tuple of (int, int, int) or None, optional
+        Additional scaling factors along the three lattice axes. Default is ``None``.
+    """
 
     supercell_name = "<commensurate supercell base>"
 
@@ -338,12 +634,29 @@ class CommensurateSupercell(Supercell):
 
     @abstractmethod
     def rescale(self, new_scaling: tuple[int, int, int]):
-        """ Create a new supercell, but with different scaling """
+        """Create a new supercell, but with different scaling.
+
+        Parameters
+        ----------
+        new_scaling : tuple of (int, int, int)
+            New scaling factors along the three lattice axes.
+
+        Returns
+        -------
+        CommensurateSupercell
+            Rescaled supercell instance.
+        """
 
 
 
     def cell_size(self) -> tuple[int, int, int] | None:
-        """ Get the smallest possible supercell"""
+        """Get the smallest possible supercell.
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            Supercell dimensions along the three lattice axes.
+        """
         i = lcm(*[vector.i.denominator for vector in self._propagation_vectors])
         j = lcm(*[vector.j.denominator for vector in self._propagation_vectors])
         k = lcm(*[vector.k.denominator for vector in self._propagation_vectors])
@@ -351,18 +664,43 @@ class CommensurateSupercell(Supercell):
         return self._scaling[0]*i, self._scaling[1]*j, self._scaling[2]*k
 
     def n_cells(self):
-        """ Number of cells in this supercell """
+        """Number of cells in this supercell.
+
+        Returns
+        -------
+        int
+            Total number of unit cells in the supercell.
+        """
         a, b, c = self.cell_size()
         return a*b*c
 
     @abstractmethod
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
-        """ The derivative of the calculated spin with respect to the specified component of supercell_spins"""
+        """The derivative of the calculated spin with respect to the specified component of supercell_spins.
+
+        Parameters
+        ----------
+        supercell_component_index : int
+            Index of the spin component in ``spin_data``.
+        cell : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3x3 Jacobian matrix of the site spin with respect to the component.
+        """
 
 
 
 class TiledSupercell(CommensurateSupercell):
-    """ Trivial supercell, just a single unit cell """
+    """Trivial supercell, just a single unit cell.
+
+    Parameters
+    ----------
+    scaling : tuple of (int, int, int), optional
+        Number of unit cells along each lattice axis. Default is ``(1, 1, 1)``.
+    """
 
     def __init__(self, scaling=(1,1,1)):
         super().__init__([], scaling)
@@ -372,15 +710,45 @@ class TiledSupercell(CommensurateSupercell):
 
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
-        """ Get the spin for a given cell, and the specified spin data """
+        """Get the spin for a given cell, and the specified spin data.
+
+        Parameters
+        ----------
+        spin_data : numpy.ndarray
+            Spin definition array for the site.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3-component spin vector.
+        """
         return spin_data[0, :]
 
     def cell_size(self) -> tuple[int, int, int]:
-        """ How big is this supercell """
+        """How big is this supercell.
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            Dimensions of the supercell along each lattice axis.
+        """
         return self._scaling
 
     def rescale(self, new_scaling: tuple[int, int, int]):
-        """ Create a copy of this supercell, but with different scaling """
+        """Create a copy of this supercell, but with different scaling.
+
+        Parameters
+        ----------
+        new_scaling : tuple of (int, int, int)
+            New scaling factors along each lattice axis.
+
+        Returns
+        -------
+        TiledSupercell
+            Rescaled tiled supercell.
+        """
         return TiledSupercell(new_scaling)
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
@@ -391,15 +759,47 @@ class TiledSupercell(CommensurateSupercell):
         return TiledSupercell(scale)
 
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
-        """ Derivative of the spin at a given site with respect to one component of it """
+        """Derivative of the spin at a given site with respect to one component of it.
+
+        Parameters
+        ----------
+        supercell_component_index : int
+            Index of the spin component.
+        cell : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3x3 identity matrix.
+        """
         return np.eye(3)
 
     def n_components(self) -> int:
-        """ Number of spin components/propagation vectors"""
+        """Number of spin components/propagation vectors.
+
+        Returns
+        -------
+        int
+            Always ``1`` for a tiled supercell.
+        """
         return 1
 
 class SpinSetter:
-    """ Helper class to set spins in a DirectSupercell"""
+    """Helper class to set spins in a DirectSupercell.
+
+    Parameters
+    ----------
+    site : Site
+        Site whose ``spin_data`` will be accessed or modified.
+    size : tuple of (int, int, int)
+        Base supercell dimensions ``(n_a, n_b, n_c)``.
+
+    Raises
+    ------
+    ValueError
+        If ``site.spin_data`` does not have shape ``(1, 3)`` or ``(n_components, 3)``.
+    """
 
     def __init__(self, site: Site, size: tuple[int, int, int]):
         self.site = site
@@ -416,6 +816,18 @@ class SpinSetter:
                                  f"or be 1x3")
 
     def _indices(self, item: tuple[int | slice, int | slice, int | slice] | np.ndarray):
+        """Resolve 3D supercell slice or index tuple to flat spin component indices.
+
+        Parameters
+        ----------
+        item : tuple of (int or slice, int or slice, int or slice) or numpy.ndarray
+            3D index or slice into the supercell grid.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of flat indices into ``site.spin_data``.
+        """
         return self.index_map[item].reshape(-1)
 
     def __getitem__(self, item: tuple[int | slice, int | slice, int | slice] | np.ndarray):
@@ -456,13 +868,31 @@ class SpinSetter:
 
 
 class DirectSupercell(CommensurateSupercell):
-    """ A supercell where the spin on each site can be set independently
+    """A supercell where the spin on each site can be set independently.
 
     The spin_data field for spins must be an n_cells x 3 matrix or a 1x3 matrix, and
-    in the former it is assumed the order of spins matches `np.reshape`.
+    in the former it is assumed the order of spins matches ``np.reshape``.
 
-    There is an extra method on this class, `spins_for(LatticeSite)`,
+    There is an extra method on this class, ``spins_for(LatticeSite)``,
     that should make assigning spins easier.
+
+    Parameters
+    ----------
+    n_a : int
+        Number of unit cells along the a-axis.
+    n_b : int
+        Number of unit cells along the b-axis.
+    n_c : int
+        Number of unit cells along the c-axis.
+    scaling : tuple of (int, int, int), optional
+        Additional scaling factors along each axis. Default is ``(1, 1, 1)``.
+
+    Raises
+    ------
+    TypeError
+        If any of ``n_a``, ``n_b``, or ``n_c`` is not an integer.
+    ValueError
+        If any of ``n_a``, ``n_b``, or ``n_c`` is not strictly positive.
     """
 
     def __init__(self, n_a: int, n_b: int, n_c: int, scaling=(1, 1, 1)):
@@ -486,20 +916,61 @@ class DirectSupercell(CommensurateSupercell):
 
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
-        """ Get the spin for a given cell, and the specified spin data """
+        """Get the spin for a given cell, and the specified spin data.
+
+        Parameters
+        ----------
+        spin_data : numpy.ndarray
+            Spin definition array for the site.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3-component spin vector for the specified cell.
+        """
         index = np.ravel_multi_index(cell_offset.as_tuple, self._base_shape)
         return spin_data[index, :]
 
     def spins_for(self, site: Site):
-        """ Use <supercell>.spins_for(<site>).spin[<a>,<b>,<c>] = <x>, <y>, <z> to set spins in a convenient way"""
+        """Use <supercell>.spins_for(<site>).spin[<a>,<b>,<c>] = <x>, <y>, <z> to set spins in a convenient way.
+
+        Parameters
+        ----------
+        site : Site
+            Site whose spins are to be accessed or modified.
+
+        Returns
+        -------
+        SpinSetter
+            Helper object for indexing and assigning spins by cell coordinates.
+        """
         return SpinSetter(site, self._base_shape)
 
     def cell_size(self) -> tuple[int, int, int]:
-        """ How big is this supercell """
+        """How big is this supercell.
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            Total supercell dimensions along each lattice axis.
+        """
         return self.n_a * self._scaling[0], self.n_b * self.scaling[1], self.n_c * self.scaling[2]
 
     def rescale(self, new_scaling: tuple[int, int, int]):
-        """ Rescale this supercell """
+        """Rescale this supercell.
+
+        Parameters
+        ----------
+        new_scaling : tuple of (int, int, int)
+            New scaling factors along each lattice axis.
+
+        Returns
+        -------
+        DirectSupercell
+            Rescaled direct supercell.
+        """
         return DirectSupercell(self.n_a, self.n_b, self.n_c, new_scaling)
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
@@ -516,14 +987,34 @@ class DirectSupercell(CommensurateSupercell):
         return DirectSupercell(n_a, n_b, n_c, scale)
 
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
-        """ Derivative of the spin at a given site with respect to one component of it """
+        """Derivative of the spin at a given site with respect to one component of it.
+
+        Parameters
+        ----------
+        supercell_component_index : int
+            Flat index of the supercell spin component.
+        cell : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3x3 identity matrix if ``supercell_component_index`` matches ``cell``,
+            otherwise a 3x3 zero matrix.
+        """
         if supercell_component_index == np.ravel_multi_index(cell.as_tuple, self._base_shape):
             return np.eye(3)
         else:
             return np.zeros((3,3))
 
     def text_data(self) -> list[str]:
-        """ Lines of text describing this supercell """
+        """Lines of text describing this supercell.
+
+        Returns
+        -------
+        list of str
+            Descriptive text lines for this supercell.
+        """
         return [self.supercell_name.capitalize(),
                 f"n_a = {self.n_a}",
                 f"n_b = {self.n_b}",
@@ -531,17 +1022,30 @@ class DirectSupercell(CommensurateSupercell):
                 f"size = {self.cell_size()}"]
 
     def n_components(self) -> int:
-        """ Number of spin components/propagation vectors"""
+        """Number of spin components/propagation vectors.
+
+        Returns
+        -------
+        int
+            Total number of independent cells ``n_a * n_b * n_c``.
+        """
         return self.n_a * self.n_b * self.n_c
 
 
 
 class TransformationSupercell(CommensurateSupercell):
-    """ Supercell with spins defined by the following equation:
+    """Supercell with spins defined by the following equation.
 
-    m = prod(M_i^{r.k}) m0
+    ``m = prod(M_i^{r.k}) m0``
 
-    where m0 is the existing spin at a given site
+    where ``m0`` is the existing spin at a given site.
+
+    Parameters
+    ----------
+    transforms : list of tuple of (CommensuratePropagationVector, SupercellTransformation or None)
+        Pairs of commensurate propagation vectors and corresponding transformations.
+    scaling : tuple of (int, int, int), optional
+        Additional scaling factors along each lattice axis. Default is ``(1, 1, 1)``.
     """
 
     supercell_name = "transformation"
@@ -561,11 +1065,35 @@ class TransformationSupercell(CommensurateSupercell):
 
 
     def rescale(self, new_scaling: tuple[int, int, int]):
-        """ Create a copy of this supercell, but with different scaling """
+        """Create a copy of this supercell, but with different scaling.
+
+        Parameters
+        ----------
+        new_scaling : tuple of (int, int, int)
+            New scaling factors along each lattice axis.
+
+        Returns
+        -------
+        TransformationSupercell
+            Rescaled transformation supercell.
+        """
         return TransformationSupercell(self._input_transforms, new_scaling)
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculate the spin based on the spin data for a given site """
+        """Calculate the spin based on the spin data for a given site.
+
+        Parameters
+        ----------
+        spin_data : numpy.ndarray
+            Spin definition array for the site.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transformed 3-component spin vector.
+        """
         spin = spin_data[0, :]
         for vector, transform in self._transforms:
             spin = transform.apply(spin=spin, propagation_vector=vector, cell_offset=cell_offset)
@@ -573,7 +1101,25 @@ class TransformationSupercell(CommensurateSupercell):
         return spin
 
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
-        """ Derivative of the spin at a given site with respect to one component of it """
+        """Derivative of the spin at a given site with respect to one component of it.
+
+        Parameters
+        ----------
+        supercell_component_index : int
+            Index of the spin component (must be ``0``).
+        cell : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3x3 composite transformation matrix at the given cell offset.
+
+        Raises
+        ------
+        ValueError
+            If ``supercell_component_index`` is not ``0``.
+        """
         if supercell_component_index != 0:
             raise ValueError("Transformation supercell does not support multiple spin definitions")
 
@@ -599,11 +1145,23 @@ class TransformationSupercell(CommensurateSupercell):
 
 
     def n_components(self) -> int:
-        """ Number of spin components/propagation vectors"""
+        """Number of spin components/propagation vectors.
+
+        Returns
+        -------
+        int
+            Always ``1`` for a transformation supercell.
+        """
         return 1
 
     def text_data(self) -> list[str]:
-        """ Lines of text describing this supercell """
+        """Lines of text describing this supercell.
+
+        Returns
+        -------
+        list of str
+            Descriptive text lines for this supercell.
+        """
         output = super().text_data()
         for pv, transform in self._transforms:
             output.append(f"{pv}, {transform}")
@@ -611,9 +1169,16 @@ class TransformationSupercell(CommensurateSupercell):
 
 
 class SummationSupercell(CommensurateSupercell):
-    """ Supercell with spins defined by
+    """Supercell with spins defined by a Fourier summation.
 
-    s = sum(m_j exp(-2 pi i r.k_j + phi)).real
+    ``s = sum(m_j exp(-2 pi i r.k_j + phi)).real``
+
+    Parameters
+    ----------
+    propagation_vectors : list of CommensuratePropagationVector
+        Commensurate propagation vectors in the summation.
+    scaling : tuple of (int, int, int) or None, optional
+        Additional scaling factors along each lattice axis. Default is ``None``.
     """
 
     supercell_name = "summation"
@@ -626,12 +1191,36 @@ class SummationSupercell(CommensurateSupercell):
 
 
     def rescale(self, new_scaling: tuple[int, int, int]):
-        """ Create a copy of this supercell, but with different scaling """
+        """Create a copy of this supercell, but with different scaling.
+
+        Parameters
+        ----------
+        new_scaling : tuple of (int, int, int)
+            New scaling factors along each lattice axis.
+
+        Returns
+        -------
+        SummationSupercell
+            Rescaled summation supercell.
+        """
         return SummationSupercell(self._propagation_vectors, new_scaling)
 
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculate spin at a given cell offset"""
+        """Calculate spin at a given cell offset.
+
+        Parameters
+        ----------
+        spin_data : numpy.ndarray
+            Array of spin components corresponding to each propagation vector.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Calculated 3-component real spin vector.
+        """
         spin = np.zeros(3, dtype=complex)
         for component, propagation_vector in zip(spin_data, self._propagation_vectors):
 
@@ -641,7 +1230,25 @@ class SummationSupercell(CommensurateSupercell):
         return spin.real
 
     def spin_derivative(self, supercell_component_index: int, cell: CellOffset):
-        """ Derivative of the spin at a given site with respect to one component of it """
+        """Derivative of the spin at a given site with respect to one component of it.
+
+        Parameters
+        ----------
+        supercell_component_index : int
+            Index of the propagation vector component.
+        cell : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            3x3 derivative matrix for the specified component.
+
+        Raises
+        ------
+        IndexError
+            If ``supercell_component_index`` is greater than or equal to ``n_components()``.
+        """
         if supercell_component_index >= self.n_components():
             raise IndexError("Expected component index to be less than number of propagation vectors")
 
@@ -650,7 +1257,13 @@ class SummationSupercell(CommensurateSupercell):
         return np.eye(3) * np.exp(-1j * (2* np.pi * pv.dot(cell) + pv.phase)).real
 
     def n_components(self) -> int:
-        """ Number of spin components/propagation vectors"""
+        """Number of spin components/propagation vectors.
+
+        Returns
+        -------
+        int
+            Number of propagation vectors in the summation.
+        """
         return len(self._propagation_vectors)
 
     def _serialise_supercell(self, context: SPWSerialisationContext):
@@ -664,14 +1277,28 @@ class SummationSupercell(CommensurateSupercell):
 
 
     def text_data(self) -> list[str]:
-        """ Lines of text describing this supercell """
+        """Lines of text describing this supercell.
+
+        Returns
+        -------
+        list of str
+            Descriptive text lines for this supercell.
+        """
         output = super().text_data()
         for pv in self._propagation_vectors:
             output.append(f"{pv}")
         return output
 
 class RotationSupercell(Supercell):
-    """ A supercell defined by spins which rotates in a plane and a single propagation vector """
+    """A supercell defined by spins which rotates in a plane and a single propagation vector.
+
+    Parameters
+    ----------
+    perpendicular : array_like
+        3-component vector normal to the plane of spin rotation.
+    propagation_vector : array_like or PropagationVector
+        Propagation vector or 3-component sequence defining the modulation.
+    """
 
     supercell_name = "rotation"
 
@@ -686,24 +1313,67 @@ class RotationSupercell(Supercell):
         self.propagation_vector = propagation_vector
 
     def spin_calculation(self, spin_data: np.ndarray, cell_offset: CellOffset):
-        """ Calculate spin at a given cell offset"""
+        """Calculate spin at a given cell offset.
+
+        Parameters
+        ----------
+        spin_data : numpy.ndarray
+            Spin definition array for the site.
+        cell_offset : CellOffset
+            Unit cell offset within the supercell.
+
+        Returns
+        -------
+        numpy.ndarray
+            Rotated 3-component spin vector.
+        """
         basis = spin_data + 1j * np.cross(self.perpendicular, spin_data)
         return np.real(basis * np.exp(-2j * np.pi * self.propagation_vector.dot(cell_offset)))
 
     def n_components(self) -> int:
-        """ Number of spin components/propagation vectors"""
+        """Number of spin components/propagation vectors.
+
+        Returns
+        -------
+        int
+            Always ``1`` for a rotation supercell.
+        """
         return 1
 
     def cell_size(self) -> tuple[int, int, int]:
-        """ How big is this supercell """
+        """How big is this supercell.
+
+        Returns
+        -------
+        tuple of (int, int, int)
+            Always ``(1, 1, 1)`` for an incommensurate rotation supercell.
+        """
         return (1, 1, 1)
 
     def n_components(self) -> int:
-        """ Number of propagation vectors in this supercell """
+        """Number of propagation vectors in this supercell.
+
+        Returns
+        -------
+        int
+            Always ``1`` for a rotation supercell.
+        """
         return 1
 
     def approximant(self, max_denominator: int = 1000) -> TransformationSupercell:
-        """ Convert to an approximate commensurate supercell """
+        """Convert to an approximate commensurate supercell.
+
+        Parameters
+        ----------
+        max_denominator : int, optional
+            Maximum denominator when approximating the propagation vector components
+            as rational fractions. Default is ``1000``.
+
+        Returns
+        -------
+        TransformationSupercell
+            Commensurate approximant supercell.
+        """
         k = CommensuratePropagationVector(
             i=self.propagation_vector.i,
             j=self.propagation_vector.j,
@@ -724,7 +1394,13 @@ class RotationSupercell(Supercell):
         return RotationSupercell(perpendicular, propagation_vector)
 
     def text_data(self) -> list[str]:
-        """ Lines of text describing this supercell """
+        """Lines of text describing this supercell.
+
+        Returns
+        -------
+        list of str
+            Descriptive text lines for this supercell.
+        """
         output = super().text_data()
         output.append(f"{self.propagation_vector}")
         output.append(f"Perpendicular={self.perpendicular}")
@@ -733,3 +1409,4 @@ class RotationSupercell(Supercell):
 supercell_types = {cls.supercell_name: cls
                    for cls in [TiledSupercell, TransformationSupercell, SummationSupercell,
                                RotationSupercell, DirectSupercell]}
+
