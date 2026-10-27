@@ -1,4 +1,4 @@
-""" Viewer window """
+"""Viewer window."""
 import ctypes
 import os
 import sys
@@ -41,13 +41,52 @@ QSurfaceFormat.setDefaultFormat(_fmt)
 
 _unique_id_counter = -1
 def _generate_unique_id():
-    """ Generate a unique ID for each site currently loaded"""
+    """Generate a unique ID for each site currently loaded.
+
+    Returns
+    -------
+    int
+        Unique integer identifier.
+    """
     global _unique_id_counter # noqa: PLW0603
     _unique_id_counter += 1
     return _unique_id_counter
 
 class Viewer(QWidget):
-    """ Main viewer class """
+    """Main viewer class.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Hamiltonian to display in the viewer.
+    initial_rotation : (3, 3) numpy.ndarray or None, optional
+        Initial 3x3 view rotation matrix. Default is ``None``.
+    initial_distance : float or None, optional
+        Initial camera distance from the view origin. Default is ``None``.
+    display_options : DisplayOptions or None, optional
+        Initial display options. Default is ``None``.
+    save_config_on_exit : bool, optional
+        Whether to save display configuration when closing the viewer. Default
+        is ``True``.
+    copies : tuple of (int, int, int), optional
+        Supercell scaling along each lattice vector. Default is ``(1, 1, 1)``.
+    rotation_supercell_expansion_max : tuple of (int, int, int), optional
+        Maximum denominator along each axis when approximating a
+        ``RotationSupercell`` propagation vector as a commensurate cell.
+        Default is ``(10, 10, 10)``.
+    propagation_vector_commensurability_tolerance : float, optional
+        Tolerance for matching a propagation vector component to a rational
+        fraction. Default is ``1e-4``.
+    parent : QWidget or None, optional
+        Parent widget. Default is ``None``.
+
+    Raises
+    ------
+    ValueError
+        If ``copies`` or ``rotation_supercell_expansion_max`` is not a triple
+        of ints, if ``initial_rotation`` is not a valid rotation matrix, or if
+        ``initial_distance`` is not strictly positive.
+    """
 
     def __init__(self,
                  hamiltonian: Hamiltonian,
@@ -129,7 +168,7 @@ class Viewer(QWidget):
         self.viewer.selectionChanged.connect(self.on_render_selection_changed)
 
     def on_snapshot_requested(self):
-        """ Take a snapshot """
+        """Take a snapshot."""
         dialog = QFileDialog(self)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         dialog.setOption(QFileDialog.DontConfirmOverwrite, True)
@@ -169,37 +208,43 @@ class Viewer(QWidget):
 
 
     def save_snapshot(self, filename):
-        """ Write the current viewer data to a file"""
+        """Write the current viewer data to a file.
+
+        Parameters
+        ----------
+        filename : str
+            Output image file path.
+        """
         data = self.viewer.snapshot()
         imwrite(filename, data)
 
 
     def on_display_options_changed(self):
-        """ Called when the toolbar changes"""
+        """Called when the toolbar changes."""
         self.viewer.display_options = self.toolbar.display_options()
 
     def on_text_hover_changed(self):
-        """ Called when mouse hovers over text components """
+        """Called when mouse hovers over text components."""
         self.viewer.hover_ids = self.text_display.hover_ids
 
     def on_text_selection_changed(self):
-        """ Called when text components are selected """
+        """Called when text components are selected."""
         self.viewer.current_selection = self.text_display.current_selection
 
     def on_render_hover_changed(self):
-        """ Called when hovering over graphical components"""
+        """Called when hovering over graphical components."""
         self.text_display.set_hover(self.viewer.hover_ids)
 
     def on_render_selection_changed(self):
-        """ Called when selecting through the graphical window"""
+        """Called when selecting through the graphical window."""
         self.text_display.set_selection(self.viewer.current_selection)
 
     def on_reset_view_requested(self):
-        """ Called when a view reset is requested"""
+        """Called when a view reset is requested."""
         self.viewer.reset_view()
 
     def closeEvent(self, event):
-        """ Qt override for close event"""
+        """Qt override for close event."""
         # Save settings on exit
         self.toolbar.save_settings()
 
@@ -215,7 +260,13 @@ _APP = None
 _VIEWERS = {}
 
 def get_app():
-    """ Get the Qt instance """
+    """Get the Qt instance.
+
+    Returns
+    -------
+    QApplication
+        Active Qt application instance.
+    """
     global _APP #noqa: PLW0603
     app = QApplication.instance()
     if app is None:
@@ -231,15 +282,48 @@ def snapshot(object: Hamiltonian | Structure,
              copies: tuple[int,int,int]=(1,1,1),
              rotation_supercell_expansion_max: tuple[int,int,int]=(10,10,10),
              propagation_vector_commensurability_tolerance=1e-4):
-    """ Make (and display) an image of a structure/hamiltonian
+    """Make (and display) an image of a structure/hamiltonian.
 
-    If filename is not a string, it will create a matplotlib plot window
+    If filename is not a string, it will create a matplotlib plot window.
 
-    :param object: Hamiltonian or Structure object to show
-    :param filename: Output filename
-    :param view_point: Position of camera
-    :param display_options: DisplayOptions object to affect settings, otherwise, it will use whatever the viewer is
-                            configured for.
+    Parameters
+    ----------
+    object : Hamiltonian or Structure
+        Hamiltonian or Structure object to show.
+    filename : str or None, optional
+        Output filename. If ``None``, displays the image via Matplotlib.
+        Default is ``None``.
+    view_point : array_like, optional
+        Position of camera. Default is ``(-5.0, -5.0, -10.0)``.
+    display_options : DisplayOptions or None, optional
+        DisplayOptions object to affect settings, otherwise, it will use
+        whatever the viewer is configured for. Default is ``None``.
+    copies : tuple of (int, int, int), optional
+        Supercell scaling along each lattice vector. Default is ``(1, 1, 1)``.
+    rotation_supercell_expansion_max : tuple of (int, int, int), optional
+        Maximum denominator along each axis when approximating a
+        ``RotationSupercell`` propagation vector as a commensurate cell.
+        Default is ``(10, 10, 10)``.
+    propagation_vector_commensurability_tolerance : float, optional
+        Tolerance for matching a propagation vector component to a rational
+        fraction. Default is ``1e-4``.
+
+    Returns
+    -------
+    matplotlib.image.AxesImage or None
+        The Matplotlib image object if ``filename`` is ``None``, otherwise
+        ``None``.
+
+    Raises
+    ------
+    TypeError
+        If ``object`` is not a ``Hamiltonian`` or ``Structure``.
+
+
+
+
+
+
 
     """
     try:
@@ -311,7 +395,30 @@ def show_object(object: Hamiltonian | Structure,
                 copies: tuple[int,int,int]=(1,1,1),
                 rotation_supercell_expansion_max: tuple[int,int,int]=(10,10,10),
                 propagation_vector_commensurability_tolerance=1e-4):
-    """ Show a Hamiltonian or structure in the viewer"""
+    """Show a Hamiltonian or structure in the viewer.
+
+    Parameters
+    ----------
+    object : Hamiltonian or Structure
+        Hamiltonian or Structure object to display.
+    block : bool, optional
+        Whether to block execution by running the Qt event loop. Default is
+        ``True``.
+    copies : tuple of (int, int, int), optional
+        Supercell scaling along each lattice vector. Default is ``(1, 1, 1)``.
+    rotation_supercell_expansion_max : tuple of (int, int, int), optional
+        Maximum denominator along each axis when approximating a
+        ``RotationSupercell`` propagation vector as a commensurate cell.
+        Default is ``(10, 10, 10)``.
+    propagation_vector_commensurability_tolerance : float, optional
+        Tolerance for matching a propagation vector component to a rational
+        fraction. Default is ``1e-4``.
+
+    Raises
+    ------
+    TypeError
+        If ``object`` is not a ``Hamiltonian`` or ``Structure``.
+    """
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
     except Exception:
