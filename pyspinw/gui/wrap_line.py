@@ -1,12 +1,36 @@
-""" Splitting and wrapping line segments to the unit cube"""
+"""Splitting and wrapping line segments to the unit cube."""
 
 import numpy as np
 
 
 def split_and_wrap_line_segment(a: np.ndarray, b: np.ndarray, tol=1e-12, max_parts=100_000):
-    """ Split a line when it crosses integer values on the axes, and wrap it in 3D to [0,1]^3
+    """Split a line when it crosses integer values on the axes, and wrap it in 3D to [0,1]^3.
 
-    :return: (points where it crosses integers, line segments moved to [0,1])
+    Parameters
+    ----------
+    a : (3,) numpy.ndarray or array_like
+        Start point of the line segment in 3D fractional coordinates.
+    b : (3,) numpy.ndarray or array_like
+        End point of the line segment in 3D fractional coordinates.
+    tol : float, optional
+        Numerical tolerance for boundary intersection checks. Default is
+        ``1e-12``.
+    max_parts : int, optional
+        Maximum number of segment splits before raising an exception. Default is
+        ``100_000``.
+
+    Returns
+    -------
+    transitions_array : (N, 3) numpy.ndarray
+        Points along the original line segment where it crosses integer plane
+        boundaries, including the endpoints.
+    output_pairs : list of tuple of ((3,) numpy.ndarray, (3,) numpy.ndarray)
+        Line segments wrapped into the unit cube ``[0, 1]^3``.
+
+    Raises
+    ------
+    Exception
+        If the iteration limit ``max_parts`` is reached.
     """
     a = np.array(a, dtype=float)
     b = np.array(b, dtype=float)
@@ -111,7 +135,7 @@ def split_and_wrap_line_segment(a: np.ndarray, b: np.ndarray, tol=1e-12, max_par
 if __name__ == "__main__":
 
     def run_example(a, b):
-        """ Show plots and data for an example"""
+        """Show plots and data for an example."""
         split, wrap = split_and_wrap_line_segment(a, b)
 
         import matplotlib.pyplot as plt
