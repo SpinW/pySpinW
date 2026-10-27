@@ -1,4 +1,4 @@
-""" Base class for renderable objects """
+"""Base class for renderable objects."""
 
 import logging
 
@@ -8,7 +8,7 @@ from OpenGL.GL import *
 logger = logging.Logger(__name__)
 
 class Model:
-    """ Base class for renderable objects """
+    """Base class for renderable objects."""
 
     def __init__(self):
         self._vaos = []
@@ -16,9 +16,15 @@ class Model:
         self._lengths = []
 
     def add_vertex_normal_data(self, vertices_and_normals: np.ndarray):
-        """ Add vertex and normal data
+        """Add vertex and normal data.
 
-        Requires an n-by-6 numpy array of float32s
+        Requires an n-by-6 numpy array of float32s.
+
+        Parameters
+        ----------
+        vertices_and_normals : (n, 6) numpy.ndarray
+            Array of interleaved 3D vertex positions and 3D normal vectors of
+            dtype ``float32``.
         """
         vao = glGenVertexArrays(1)
         vbo = glGenBuffers(1)
@@ -50,7 +56,7 @@ class Model:
 
 
     def render_triangles(self):
-        """ Call the GL rendering for the triangles in this model """
+        """Call the GL rendering for the triangles in this model."""
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
         for vao, length in zip(self._vaos, self._lengths):
@@ -60,7 +66,7 @@ class Model:
         glBindVertexArray(0)
 
     def render_back(self):
-        """ Render the back faces using wireframe - used for making selections """
+        """Render the back faces using wireframe - used for making selections."""
         glEnable(GL_CULL_FACE)
         glCullFace(GL_FRONT)
         for vao, length in zip(self._vaos, self._lengths):
@@ -70,4 +76,3 @@ class Model:
 
 
         glBindVertexArray(0)
-
