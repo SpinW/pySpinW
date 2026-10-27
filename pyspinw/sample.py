@@ -250,8 +250,7 @@ class Sample3D(Sample):
                        new_figure: bool=True,
                        use_rust: bool=True,
                        use_rotating: bool=True,
-                       intensity_unit: IntensityUnits | str = 'cell',
-                       scale: str='linear'):
+                       intensity_unit: IntensityUnits | str = 'cell'):
         """Create a spaghetti diagram with intensity as colorfill overplotted by mode energies.
 
         Parameters
@@ -1174,8 +1173,15 @@ class Powder(Sample1D):
 class MagneticFieldPowder(Sample1D):
     """Powder in magnetic field (slightly different parallelisation method to Powder)."""
 
+    def __init__(self, hamiltonian: Hamiltonian):
+        raise NotImplementedError("Powder in magnetic field not implemented yet")
+
 class TwoMagnon(Sample3D):
     """Two magnon excitations in a single crystal."""
+
+    def __init__(self, hamiltonian: Hamiltonian):
+        raise NotImplementedError("Two magnon calculation not implemented yet")
+
 
 _all_samples = [SingleCrystal, Twin, Multidomain, Powder]
 _all_samples_lookup = {cls.sample_name: cls for cls in _all_samples}

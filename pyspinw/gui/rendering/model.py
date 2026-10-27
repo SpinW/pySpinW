@@ -66,7 +66,7 @@ class Model:
         glBindVertexArray(0)
 
     def render_back(self):
-        """Render the back faces using wireframe - used for making selections."""
+        """Render the back faces only - used for making selections."""
         glEnable(GL_CULL_FACE)
         glCullFace(GL_FRONT)
         for vao, length in zip(self._vaos, self._lengths):

@@ -357,7 +357,7 @@ class Structure(SPWSerialisable):
         )
 
     def _without_nonmagnetic_with_removed_uids(self) -> tuple["Structure", set[int]]:
-        """Get a copy of the structure without magnetic sites, along with a list of uids for the removed sites.
+        """Get a copy of the structure without non-magnetic sites, along with a list of uids for the removed sites.
 
         Returns
         -------
@@ -417,7 +417,7 @@ class Structure(SPWSerialisable):
         # return self._input_sites.copy()
 
     def sites_by_name(self, name) -> list[Site]:
-        """Get sites where name matches regex.
+        """Find sites by their name, can make multiple matches.
 
         Parameters
         ----------
@@ -672,7 +672,7 @@ class Structure(SPWSerialisable):
                       n=1,
                       element: str | None = None,
                       direction_filter: DirectionalityFilter | None = None):
-        """Get one, arbitrary, n-th nearest neighbours, along with cell offsets.
+        """Get one, arbitrary, n-th nearest neighbour, along with cell offset.
 
         Parameters
         ----------
@@ -812,7 +812,7 @@ class Structure(SPWSerialisable):
         sites_to_send = None if symmetry_considerations_changed else self.sites
 
         return Structure(
-            self._input_sites,
+            self._input_sites if sites is None else sites,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
             self._supercell if supercell is None else supercell,

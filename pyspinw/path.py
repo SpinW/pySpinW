@@ -9,7 +9,7 @@ from pyspinw.structure import Structure
 
 
 class Path:
-    """Path through q-space.
+    """Path through q-space (in RLU).
 
     Parameters
     ----------

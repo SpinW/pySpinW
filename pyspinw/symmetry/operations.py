@@ -681,7 +681,7 @@ class MagneticOperation(Operation):
 
     @staticmethod
     def from_text(operation_string: str):
-        """Parse a string form of an expression, e.g. 'x,x-y,z+1/2'.
+        """Parse a string form of an expression, e.g. 'x,x-y,z+1/2,-1'.
 
         Parameters
         ----------
