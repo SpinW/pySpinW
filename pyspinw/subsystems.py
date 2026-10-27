@@ -1,18 +1,38 @@
-""" Identification of subsystems of a collection of sites and exchanges """
+"""Identification of subsystems of a collection of sites and exchanges."""
 
 from pyspinw.exchange import Exchange
 from pyspinw.site import Site, ImpliedLatticeSite
 
 
 class Node:
-    """ Graph model for depth first search """
+    """Graph model for depth first search.
+
+    Attributes
+    ----------
+    connected : list of Node
+        Adjacent nodes connected to this node.
+    group : int
+        Component group index, or ``-1`` if not yet visited.
+    """
 
     def __init__(self):
         self.connected: list["Node"] = []
         self.group = -1
 
     def propagate(self, group) -> bool:
-        """ Search the graph, only follow if not already visited (self.group>=0)"""
+        """Search the graph, only follow if not already visited (``self.group >= 0``).
+
+        Parameters
+        ----------
+        group : int
+            Component group index to assign to reachable unvisited nodes.
+
+        Returns
+        -------
+        bool
+            ``True`` if this node was unvisited and propagation occurred,
+            ``False`` otherwise.
+        """
         if self.group == -1:
             self.group = group
             for node in self.connected:
@@ -24,11 +44,26 @@ class Node:
 
 def find_components(sites: list[Site], exchanges: list[Exchange]) \
         -> list[tuple[list[Site], list[Exchange]]]:
-    """Find components (maximal disjoint subsystems) of the given system
+    """Find components (maximal disjoint subsystems) of the given system.
 
-    or in other words, group the sites by being coupled to each other.
+    Or in other words, group the sites by being coupled to each other.
 
-    Important: Assumes that all the sites in the exchanges are in the list of sites
+    Parameters
+    ----------
+    sites : list of Site
+        List of lattice sites in the system.
+    exchanges : list of Exchange
+        List of exchange couplings between sites.
+
+    Returns
+    -------
+    list of tuple of (list of Site, list of Exchange)
+        List of ``(site_group, exchange_group)`` pairs for each connected
+        component.
+
+    Notes
+    -----
+    Assumes that all the sites in `exchanges` are in `sites`.
     """
     unique_sites = [site for site in sites if not isinstance(site, ImpliedLatticeSite)]
     n_unique_sites = len(unique_sites)
