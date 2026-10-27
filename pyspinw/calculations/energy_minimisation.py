@@ -1,4 +1,4 @@
-""" Classical minimisation of spin orientations """
+"""Classical minimisation of spin orientations."""
 import warnings
 from collections import defaultdict
 from enum import Enum
@@ -15,14 +15,25 @@ from pyspinw.util import triple_product_matrix, rotation_matrix, rotation_from_z
 BIGSTEPSIZE = 1.0
 
 class MinimisationConstraintGenerator(ABC):
-    """ Base class for constraint specifications that can be applied to all sites"""
+    """Base class for constraint specifications that can be applied to all sites."""
 
     @abstractmethod
     def generate(self, n_constraints: int):
-        """ Generate full list of constraints"""
+        """Generate full list of constraints.
+
+        Parameters
+        ----------
+        n_constraints : int
+            Number of constraints to generate.
+
+        Returns
+        -------
+        list of MinimisationConstraint
+            Generated list of constraints.
+        """
 
 class MinimisationConstraint:
-    """ Base class for constraint specifications applied to a single site"""
+    """Base class for constraint specifications applied to a single site."""
 
     name = "<constraint base class>"
 
@@ -30,22 +41,28 @@ class MinimisationConstraint:
         return self.name
 
 class FreeConstraint(MinimisationConstraint, MinimisationConstraintGenerator):
-    """ Specify that spin should be unconstrained """
+    """Specify that spin should be unconstrained."""
 
     name = "Free"
 
     def generate(self, n_constraints: int):
-        """ Generate a list of constraints """
+        """Generate a list of constraints."""
         return [self for _ in range(n_constraints)]
 
 
 class FixedConstraint(MinimisationConstraint):
-    """ Specify that spin should be fixed """
+    """Specify that spin should be fixed."""
 
     name = "Fixed"
 
 class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
-    """ Specify that spin should be constrained to plane """
+    """Specify that spin should be constrained to plane.
+
+    Parameters
+    ----------
+    axis : array_like
+        Normal vector defining the plane.
+    """
 
     name = "Planar"
 
@@ -57,7 +74,7 @@ class Planar(MinimisationConstraint, MinimisationConstraintGenerator):
         self.axis /= np.sqrt(np.sum(self.axis**2))
 
     def generate(self, n_constraints: int):
-        """ Generate a list of constraints """
+        """Generate a list of constraints."""
         return [self for _ in range(n_constraints)]
 
     def __repr__(self):
@@ -67,17 +84,23 @@ Free = FreeConstraint()
 Fixed = FixedConstraint()
 
 class OneFixed(MinimisationConstraintGenerator):
-    """ Constraint Generator"""
+    """Constraint Generator.
+
+    Parameters
+    ----------
+    index : int, optional
+        Index of the site to fix. Default is ``0``.
+    """
 
     def __init__(self, index:int=0):
         self.index = index
 
     def generate(self, n_constraints: int):
-        """ Generate a list of constraints """
+        """Generate a list of constraints."""
         return [Fixed if self.index == i else Free for i in range(n_constraints)]
 
 class InitialRandomisation(Enum):
-    """ Enum for setting the method of initial randomisation """
+    """Enum for setting the method of initial randomisation."""
 
     NONE = "none"
     JITTER = "jitter"
@@ -88,9 +111,30 @@ alpha_m = np.array([0,-1,0], dtype=float)
 beta_m = np.array([1,0,0], dtype=float)
 
 class ClassicalEnergyMinimisation:
-    """Do a classical energy minimisation of the spin orientations
+    """Do a classical energy minimisation of the spin orientations.
 
-    See dev note 007_energy_minimisation.md
+    See dev note 007_energy_minimisation.md.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Hamiltonian describing the magnetic system.
+    constraints : list of MinimisationConstraint or MinimisationConstraintGenerator, optional
+        Constraints on the spin orientations. Default is ``Free``.
+    field : array_like or None, optional
+        External magnetic field vector of length 3 in Tesla. Default is ``None``.
+    seed : int or None, optional
+        Random seed for the random number generator. Default is ``None``.
+
+    Raises
+    ------
+    TypeError
+        If the structure supercell is not a ``CommensurateSupercell``, or if
+        `constraints` is not a ``MinimisationConstraintGenerator`` or list of
+        ``MinimisationConstraint``.
+    ValueError
+        If `constraints` is a list whose length does not match the number of
+        sites, or if `field` is not a length-3 vector.
     """
 
     def __init__(self,
@@ -208,7 +252,22 @@ class ClassicalEnergyMinimisation:
 
     @staticmethod
     def _random_orientations(rng, shape, dim=3):
-        """ Make random gaussian vectors, avoiding 0,0,0..."""
+        """Make random gaussian vectors, avoiding 0,0,0.
+
+        Parameters
+        ----------
+        rng : numpy.random.Generator
+            Random number generator instance.
+        shape : tuple of int
+            Output shape before the vector dimension.
+        dim : int, optional
+            Dimension of each random vector. Default is ``3``.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of normalised random vectors with shape ``(*shape, dim)``.
+        """
         n = int(np.prod(shape))
 
         output = rng.normal(0, 1, (n, dim))
@@ -227,7 +286,13 @@ class ClassicalEnergyMinimisation:
         return output.reshape(*(shape + (dim, ))) # reshape to expected shape
 
     def jitter(self, jitter_size_rad=0.1):
-        """ Jitter method applies a movement of fixed size (radians) in a random direction """
+        """Jitter method applies a movement of fixed size (radians) in a random direction.
+
+        Parameters
+        ----------
+        jitter_size_rad : float, optional
+            Angular size of the random displacement in radians. Default is ``0.1``.
+        """
         #
         # Free rotations
         #
@@ -268,7 +333,7 @@ class ClassicalEnergyMinimisation:
                     rotation_matrix(angle, axis) @ self.spin_data[site_index, component_index, :]
 
     def randomise(self):
-        """ Randomise method chooses random directions for spins"""
+        """Randomise method chooses random directions for spins."""
         # Do Free sites using Gaussian method
 
         random_orientations = self._random_orientations(self.rng, (self.n_free, self.n_components), 3)
@@ -294,7 +359,13 @@ class ClassicalEnergyMinimisation:
 
 
     def energy(self):
-        """ Energy of the current spins according to the hamiltonian, per unit cell """
+        """Energy of the current spins according to the hamiltonian, per unit cell.
+
+        Returns
+        -------
+        float
+            Total classical energy per unit cell.
+        """
         supercell = self.hamiltonian.structure.supercell
 
         energy = 0.0
@@ -335,7 +406,25 @@ class ClassicalEnergyMinimisation:
                  initial_randomisation: InitialRandomisation | str = InitialRandomisation.JITTER,
                  step_size=0.1,
                  verbose=False):
-        """ Automatically do the minimisation and stop based on energy convergence """
+        """Automatically do the minimisation and stop based on energy convergence.
+
+        Parameters
+        ----------
+        rtol : float, optional
+            Relative tolerance for energy convergence relative to the initial step.
+            Default is ``1e-10``.
+        atol : float, optional
+            Absolute tolerance for energy convergence. Default is ``1e-12``.
+        max_iters : int, optional
+            Maximum number of gradient descent iterations. Default is ``1000``.
+        initial_randomisation : InitialRandomisation or str, optional
+            Method used to initialise spin orientations before minimisation.
+            Default is ``InitialRandomisation.JITTER``.
+        step_size : float, optional
+            Step size factor for gradient descent updates. Default is ``0.1``.
+        verbose : bool, optional
+            If ``True``, print convergence progress. Default is ``False``.
+        """
         if isinstance(initial_randomisation, str):
             initial_randomisation = InitialRandomisation(initial_randomisation.lower())
 
@@ -394,7 +483,13 @@ class ClassicalEnergyMinimisation:
 
 
     def iterate(self, step_size=0.1):
-        """ Perform one step of gradient descent """
+        """Perform one step of gradient descent.
+
+        Parameters
+        ----------
+        step_size : float, optional
+            Step size factor for the gradient descent update. Default is ``0.1``.
+        """
         # Free sites
 
         rotation_matrices = [[rotation_from_z(self.spin_data[site_index, component_index, :])
