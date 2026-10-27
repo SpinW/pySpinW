@@ -36,7 +36,7 @@ class SymmetryGroup(ABC):
 
 
     def implied_sites_for(self, site: Site, unit_cell: UnitCell) -> list[ImpliedLatticeSite]:
-        """Find "duplicate" sites of a given site.
+        """Find symmetry related sites for a given site.
 
         Parameters
         ----------
@@ -581,7 +581,7 @@ class SpacegroupDatabase:
 
 
     def all_spacegroup_settings(self, number: int):
-        """Get a list of all spacegroups that correspond to a given setting.
+        """Get a list of all spacegroups that correspond to a given Hall number.
 
         Parameters
         ----------

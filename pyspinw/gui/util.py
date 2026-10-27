@@ -10,14 +10,14 @@ class QRightLabel(QLabel):
 
     Parameters
     ----------
-    test : str
+    text : str
         Text label to display.
     parent : QWidget or None, optional
         Parent widget. Default is ``None``.
     """
 
-    def __init__(self, test: str, parent=None):
-        super().__init__(test, parent=parent)
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent=parent)
         self.setAlignment(Qt.AlignRight)
 
 
