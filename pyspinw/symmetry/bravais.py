@@ -1,10 +1,18 @@
-""" Data on different kinds of Bravais lattice"""
+"""Data on different kinds of Bravais lattice."""
 
 from dataclasses import dataclass
 
 @dataclass
 class LatticeType:
-    """ Bravais lattice type data"""
+    """Bravais lattice type data.
+
+    Parameters
+    ----------
+    name : str
+        Full name of the Bravais centring type.
+    letter : str
+        Single-letter symbol for the Bravais centring type.
+    """
 
     name: str
     letter: str
