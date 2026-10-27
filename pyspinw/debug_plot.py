@@ -1,4 +1,4 @@
-""" Temporary plot of sites and couplings """
+"""Temporary plot of sites and couplings."""
 import matplotlib.pyplot as plt
 
 from pyspinw.exchange import Exchange
@@ -7,7 +7,17 @@ from pyspinw.structure import Structure
 
 
 def debug_plot(structure: Structure, couplings: list[Exchange], show=True):
-    """ Plotting """
+    """Plotting.
+
+    Parameters
+    ----------
+    structure : Structure
+        Crystal structure containing sites to plot.
+    couplings : list of Exchange
+        List of exchange couplings to plot.
+    show : bool, optional
+        If ``True``, call `` matplotlib.pyplot.show()``. Default is ``True``.
+    """
     fig = plt.figure()
 
     ax = fig.add_subplot(projection='3d')
