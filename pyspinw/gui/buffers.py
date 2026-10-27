@@ -1,10 +1,18 @@
-""" Specialised buffers for rendering"""
+"""Specialised buffers for rendering."""
 
 import numpy as np
 from OpenGL.GL import *
 
 class IntegerBuffer:
-    """ Manages a uint framebuffer, used as a location to render object ids to for selections"""
+    """Manages a uint framebuffer, used as a location to render object ids to for selections.
+
+    Attributes
+    ----------
+    fbo : int
+        OpenGL framebuffer object identifier.
+    depth : int
+        OpenGL depth renderbuffer identifier.
+    """
 
     def __init__(self):
 
@@ -61,7 +69,15 @@ class IntegerBuffer:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def use(self, width: int, height: int):
-        """ Make this the active framebuffer, and set appropriate flags """
+        """Make this the active framebuffer, and set appropriate flags.
+
+        Parameters
+        ----------
+        width : int
+            Width of the viewport in pixels.
+        height : int
+            Height of the viewport in pixels.
+        """
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glViewport(0, 0, width, height)
 
@@ -72,7 +88,21 @@ class IntegerBuffer:
         glClear(GL_DEPTH_BUFFER_BIT)
 
     def get_image(self, width, height):
-        """ Get this buffer as data that can be treated as an image """
+        """Get this buffer as data that can be treated as an image.
+
+        Parameters
+        ----------
+        width : int
+            Width of the image to read in pixels.
+        height : int
+            Height of the image to read in pixels.
+
+        Returns
+        -------
+        numpy.ndarray
+            2D array of shape ``(height, width)`` with dtype ``uint32``
+            containing the framebuffer pixel values.
+        """
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
 
         # Allocate numpy array
