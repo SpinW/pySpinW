@@ -1,4 +1,4 @@
-""" Information/structures around symmetry state """
+"""Information/structures around symmetry state."""
 
 from dataclasses import dataclass
 
@@ -8,7 +8,17 @@ from pyspinw.symmetry.unitcell import UnitCell
 
 
 class SymmetrySettings:
-    """ Object to hold symmetry information together """
+    """Object to hold symmetry information together.
+
+    Parameters
+    ----------
+    space_group : SpaceGroup
+        Crystallographic space group.
+    magnetic_group : MagneticSpaceGroup
+        Magnetic space group.
+    unit_cell : UnitCell
+        Crystal unit cell.
+    """
 
     def __init__(self, space_group: SpaceGroup, magnetic_group: MagneticSpaceGroup, unit_cell: UnitCell):
 
@@ -18,17 +28,17 @@ class SymmetrySettings:
 
     @property
     def space_group(self):
-        """ Get the space group """
+        """Space group associated with the symmetry settings."""
         return self._space_group
 
     @property
     def magnetic_group(self):
-        """ Get the magnetic group """
+        """Magnetic space group associated with the symmetry settings."""
         return self._magnetic_group
 
     @property
     def unit_cell(self):
-        """ Get the unit cell """
+        """Unit cell associated with the symmetry settings."""
         return self._unit_cell
 #
 # DEFAULT_SYMMETRY = SymmetrySettings(
@@ -36,3 +46,4 @@ class SymmetrySettings:
 #     magnetic_group=magnetic_group_symbol_lookup["P1.1"],
 #     unit_cell=UnitCell(1,1,1)
 # )
+
