@@ -113,7 +113,7 @@ beta_m = np.array([1,0,0], dtype=float)
 class ClassicalEnergyMinimisation:
     """Do a classical energy minimisation of the spin orientations.
 
-    See dev note 007_energy_minimisation.md.
+    See dev note `007_energy_minimisation.md <https://github.com/SpinW/pySpinW/blob/main/docs/developers/notes/007_energy_minimisation.md>`__.
 
     Parameters
     ----------
@@ -122,7 +122,7 @@ class ClassicalEnergyMinimisation:
     constraints : list of MinimisationConstraint or MinimisationConstraintGenerator, optional
         Constraints on the spin orientations. Default is ``Free``.
     field : array_like or None, optional
-        External magnetic field vector of length 3 in Tesla. Default is ``None``.
+        External magnetic field vector in Tesla. Default is ``None``.
     seed : int or None, optional
         Random seed for the random number generator. Default is ``None``.
 
