@@ -230,8 +230,11 @@ class TB2J_Input:
         TB2J_Input or None
             Parsed TB2J input instance.
         """
+        obj = cls()
         with open(filename, 'r') as f:
-            return cls()._parse_text(f.read())
+            obj._parse_text(f.read())
+        obj.file = str(filename)
+        return obj
 
     @classmethod
     def from_text(cls, text: str):
@@ -247,7 +250,10 @@ class TB2J_Input:
         TB2J_Input or None
             Parsed TB2J input instance.
         """
-        return cls()._parse_text(text)
+        obj = cls()
+        obj.file = None
+        obj._parse_text(text)
+        return obj
 
     @classmethod
     def from_pickle(cls, filename: pathlib.Path | str):
@@ -263,8 +269,11 @@ class TB2J_Input:
         TB2J_Input or None
             Parsed TB2J input instance.
         """
+        obj = cls()
         with open(filename, 'rb') as f:
-            return cls()._parse_pickle(pickle.load(f))
+            return obj._parse_pickle(pickle.load(f))
+        obj.file = str(filename)
+        return obj
 
     def to_hamiltonian(self, symmetrize: bool=False):
         """Create a SpinW Hamiltonian object from the TB2J inputs.

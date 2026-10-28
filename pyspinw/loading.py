@@ -70,7 +70,7 @@ def load(filename: str | pathlib.Path,
         return load_cif(filename, supercell=cif_supercell, entry_index=cif_entry_index, verbose=verbose)
 
     else:
-        extension = filename_string.split(".")[-1]
+        extension = filename_string.rsplit(".", maxsplit=1)[-1]
 
         if len(filename_string) == 1:
             raise ValueError("File has no extension")
