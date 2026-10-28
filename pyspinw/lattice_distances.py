@@ -19,15 +19,6 @@ class InteractionGeometries:
         Vectors for each position found.
     distances : (N,) numpy.ndarray
         Distance to each point.
-
-    Attributes
-    ----------
-    cell_indices : (N, 3) numpy.ndarray
-        Indices of the cells where a point was found at a sufficiently close distance.
-    vectors : (N, 3) numpy.ndarray
-        Vectors for each position found.
-    distances : (N,) numpy.ndarray
-        Distance to each point.
     """
 
     cell_indices: np.ndarray

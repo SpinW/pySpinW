@@ -281,11 +281,11 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
 class Hamiltonian(SPWSerialisable):
     """Representation of a Hamiltonian - this could be considered the central class for pyspinw.
 
-    `Hamiltonian`s contain all the information needed to calculate the scattering for a given q in
-    a unform material, and is composed of a `Structure` object, `Exchange`s and `Anisotropy`s.
+    ``Hamiltonian`` contain all the information needed to calculate the scattering for a given q in
+    a unform material, and is composed of a ``Structure`` object, ``Exchange`` and ``Anisotropy``.
 
-    The `Hamiltonian` object does not deal with non-uniform materials, such as powders or twins,
-    these are specified with the `Sample` subclasses, which take `Hamiltonian` classes as inputs.
+    The ``Hamiltonian`` object does not deal with non-uniform materials, such as powders or twins,
+    these are specified with the ``Sample`` subclasses, which take ``Hamiltonian`` classes as inputs.
 
     Parameters
     ----------
