@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 import runpy
 import sys
+import re
 
 from .jupyter_files import JupyterFile
 
@@ -14,16 +15,53 @@ tools_dir = Path(__file__).parent
 
 tutorial_input_dir = tools_dir / Path("../../examples/tutorials/tutorial_inputs")
 tutorial_output_dir = tools_dir / Path("../../examples/tutorials/tutorial_outputs")
+image_extensions = ['.png', '.jpg', '.jpeg', '.svg']
 
+RE_IMAGE_BLOCK = re.compile(r'^#\$\$\$\$:(?P<im>[0-9]*)(.*)^#\$\$\$\$\$:(?P=im)', re.DOTALL | re.MULTILINE)
+RE_IMAGE_FILE = re.compile(r'[\'\"](.*)(' + '|'.join(image_extensions) + ')')
+
+
+def _parse_images():
+    with open("artifacts.py", "r") as artifacts_file:
+        artifacts_py = artifacts_file.read()
+    image_blocks = []
+    for block in RE_IMAGE_BLOCK.finditer(artifacts_py):
+        image_code = block.group(2)
+        # Search image code for _first_ output filename with any extension defined above
+        filename = RE_IMAGE_FILE.search(image_code)
+        if filename is None:
+            raise RuntimeError(f'No image filename found in code block {image_code}')
+        filename = filename.group(1) + filename.group(2)
+        if 'savefig' in image_code:
+            savefig_cmd = re.search(r'(\w*)\.savefig\((.*[\'"]' + filename + r'[\'"].*\))', image_code, re.DOTALL | re.MULTILINE)
+            savefig_dark_cmd = 'savefig_dark(' + savefig_cmd.group(1) + ',' + savefig_cmd.group(2)
+            savefig_dark_cmd = savefig_dark_cmd.replace(filename, filename.replace('.', '_dark.'))
+            artifacts_py = artifacts_py.replace(savefig_cmd.group(2), savefig_cmd.group(2) + '\n' + savefig_dark_cmd)
+            image_blocks.append([f'```{{image}} {filename}\n:class: only-light\n```\n',
+                                 f'```{{image}} {filename.replace('.', '_dark.')}\n:class: only-dark\n```\n'])
+        elif 'snapshot' in image_code:
+            snapshot_cmd = re.search(r'(snapshot\(.*[\'"]' + filename + r'[\'"].*\))', image_code, re.DOTALL | re.MULTILINE).group(1)
+            snapshotlight_cmd = snapshot_cmd.replace('snapshot', 'snapshot_light')
+            snapshotlight_cmd = snapshotlight_cmd.replace(filename, filename.replace('.', '_light.'))
+            snapshotdark_cmd = snapshot_cmd.replace('snapshot', 'snapshot_dark')
+            artifacts_py = artifacts_py.replace(snapshot_cmd, snapshotdark_cmd + '\n' + snapshotlight_cmd)
+            image_blocks.append([f'```{{image}} {filename}\n:class: only-dark\n```\n',
+                                 f'```{{image}} {filename.replace('.', '_light.')}\n:class: only-light\n```\n'])
+        else:
+            image_blocks.append([f"\n![]({filename})\n\n"])
+
+    with open("artifacts.py", "w") as artifacts_file:
+        artifacts_file.write(artifacts_py)
+
+    return image_blocks
 
 
 def run(files):
 
-
-
     spinw_tutorial_text = "\n_This tutorial mirrors MATLAB spinW [Tutorial %d](../../../spinw/tutorials/tutorial%02d)_\n\n"
     md_placeholder_stdout = "%%%%% stdout "
     md_placeholder_stderr = "%%%%% stderr "
+    md_placeholder_image = "%%%%% image "
 
 
     # Clean directory
@@ -97,6 +135,7 @@ def run(files):
             skip_lines = 0
             stdout_capture_index = 0
             stderr_capture_index = 0
+            image_index = 0
 
             jupyter = JupyterFile()
 
@@ -104,6 +143,8 @@ def run(files):
                 with open(output_target_dir / "artifacts.py", 'w') as artifacts_file:
                     artifacts_file.write("import sys\n"
                                          "import io\n"
+                                         "import matplotlib.pyplot as plt\n"
+                                         "from tools.tutorials.darkmode import *\n"
                                          "old_stdout = sys.stdout\n"
                                          "old_stderr = sys.stderr\n"
                                          "stdout_buffer = io.StringIO()\n"
@@ -155,6 +196,7 @@ def run(files):
 
                             case 2: # It's a control tag
                                 rest_is_code = False # Flag to treat the rest of this block as code to be added
+                                is_image_block = False
                                 for line in block:
                                     if rest_is_code:
                                         artifacts_file.write(line)
@@ -183,9 +225,10 @@ def run(files):
 
                                             elif line.startswith("image"): # Put an image tag in .md, and code in the python
                                                 parts = line.split(":")
-                                                image_filename = parts[1]
-                                                md_file.write(f"\n![]({image_filename})\n\n")
+                                                md_file.write("\n" + md_placeholder_image + str(image_index) + "\n")
+                                                artifacts_file.write(f'\n#$$$$:{image_index}\n')
                                                 rest_is_code = True
+                                                is_image_block = True
 
                                             elif line.startswith("skip"): # Skips a certain number of lines
                                                 parts = line.split(":")
@@ -225,6 +268,9 @@ def run(files):
 
                                         except Exception as e:
                                             raise ValueError(f"Could not parse line {line.strip()}") from e
+                                if is_image_block:
+                                    artifacts_file.write(f'\n#$$$$$:{image_index}\n')
+                                    image_index += 1
                             case _:
                                 raise ValueError(f"Unknown level {level}")
 
@@ -262,6 +308,9 @@ def run(files):
             # File will probably set these to something else, and if there's an error it will be a problem
             old_stdout = sys.stdout
             old_stderr = sys.stderr
+
+            # Parses the artifacts file and change image blocks to make light and dark images and get file name
+            image_blocks = _parse_images()
 
             try:
                 runpy.run_path("artifacts.py", run_name="__main__")
@@ -329,6 +378,10 @@ def run(files):
                         for replace_line in stderr_blocks[block_index]:
                             md_file.write(replace_line)
                         md_file.write("```\n\n")
+                    elif line.startswith(md_placeholder_image):
+                        block_index = int(line[len(md_placeholder_image):].strip())
+                        for replace_line in image_blocks[block_index]:
+                            md_file.write(replace_line)
                     else:
                         md_file.write(line)
 
