@@ -46,4 +46,3 @@ class SymmetrySettings:
 #     magnetic_group=magnetic_group_symbol_lookup["P1.1"],
 #     unit_cell=UnitCell(1,1,1)
 # )
-

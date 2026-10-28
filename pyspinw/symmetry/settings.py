@@ -255,4 +255,3 @@ class Setting:
         s += "" if self.choice_number is None else str(self.choice_number)
         s += "" if self.permutation is None else self.permutation.to_string()
         return s
-

@@ -54,4 +54,3 @@ def evaluate(expression, variables):
 
 if __name__ == "__main__":
     print(evaluate("x+y-z",{"x": 1, "y": 3, "z": 10}))
-

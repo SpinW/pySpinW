@@ -99,4 +99,3 @@ formatted_aliases = load_formatted_aliases()
 canonical_aliases = load_canonical_aliases()
 canonical_to_formatted = load_canonised_to_formatted()
 preferred_names = load_preferred_names()
-
