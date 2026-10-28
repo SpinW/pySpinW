@@ -32,29 +32,20 @@ class AbstractExchange:
         Cartesian distance between the sites.
     order : int
         Shell order index (increasing with distance).
-
-    Attributes
-    ----------
-    name : str
-        Name of the exchange.
-    site_1 : Site
-        First site of the exchange pair.
-    site_2 : Site
-        Second site of the exchange pair.
-    cell_offset : CellOffset
-        Unit cell offset between ``site_1`` and ``site_2``.
-    distance : float
-        Cartesian distance between the sites.
-    order : int
-        Shell order index (increasing with distance).
     """
 
     name: str
+    """Name of the exchange."""
     site_1: Site
+    """First site of the exchange pair."""
     site_2: Site
+    """Second site of the exchange pair."""
     cell_offset: CellOffset
+    """Unit cell offset between ``site_1`` and ``site_2``."""
     distance: float
+    """Cartesian distance between the sites."""
     order: int
+    """Shell order index (increasing with distance)."""
 
 def approx_equal(v1, v2):
     """Are two vectors approximately the same (within tolerance).
