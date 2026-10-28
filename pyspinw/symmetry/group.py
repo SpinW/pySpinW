@@ -1,4 +1,4 @@
-""" Space groups and magnetic space groups"""
+"""Space groups and magnetic space groups."""
 from collections import defaultdict
 
 from abc import ABC, abstractmethod
@@ -27,16 +27,29 @@ from pyspinw.symmetry.symmetry_checking import ExchangeMatrixConstraints, Anisot
 from pyspinw.tolerances import tolerances
 
 class SymmetryGroup(ABC):
-    """ Base class for symmetry group and magnetic symmetry group """
+    """Base class for symmetry group and magnetic symmetry group."""
 
     @property
     @abstractmethod
     def space_operations(self) -> list[SpaceOperation]:
-        """ The SpaceOperations for this group """
+        """The SpaceOperations for this group."""
 
 
     def implied_sites_for(self, site: Site, unit_cell: UnitCell) -> list[ImpliedLatticeSite]:
-        """ Find "duplicate" sites of a given site """
+        """Find symmetry related sites for a given site.
+
+        Parameters
+        ----------
+        site : Site
+            Parent site to generate symmetry-equivalent sites from.
+        unit_cell : UnitCell
+            Unit cell defining the coordinate system for spin transformations.
+
+        Returns
+        -------
+        list of ImpliedLatticeSite
+            List of symmetry-implied lattice sites distinct from `site`.
+        """
         coordinates = site.ijk.reshape(1, 3) % 1
         spins = unit_cell.spin_cartesian_to_lattice_units(site.spin_data)
 
@@ -80,7 +93,24 @@ class SymmetryGroup(ABC):
                                  site_2: "Site",
                                  offset: tuple[int, int, int] = (0,0,0),
                                  tolerance=1e-10) -> list[SpaceOperation]:
-        """ Get a list of symmetry operations that can transform `site_1` into `site_2` """
+        """Get a list of symmetry operations that can transform `site_1` into `site_2`.
+
+        Parameters
+        ----------
+        site_1 : Site
+            Starting site.
+        site_2 : Site
+            Target site.
+        offset : tuple of (int, int, int) or CellOffset, optional
+            Unit cell offset added to `site_2`. Default is ``(0, 0, 0)``.
+        tolerance : float, optional
+            Absolute tolerance for comparing site positions. Default is ``1e-10``.
+
+        Returns
+        -------
+        list of SpaceOperation
+            Symmetry operations mapping `site_1` to `site_2` plus `offset`.
+        """
         offset = CellOffset.coerce(offset)
 
         return [operation for operation in self.space_operations
@@ -93,7 +123,24 @@ class SymmetryGroup(ABC):
                                         site_2: Site,
                                         offset: CellOffsetCoercible = (0, 0, 0)) \
             -> tuple[set[SpaceOperation], set[SpaceOperation]]:
-        """ Get operations on pairs of sites """
+        r"""Get operations on pairs of sites.
+
+        Parameters
+        ----------
+        site_1 : Site
+            First site in the pair.
+        site_2 : Site
+            Second site in the pair.
+        offset : CellOffsetCoercible, optional
+            Unit cell offset for the pair. Default is ``(0, 0, 0)``.
+
+        Returns
+        -------
+        identity_operations : set of SpaceOperation
+            Operations that preserve both sites in place ($J = M J M^T$).
+        inversion_operations : set of SpaceOperation
+            Operations that exchange `site_1` and `site_2` ($J = M J^T M^T$).
+        """
         offset = CellOffset.coerce(offset)
 
         #
@@ -119,7 +166,24 @@ class SymmetryGroup(ABC):
                                  pair_2: tuple[Site, Site],
                                  offset: CellOffsetCoercible = (0, 0, 0),
                                  tolerance: float=1e-10) -> set[SpaceOperation]:
-        """ Operations in this group that transform one ordered pair into another """
+        """Operations in this group that transform one ordered pair into another.
+
+        Parameters
+        ----------
+        pair_1 : tuple of (Site, Site)
+            Starting ordered pair of sites.
+        pair_2 : tuple of (Site, Site)
+            Target ordered pair of sites.
+        offset : CellOffsetCoercible, optional
+            Unit cell offset applied to `pair_2`. Default is ``(0, 0, 0)``.
+        tolerance : float, optional
+            Absolute tolerance for position matching. Default is ``1e-10``.
+
+        Returns
+        -------
+        set of SpaceOperation
+            Set of symmetry operations mapping `pair_1` onto `pair_2`.
+        """
         offset = CellOffset.coerce(offset)
 
         left_operations = self.operations_between_sites(pair_1[0], pair_2[0], offset, tolerance=tolerance)
@@ -135,7 +199,29 @@ class SymmetryGroup(ABC):
                              site_2: Site | ArrayLike,
                              unit_cell: UnitCell,
                              do_print: bool = True) -> ExchangeMatrixConstraints:
-        """ Get the details of the allowed exchange matrices"""
+        """Get the details of the allowed exchange matrices.
+
+        Parameters
+        ----------
+        site_1 : Site or array_like
+            First site or 3-vector of fractional coordinates.
+        site_2 : Site or array_like
+            Second site or 3-vector of fractional coordinates.
+        unit_cell : UnitCell
+            Unit cell used to convert operations to Cartesian coordinates.
+        do_print : bool, optional
+            If ``True``, print a summary of the constraints. Default is ``True``.
+
+        Returns
+        -------
+        ExchangeMatrixConstraints
+            Object describing the symmetry constraints on the exchange matrix.
+
+        Raises
+        ------
+        TypeError
+            If `site_1` or `site_2` cannot be converted to a ``Site``.
+        """
         if not isinstance(site_1, Site):
             try:
                 site_1 = Site(i=float(site_1[0]),
@@ -178,7 +264,27 @@ class SymmetryGroup(ABC):
                                site: Site | ArrayLike,
                                unit_cell: UnitCell,
                                do_print: bool = True) -> AnisotropyMatrixConstraints:
-        """ Get the details of the allowed anisotropy matrices"""
+        """Get the details of the allowed anisotropy matrices.
+
+        Parameters
+        ----------
+        site : Site or array_like
+            Site or 3-vector of fractional coordinates.
+        unit_cell : UnitCell
+            Unit cell used to convert operations to Cartesian coordinates.
+        do_print : bool, optional
+            If ``True``, print a summary of the constraints. Default is ``True``.
+
+        Returns
+        -------
+        AnisotropyMatrixConstraints
+            Object describing the symmetry constraints on the anisotropy matrix.
+
+        Raises
+        ------
+        TypeError
+            If `site` cannot be converted to a ``Site``.
+        """
         if not isinstance(site, Site):
             try:
                 site = Site(i=float(site[0]),
@@ -206,20 +312,57 @@ class SymmetryGroup(ABC):
 
     @property
     def lattice_system(self):
-        """ Get the lattice system object """
+        """Get the lattice system object."""
         raise NotImplementedError("`lattice_system` is not implemented in base class")
 
     def _description(self):
-        """ Description string for this spacegroup """
+        """Description string for this spacegroup.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised in the abstract base class.
+        """
         raise NotImplementedError("`description()` is not implemented in base class")
 
     def for_supercell(self, supercell: Supercell):
-        """ Get the symmetry group of a supercell, as implied by the symmetry of the unit cell """
+        """Get the symmetry group of a supercell, as implied by the symmetry of the unit cell.
+
+        Parameters
+        ----------
+        supercell : Supercell
+            Supercell for which to determine the implied symmetry group.
+
+        Returns
+        -------
+        SpaceGroup
+            Implied space group of the supercell.
+        """
         return database.spacegroup_by_name("p1") # TODO: Implement properly
 
 
 class SpaceGroup(SymmetryGroup, SPWSerialisable):
-    """ Representation of a space group"""
+    """Representation of a space group.
+
+    Parameters
+    ----------
+    hall_number : int
+        Hall number (1 to 530) identifying the specific space group setting.
+    number : int
+        International Tables space group number (1 to 230).
+    international_symbol : str
+        Full international Hermann-Mauguin symbol.
+    short_symbol : str
+        Short international Hermann-Mauguin symbol.
+    preferred_symbol : str
+        Preferred symbol used for serialisation and display.
+    operations : list of SpaceOperation
+        Symmetry operations belonging to this space group.
+    lattice_system : LatticeSystem
+        Crystal lattice system associated with this space group.
+    choice : str or None
+        Setting choice string (e.g. origin or axis choice), or ``None``.
+    """
 
     serialisation_name = "space_group"
 
@@ -248,17 +391,23 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @property
     def lattice_system(self):
-        """ Get the lattice system associated with this spacegroup """
+        """Get the lattice system associated with this spacegroup."""
         return self._lattice_system
 
     @property
     def space_operations(self):
-        """ The SpaceOperations for this group """
+        """The SpaceOperations for this group."""
         return self.operations
 
 
     def _serialisation_string(self):
-        """ Name to use to refer to this group in serialisation"""
+        """Name to use to refer to this group in serialisation.
+
+        Returns
+        -------
+        str
+            Preferred symbol string for serialising this space group.
+        """
         return self.preferred_symbol
 
     def _serialise(self, context: SPWSerialisationContext):
@@ -271,18 +420,17 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
 
     @property
     def name(self) -> str:
-        """ Just the space group name with setting choice if relevant"""
+        """Just the space group name with setting choice if relevant."""
         if self.choice is None:
             return self.symbol
         else:
             return f"{self.symbol} [{self.choice}]"
 
     def _description(self):
-        """ Description string for this spacegroup"""
+        """Description string for this spacegroup."""
         return self.name
 
     def __repr__(self):
-        """repr"""
         if self.choice is None:
             return f"SpaceGroup({self.number}, {self.symbol}, hall={self.hall_number})"
         else:
@@ -305,24 +453,36 @@ class SpaceGroup(SymmetryGroup, SPWSerialisable):
 #
 
 class ExactMatch:
-    """ Result for exact matches in database searches"""
+    """Result for exact matches in database searches.
+
+    Parameters
+    ----------
+    spacegroup : SpaceGroup
+        The exactly matched space group.
+    """
 
     def __init__(self, spacegroup: SpaceGroup):
         self.spacegroup = spacegroup
 
 class PartialMatch:
-    """ Result for database searches that are not exact"""
+    """Result for database searches that are not exact.
+
+    Parameters
+    ----------
+    spacegroups : list of SpaceGroup
+        List of partially matching space groups.
+    """
 
     def __init__(self, spacegroups: list[SpaceGroup]):
         self.spacegroups = spacegroups
 
 
 class NoSuchGroup(Exception):
-    """ Raised when a group is not found. """
+    """Raised when a group is not found."""
 
 
 class SpacegroupDatabase:
-    """ Holds all the information about spacegroups and magnetic spacegroups """
+    """Holds all the information about spacegroups and magnetic spacegroups."""
 
     # Letter representing the crystal system monoclinic, cubic etc
     _spacegroup_number_to_lattice_system = \
@@ -421,20 +581,50 @@ class SpacegroupDatabase:
 
 
     def all_spacegroup_settings(self, number: int):
-        """ Get a list of all spacegroups that correspond to a given setting """
+        """Get a list of all spacegroups that correspond to a given Hall number.
+
+        Parameters
+        ----------
+        number : int
+            International Tables space group number (1 to 230).
+
+        Returns
+        -------
+        list of SpaceGroup
+            All space group settings corresponding to `number`.
+        """
         return self._spacegroup_number_lookup[number]
 
     def spacegroups_for_lattice_symbol(self, lattice_symbol: str):
-        """ Get the spacegroups that correspond to a given lattice symbol (e.g. hR)"""
+        """Get the spacegroups that correspond to a given lattice symbol (e.g. hR).
+
+        Parameters
+        ----------
+        lattice_symbol : str
+            Two-letter Pearson/Bravais lattice symbol (e.g. ``'hR'``).
+
+        Returns
+        -------
+        list of SpaceGroup
+            Space groups associated with `lattice_symbol`.
+        """
         return self._lattice_symbol_to_spacegroups[lattice_symbol]
 
     def spacegroups_with_operations(self, operation_string: str) -> ExactMatch | PartialMatch:
-        """ Get a spacegroup by a list of operations
+        """Get a spacegroup by a list of operations.
 
-        Example: "x, y, z; -x, -y, -z" should give P1
+        Example: ``"x, y, z; -x, -y, -z"`` should give P1.
 
-        :param operation_string: A list of operations in the x,y,z form, semicolon separated
-        :return: ExactMatch or MultipleMatches
+        Parameters
+        ----------
+        operation_string : str
+            A list of operations in the ``x, y, z`` form, semicolon separated.
+
+        Returns
+        -------
+        ExactMatch or PartialMatch
+            ``ExactMatch`` if a group has the exact set of operations, or
+            ``PartialMatch`` containing groups that are supersets of the operations.
         """
         operations = {canonise_string(op) for op in operation_string.split(";")}
 
@@ -450,7 +640,23 @@ class SpacegroupDatabase:
 
 
     def spacegroup_by_name(self, name: str) -> SpaceGroup:
-        """ Get a spacegroup by name"""
+        """Get a spacegroup by name.
+
+        Parameters
+        ----------
+        name : str
+            Name or alias of the space group.
+
+        Returns
+        -------
+        SpaceGroup
+            Matching ``SpaceGroup`` instance.
+
+        Raises
+        ------
+        NoSuchGroup
+            If no space group matches `name`.
+        """
         canonised_input = canonise_string(name)
 
         if canonised_input in canonical_aliases:

@@ -1,4 +1,4 @@
-""" Shader for most of the objects in the viewer"""
+"""Shader for most of the objects in the viewer."""
 
 import numpy as np
 from OpenGL.GL import *
@@ -8,7 +8,33 @@ from pyspinw.gui.rendering.shader import Shader
 
 
 class ObjectShader(Shader):
-    """ Shader for most of the objects in the viewer"""
+    """Shader for most of the objects in the viewer.
+
+    Attributes
+    ----------
+    vertex_shader : str
+        Name of the vertex shader resource.
+    fragment_shader : str
+        Name of the fragment shader resource.
+    model_matrix : (4, 4) numpy.ndarray
+        Model transformation matrix.
+    projection_view : (4, 4) numpy.ndarray
+        Combined projection-view matrix.
+    view : (4, 4) numpy.ndarray
+        View transformation matrix.
+    light_position : tuple of (float, float, float)
+        Position of the light source in world coordinates.
+    view_position : tuple of (float, float, float)
+        Position of the camera in world coordinates.
+    light_color : tuple of (float, float, float)
+        RGB color of the light source.
+    object_color : tuple of (float, float, float)
+        RGB color of the rendered object.
+    specular_strength : float
+        Specular lighting strength factor.
+    ambient_strength : float
+        Ambient lighting strength factor.
+    """
 
     vertex_shader = "object_vertex"
     fragment_shader = "object_fragment"
@@ -45,12 +71,12 @@ class ObjectShader(Shader):
 
     @property
     def camera(self):
-        """ Get the current camera"""
+        """Current camera used by the shader."""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
-        """ Set the camera and associated matrices """
+        """Set the camera and associated matrices."""
         self._camera = camera
 
         self.view = self.camera.view_matrix()

@@ -1,1 +1,1 @@
-""" Data module"""
+"""Data module."""

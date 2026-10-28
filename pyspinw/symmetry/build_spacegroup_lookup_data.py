@@ -1,6 +1,6 @@
-""" This file is responsible for building the table of allowed names
+"""Build the table of allowed spacegroup names.
 
-Run this as a script to build the database of name lookups
+Run this as a script to build the database of name lookups.
 """
 import os
 from collections import defaultdict
@@ -13,9 +13,21 @@ from pyspinw.symmetry.canonise import canonise_string
 
 @dataclass
 class SettingExpander:
-    """ This object is used to convert choices as specified in spglib
+    """Convert choices as specified in spglib to explicit defaults.
 
-    Where defaults are just ommited, to ones where the defaults are explicit
+    Where defaults are just omitted, convert to ones where the defaults are explicit.
+
+    Parameters
+    ----------
+    choice_number : bool, optional
+        Whether a choice number option is applicable. Default is ``False``.
+    permutation : bool, optional
+        Whether an axis permutation option is applicable. Default is ``False``.
+    unique_axis : bool, optional
+        Whether a unique axis option is applicable. Default is ``False``.
+    rhombohedral_or_hexagonal : bool, optional
+        Whether a rhombohedral or hexagonal setting option is applicable.
+        Default is ``False``.
     """
 
     choice_number: bool = False
@@ -24,7 +36,13 @@ class SettingExpander:
     rhombohedral_or_hexagonal: bool = False
 
     def allow_options_consistent_with(self, setting: Setting):
-        """ """
+        """Enable setting options that are present in the given `setting`.
+
+        Parameters
+        ----------
+        setting : Setting
+            Setting instance whose non-``None`` fields mark applicable options.
+        """
         if setting.choice_number is not None:
             self.choice_number = True
 
@@ -38,7 +56,18 @@ class SettingExpander:
             self.rhombohedral_or_hexagonal = True
 
     def expand(self, setting: Setting):
-        """ Fill in the implicit setting parameters if they are not there """
+        """Fill in the implicit setting parameters if they are not there.
+
+        Parameters
+        ----------
+        setting : Setting
+            Setting instance with potentially omitted default fields.
+
+        Returns
+        -------
+        Setting
+            Expanded ``Setting`` with explicit default values filled in.
+        """
         return Setting(
             choice_number = 1 if self.choice_number and setting.choice_number is None else setting.choice_number,
             permutation = (AxisPermutation.from_string("abc")
@@ -53,11 +82,16 @@ class SettingExpander:
         )
 
 def build_expanded_settings() -> dict[int, Setting]:
-    """ Create a dictionary that maps to `Setting` objects that have explicit defaults
+    """Create a dictionary that maps to `Setting` objects that have explicit defaults.
 
     If they're part of a group with alternate choices, make sure that there
     is an entry for that kind of choice (e.g. permutation, unique axis) rather than
-    None
+    None.
+
+    Returns
+    -------
+    dict of {int: Setting}
+        Mapping from Hall number (1 to 530) to expanded ``Setting`` object.
     """
     # Collect together settings for each group
     settings_lists = defaultdict(list)
@@ -87,9 +121,21 @@ def build_expanded_settings() -> dict[int, Setting]:
     return expanded_settings
 
 def build_spacegroup_lookup(target_directory: str):
-    """Create lookup tables for getting spacegroups from strings
+    """Create lookup tables for getting spacegroups from strings.
 
     See ADR 010 for requirements.
+
+    Parameters
+    ----------
+    target_directory : str
+        Output directory path where spacegroup lookup text files are written.
+
+    Raises
+    ------
+    Exception
+        If a setting has no non-default entry or if a preferred name collision occurs.
+    ValueError
+        If canonised spacegroup alias collisions are found between different settings.
     """
     default_names = {}
     default_setting_index = {}

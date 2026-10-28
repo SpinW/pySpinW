@@ -1,4 +1,4 @@
-"""Calculations for finding distances between sites in a lattice"""
+"""Calculations for finding distances between sites in a lattice."""
 
 from dataclasses import dataclass
 
@@ -9,19 +9,44 @@ from pyspinw.tolerances import tolerances
 
 @dataclass
 class InteractionGeometries:
-    """Holds the output from the algorithm to find relative positions"""
+    """Holds the output from the algorithm to find relative positions.
+
+    Parameters
+    ----------
+    cell_indices : (N, 3) numpy.ndarray
+        Indices of the cells where a point was found at a sufficiently close distance.
+    vectors : (N, 3) numpy.ndarray
+        Vectors for each position found.
+    distances : (N,) numpy.ndarray
+        Distance to each point.
+
+    Attributes
+    ----------
+    cell_indices : (N, 3) numpy.ndarray
+        Indices of the cells where a point was found at a sufficiently close distance.
+    vectors : (N, 3) numpy.ndarray
+        Vectors for each position found.
+    distances : (N,) numpy.ndarray
+        Distance to each point.
+    """
 
     cell_indices: np.ndarray
-    """ Indices of the cells where a point was found at a sufficiently close distance"""
+    """Indices of the cells where a point was found at a sufficiently close distance."""
 
     vectors: np.ndarray
-    """ Vectors for each position found"""
+    """Vectors for each position found."""
 
     distances: np.ndarray
-    """ Distance to the each point"""
+    """Distance to each point."""
 
     def expand(self) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
-        """ Create a list of tuples from the data in this object"""
+        """Create a list of tuples from the data in this object.
+
+        Returns
+        -------
+        list of tuple of (numpy.ndarray, numpy.ndarray, float)
+            List of ``(cell_index, vector, distance)`` tuples for each interaction.
+        """
         return [(self.cell_indices[i, :],
                  self.vectors[i, :],
                  self.distances[i])
@@ -39,13 +64,26 @@ def find_relative_positions(
     """Find fractional coordinates from translations of the unit cell close to the origin.
 
     Find all sets of fractional coordinates produced by translations of input coordinates by multiples
-    of the unit cell, and that differ by a cartesian distance of a most max_distance from (0,0,0)
+    of the unit cell, and that differ by a cartesian distance of at most ``max_distance`` from ``(0, 0, 0)``.
 
-    :param fractional_coordinates: Fractional coordinates of the base point
-    :param unit_cell_transform: Transform from fractional coordinates to cartesian coordinates
-    :param max_distance: Maximum distance
-    :param tol: tolerance used to check for identity
-    :param is_self_interaction: include the original point with no translation (i,j,k = 0,0,0)
+    Parameters
+    ----------
+    fractional_coordinates : (3,) numpy.ndarray
+        Fractional coordinates of the base point.
+    unit_cell_transform : (3, 3) numpy.ndarray
+        Transform from fractional coordinates to Cartesian coordinates.
+    max_distance : float
+        Maximum distance.
+    tol : float, optional
+        Tolerance used to check for identity. Default is ``tolerances.SAME_SITE_ABS_TOL``.
+    is_self_interaction : bool, optional
+        Exclude inverse duplicate translations and the zero translation when
+        computing self-interactions. Default is ``True``.
+
+    Returns
+    -------
+    InteractionGeometries
+        Object containing matching unit cell offsets, Cartesian vectors, and distances.
     """
     if is_self_interaction:
         fractional_coordinate_offsets = partial_search_space(unit_cell_transform, max_distance)
@@ -70,10 +108,20 @@ def find_relative_positions(
 def full_search_space(
         unit_cell_transform: np.ndarray,
         radius: float) -> np.ndarray:
-    """List of unit cell translations so that cells cover a sphere of the specified radius
+    """List of unit cell translations so that cells cover a sphere of the specified radius.
 
-    :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
-    :param radius: maximum radius
+    Parameters
+    ----------
+    unit_cell_transform : (3, 3) numpy.ndarray
+        Transformation from fractional coordinates to Cartesian coordinates.
+    radius : float
+        Maximum radius.
+
+    Returns
+    -------
+    (N, 3) numpy.ndarray
+        Grid of integer unit cell translation vectors ``(i, j, k)`` covering the
+        bounding box of the sphere of radius ``radius``.
     """
     # Note: In fractional coordinates, a fixed radius sphere is an ellipsoid
     # Note: We want any unit cell that overlaps with the ellipsoid, as such, we need to add
@@ -129,12 +177,22 @@ def full_search_space(
 def partial_search_space(
         unit_cell_transform: np.ndarray,
         radius: float) -> np.ndarray:
-    """Partial list of unit cell translations so that cells cover a sphere of the specified radius
+    """Partial list of unit cell translations so that cells cover a sphere of the specified radius.
 
-    Only one representation from each pair where (a,b,c) = (-p,-q,-r)
+    Only one representation from each pair where ``(a, b, c) = (-p, -q, -r)``.
 
-    :param unit_cell_transform: transformation from fractional coordinates to cartesian coordinates
-    :param radius: maximum radius
+    Parameters
+    ----------
+    unit_cell_transform : (3, 3) numpy.ndarray
+        Transformation from fractional coordinates to Cartesian coordinates.
+    radius : float
+        Maximum radius.
+
+    Returns
+    -------
+    (N, 3) numpy.ndarray
+        Half-space grid of integer unit cell translation vectors ``(i, j, k)``
+        excluding the origin and inversion-duplicate pairs.
     """
     # Note: In fractional coordinates, a fixed radius sphere is an ellipsoid
     # Note: We want any unit cell that overlaps with the ellipsoid, as such, we need to add
@@ -226,7 +284,7 @@ def partial_search_space(
 
 
 def demo_point_finding():
-    """Demonstrate the calculation of the calculation of cells for searching in"""
+    """Demonstrate the calculation of the calculation of cells for searching in."""
     import matplotlib.pyplot as plt
 
     radius = 5

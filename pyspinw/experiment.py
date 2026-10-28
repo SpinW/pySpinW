@@ -18,22 +18,27 @@ class Experiment(SPWSerialisable):
     An experiment combines a physical sample with an optional instrument model.
     The sample provides the magnetic model to evaluate, while the instrument
     provides resolution information for the simulated measurement.
+
+    Parameters
+    ----------
+    sample : Sample
+        Sample model that owns the Hamiltonian and q-point generation logic.
+    instrument : Instrument or None, optional
+        Instrument model used to provide resolution information. If omitted,
+        methods that require instrument resolution need to handle the missing
+        instrument before calling this object. Default is ``None``.
+
+    Attributes
+    ----------
+    sample : Sample
+        Sample model that owns the Hamiltonian and q-point generation logic.
+    instrument : Instrument or None
+        Instrument model used to provide resolution information.
     """
 
     serialisation_name = "experiment"
 
     def __init__(self, sample: Sample, instrument: Instrument | None = None):
-        """Create an experiment from a sample and optional instrument.
-
-        Parameters
-        ----------
-        sample : Sample
-            Sample model that owns the Hamiltonian and q-point generation logic.
-        instrument : Instrument | None, optional
-            Instrument model used to provide resolution information. If omitted,
-            methods that require instrument resolution need to handle the missing
-            instrument before calling this object.
-        """
         self.sample = sample
         self.instrument = instrument
 
@@ -42,17 +47,18 @@ class Experiment(SPWSerialisable):
 
         Parameters
         ----------
-        input_q : list[np.ndarray]
+        input_q : list of numpy.ndarray
             Momentum-space inputs passed to the sample for q-point generation.
         n_q : int
             Number of q-points to generate from the requested momentum inputs.
         field : None, optional
             External field passed through to the sample q-point generator.
+            Default is ``None``.
 
         Returns
         -------
-        np.ndarray
-            Energies and intensities calculated from the generated q-points.
+        numpy.ndarray
+            Energies calculated from the generated q-points.
         """
         generated_q = self.sample.generate_q(input_q, n_q, field, self.instrument.resolution)
         energies, _ = self.sample.hamiltonian._energies_and_intensities(generated_q)
@@ -60,7 +66,20 @@ class Experiment(SPWSerialisable):
         return energies
 
     def fit(self, data: Data):
-        """Fit the experimental model to a dataset. This has not been implemented yet."""
+        """Fit the experimental model to a dataset.
+
+        This has not been implemented yet.
+
+        Parameters
+        ----------
+        data : Data
+            Experimental dataset to fit against.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised because fitting has not been implemented yet.
+        """
         q_values = data.q
         raise NotImplementedError()
 

@@ -17,14 +17,49 @@ from pyspinw.util import triple_product_matrix, is_diagonal
 
 _exchange_id_counter = -1
 def _generate_unique_exchange_id():
-    """Generate a unique ID for each exchange currently loaded."""
+    """Generate a unique ID for each exchange currently loaded.
+
+    Returns
+    -------
+    int
+        Unique integer identifier for the exchange.
+    """
     global _exchange_id_counter # noqa: PLW0603
     _exchange_id_counter += 1
     return _exchange_id_counter
 
 @dataclass
 class ExchangeBaseDeserialisation:
-    """Hold basic properties of an exchange term."""
+    """Hold basic properties of an exchange term.
+
+    Used during serialisation, not a user facing function
+
+    Parameters
+    ----------
+    name : str
+        Name of the exchange term.
+    site_1 : Site
+        First lattice site in the exchange term.
+    site_2 : Site
+        Second lattice site in the exchange term.
+    cell_offset : CellOffset
+        Offset between the unit cells containing the two sites.
+    metadata : ExchangeMetadata
+        Metadata attached to the exchange term.
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange term.
+    site_1 : Site
+        First lattice site in the exchange term.
+    site_2 : Site
+        Second lattice site in the exchange term.
+    cell_offset : CellOffset
+        Offset between the unit cells containing the two sites.
+    metadata : ExchangeMetadata
+        Metadata attached to the exchange term.
+    """
 
     name: str
     site_1: Site
@@ -44,13 +79,18 @@ class Exchange(SPWSerialisable):
         Second lattice site in the exchange term.
     cell_offset : CellOffsetCoercible
         Offset between the unit cells containing the two sites.
-    exchange_matrix : numpy.ndarray
+    exchange_matrix : (3, 3) numpy.ndarray
         3x3 matrix defining the exchange interaction.
     name : str, optional
         Name for the exchange term. Default is ``""``.
-    color : tuple of float, optional
+    color : tuple of (float, float, float), optional
         RGB color used when displaying the exchange term.
     metadata : ExchangeMetadata, optional
+        Metadata attached to the exchange term.
+
+    Attributes
+    ----------
+    metadata : ExchangeMetadata
         Metadata attached to the exchange term.
     """
 
@@ -134,7 +174,7 @@ class Exchange(SPWSerialisable):
 
         Parameters
         ----------
-        unit_cell
+        unit_cell : UnitCell
             Unit cell used to convert lattice coordinates to Cartesian coordinates.
 
         Returns
@@ -149,7 +189,7 @@ class Exchange(SPWSerialisable):
 
         Parameters
         ----------
-        unit_cell
+        unit_cell : UnitCell
             Unit cell used to convert lattice coordinates to Cartesian coordinates.
 
         Returns
@@ -160,6 +200,18 @@ class Exchange(SPWSerialisable):
         return np.sqrt(np.sum(self.vector(unit_cell)**2))
 
     def _base_serialisation(self, context: SPWSerialisationContext):
+        """Serialise base properties of the exchange term.
+
+        Parameters
+        ----------
+        context : SPWSerialisationContext
+            Serialisation context.
+
+        Returns
+        -------
+        dict
+            Serialised dictionary of base exchange properties.
+        """
         return {
             "name": self.name,
             "site_1": self._site_1._serialise(context),
@@ -169,7 +221,13 @@ class Exchange(SPWSerialisable):
         }
 
     def generalise(self):
-        """ Convert to most general Exchange class """
+        """Create a new exchange that is the most general kind, (`Exchange`).
+
+        Returns
+        -------
+        Exchange
+            General ``Exchange`` instance with the same parameters and matrix.
+        """
         return Exchange(name=self.name,
                         site_1=self.site_1,
                         site_2=self.site_2,
@@ -178,7 +236,13 @@ class Exchange(SPWSerialisable):
                         metadata=self.metadata)
 
     def specialise(self):
-        """ Get the most specific exchange class available that fits this exchange """
+        """Get the most specific exchange class available that fits this exchange.
+
+        Returns
+        -------
+        Exchange
+            Most specific ``Exchange`` subclass instance that represents this exchange.
+        """
         return specialise_exchange(self)
 
     @check_sizes(exchange_matrix=(3,3), force_numpy=True, allow_nones=True)
@@ -193,18 +257,23 @@ class Exchange(SPWSerialisable):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
         name : str, optional
             Replacement exchange name. If omitted, the current name is reused.
-        exchange_matrix : numpy.ndarray, optional
+        exchange_matrix : (3, 3) numpy.ndarray, optional
             Replacement exchange matrix. If omitted, the current matrix is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        Exchange
+            New ``Exchange`` instance with the specified fields updated.
         """
         return Exchange(
             site_1=self.site_1 if site_1 is None else site_1,
@@ -217,6 +286,20 @@ class Exchange(SPWSerialisable):
     @staticmethod
     @expects_keys("name, site_1, site_2, cell_offset")
     def _base_deserialisation(json, context: SPWSerialisationContext):
+        """Deserialise base properties of an exchange term.
+
+        Parameters
+        ----------
+        json : dict
+            Serialised dictionary containing base exchange properties.
+        context : SPWSerialisationContext
+            Deserialisation context.
+
+        Returns
+        -------
+        ExchangeBaseDeserialisation
+            Container holding the deserialised base exchange properties.
+        """
         return ExchangeBaseDeserialisation(
             name=json["name"],
             site_1=Site._deserialise(json["site_1"], context),
@@ -232,6 +315,18 @@ class Exchange(SPWSerialisable):
         }
 
     def _exchange_serialise(self, context: SPWSerialisationContext) -> dict:
+        """Serialise exchange-specific data to a dictionary.
+
+        Parameters
+        ----------
+        context : SPWSerialisationContext
+            Serialisation context.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the serialised exchange data.
+        """
         json = self._base_serialisation(context)
         json["matrix"] = numpy_serialise(self._exchange_matrix)
         return json
@@ -246,6 +341,20 @@ class Exchange(SPWSerialisable):
     @staticmethod
     @expects_keys("matrix")
     def _exchange_deserialise(data: dict, context: SPWSerialisationContext):
+        """Deserialise an ``Exchange`` instance from a data dictionary.
+
+        Parameters
+        ----------
+        data : dict
+            Dictionary containing serialised exchange data.
+        context : SPWSerialisationContext
+            Deserialisation context.
+
+        Returns
+        -------
+        Exchange
+            Deserialised ``Exchange`` instance.
+        """
         base = Exchange._base_deserialisation(data, context)
 
         return Exchange(
@@ -257,14 +366,37 @@ class Exchange(SPWSerialisable):
             metadata=base.metadata)
 
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        Returns
+        -------
+        bool
+            ``True`` if the exchange matrix is symmetric within tolerance, ``False``
+            otherwise.
+        """
         return np.all(np.abs(self.exchange_matrix - self.exchange_matrix.T) < tolerances.IS_ZERO_TOL)
 
     def _obeys_symmetry(self,
                         unit_cell: UnitCell,
                         identity_operations: set[SpaceOperation],
                         inversion_operations: set[SpaceOperation]) -> bool:
-        """ Main logic for symmetry checking """
+        """Main logic for symmetry checking.
+
+        Parameters
+        ----------
+        unit_cell : UnitCell
+            Unit cell of the structure.
+        identity_operations : set of SpaceOperation
+            Symmetry operations that map the site pair to itself in the same order.
+        inversion_operations : set of SpaceOperation
+            Symmetry operations that swap the two sites in the pair.
+
+        Returns
+        -------
+        bool
+            ``True`` if the exchange matrix obeys the given symmetry operations,
+            ``False`` otherwise.
+        """
         # We want the exchange matrix in lattice units
         exchange_matrix = unit_cell._xyz_spins @ self._exchange_matrix @ unit_cell._xyz_spins.T
         # exchange_matrix = unit_cell._xyz_spins_inv @ self._exchange_matrix @ unit_cell._xyz_spins_inv.T
@@ -315,7 +447,19 @@ class Exchange(SPWSerialisable):
         return True
 
     def obeys_symmetry(self, structure: "Structure") -> bool:
-        """ Check that this exchange is consistent with the symmetry group """
+        """Check that this exchange is consistent with the symmetry group.
+
+        Parameters
+        ----------
+        structure : Structure
+            Crystal structure defining the unit cell and space group.
+
+        Returns
+        -------
+        bool
+            ``True`` if the exchange is invariant under the symmetry operations
+            of ``structure``, ``False`` otherwise.
+        """
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
 
@@ -328,14 +472,38 @@ class Exchange(SPWSerialisable):
                       site_1: Site,
                       site_2: Site,
                       cell_offset: CellOffsetCoercible = (0,0,0)) -> "Exchange":
-        """ Copy this exchange using symmetry operations """
-        # We want to copy the exchange under symmetry operations
-        # There might be more than one symmetry operation that maps the pair of sites
-        #  however, the effect on the exchange should be the same for all these operations,
-        #  this means we can just pick an arbitrary one.
-        # If this turns out not to be the case, then exchange itself does not need to obey the
-        # symmetry constraints
+        """Copy this exchange using symmetry operations.
 
+        Parameters
+        ----------
+        structure : Structure
+            Crystal structure defining the unit cell and space group.
+        site_1 : Site
+            First target lattice site.
+        site_2 : Site
+            Second target lattice site.
+        cell_offset : CellOffsetCoercible, optional
+            Unit-cell offset for the copied exchange. Default is ``(0, 0, 0)``.
+
+        Returns
+        -------
+        Exchange
+            New ``Exchange`` instance mapped to ``(site_1, site_2)`` by symmetry.
+
+        Raises
+        ------
+        ValueError
+            If this exchange does not obey the symmetry constraints of ``structure``,
+            or if ``(site_1, site_2)`` is not related to the original site pair by
+            symmetry.
+
+        Notes
+        -----
+        There might be more than one symmetry operation that maps the pair of sites;
+        however, the effect on the exchange should be the same for all these
+        operations, meaning an arbitrary matching operation can be chosen when the
+        exchange obeys the symmetry constraints.
+        """
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
 
@@ -367,7 +535,31 @@ class Exchange(SPWSerialisable):
                       include_original=False,
                       specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT
                       ) -> list["Exchange"]:
-        """ Make multiple copies of this exchange so that symmetry is satisfied """
+        """Make multiple copies of this exchange so that symmetry is satisfied.
+
+        Parameters
+        ----------
+        structure : Structure
+            Crystal structure defining the unit cell, sites, and space group.
+        include_original : bool, optional
+            Whether to include this original exchange in the returned list.
+            Default is ``False``.
+        specialisation_rounding_exponent : int, optional
+            Decimal exponent used to round exchange matrix entries when specialising
+            generated exchanges, or ``None`` for no rounding. Default is
+            ``tolerances.SPECIALISE_ROUNDING_EXPONENT``.
+
+        Returns
+        -------
+        list of Exchange
+            Symmetry-equivalent exchanges generated across the structure, specialised
+            to the narrowest applicable ``Exchange`` subclass.
+
+        Raises
+        ------
+        ValueError
+            If this exchange does not obey the symmetry constraints of ``structure``.
+        """
         # Get the symmetry related sites
 
         if not self.obeys_symmetry(structure):
@@ -462,7 +654,19 @@ class Exchange(SPWSerialisable):
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Convert this to a specialised exchange type """
+        """Convert this to a specialised exchange type.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        Exchange or None
+            Specialised exchange instance if compatible with this class, or ``None``
+            otherwise.
+        """
         return exchange
 
     @property
@@ -568,6 +772,11 @@ class HeisenbergExchange(Exchange):
         """Return whether this is a symmetric exchange.
 
         A Heisenberg exchange is always symmetric, so this always returns ``True``.
+
+        Returns
+        -------
+        bool
+            Always ``True``.
         """
         return True
 
@@ -583,9 +792,9 @@ class HeisenbergExchange(Exchange):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
@@ -595,6 +804,11 @@ class HeisenbergExchange(Exchange):
             Replacement exchange coefficient. If omitted, the current coefficient is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        HeisenbergExchange
+            New ``HeisenbergExchange`` instance with the specified fields updated.
         """
         return HeisenbergExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -608,7 +822,19 @@ class HeisenbergExchange(Exchange):
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Create a specialised version of this exchange """
+        """Create a specialised version of this exchange.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        HeisenbergExchange or None
+            ``HeisenbergExchange`` instance if ``exchange`` has an isotropic diagonal
+            matrix, or ``None`` otherwise.
+        """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0,0] == m[1,1] and m[1,1] == m[2,2]:
             return HeisenbergExchange(
@@ -725,6 +951,11 @@ class DiagonalExchange(Exchange):
         """Return whether this is a symmetric exchange.
 
         A diagonal exchange is always symmetric, so this always returns ``True``.
+
+        Returns
+        -------
+        bool
+            Always ``True``.
         """
         return True
 
@@ -742,9 +973,9 @@ class DiagonalExchange(Exchange):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
@@ -758,6 +989,11 @@ class DiagonalExchange(Exchange):
             Replacement z exchange coefficient. If omitted, the current coefficient is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        DiagonalExchange
+            New ``DiagonalExchange`` instance with the specified fields updated.
         """
         return DiagonalExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -772,7 +1008,19 @@ class DiagonalExchange(Exchange):
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Create a specialised version of this exchange """
+        """Create a specialised version of this exchange.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        DiagonalExchange or None
+            ``DiagonalExchange`` instance if ``exchange`` has a diagonal matrix,
+            or ``None`` otherwise.
+        """
         m = exchange.exchange_matrix
         if is_diagonal(m):
             return DiagonalExchange(
@@ -864,6 +1112,11 @@ class XYExchange(Exchange):
         """Return whether this is a symmetric exchange.
 
         An XY exchange is always symmetric, so this always returns ``True``.
+
+        Returns
+        -------
+        bool
+            Always ``True``.
         """
         return True
 
@@ -878,9 +1131,9 @@ class XYExchange(Exchange):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
@@ -890,6 +1143,11 @@ class XYExchange(Exchange):
             Replacement exchange coefficient. If omitted, the current coefficient is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        XYExchange
+            New ``XYExchange`` instance with the specified fields updated.
         """
         return XYExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -902,7 +1160,19 @@ class XYExchange(Exchange):
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Create a specialised version of this exchange """
+        """Create a specialised version of this exchange.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        XYExchange or None
+            ``XYExchange`` instance if ``exchange`` has an XY diagonal matrix,
+            or ``None`` otherwise.
+        """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0,0] == m[1,1] and m[2,2] == 0:
             return XYExchange(
@@ -1016,9 +1286,9 @@ class XXZExchange(Exchange):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
@@ -1030,6 +1300,11 @@ class XXZExchange(Exchange):
             Replacement z exchange coefficient. If omitted, the current coefficient is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        XXZExchange
+            New ``XXZExchange`` instance with the specified fields updated.
         """
         return XXZExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -1043,12 +1318,29 @@ class XXZExchange(Exchange):
         """Return whether this is a symmetric exchange.
 
         An XXZ exchange is always symmetric, so this always returns ``True``.
+
+        Returns
+        -------
+        bool
+            Always ``True``.
         """
         return True
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Create a specialised version of this exchange """
+        """Create a specialised version of this exchange.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        XXZExchange or None
+            ``XXZExchange`` instance if ``exchange`` has an XXZ diagonal matrix,
+            or ``None`` otherwise.
+        """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0,0] == m[1,1]:
             return XXZExchange(
@@ -1146,9 +1438,9 @@ class IsingExchange(Exchange):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
@@ -1158,6 +1450,11 @@ class IsingExchange(Exchange):
             Replacement z exchange coefficient. If omitted, the current coefficient is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        IsingExchange
+            New ``IsingExchange`` instance with the specified fields updated.
         """
         return IsingExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -1171,12 +1468,29 @@ class IsingExchange(Exchange):
         """Return whether this is a symmetric exchange.
 
         An Ising exchange is always symmetric, so this always returns ``True``.
+
+        Returns
+        -------
+        bool
+            Always ``True``.
         """
         return True
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Create a specialised version of this exchange """
+        """Create a specialised version of this exchange.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        IsingExchange or None
+            ``IsingExchange`` instance if ``exchange`` has an Ising (z-only) diagonal
+            matrix, or ``None`` otherwise.
+        """
         m = exchange.exchange_matrix
         if is_diagonal(m) and m[0, 0] == 0 and m[1, 1] == 0:
             return IsingExchange(
@@ -1298,9 +1612,9 @@ class DMExchange(Exchange):
 
         Parameters
         ----------
-        site_1 : LatticeSite, optional
+        site_1 : Site, optional
             Replacement first lattice site. If omitted, the current site is reused.
-        site_2 : LatticeSite, optional
+        site_2 : Site, optional
             Replacement second lattice site. If omitted, the current site is reused.
         cell_offset : CellOffset, optional
             Replacement unit-cell offset. If omitted, the current offset is reused.
@@ -1314,6 +1628,11 @@ class DMExchange(Exchange):
             Replacement z D-vector component. If omitted, the current component is reused.
         metadata : ExchangeMetadata, optional
             Replacement metadata. If omitted, the current metadata is copied.
+
+        Returns
+        -------
+        DMExchange
+            New ``DMExchange`` instance with the specified fields updated.
         """
         return DMExchange(
                 site_1=self.site_1 if site_1 is None else site_1,
@@ -1327,12 +1646,30 @@ class DMExchange(Exchange):
 
 
     def is_symmetric(self):
-        """Return whether this is a symmetric exchange."""
+        """Return whether this is a symmetric exchange.
+
+        Returns
+        -------
+        bool
+            ``True`` if all D-vector components are zero, ``False`` otherwise.
+        """
         return self.d_x == 0 and self.d_y == 0 and self.d_z == 0
 
     @staticmethod
     def _specialise(exchange: "Exchange") -> Optional["Exchange"]:
-        """ Create a specialised version of this exchange """
+        """Create a specialised version of this exchange.
+
+        Parameters
+        ----------
+        exchange : Exchange
+            Exchange instance to specialise.
+
+        Returns
+        -------
+        DMExchange or None
+            ``DMExchange`` instance if ``exchange`` has an antisymmetric matrix,
+            or ``None`` otherwise.
+        """
         m = exchange.exchange_matrix
 
         if not np.all(np.diagonal(m) == 0):
@@ -1363,18 +1700,29 @@ lowercase_exchange_lookup = {exchange.exchange_type.lower(): exchange for exchan
 _specialisation_search = [HeisenbergExchange, XYExchange,  XXZExchange, IsingExchange, DiagonalExchange, DMExchange]
 
 def specialise_exchange(exchange: Exchange, rounding_exponent: int | None = None):
-    """ Find the narrowest exchange subclass to fit the exchange """
-    # We need to run this on rounded matrices to deal with numerical inaccuracies
-    # We could make specialisation method deal with this individually,
-    # but we can also just give the rounded matrix to the function.
-    #
-    # Ideally, we don't round, so if something specialises without rounding, we just
-    # return that, we can check this by doing both the unrounded and rounded version
-    # and returning the unrounded on if it has the same class as the rounded one
-    #
-    # If we don't allow rounding, i.e. rounding exponent = None, then we can just do
-    # one half of this and return the result
+    """Find the narrowest exchange subclass to fit the exchange.
 
+    Parameters
+    ----------
+    exchange : Exchange
+        Exchange term to specialise.
+    rounding_exponent : int, optional
+        Number of decimal places to round the exchange matrix to when testing for
+        specialised forms, or ``None`` to disable rounding. Default is ``None``.
+
+    Returns
+    -------
+    Exchange
+        Specialised ``Exchange`` subclass instance, or the original/general
+        ``Exchange`` if no narrower subclass matches.
+
+    Notes
+    -----
+    To handle numerical inaccuracies when ``rounding_exponent`` is provided, both
+    the unrounded and rounded exchange matrices are tested against candidate
+    subclasses. If both specialise to the same class, the unrounded specialised
+    exchange is returned; otherwise, the rounded specialised exchange is returned.
+    """
     unrounded_specialised = exchange
 
 

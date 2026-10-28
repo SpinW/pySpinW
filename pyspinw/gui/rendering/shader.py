@@ -1,4 +1,4 @@
-""" Base class for the shader interface """
+"""Base class for the shader interface."""
 
 from abc import ABC, abstractmethod
 
@@ -7,10 +7,19 @@ from pyspinw.gui.rendering.load_shaders import load_shaders
 from OpenGL.GL import *
 
 class Shader(ABC):
-    """ Base class for shader objects
+    """Base class for shader objects.
 
     These objects must be initialised in the initialiseGL section of an OpenGLWidget, or, at least, after open gl
     has been started up.
+
+    Attributes
+    ----------
+    vertex_shader : str
+        Name of the vertex shader resource.
+    fragment_shader : str
+        Name of the fragment shader resource.
+    shader_program : int
+        Linked OpenGL shader program handle.
     """
 
     vertex_shader = "default_vertex"
@@ -21,10 +30,9 @@ class Shader(ABC):
 
     @abstractmethod
     def _set_uniforms(self):
-        """ Set up shader variables"""
+        """Set up shader variables."""
 
     def use(self):
-        """ Call to set this shader for use"""
+        """Call to set this shader for use."""
         glUseProgram(self.shader_program)
         self._set_uniforms()
-

@@ -1,4 +1,4 @@
-"""Different Kinds of samples"""
+"""Different kinds of samples."""
 
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -22,7 +22,18 @@ from pyspinw.tolerances import tolerances
 # pylint: disable=R0903
 
 class Sample(ABC, SPWSerialisable):
-    """Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc)"""
+    """Representation of the macrostructure of a sample used in an experiment (Twin, Powder etc).
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Spin Hamiltonian of the system.
+
+    Attributes
+    ----------
+    hamiltonian : Hamiltonian
+        Spin Hamiltonian of the system.
+    """
 
     serialisation_name = "sample"
     sample_name = "<base-class>"
@@ -34,7 +45,22 @@ class Sample(ABC, SPWSerialisable):
                  path: Path,
                  field: ArrayLike | None = None,
                  use_rust: bool=True):
+        """Calculate sorted positive magnon energies along a path.
 
+        Parameters
+        ----------
+        path : Path
+            Reciprocal-space path along which to evaluate energies.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+
+        Returns
+        -------
+        list of numpy.ndarray
+            Sorted positive mode energies at each q-point.
+        """
         return self.hamiltonian.sorted_positive_energies(path, field=field, use_rust=use_rust)
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
@@ -48,12 +74,36 @@ class Sample(ABC, SPWSerialisable):
 
     @abstractmethod
     def _sample_serialise(self, context: SPWSerialisationContext):
-        """ Serialise the data for specific kind of sample """
+        """Serialise the data for specific kind of sample.
+
+        Parameters
+        ----------
+        context : SPWSerialisationContext
+            Serialisation context.
+
+        Returns
+        -------
+        dict
+            Serialised sample data.
+        """
 
     @staticmethod
     @abstractmethod
     def _sample_deserialise(json, context: SPWDeserialisationContext):
-        """ Deserialise the data for this kind of sample """
+        """Deserialise the data for this kind of sample.
+
+        Parameters
+        ----------
+        json : dict
+            Serialised sample dictionary.
+        context : SPWDeserialisationContext
+            Deserialisation context.
+
+        Returns
+        -------
+        Sample
+            Deserialised sample instance.
+        """
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
         return {"type": self.sample_name,
@@ -66,15 +116,39 @@ class Sample(ABC, SPWSerialisable):
 
     @abstractmethod
     def _sample_serialise(self, context: SPWSerialisationContext):
-        """ Serialise the data for specific kind of sample """
+        """Serialise the data for specific kind of sample.
+
+        Parameters
+        ----------
+        context : SPWSerialisationContext
+            Serialisation context.
+
+        Returns
+        -------
+        dict
+            Serialised sample data.
+        """
 
     @staticmethod
     @abstractmethod
     def _sample_deserialise(json, context: SPWDeserialisationContext):
-        """ Deserialise the data for this kind of sample """
+        """Deserialise the data for this kind of sample.
+
+        Parameters
+        ----------
+        json : dict
+            Serialised sample dictionary.
+        context : SPWDeserialisationContext
+            Deserialisation context.
+
+        Returns
+        -------
+        Sample
+            Deserialised sample instance.
+        """
 
 class Sample3D(Sample):
-    """ Sample where the direction of q matters"""
+    """Sample where the direction of q matters."""
 
     @abstractmethod
     def _energies_and_intensities(self,
@@ -83,14 +157,50 @@ class Sample3D(Sample):
                                  use_rust: bool = True,
                                  use_rotating: bool=True,
                                  intensity_unit: IntensityUnits | str='cell',):
-        """ Abstract method to get the energies and intensities """
+        """Abstract method to get the energies and intensities.
+
+        Parameters
+        ----------
+        points : numpy.ndarray
+            Array of 3D q-points of shape ``(n_q, 3)``.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        use_rotating : bool, default=True
+            Whether to use rotating-frame coordinates.
+        intensity_unit : IntensityUnits or str, default='cell'
+            Unit system for calculated intensities.
+
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies.
+        intensities : list or numpy.ndarray
+            Calculated mode intensities.
+        """
 
     @check_sizes(field=(3,), allow_nones=True)
     def energies(self,
                  path: Path,
                  field: ArrayLike | None = None,
                  use_rust: bool = True) -> list[np.ndarray]:
-        """ Get the energies along a specified path """
+        """Get the energies along a specified path.
+
+        Parameters
+        ----------
+        path : Path
+            Reciprocal-space path along which to evaluate energies.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+
+        Returns
+        -------
+        list of numpy.ndarray
+            Sorted positive mode energies along `path`.
+        """
         return self._energies(path, field, use_rust)
 
 
@@ -100,7 +210,28 @@ class Sample3D(Sample):
                                  use_rust: bool = True,
                                  use_rotating: bool = True,
                                  intensity_unit: IntensityUnits | str = 'cell'):
-        """ Get energy and intensity data"""
+        """Get energy and intensity data.
+
+        Parameters
+        ----------
+        path : Path
+            Reciprocal-space path along which to evaluate energies and intensities.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        use_rotating : bool, default=True
+            Whether to use rotating-frame coordinates.
+        intensity_unit : IntensityUnits or str, default='cell'
+            Unit system for calculated intensities.
+
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies at each q-point along `path`.
+        intensities : list or numpy.ndarray
+            Calculated mode intensities at each q-point along `path`.
+        """
         return self._energies_and_intensities(
             path.q_points(),
             field=field,
@@ -119,9 +250,41 @@ class Sample3D(Sample):
                        new_figure: bool=True,
                        use_rust: bool=True,
                        use_rotating: bool=True,
-                       intensity_unit: IntensityUnits | str = 'cell',
-                       scale: str='linear'):
-        """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
+                       intensity_unit: IntensityUnits | str = 'cell'):
+        """Create a spaghetti diagram with intensity as colorfill overplotted by mode energies.
+
+        Parameters
+        ----------
+        path : Path
+            Reciprocal-space path to plot.
+        evect : array_like, optional
+            1D array of energy bin edges or centres in meV.
+        dE : float or callable, optional
+            Energy resolution broadening (FWHM in meV) or resolution function.
+        vmin : float, default=0
+            Minimum value for the color scale.
+        vmax : float, optional
+            Maximum value for the color scale.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        show : bool, default=True
+            If ``True``, call ``matplotlib.pyplot.show()``.
+        new_figure : bool, default=True
+            If ``True``, create a new matplotlib figure and axes.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        use_rotating : bool, default=True
+            Whether to use rotating-frame coordinates.
+        intensity_unit : IntensityUnits or str, default='cell'
+            Unit system for calculated intensities.
+        scale : str, default='linear'
+            Intensity scaling mode.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            The matplotlib figure if ``show=False``, otherwise ``None``.
+        """
         if new_figure:
             fig, ax = plt.subplots()
         else:
@@ -178,22 +341,33 @@ class Sample3D(Sample):
         Parameters
         ----------
         q_slice : Slice
-            2D slice object defining the grid of q-points. Energy bounds e_min
-            and e_max (in meV) are taken from this object.
-        vmin, vmax :
-            Color scale limits
-        field:
-            external field
-        show :
-            Whether to display the plot
-        new_figure :
-            Whether to create a new figure
-        use_rust, use_rotating, intensity_unit :
-            Same as energies_and_intensities
-        cmap :
-            Matplotlib colormap name
-        origin :
-            'lower' or 'upper' for matplotlib imshow origin
+            2D slice object defining the grid of q-points. Energy bounds
+            ``e_min`` and ``e_max`` (in meV) are taken from this object.
+        vmin : float, default=0
+            Minimum limit of the color scale.
+        vmax : float, optional
+            Maximum limit of the color scale.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        show : bool, default=True
+            Whether to display the plot.
+        new_figure : bool, default=True
+            Whether to create a new figure.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        use_rotating : bool, default=True
+            Whether to use rotating-frame coordinates.
+        intensity_unit : IntensityUnits or str, default='cell'
+            Unit system for calculated intensities.
+        cmap : str, default='magma_r'
+            Matplotlib colormap name.
+        origin : str, default='lower'
+            ``'lower'`` or ``'upper'`` for matplotlib ``imshow`` origin.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            The matplotlib figure if ``show=False``, otherwise ``None``.
         """
         if new_figure:
             fig, ax = plt.subplots()
@@ -275,17 +449,37 @@ class Sample3D(Sample):
 
 
 class Sample1D(Sample):
-    """ Sample where the direction of q does not matter
+    """Sample where the direction of q does not matter.
 
     An important difference from Sample3D is there's no option to just get energies,
     this is because they will form a continuum in 1D. The 3D q-energy curves can
-    be obtained from the Hamiltonian, they're just not exposed at this level
+    be obtained from the Hamiltonian, they're just not exposed at this level.
     """
 
 
 
 class CrystalDomain(SPWSerialisable):
-    """ Orientation and amount of crystalline domain (e.g. one of a twin, or a domain in the traditional sense) """
+    """Orientation and amount of crystalline domain (e.g. one of a twin, or a domain in the traditional sense).
+
+    Parameters
+    ----------
+    transformation : (3, 3) array_like
+        Orthonormal ``3x3`` transformation matrix describing the domain orientation.
+    weighting : float
+        Non-negative weight (relative volume fraction) of the domain.
+
+    Attributes
+    ----------
+    transformation : (3, 3) numpy.ndarray
+        Orthonormal ``3x3`` transformation matrix describing the domain orientation.
+    weighting : float
+        Non-negative weight of the domain.
+
+    Raises
+    ------
+    ValueError
+        If `transformation` is not orthonormal or if `weighting` is negative.
+    """
 
     serialisation_name = "crystal_domain"
 
@@ -321,7 +515,18 @@ CrystalDomainLike = CrystalDomain | tuple[ArrayLike, float]
 
 
 def _domain_like_to_domain(domain_like: CrystalDomainLike) -> CrystalDomain:
-    """ Converts CrystalDomainLike to CrystalDomain """
+    """Convert CrystalDomainLike to CrystalDomain.
+
+    Parameters
+    ----------
+    domain_like : CrystalDomain or tuple of (array_like, float)
+        Domain object or ``(transformation, weighting)`` tuple.
+
+    Returns
+    -------
+    CrystalDomain
+        Corresponding :class:`CrystalDomain` instance.
+    """
     if isinstance(domain_like, CrystalDomain):
         return domain_like
     else:
@@ -329,7 +534,13 @@ def _domain_like_to_domain(domain_like: CrystalDomainLike) -> CrystalDomain:
 
 
 class SingleCrystal(Sample3D):
-    """Specifies a single crystal sample"""
+    """Specifies a single crystal sample.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Spin Hamiltonian of the single crystal.
+    """
 
     sample_name = "single_crystal"
 
@@ -343,7 +554,28 @@ class SingleCrystal(Sample3D):
                                  use_rust: bool = True,
                                  use_rotating: bool = True,
                                  intensity_unit: IntensityUnits | str = 'cell'):
-        """ Get energy and intensity data"""
+        """Get energy and intensity data.
+
+        Parameters
+        ----------
+        q_points : numpy.ndarray
+            Array of 3D q-points of shape ``(n_q, 3)``.
+        field : array_like, optional
+            External magnetic field vector of shape ``(3,)``.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        use_rotating : bool, default=True
+            Whether to use rotating-frame coordinates.
+        intensity_unit : IntensityUnits or str, default='cell'
+            Unit system for calculated intensities.
+
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies.
+        intensities : list or numpy.ndarray
+            Calculated mode intensities.
+        """
         # Note: we don't use the _ method because we want to ignore non-magnetic sites
         return self.hamiltonian._energies_and_intensities(
             q_points, field=field, use_rust=use_rust, use_rotating=use_rotating, intensity_unit=intensity_unit)
@@ -358,7 +590,20 @@ class SingleCrystal(Sample3D):
 
 
 class Multidomain(Sample3D):
-    """Sample consisting of multiple domains"""
+    """Sample consisting of multiple domains.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Spin Hamiltonian of the system.
+    domains : list of CrystalDomainLike
+        List of crystalline domains or ``(transformation, weighting)`` tuples.
+
+    Attributes
+    ----------
+    weights : list of float
+        Normalised domain weights summing to ``1.0``.
+    """
 
     sample_name = "multidomain"
 
@@ -449,6 +694,23 @@ class Twin(Multidomain):
 
     This is a special case of `Multidomain`, which can use completely general transformations,
     and have more than one "twin".
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Spin Hamiltonian of the system.
+    twinning_plane_normal : (3,) array_like
+        Normal vector to the twinning mirror plane.
+    second_twin_fraction : float
+        Volume fraction of the second twin domain, between ``0`` and ``1``.
+    units : CoordsUnits or str, default='lu'
+        Coordinate units of `twinning_plane_normal` (``'lu'`` or ``'xyz'``).
+
+    Raises
+    ------
+    ValueError
+        If `second_twin_fraction` is not in ``[0, 1]`` or if `units` is not
+        recognised.
     """
 
     sample_name = "twin"
@@ -513,13 +775,54 @@ class Twin(Multidomain):
         )
 
 class ScalingMethod(Enum):
-    """ Scaling methods for plots"""
+    """Scaling methods for plots."""
 
     LINEAR = 'linear'
     LOG = 'log'
 
 class ParameterizedPowderSpectrum:
-    """ A powder spectrum that has been parameterised"""
+    """A powder spectrum that has been parameterised.
+
+    Calling an instance with parameter values evaluates the powder spectrum at
+    those specified parameter values.
+
+    Parameters
+    ----------
+    powder : Powder
+        Powder sample to parameterise.
+    parameters : Sequence of ParametrizationType
+        Parameter specifications passed to :meth:`Hamiltonian.parameterize`.
+    path : Path1D or EmpiricalPath1D or array_like
+        1D path or array of ``|q|`` magnitudes in inverse Angstroms.
+    n_samples : int, default=100
+        Approximate number of spherical orientation samples per ``|q|`` shell.
+    method : SphericalPointGeneratorType or str, default='fibonacci'
+        Spherical point sampling method.
+    min_energy : float, optional
+        Minimum energy for histogramming in meV.
+    max_energy : float, optional
+        Maximum energy for histogramming in meV.
+    n_energy_bins : int, optional
+        Number of energy bins.
+    energy_stddev : float, optional
+        Standard deviation for Gaussian energy broadening in meV.
+    random_seed : int, optional
+        Random seed for stochastic spherical sampling methods.
+    use_rust : bool, default=True
+        Whether to use the Rust backend for calculation.
+    find_ground_state_with : dict, optional
+        Keyword arguments forwarded to ground-state energy minimisation when
+        updating parameters.
+    ignore_imaginary : bool, default=False
+        If ``True``, zero out intensities of modes with significant imaginary
+        energy components.
+
+    Attributes
+    ----------
+    parameterised_hamiltonian : callable
+        Parameterized Hamiltonian factory returned by
+        :meth:`Hamiltonian.parameterize`.
+    """
 
     def __init__(self,
                  powder: "Powder",
@@ -552,8 +855,7 @@ class ParameterizedPowderSpectrum:
                                 *parameters,
                                            find_ground_state_with=find_ground_state_with)
 
-    def __call__(self, *parameters):
-        """ Evaluate the powder spectrum at specified parameter values """
+    def __call__(self, *parameters):  # noqa: D102
         powder = Powder(self.parameterised_hamiltonian(*parameters))
         return powder.spectrum(
             path=self._path,
@@ -569,7 +871,13 @@ class ParameterizedPowderSpectrum:
 
 
 class Powder(Sample1D):
-    """Sample is a powder"""
+    """Sample is a powder.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Spin Hamiltonian of the system.
+    """
 
     def __init__(self, hamiltonian: Hamiltonian):
 
@@ -586,7 +894,43 @@ class Powder(Sample1D):
                  random_seed: int | None = None,
                  use_rust: bool = True,
                  ignore_imaginary: bool = False):
-        """ Get the powder spectrum """
+        """Get the powder spectrum.
+
+        Parameters
+        ----------
+        path : Path1D or EmpiricalPath1D or array_like
+            1D path or array of ``|q|`` magnitudes in inverse Angstroms.
+        n_samples : int, default=100
+            Approximate number of spherical orientation samples per ``|q|`` shell.
+        method : SphericalPointGeneratorType or str, default='fibonacci'
+            Spherical point sampling method.
+        min_energy : float, optional
+            Minimum energy for histogramming in meV.
+        max_energy : float, optional
+            Maximum energy for histogramming in meV.
+        n_energy_bins : int, optional
+            Number of energy bins. Defaults to ``n_samples // 4``.
+        energy_stddev : float, optional
+            Standard deviation for Gaussian energy broadening in meV. If ``None``,
+            histogram binning is used.
+        random_seed : int, optional
+            Random seed for stochastic spherical sampling methods.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        ignore_imaginary : bool, default=False
+            If ``True``, zero out intensities of modes with significant imaginary
+            energy components.
+
+        Returns
+        -------
+        q_values : numpy.ndarray
+            1D array of ``|q|`` magnitudes.
+        energy_bin_centres : numpy.ndarray
+            1D array of energy bin centres in meV.
+        output : numpy.ndarray
+            2D array of powder-averaged intensities of shape
+            ``(len(q_values), n_energy_bins)``.
+        """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
@@ -669,7 +1013,42 @@ class Powder(Sample1D):
             use_rust: bool = True,
             find_ground_state_with: dict | None = None,
             ignore_imaginary: bool = False):
-        """ Get the powder spectrum as a function of parameters """
+        """Get the powder spectrum as a function of parameters.
+
+        Parameters
+        ----------
+        parameters : Sequence of ParametrizationType
+            Parameter specifications passed to :meth:`Hamiltonian.parameterize`.
+        path : Path1D or EmpiricalPath1D or array_like
+            1D path or array of ``|q|`` magnitudes in inverse Angstroms.
+        n_samples : int, default=100
+            Approximate number of spherical orientation samples per ``|q|`` shell.
+        method : SphericalPointGeneratorType or str, default='fibonacci'
+            Spherical point sampling method.
+        min_energy : float, optional
+            Minimum energy for histogramming in meV.
+        max_energy : float, optional
+            Maximum energy for histogramming in meV.
+        n_energy_bins : int, optional
+            Number of energy bins.
+        energy_stddev : float, optional
+            Standard deviation for Gaussian energy broadening in meV.
+        random_seed : int, optional
+            Random seed for stochastic spherical sampling methods.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        find_ground_state_with : dict, optional
+            Keyword arguments forwarded to ground-state energy minimisation when
+            updating parameters.
+        ignore_imaginary : bool, default=False
+            If ``True``, zero out intensities of modes with significant imaginary
+            energy components.
+
+        Returns
+        -------
+        ParameterizedPowderSpectrum
+            Callable parameterized powder spectrum object.
+        """
         return ParameterizedPowderSpectrum(
                         self,
                         parameters,
@@ -700,7 +1079,45 @@ class Powder(Sample1D):
                       use_rust: bool = True,
                       data: ArrayLike | None = None,
                       ignore_imaginary: bool = False):
-        """ Show the powder spectrum """
+        """Show the powder spectrum.
+
+        Parameters
+        ----------
+        path : Path1D or EmpiricalPath1D or array_like or tuple
+            1D path or array of ``|q|`` magnitudes in inverse Angstroms.
+        n_samples : int, default=100
+            Approximate number of spherical orientation samples per ``|q|`` shell.
+        method : SphericalPointGeneratorType or str, default='fibonacci'
+            Spherical point sampling method.
+        min_energy : float, optional
+            Minimum energy for histogramming in meV.
+        max_energy : float, optional
+            Maximum energy for histogramming in meV.
+        n_energy_bins : int, optional
+            Number of energy bins.
+        energy_stddev : float, optional
+            Standard deviation for Gaussian energy broadening in meV.
+        random_seed : int, optional
+            Random seed for stochastic spherical sampling methods.
+        scaling_method : ScalingMethod or str, default='linear'
+            Intensity scaling method (``'linear'`` or ``'log'``).
+        show : bool, default=True
+            If ``True``, call ``matplotlib.pyplot.show()``.
+        new_figure : bool, default=True
+            If ``True``, create a new matplotlib figure.
+        use_rust : bool, default=True
+            Whether to use the Rust backend for calculation.
+        data : array_like, optional
+            Precomputed 2D spectrum array to plot instead of recomputing.
+        ignore_imaginary : bool, default=False
+            If ``True``, zero out intensities of modes with significant imaginary
+            energy components.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            The matplotlib figure if ``show=False``, otherwise ``None``.
+        """
         if not isinstance(path, Path1DBase):
             path = EmpiricalPath1D(path)
 
@@ -754,10 +1171,17 @@ class Powder(Sample1D):
         return Powder(Hamiltonian._deserialise(json["hamiltonian"], context))
 
 class MagneticFieldPowder(Sample1D):
-    """ Powder in magnetic field (slightly different parallelisation method to Powder)"""
+    """Powder in magnetic field (slightly different parallelisation method to Powder)."""
+
+    def __init__(self, hamiltonian: Hamiltonian):
+        raise NotImplementedError("Powder in magnetic field not implemented yet")
 
 class TwoMagnon(Sample3D):
-    """ Two magnon excitations in a single crystal"""
+    """Two magnon excitations in a single crystal."""
+
+    def __init__(self, hamiltonian: Hamiltonian):
+        raise NotImplementedError("Two magnon calculation not implemented yet")
+
 
 _all_samples = [SingleCrystal, Twin, Multidomain, Powder]
 _all_samples_lookup = {cls.sample_name: cls for cls in _all_samples}

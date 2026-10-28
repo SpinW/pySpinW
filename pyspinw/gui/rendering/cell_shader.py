@@ -1,4 +1,4 @@
-""" Shader for unit- and super- cells """
+"""Shader for unit- and super- cells."""
 
 import numpy as np
 
@@ -8,7 +8,19 @@ from pyspinw.gui.rendering.shader import Shader
 from OpenGL.GL import *
 
 class CellShader(Shader):
-    """ Shader for unit- and super- cells """
+    """Shader for unit- and super- cells.
+
+    Attributes
+    ----------
+    vertex_shader : str
+        Name of the vertex shader resource.
+    fragment_shader : str
+        Name of the fragment shader resource.
+    model_matrix : (4, 4) numpy.ndarray
+        Model transformation matrix.
+    projection_view : (4, 4) numpy.ndarray
+        Combined projection-view matrix.
+    """
 
     vertex_shader = "simple_vertex"
     fragment_shader = "cell_fragment"
@@ -24,12 +36,12 @@ class CellShader(Shader):
 
     @property
     def camera(self):
-        """ Get the current camera"""
+        """Current camera used by the shader."""
         return self._camera
 
     @camera.setter
     def camera(self, camera: Camera):
-        """ Set the current camera and associated matrices"""
+        """Set the current camera and associated matrices."""
         self._camera = camera
 
         view = self.camera.view_matrix()

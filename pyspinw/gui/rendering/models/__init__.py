@@ -1,1 +1,1 @@
-""" Rendering submodule"""
+"""Rendering submodule."""

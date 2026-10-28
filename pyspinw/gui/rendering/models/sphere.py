@@ -1,4 +1,4 @@
-""" Sphere Model """
+"""Sphere Model."""
 
 import numpy as np
 from scipy.spatial import ConvexHull
@@ -8,7 +8,23 @@ from pyspinw.gui.rendering.model import Model
 
 
 class Sphere(Model):
-    """ 3D Model of a sphere """
+    """3D Model of a sphere.
+
+    Parameters
+    ----------
+    divisions : int
+        Number of geodesic subdivisions used to generate the sphere mesh.
+    radius : float, optional
+        Radius of the sphere. Default is ``1.0``.
+    padding : float, optional
+        Radial padding added to the sphere radius (e.g., for selection outlines).
+        Default is ``0.0``.
+
+    Attributes
+    ----------
+    vertices_and_normals : numpy.ndarray
+        Flattened ``float32`` array of interleaved vertex positions and normals.
+    """
 
     def __init__(self, divisions: int, radius: float=1.0, padding=0.0):
 

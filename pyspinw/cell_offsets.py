@@ -1,4 +1,4 @@
-""" Cell offsets (i.e. reference to a particular unit cell in a crystal)"""
+"""Cell offsets (i.e. reference to a particular unit cell in a crystal)."""
 import numpy as np
 
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext
@@ -6,7 +6,17 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext
 
 
 class CellOffset(SPWSerialisable):
-    """ Representation of the relative position of individual unit cells within the lattice """
+    """Representation of the relative position of individual unit cells within the lattice.
+
+    Parameters
+    ----------
+    i : int
+        First unit cell offset component along lattice vector :math:`a`.
+    j : int
+        Second unit cell offset component along lattice vector :math:`b`.
+    k : int
+        Third unit cell offset component along lattice vector :math:`c`.
+    """
 
     serialisation_name = "cell_offset"
 
@@ -19,31 +29,42 @@ class CellOffset(SPWSerialisable):
 
     @property
     def i(self):
-        """ First cell offset component"""
+        """First cell offset component."""
         return self._i
 
     @property
     def j(self):
-        """ Second cell offset component"""
+        """Second cell offset component."""
         return self._j
 
     @property
     def k(self):
-        """ Third cell offset component"""
+        """Third cell offset component."""
         return self._k
 
     @property
     def as_tuple(self):
-        """ As a tuple of ints"""
+        """As a tuple of ints."""
         return self._i, self._j, self._k
 
     @property
     def vector(self):
-        """ Vector of index (int array)"""
+        """Vector of index (int array)."""
         return self._vector
 
     def position_in_supercell(self, supercell_size: tuple[int, int, int]):
-        """ Get the position within a supercell, rather than an infinite crystal (do mods)"""
+        """Get the position within a supercell, rather than an infinite crystal (do mods).
+
+        Parameters
+        ----------
+        supercell_size : tuple of (int, int, int)
+            Dimensions ``(si, sj, sk)`` of the supercell in unit cells.
+
+        Returns
+        -------
+        CellOffset
+            Cell offset wrapped into the supercell via modulo arithmetic.
+        """
         si, sj, sk = supercell_size
 
         return CellOffset(
@@ -63,9 +84,28 @@ class CellOffset(SPWSerialisable):
 
     @staticmethod
     def coerce(cell_offset_or_data):
-        """ Convert a cell offset specification to a CellOffset object
+        """Convert a cell offset specification to a CellOffset object.
 
-        Input could be a tuple, None or CellOffset
+        Input could be a tuple, None or CellOffset.
+
+        Parameters
+        ----------
+        cell_offset_or_data : CellOffset or array_like of int or None
+            Cell offset instance, a 3-element sequence/array of integers, or
+            ``None`` (which defaults to ``(0, 0, 0)``).
+
+        Returns
+        -------
+        CellOffset
+            Coerced `CellOffset` instance.
+
+        Raises
+        ------
+        ValueError
+            If an array-like input does not have length 3 or does not contain
+            approximately integer values.
+        TypeError
+            If ``cell_offset_or_data`` is not a `CellOffset`, array-like, or ``None``.
         """
         if isinstance(cell_offset_or_data, CellOffset):
             return cell_offset_or_data
@@ -109,7 +149,22 @@ CellOffsetCoercible = CellOffset | tuple[int, int, int] | None
 
 
 def cell_offset_generator(a, b, c):
-    """ Iterator for cells in supercell """
+    """Iterator for cells in supercell.
+
+    Parameters
+    ----------
+    a : int
+        Number of unit cells along the first lattice direction.
+    b : int
+        Number of unit cells along the second lattice direction.
+    c : int
+        Number of unit cells along the third lattice direction.
+
+    Yields
+    ------
+    CellOffset
+        Each `CellOffset` ``(i, j, k)`` in the supercell grid.
+    """
     for i in range(a):
         for j in range(b):
             for k in range(c):

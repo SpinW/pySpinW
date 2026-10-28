@@ -1,4 +1,4 @@
-"""Methods for geodesic sampling"""
+"""Methods for geodesic sampling."""
 
 from collections import defaultdict
 
@@ -9,7 +9,7 @@ _ico_ring_h = np.sqrt(1 / 5)
 _ico_ring_r = np.sqrt(4 / 5)
 
 class Geodesic:
-    """ Points arranged pretty uniformly and regularly on a sphere"""
+    """Points arranged pretty uniformly and regularly on a sphere."""
 
     #
     # Need to define an icosahedron, upon which everything else is based
@@ -84,14 +84,23 @@ class Geodesic:
 
     @staticmethod
     def points_for_division_amount(n_divisions):
-        """ Get the number of points on the sphere for a given number of geodesic divisions
+        """Get the number of points on the sphere for a given number of geodesic divisions.
 
         In other words, how many sections is each edge of the initial icosahedron split into
         (not how many times it is divided in half, which might be what you think given some other
-        geodesic generation methods)
+        geodesic generation methods).
 
-        Icosahedron counts as 1 division
+        Icosahedron counts as 1 division.
 
+        Parameters
+        ----------
+        n_divisions : int
+            Number of edge subdivisions of the base icosahedron.
+
+        Returns
+        -------
+        int
+            Total number of vertices on the geodesic sphere.
         """
         return 10*n_divisions*n_divisions + 2
 
@@ -99,9 +108,19 @@ class Geodesic:
 
     @staticmethod
     def minimal_divisions_for_points(n_points):
-        """ What division number should I use if I want at least n_points points on my geodesic
+        """Determine the minimum division number needed for at least `n_points` points.
 
-        rounded (ciel) inverse of points_for_division_amount
+        Rounded (ceil) inverse of `points_for_division_amount`.
+
+        Parameters
+        ----------
+        n_points : int
+            Minimum desired number of points on the geodesic sphere.
+
+        Returns
+        -------
+        int
+            Minimum number of edge subdivisions required.
         """
         n_ish = np.sqrt((n_points - 2)/10)
 
@@ -109,20 +128,46 @@ class Geodesic:
 
     @staticmethod
     def by_point_count(n_points) -> tuple[np.ndarray, np.ndarray]:
-        """ Get point sample on a unit geodesic sphere, *at least* n_points will be returned
+        """Get point sample on a unit geodesic sphere, *at least* n_points will be returned.
 
-        Weights of each point are calculated by fractional spherical area of dual polyhedron, and total weight = 4pi
+        Weights of each point are calculated by fractional spherical area of dual polyhedron,
+        and total weight = 4pi.
+
+        Parameters
+        ----------
+        n_points : int
+            Minimum number of points to sample on the unit sphere.
+
+        Returns
+        -------
+        points : (N, 3) numpy.ndarray
+            Cartesian coordinates of points on the unit sphere.
+        weights : (N,) numpy.ndarray
+            Spherical area weights associated with each point.
         """
         return Geodesic.by_divisions(Geodesic.minimal_divisions_for_points(n_points))
 
     @staticmethod
     def by_divisions(n_divisions) -> tuple[np.ndarray, np.ndarray]:
-        """ Get point sample on a unit geodesic sphere
+        """Get point sample on a unit geodesic sphere.
 
         Points are created by dividing each face of an icosahedron into smaller triangles
-        so that each edge is split into n_divisions pieces
+        so that each edge is split into `n_divisions` pieces.
 
-        Weights of each point are calculated by fractional spherical area of dual polyhedron, and total weight = 4pi
+        Weights of each point are calculated by fractional spherical area of dual polyhedron,
+        and total weight = 4pi.
+
+        Parameters
+        ----------
+        n_divisions : int
+            Number of sections into which each icosahedron edge is divided.
+
+        Returns
+        -------
+        points : (N, 3) numpy.ndarray
+            Cartesian coordinates of points on the unit sphere.
+        weights : (N,) numpy.ndarray
+            Spherical area weights associated with each point.
         """
         # Check cache for pre-existing data
         if n_divisions in Geodesic._cache:
@@ -182,7 +227,18 @@ class Geodesic:
 
     @staticmethod
     def _calculate_weights(points) -> np.ndarray:
-        """Calculate the angular area associated with each point"""
+        """Calculate the angular area associated with each point.
+
+        Parameters
+        ----------
+        points : (N, 3) numpy.ndarray
+            Cartesian coordinates of points on the unit sphere.
+
+        Returns
+        -------
+        (N,) numpy.ndarray
+            Spherical polygon area weights for each point.
+        """
         z = np.array([0.0, 0.0, 1.0]) # Used in area calculation
 
         # Calculate convex hull to get the triangles, because it's easy
@@ -250,7 +306,18 @@ class Geodesic:
 
     @staticmethod
     def _rotation_matrix_to_z_vector(point_on_sphere: np.ndarray) -> np.ndarray:
-        """ Calculate *a* rotation matrix that moves a given point onto the z axis"""
+        """Calculate *a* rotation matrix that moves a given point onto the z axis.
+
+        Parameters
+        ----------
+        point_on_sphere : (3,) numpy.ndarray
+            Cartesian coordinates of a point on the unit sphere.
+
+        Returns
+        -------
+        (3, 3) numpy.ndarray
+            Rotation matrix mapping `point_on_sphere` onto the positive z-axis.
+        """
         # Find the rotation around the x axis
         y = point_on_sphere[1]
         z = point_on_sphere[2]

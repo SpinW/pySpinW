@@ -1,4 +1,12 @@
-""" Things needed specifically for deserialisation, basically a list of objects that can be serialised """
+"""Things needed specifically for deserialisation, basically a list of objects that can be serialised.
+
+Attributes
+----------
+serialisation_entry_classes : list of type
+    List of classes that can be specified in serialised JSON.
+serialisation_class_lookup : dict of {str: type}
+    Mapping from ``serialisation_name`` string to serialisable class.
+"""
 from pyspinw import CrystalDomain
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchange import Exchange

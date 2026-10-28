@@ -22,7 +22,13 @@ _anisotropy_id_counter = -1
 
 
 def _generate_unique_anisotropy_id():
-    """Generate a unique ID for each anisotropy currently loaded."""
+    """Generate a unique ID for each anisotropy currently loaded.
+
+    Returns
+    -------
+    int
+        Unique integer identifier for an anisotropy instance.
+    """
     global _anisotropy_id_counter  # noqa: PLW0603
     _anisotropy_id_counter += 1
     return _anisotropy_id_counter
@@ -31,14 +37,18 @@ def _generate_unique_anisotropy_id():
 class Anisotropy(SPWSerialisable):
     """Represent the anisotropy term at a given site.
 
+    The anisotropy matrix is defined in spinW style cartesian coordinates
+    (orthogonal but lattice aligned as best as possible).
+    Assuming spins are understood to be quantum numbers, units are energy.
+
     Parameters
     ----------
-    site
+    site : Site
         Lattice site to which the anisotropy term applies.
-    anisotropy_matrix
+    anisotropy_matrix : array_like
         3x3 matrix defining the anisotropy contribution for the site.
-    name
-        Optional name
+    name : str, optional
+        Optional name. Default is ``""``.
     """
 
     #: Type name used when serialising anisotropy terms to SPW data.
@@ -62,7 +72,7 @@ class Anisotropy(SPWSerialisable):
 
     @property
     def site(self):
-        """Get the site for this anisotropy."""
+        """Site for this anisotropy."""
         return self._site
 
     @property
@@ -74,7 +84,21 @@ class Anisotropy(SPWSerialisable):
             return self._anisotropy_matrix
 
     def _obeys_symmetry(self, unit_cell: UnitCell, operations: list[SpaceOperation]):
-        """ Main part of the check for whether the anisotropy matrix obeys symmetry """
+        """Main part of the check for whether the anisotropy matrix obeys symmetry.
+
+        Parameters
+        ----------
+        unit_cell : UnitCell
+            Unit cell defining the coordinate transformation to Cartesian space.
+        operations : list of SpaceOperation
+            Symmetry operations to check against the symmetrised anisotropy matrix.
+
+        Returns
+        -------
+        bool
+            ``True`` if the symmetrised anisotropy matrix is invariant under all
+            given operations, ``False`` otherwise.
+        """
         # We only care if it gives the same quadratic expression for the energy, not if the actual matrices
         # are the same, so, look at the symmetrised version (also multiples by 2, but that doesn't matter)
         m = self.anisotropy_matrix + self.anisotropy_matrix.T
@@ -89,7 +113,19 @@ class Anisotropy(SPWSerialisable):
         return True
 
     def obeys_symmetry(self, structure: Structure):
-        """Check that this anisotropy is consistent with the symmetry group"""
+        """Check that this anisotropy is consistent with the symmetry group.
+
+        Parameters
+        ----------
+        structure : Structure
+            Structure containing the space group and unit cell.
+
+        Returns
+        -------
+        bool
+            ``True`` if this anisotropy is invariant under the site symmetry
+            operations of ``structure``, ``False`` otherwise.
+        """
         spacegroup = structure.spacegroup
         unit_cell = structure.unit_cell
 
@@ -103,7 +139,26 @@ class Anisotropy(SPWSerialisable):
     def symmetry_copy(self,
                       structure: "Structure",
                       site: Site):
-        """ Copy this anisotropy using symmetry operations """
+        """Copy this anisotropy using symmetry operations.
+
+        Parameters
+        ----------
+        structure : Structure
+            Structure defining the space group and unit cell.
+        site : Site
+            Target site to which the anisotropy is copied.
+
+        Returns
+        -------
+        Anisotropy
+            New anisotropy instance transformed onto ``site``.
+
+        Raises
+        ------
+        ValueError
+            If this anisotropy does not obey symmetry constraints or if ``site``
+            is not related to the original site by symmetry.
+        """
         # We want to copy the anisotropy under symmetry operations
         # There might be more than one symmetry operation that maps the pair of sites
         #  however, the effect on the anisotropy should be the same for all these operations,
@@ -137,9 +192,29 @@ class Anisotropy(SPWSerialisable):
 
     def symmetry_fill(self,
                       structure: "Structure",
-                      include_original=False,
-                      specialisation_rounding_exponent: int | None = tolerances.SPECIALISE_ROUNDING_EXPONENT):
-        """ Make multiple copies of this anisotropy so that symmetry is satisfied """
+                      include_original=False):
+        """Make multiple copies of this anisotropy so that symmetry is satisfied.
+
+        Parameters
+        ----------
+        structure : Structure
+            Structure defining the space group, unit cell, and symmetry-related sites.
+        include_original : bool, optional
+            Whether to include the original anisotropy in the returned list.
+            Default is ``False``.
+
+        Returns
+        -------
+        list of Anisotropy
+            Symmetry-equivalent anisotropy terms specialised to their narrowest
+            subclass.
+
+        Raises
+        ------
+        ValueError
+            If this anisotropy does not obey the symmetry constraints of
+            ``structure.spacegroup``.
+        """
         # Get the symmetry related sites
 
         if not self.obeys_symmetry(structure):
@@ -205,6 +280,18 @@ class Anisotropy(SPWSerialisable):
 
 
     def _anisotropy_serialise(self, context: SPWSerialisationContext) -> dict:
+        """Serialise the anisotropy data to a dictionary.
+
+        Parameters
+        ----------
+        context : SPWSerialisationContext
+            Serialisation context for shared objects.
+
+        Returns
+        -------
+        dict
+            Serialised representation of the anisotropy fields.
+        """
         return {"site": self._site._serialise(context),
                 "anisotropy_matrix": numpy_serialise(self._anisotropy_matrix),
                 "name": self._name}
@@ -218,6 +305,21 @@ class Anisotropy(SPWSerialisable):
     @staticmethod
     @expects_keys("site, anisotropy_matrix, name")
     def _anisotropy_deserialise(json: dict, context: SPWDeserialisationContext):
+        """Deserialise an anisotropy instance from a dictionary.
+
+        Parameters
+        ----------
+        json : dict
+            Dictionary containing serialised ``site``, ``anisotropy_matrix``,
+            and ``name`` entries.
+        context : SPWDeserialisationContext
+            Deserialisation context for resolving shared objects.
+
+        Returns
+        -------
+        Anisotropy
+            Deserialised anisotropy instance.
+        """
         site = Site._deserialise(json["site"], context)
         anisotropy_matrix = numpy_deserialise(json["anisotropy_matrix"])
         return Anisotropy(site, anisotropy_matrix, json["name"])
@@ -230,7 +332,7 @@ class Anisotropy(SPWSerialisable):
 
     @property
     def name(self):
-        """Name of this anisotropy"""
+        """Name of this anisotropy."""
         return self._name
 
     def __repr__(self):
@@ -241,12 +343,17 @@ class Anisotropy(SPWSerialisable):
 
         Parameters
         ----------
-        site
+        site : Site or None, optional
             Replacement lattice site. If omitted, the current site is reused.
-        anisotropy_matrix
+        anisotropy_matrix : array_like or None, optional
             Replacement anisotropy matrix. If omitted, the current matrix is reused.
-        name
-            Optional name. If omitted, current name is reused.
+        name : str, optional
+            Optional name. If omitted, current name is reused. Default is ``""``.
+
+        Returns
+        -------
+        Anisotropy
+            New anisotropy instance with updated values.
         """
         return Anisotropy(
             site=self.site if site is None else site,
@@ -255,18 +362,40 @@ class Anisotropy(SPWSerialisable):
         )
 
     def generalise(self):
-        """ Returns the most general version of this class """
+        """Return the most general version of this class.
+
+        Returns
+        -------
+        Anisotropy
+            General ``Anisotropy`` instance with the same site and matrix.
+        """
         return Anisotropy(site=self.site, anisotropy_matrix=self.anisotropy_matrix)
 
     def specialise(self):
-        """ Convert this to the most specific anisotropy class possible """
+        """Convert this to the most specific anisotropy class possible.
+
+        Returns
+        -------
+        Anisotropy
+            Most specific anisotropy subclass instance representing this term.
+        """
         return specialise_anisotropy(self)
 
     @staticmethod
     def _specialise(anisotropy: "Anisotropy") -> "Anisotropy | None":
-        """ Try to get an anisotropy of this class
+        """Try to get an anisotropy of this class.
 
-        As this is the most general case, it will always succeed
+        As this is the most general case, it will always succeed.
+
+        Parameters
+        ----------
+        anisotropy : Anisotropy
+            Anisotropy instance to convert.
+
+        Returns
+        -------
+        Anisotropy or None
+            The input ``anisotropy`` instance.
         """
         return anisotropy
 
@@ -278,14 +407,15 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     Parameters
     ----------
-    site
+    site : Site
         Lattice site to which the anisotropy term applies.
-    a
-        Anisotropy constant.
-    direction
+    a : float
+        Anisotropy constant, a > 0 is easy-plane, a < 0 is easy-axis
+    direction : array_like, optional
         Principal anisotropy direction. The vector is normalized before use.
-    name
-        Optional name.
+        Default is ``np.array([0, 0, 1])``.
+    name : str, optional
+        Optional name. Default is ``""``.
     """
 
     _anisotropy_serialisation_name = "axis-magnitude"
@@ -358,14 +488,20 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
         Parameters
         ----------
-        site
+        site : Site or None, optional
             Replacement lattice site. If omitted, the current site is reused.
-        a
+        a : float or None, optional
             Replacement anisotropy constant. If omitted, the current constant is reused.
-        direction
-            Replacement principal anisotropy direction. If omitted, the current direction is reused.
-        name
+        direction : array_like or None, optional
+            Replacement principal anisotropy direction. If omitted, the current
+            direction is reused.
+        name : str or None, optional
             Optional name. If omitted, current name is reused.
+
+        Returns
+        -------
+        AxisMagnitudeAnisotropy
+            New uniaxial anisotropy instance with updated values.
         """
         return AxisMagnitudeAnisotropy(
             site=self.site if site is None else site,
@@ -376,7 +512,23 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @staticmethod
     def _specialise(anisotropy: "Anisotropy", tol=1e-14) -> "Anisotropy | None":
-        """ Try to get an anisotropy of this class """
+        """Try to get an anisotropy of this class.
+
+        Parameters
+        ----------
+        anisotropy : Anisotropy
+            Anisotropy instance to convert.
+        tol : float, optional
+            Numerical tolerance for sign checks on diagonal elements.
+            Default is ``1e-14``.
+
+        Returns
+        -------
+        AxisMagnitudeAnisotropy or None
+            Converted ``AxisMagnitudeAnisotropy`` instance if the anisotropy
+            matrix can be represented in axis-magnitude form, or ``None``
+            otherwise.
+        """
         # If it is already this form, return it
         if isinstance(anisotropy, AxisMagnitudeAnisotropy):
             return anisotropy
@@ -460,7 +612,18 @@ _all_anisotropies = [AxisMagnitudeAnisotropy, Anisotropy]
 _anisotropy_lookup = {cls._anisotropy_serialisation_name: cls for cls in _all_anisotropies}
 
 def specialise_anisotropy(anisotropy: Anisotropy) -> Anisotropy:
-    """ Find the narrowest anisotropy subclass to fit the exchange """
+    """Find the narrowest anisotropy subclass to fit the anisotropy.
+
+    Parameters
+    ----------
+    anisotropy : Anisotropy
+        Anisotropy instance to specialise.
+
+    Returns
+    -------
+    Anisotropy
+        Narrowest anisotropy subclass instance that represents ``anisotropy``.
+    """
     for An in _all_anisotropies:
         specialised = An._specialise(anisotropy)
         if specialised is not None:

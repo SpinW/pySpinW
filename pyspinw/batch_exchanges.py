@@ -1,4 +1,4 @@
-""" Functions and classes for automatically creating multiple exchanges"""
+"""Functions and classes for automatically creating multiple exchanges."""
 
 from collections import defaultdict
 
@@ -16,7 +16,38 @@ from pyspinw.tolerances import tolerances
 
 @dataclass
 class AbstractExchange:
-    """ Used to internally represent some exchange properties, and some properties that are only needed internally"""
+    """Used to internally represent some exchange properties, and some properties that are only needed internally.
+
+    Parameters
+    ----------
+    name : str
+        Name of the exchange.
+    site_1 : Site
+        First site of the exchange pair.
+    site_2 : Site
+        Second site of the exchange pair.
+    cell_offset : CellOffset
+        Unit cell offset between ``site_1`` and ``site_2``.
+    distance : float
+        Cartesian distance between the sites.
+    order : int
+        Shell order index (increasing with distance).
+
+    Attributes
+    ----------
+    name : str
+        Name of the exchange.
+    site_1 : Site
+        First site of the exchange pair.
+    site_2 : Site
+        Second site of the exchange pair.
+    cell_offset : CellOffset
+        Unit cell offset between ``site_1`` and ``site_2``.
+    distance : float
+        Cartesian distance between the sites.
+    order : int
+        Shell order index (increasing with distance).
+    """
 
     name: str
     site_1: Site
@@ -26,11 +57,38 @@ class AbstractExchange:
     order: int
 
 def approx_equal(v1, v2):
-    """ Are two vectors approximately the same (within tolerance)"""
+    """Are two vectors approximately the same (within tolerance).
+
+    Parameters
+    ----------
+    v1 : array_like
+        First vector.
+    v2 : array_like
+        Second vector.
+
+    Returns
+    -------
+    bool
+        ``True`` if ``v1`` and ``v2`` are equal within ``tolerances.VECTOR_TOL``.
+    """
     return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL)
 
 def approx_equal_direction(v1, v2):
-    "Are two vectors in the same direction (within tolerance)"
+    """Are two vectors in the same direction (within tolerance).
+
+    Parameters
+    ----------
+    v1 : array_like
+        First vector.
+    v2 : array_like
+        Second vector.
+
+    Returns
+    -------
+    bool
+        ``True`` if ``v1`` and ``v2`` are parallel or antiparallel within
+        ``tolerances.VECTOR_TOL``.
+    """
     return np.all(np.abs(v1 - v2) < tolerances.VECTOR_TOL) or np.all(np.abs(v1 + v2) < tolerances.VECTOR_TOL)
 
 
@@ -40,16 +98,30 @@ def apply_naming_convention(naming_pattern: str,
                             type_symbol: str,
                             order: int,
                             xyz_direction: np.ndarray):
-    """Convert a naming string into an actual name
+    """Convert a naming string into an actual name.
 
-    :param naming_pattern: string describing how to name things
-    :param name_1: name of the first site - specified with $SITE1$
-    :param name_2: name of the second site - specified with $SITE2$
-    :param type_symbol: string that denotes the type of the exchange (e.g. 'J', 'DM')
-    :param order: index of the "shell", i.e. an index that increases with distance - use $ORDER$
-    :param xyz_direction: direction of exchange, use $DIRECTION$ to give a string that denotes
-                           this concisely (hopefully)
+    Parameters
+    ----------
+    naming_pattern : str
+        String describing how to name things.
+    name_1 : str
+        Name of the first site, substituted for ``[site1]`` (or ``$SITE1$``).
+    name_2 : str
+        Name of the second site, substituted for ``[site2]`` (or ``$SITE2$``).
+    type_symbol : str
+        String that denotes the type of the exchange (e.g., ``'J'``, ``'DM'``),
+        substituted for ``[type]``.
+    order : int
+        Index of the "shell", i.e., an index that increases with distance,
+        substituted for ``[order]`` (or ``$ORDER$``).
+    xyz_direction : numpy.ndarray
+        Direction of exchange, substituted for ``[direction]`` (or ``$DIRECTION$``)
+        to give a concise direction string.
 
+    Returns
+    -------
+    str
+        Formatted exchange name.
     """
     if "[direction]" in naming_pattern:
 
@@ -88,16 +160,30 @@ def batch_exchanges(sites: list[Site],
                     naming_pattern: str=default_naming_pattern,
                     type_symbol: str="J",
                     both_directions: bool=False):
-    """ Find all the exchanges within a certain distance
+    """Find all the exchanges within a certain distance.
 
-    :param sites: List of LatticeSite or ImpliedLatticeSite to find exchanges between
-    :param unit_cell: Unit cell, needed for working out cartesian distances
-    :param max_distance: Maximum distance to get exchanges for
-    :param naming_convention: Formatting string for the naming, see `apply_naming_convention` for details
-    :param both_directions: Exchanges in both directions
+    Most of the work here is about constraining by order and giving it a sensible name.
 
+    Parameters
+    ----------
+    sites : list of Site
+        List of ``LatticeSite`` or ``ImpliedLatticeSite`` to find exchanges between.
+    unit_cell : UnitCell
+        Unit cell, needed for working out Cartesian distances.
+    max_distance : float
+        Maximum distance to get exchanges for.
+    naming_pattern : str, optional
+        Formatting string for the naming; see `apply_naming_convention` for details.
+        Default is ``default_naming_pattern``.
+    type_symbol : str, optional
+        Symbol representing the exchange type. Default is ``"J"``.
+    both_directions : bool, optional
+        Whether to generate exchanges in both directions. Default is ``False``.
 
-    Most of the work here is about constraining by order and giving it a sensible name
+    Returns
+    -------
+    list of AbstractExchange
+        List of `AbstractExchange` objects sorted by distance.
     """
     unique_sites = set([site.parent_site if isinstance(site, ImpliedLatticeSite) else site for site in sites])
     unique_index = {site: index for index, site in enumerate(unique_sites)}
@@ -209,5 +295,3 @@ def batch_exchanges(sites: list[Site],
 
     # Return sorted list by distance
     return sorted(all_exchanges, key=lambda exchange: exchange.distance)
-
-

@@ -1,4 +1,12 @@
-"""Mathematical constants used by pySpinW."""
+"""Mathematical constants used by pySpinW.
+
+Attributes
+----------
+MU_B : float
+    Bohr magneton in units of meV/T.
+ELECTRON_G : float
+    Electron g-factor (defined as 2.0 to agree with MATLAB SpinW).
+"""
 
 # Bohr magneton in units meV/T
 MU_B = 0.057883818066

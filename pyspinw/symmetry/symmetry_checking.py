@@ -1,4 +1,4 @@
-""" Functions and classes for finding allowed, disallowed and restricted symmetries """
+"""Functions and classes for finding allowed, disallowed and restricted symmetries."""
 
 import numpy as np
 
@@ -6,7 +6,21 @@ from pyspinw.util import rotation_matrix
 
 
 def rref(A, tol=1e-12):
-    """ Reduced row echelon form - not in scipy or numpy"""
+    """Reduced row echelon form - not in scipy or numpy.
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+        2D matrix to reduce.
+    tol : float, optional
+        Numerical tolerance below which entries are treated as zero.
+        Default is ``1e-12``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Reduced row echelon form of ``A``.
+    """
     A = A.astype(float).copy()
     rows, cols = A.shape
     r = 0
@@ -61,22 +75,38 @@ _sym_matrix = _symantisym_matrix[:,:6]
 _symantisym_matrix_inv = np.linalg.inv(_symantisym_matrix)
 
 def free_and_zero(reduced: np.ndarray, tol: float):
-    """ Calculates which variables are free and which are zero according to the equation `reduced = 0`
+    """Calculate which variables are free and which are zero according to the equation ``reduced = 0``.
 
-    Also creates a list of constraints
+    Also creates a list of constraints.
+
+    Parameters
+    ----------
+    reduced : numpy.ndarray
+        Matrix in reduced row echelon form.
+    tol : float
+        Numerical tolerance for treating matrix entries as zero.
+
+    Returns
+    -------
+    free : numpy.ndarray
+        Boolean array indicating which variables are completely free.
+    zero : numpy.ndarray
+        Boolean array indicating which variables are constrained to be zero.
+    constraints : list of numpy.ndarray
+        List of row vectors representing linear constraint equations between
+        non-zero, non-free variables.
+
+    Notes
+    -----
+    The reduced form is interpretable as a list of constraints on the matrix.
+    If a row has entries starting at position ``i``, then the next row will have
+    entries starting at position ``i`` or greater. Scanning the rows:
+
+    * If a column is skipped (no row starting with it), it is completely free.
+    * If a row has a single non-zero entry, that entry must be zero.
+    * Otherwise, the row defines a linear relationship between entries that
+      must be obeyed.
     """
-    # The reduced form should be interpretable as a list of constraints on the matrix
-    # It will not have non-zero entries in unless the row directly above has entries in the same column or to
-    # the left, or, in other words, if a row has entries starting at position i, then the next row will have
-    # entries starting at position i or greater
-    #
-    # We can scan the rows,
-    #   there will be at most 9 non-zero of them
-    #   each will be an equation for one of the entries, and that will be the leftmost
-    #   * if a column is "skipped" (i.e. no row starting with it) then it is completely free
-    #   * if it has a single non-zero entry, then that entry must be zero
-    #   * otherwise, the row will define a relationship between entries that must be obeyed
-
     size = reduced.shape[1]
 
     free = np.ones((size,), dtype=bool)  # Assume free by default
@@ -114,7 +144,13 @@ def free_and_zero(reduced: np.ndarray, tol: float):
     return free, zero, constraints
 
 class MatrixConstraints:
-    """ Base class for constraint data"""
+    """Base class for constraint data.
+
+    Parameters
+    ----------
+    n : int
+        Number of independent matrix parameters being constrained.
+    """
 
     def __init__(self, n: int):
         self.free = None
@@ -123,7 +159,15 @@ class MatrixConstraints:
         self.n = n
 
     def _matrix_form_strings(self) -> tuple[list[str], list[str]]:
-        """ Gets the strings used to build matrices and constraint equations"""
+        """Get the strings used to build matrices and constraint equations.
+
+        Returns
+        -------
+        strings : list of str
+            Formatted symbol strings for each of the ``n`` matrix parameters.
+        eqns : list of str
+            Formatted linear constraint equations relating parameters.
+        """
         strings = [" 0" for _ in range(self.n)]
         characters = list(reversed("abcdefghi"))
 
@@ -198,11 +242,36 @@ class MatrixConstraints:
         return strings, eqns
 
     def text_summary(self, simplify_output=True, unicode=True):
-        """ Summary of matrix constraints as a string (empty in base class)"""
+        """Summary of matrix constraints as a string (empty in base class).
+
+        Parameters
+        ----------
+        simplify_output : bool, optional
+            Whether to replace all-zero or all-free matrices with a short phrase.
+            Default is ``True``.
+        unicode : bool, optional
+            Whether to use Unicode box-drawing characters for matrices.
+            Default is ``True``.
+
+        Returns
+        -------
+        str
+            Formatted summary string.
+        """
         return ""
 
     def print_summary(self, simplify_output=True, unicode=True):
-        """ Print out a summary of the exchange properties """
+        """Print out a summary of the constraint properties.
+
+        Parameters
+        ----------
+        simplify_output : bool, optional
+            Whether to replace all-zero or all-free matrices with a short phrase.
+            Default is ``True``.
+        unicode : bool, optional
+            Whether to use Unicode box-drawing characters for matrices.
+            Default is ``True``.
+        """
         print(self.text_summary(simplify_output, unicode))
 
     def __repr__(self):
@@ -212,7 +281,23 @@ class MatrixConstraints:
 
 
 class ExchangeMatrixConstraints(MatrixConstraints):
-    """ Object representing the constraints on the exchange matrix based on symmetry transformations """
+    """Object representing the constraints on the exchange matrix based on symmetry transformations.
+
+    Parameters
+    ----------
+    transformations : list of numpy.ndarray
+        List of 3x3 point-operation matrices leaving the bond sites unswapped.
+    swapped_transformations : list of numpy.ndarray or None, optional
+        List of 3x3 point-operation matrices that swap the two bond sites.
+        Default is ``None``.
+    tol : float, optional
+        Numerical tolerance for row reduction and zero checks. Default is ``1e-12``.
+
+    Raises
+    ------
+    TypeError
+        If ``transformations`` or ``swapped_transformations`` is not a list.
+    """
 
     def __init__(self,
                  transformations: list[np.ndarray],
@@ -246,7 +331,20 @@ class ExchangeMatrixConstraints(MatrixConstraints):
         self.free, self.zero, self.constraints = free_and_zero(reduced, tol)
 
     def text_summary(self, simplify_output=True, unicode=True):
-        """ Textual summary of symmetry allowed exchange properties"""
+        """Textual summary of symmetry allowed exchange properties.
+
+        Parameters
+        ----------
+        simplify_output : bool, optional
+            Whether to simplify all-zero or all-free components. Default is ``True``.
+        unicode : bool, optional
+            Whether to use Unicode matrix brackets. Default is ``True``.
+
+        Returns
+        -------
+        str
+            Formatted textual summary of allowed symmetric and antisymmetric exchange.
+        """
         m, equations = self._matrix_form_strings()
 
         if unicode:
@@ -293,7 +391,20 @@ class ExchangeMatrixConstraints(MatrixConstraints):
 
 
 class AnisotropyMatrixConstraints(MatrixConstraints):
-    """ Object representing the constraints on anisotropy matrices based on symmetry transformations """
+    """Object representing the constraints on anisotropy matrices based on symmetry transformations.
+
+    Parameters
+    ----------
+    transformations : list of numpy.ndarray
+        List of 3x3 point-operation matrices leaving the site invariant.
+    tol : float, optional
+        Numerical tolerance for row reduction and zero checks. Default is ``1e-12``.
+
+    Raises
+    ------
+    TypeError
+        If ``transformations`` is not a list.
+    """
 
     def __init__(self,
                  transformations: list[np.ndarray],
@@ -320,7 +431,21 @@ class AnisotropyMatrixConstraints(MatrixConstraints):
 
 
     def text_summary(self, simplify_output=True, unicode=True):
-        """ Textual summary of symmetry allowed exchange properties"""
+        """Textual summary of symmetry allowed anisotropy properties.
+
+        Parameters
+        ----------
+        simplify_output : bool, optional
+            Whether to simplify all-zero or all-free anisotropy matrices.
+            Default is ``True``.
+        unicode : bool, optional
+            Whether to use Unicode matrix brackets. Default is ``True``.
+
+        Returns
+        -------
+        str
+            Formatted textual summary of allowed anisotropy matrices.
+        """
         m, equations = self._matrix_form_strings()
 
         if unicode:
@@ -359,6 +484,7 @@ if __name__ == "__main__":
     transformation = rotation_matrix(2*np.pi/3, (0,1,0))
 
     AnisotropyMatrixConstraints([transformation]).print_summary()
+
 
 
 

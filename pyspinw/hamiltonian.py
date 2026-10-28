@@ -1,4 +1,4 @@
-"""Selection of different Hamiltonians"""
+"""Selection of different Hamiltonians."""
 import logging
 import warnings
 from collections.abc import Callable
@@ -38,14 +38,50 @@ from pyspinw.units import IntensityUnits, intensity_units
 logger = logging.Logger("pyspinw.hamiltonian")
 
 def uniquetol(values: ArrayLike, tol: float=1e-5):
-    """ Returns floating point unique values within a given tolerance """
+    """Return floating point unique values within a given tolerance.
+
+    Parameters
+    ----------
+    values : array_like
+        Input array of numeric values.
+    tol : float, optional
+        Tolerance within which values are considered equal. Default is ``1e-5``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Unique values within the specified tolerance.
+    """
     vabs = np.real(values) + np.imag(values)
     isrt = np.argsort(vabs)
     idif = np.append(True, np.diff(vabs[isrt]))
     return values[isrt[idif > tol]]
 
 def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: int=0, is_series: bool=True):
-    """ Removes degenerate and ghost (zero-intensity) modes from spectrum """
+    """Remove degenerate and ghost (zero-intensity) modes from spectrum.
+
+    Parameters
+    ----------
+    energy : array_like
+        Mode energies at each q-point with shape ``(n_q, n_modes)``.
+    intensity : array_like
+        Mode intensities at each q-point with shape ``(n_q, n_modes)``.
+    tol : float, optional
+        Energy tolerance for grouping degenerate modes. Default is ``1e-5``.
+    zeroint : int or float, optional
+        Intensity threshold below which modes are treated as ghost modes.
+        Default is ``0``.
+    is_series : bool, optional
+        Whether to maintain a consistent number of modes across q-points.
+        Default is ``True``.
+
+    Returns
+    -------
+    en_out : numpy.ndarray
+        Degeneracy-merged mode energies with empty columns removed.
+    int_out : numpy.ndarray
+        Summed mode intensities corresponding to ``en_out``.
+    """
     energy, intensity = (np.array(energy), np.array(intensity))
     en_out, int_out = (energy * np.nan, intensity * np.nan)
     if tol > 0:
@@ -76,7 +112,25 @@ def omegasum(energy: ArrayLike, intensity: ArrayLike, tol: float=1e-5, zeroint: 
     return en_out, int_out
 
 def egrid(energy: ArrayLike, intensity: ArrayLike, evect: ArrayLike, dE: float | Callable):
-    """Bins a set of energy/intensity into a spectrum with Gaussian broadening"""
+    """Bin a set of energy/intensity into a spectrum with Gaussian broadening.
+
+    Parameters
+    ----------
+    energy : array_like
+        Mode energies at each q-point with shape ``(n_q, n_modes)``.
+    intensity : array_like
+        Mode intensities at each q-point with shape ``(n_q, n_modes)``.
+    evect : array_like
+        1D array of energy grid values.
+    dE : float or callable
+        Gaussian broadening full width at half maximum (FWHM), given as a scalar
+        or a callable ``dE(evect)``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Broadened 2D intensity spectrum with shape ``(n_q, len(evect))``.
+    """
     energy, intensity = (np.real(np.array(energy)), np.array(intensity))
     esigma = dE(evect) if isinstance(dE, Callable) else np.ones(evect.shape) * dE
     esigma /= 2 * np.sqrt(2* np.log(2))  # Convert from FWHM
@@ -95,9 +149,33 @@ ParametrizationType = Union[str,
                        tuple[Exchange | Anisotropy | str, str]]
 
 def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: ParametrizationType):
-    """ Convert many options for defining parameters into a more regular form
+    """Convert many options for defining parameters into a more regular form.
 
-    This is used in the parameterisation method/class
+    This is used in the parameterisation method/class.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Hamiltonian instance used to resolve string exchange and anisotropy names.
+    parameter_data : ParametrizationType
+        Parameter definition given as a string, tuple, or list of strings/tuples.
+
+    Returns
+    -------
+    exchanges : list of tuple of (Exchange, str)
+        Resolved pairs of exchange objects and parameter names.
+    anisotropies : list of tuple of (Anisotropy, str)
+        Resolved pairs of anisotropy objects and parameter names.
+
+    Raises
+    ------
+    ValueError
+        If a tuple or string specification is invalid or no matching exchange or
+        anisotropy is found.
+    TypeError
+        If ``parameter_data`` or its components have an unsupported type.
+    Exception
+        If an internal check on tuple conversion fails.
     """
     # Step 1: convert everything to a Sequence
 
@@ -201,7 +279,30 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
 
 
 class Hamiltonian(SPWSerialisable):
-    """Hamiltonian base class"""
+    """Representation of a Hamiltonian - this could be considered the central class for pyspinw.
+
+    `Hamiltonian`s contain all the information needed to calculate the scattering for a given q in
+    a unform material, and is composed of a `Structure` object, `Exchange`s and `Anisotropy`s.
+
+    The `Hamiltonian` object does not deal with non-uniform materials, such as powders or twins,
+    these are specified with the `Sample` subclasses, which take `Hamiltonian` classes as inputs.
+
+    Parameters
+    ----------
+    structure : Structure
+        Magnetic structure containing the lattice sites, unit cell, spacegroup,
+        and supercell.
+    exchanges : list of Exchange
+        Exchange interactions between sites in ``structure``.
+    anisotropies : list of Anisotropy, optional
+        Single-ion anisotropies on sites in ``structure``. Default is ``None``.
+
+    Raises
+    ------
+    ValueError
+        If any site referenced by ``exchanges`` or ``anisotropies`` is not in
+        ``structure``.
+    """
 
     serialisation_name = "hamiltonian"
 
@@ -229,30 +330,52 @@ class Hamiltonian(SPWSerialisable):
 
     @property
     def structure(self):
-        """ Get the magnetic structure """
+        """Get the magnetic structure."""
         return self._structure
 
     @property
     def exchanges(self):
-        """ Get the exchanges """
+        """Get the exchanges."""
         return self._exchanges
 
     def exchanges_by_name(self, regex):
-        """ Get list of exchanges whose names match the regex """
+        """Get list of exchanges whose names match the regex.
+
+        Parameters
+        ----------
+        regex : str
+            Regular expression pattern matched against exchange names.
+
+        Returns
+        -------
+        list of Exchange
+            Exchanges whose names match ``regex``.
+        """
         return [exchange for exchange in self.exchanges if re.match(regex, exchange.name) is not None]
 
     @property
     def anisotropies(self):
-        """ Get the anisotropies """
+        """Get the anisotropies."""
         return self._anisotropies
 
     def anisotropies_by_name(self, regex):
-        """ Get list of anisotropies whose names match the regex """
+        """Get list of anisotropies whose names match the regex.
+
+        Parameters
+        ----------
+        regex : str
+            Regular expression pattern matched against anisotropy names.
+
+        Returns
+        -------
+        list of Anisotropy
+            Anisotropies whose names match ``regex``.
+        """
         return [anisotropy for anisotropy in self.anisotropies if re.match(regex, anisotropy.name) is not None]
 
     @property
     def text_summary(self) -> str:
-        """ String giving details of the system """
+        """String giving details of the system."""
         # lines = ["Sites:"]
         # for site in self.structure.sites:
         #     lines.append(f"  {site}")
@@ -279,13 +402,26 @@ class Hamiltonian(SPWSerialisable):
                 dict[tuple[int, tuple[int, int, int]], Site],
                 list[int],
                 list[int]]:
-        """ Expand the supercell structure into a single cell structure and return the mapping between hamiltonians
+        """Expand the supercell structure into a single cell structure and return the mapping between hamiltonians.
 
-        This should only be used internally, and its not very user friendly
+        This should only be used internally, and its not very user friendly.
 
-        The site mapping is a dict from (original site UID, offset) -> LatticeSite
-        The exchange mapping is a len(new exchanges) list of indices for the original exchanges
-        The anisotropy mapping is a len(new anisotropies) list of indices for the original anisotropies
+        Parameters
+        ----------
+        supercell_size : tuple of (int, int, int), optional
+            Supercell dimensions to expand into. If ``None``, the structure's
+            supercell cell size is used. Default is ``None``.
+
+        Returns
+        -------
+        hamiltonian : Hamiltonian
+            Expanded single-cell Hamiltonian.
+        site_mapping : dict of ((int, tuple of (int, int, int)), Site)
+            Mapping from ``(original site UID, offset)`` to the expanded ``Site``.
+        exchange_mapping : list of int
+            Indices for the original exchanges corresponding to each expanded exchange.
+        anisotropy_mapping : list of int
+            Indices for the original anisotropies corresponding to each expanded anisotropy.
         """
         bigger_cell, site_mapping = self.structure._expansion_site_mapping(supercell_size)
 
@@ -358,7 +494,23 @@ class Hamiltonian(SPWSerialisable):
                 site_mapping, exchange_mapping, anisotropy_mapping)
 
     def expanded(self, supercell_size: tuple[int, int, int] | None = None):
-        """ Expand the supercell structure into a single cell structure """
+        """Expand the supercell structure into a single cell structure.
+
+        Parameters
+        ----------
+        supercell_size : tuple of (int, int, int), optional
+            Supercell dimensions to expand into. Default is ``None``.
+
+        Returns
+        -------
+        Hamiltonian
+            Expanded single-cell Hamiltonian.
+
+        Raises
+        ------
+        TypeError
+            If ``supercell_size`` is not a length-3 tuple.
+        """
         if supercell_size is not None:
             if not isinstance(supercell_size, tuple):
                 raise TypeError("supercell_size should be a tuple")
@@ -379,7 +531,14 @@ class Hamiltonian(SPWSerialisable):
         return expanded
 
     def without_nonmagnetic(self):
-        """ Get a copy of this Hamiltonian with the nonmagnetic sites removed """
+        """Get a copy of this Hamiltonian with the nonmagnetic sites removed.
+
+        Returns
+        -------
+        Hamiltonian
+            Hamiltonian with all nonmagnetic sites and their associated exchanges
+            and anisotropies removed.
+        """
         new_structure, removed_uids = self.structure._without_nonmagnetic_with_removed_uids()
 
         new_exchanges = [exchange for exchange in self.exchanges
@@ -392,11 +551,22 @@ class Hamiltonian(SPWSerialisable):
         return Hamiltonian(new_structure, new_exchanges, new_anisotropies)
 
     def sites_by_name(self, test_string) -> list[Site]:
-        """ Get sites where name matches regex"""
+        """Get sites where name matches regex.
+
+        Parameters
+        ----------
+        test_string : str
+            Regular expression pattern matched against site names.
+
+        Returns
+        -------
+        list of Site
+            Sites whose names match ``test_string``.
+        """
         return self.structure.sites_by_name(test_string)
 
     def print_summary(self):
-        """ Print a textual summary to stdout"""
+        """Print a textual summary to stdout."""
         print(self.text_summary)
 
     @check_sizes(field=(3,), allow_nones=True, force_numpy=True)
@@ -410,14 +580,29 @@ class Hamiltonian(SPWSerialisable):
                                  ):
         """Calculate the energy levels and intensities of the system for the given q-vectors.
 
-        :param path: *required* Path along which to calculate
-        :param field: Optional magnetic field vector, in tesla
-        :param use_rust: Whether to use Rust or Python calculator (default: True)
-        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
-        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
-        :param components: Whether to compute a particular polarised neutron component (default: 'Sperp');
-                           for the accepted strings, including 'all', see
-                           :func:`pyspinw.polarisation.calculate_polarised_intensity`
+        Parameters
+        ----------
+        path : Path
+            Path along which to calculate.
+        field : array_like, optional
+            Magnetic field vector, in tesla. Default is ``None``.
+        use_rust : bool, optional
+            Whether to use Rust or Python calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Whether to normalise intensity per unit cell or spin. Default is ``'cell'``.
+        components : str, optional
+            Whether to compute a particular polarised neutron component. Default is
+            ``'Sperp'``; for the accepted strings, including ``'all'``, see
+            :func:`pyspinw.polarisation.calculate_polarised_intensity`.
+
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies at each q-point.
+        intensities : numpy.ndarray or list of numpy.ndarray or tuple
+            Calculated mode intensities at each q-point.
         """
         return self.without_nonmagnetic()._energies_and_intensities(
             q_vectors=path.q_points(),
@@ -439,14 +624,30 @@ class Hamiltonian(SPWSerialisable):
                               ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate the energy levels of the system for the given q-vectors.
 
-        ** Does not remove nonmagnetic sites **
+        Does not remove nonmagnetic sites.
 
-        :param q_vectors: *required* An array of q-vectors
-        :param field: Optional magnetic field vector, in tesla
-        :param use_rust: Whether to use Rust or Python calculator (default: True)
-        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
-        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
-        :param components: Whether to compute a particular polarised neutron component (default: 'Sperp')
+        Parameters
+        ----------
+        q_vectors : (N, 3) numpy.ndarray
+            An array of q-vectors.
+        field : array_like, optional
+            Magnetic field vector, in tesla. Default is ``None``.
+        use_rust : bool, optional
+            Whether to use Rust or Python calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Whether to normalise intensity per unit cell or spin. Default is ``'cell'``.
+        components : str, optional
+            Whether to compute a particular polarised neutron component. Default is
+            ``'Sperp'``.
+
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies at each q-point.
+        intensities : numpy.ndarray or list of numpy.ndarray or tuple
+            Calculated mode intensities at each q-point.
         """
         #
         # Set up choice of calculation
@@ -480,19 +681,36 @@ class Hamiltonian(SPWSerialisable):
                           save_sab: bool = False,
                           save_wavefunctions: bool = False
                           ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Performs a spin wave calculation of the system for the given q-point path.
+        """Perform a spin wave calculation of the system for the given q-point path.
 
-        :param path: *required* Path along which to calculate
-        :param field: Optional magnetic field vector, in tesla
-        :param use_rust: Whether to use Rust or Python calculator (default: True)
-        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
-        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
-        :param save_sab: Whether return the Sab matrices (default: False)
-        :param save_wavefunctions: Whether to return the eigenvectors at each Q-point (default: False)
+        Parameters
+        ----------
+        path : Path
+            Path along which to calculate.
+        field : array_like, optional
+            Magnetic field vector, in tesla. Default is ``None``.
+        use_rust : bool, optional
+            Whether to use Rust or Python calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Whether to normalise intensity per unit cell or spin. Default is ``'cell'``.
+        save_sab : bool, optional
+            Whether to return the Sab matrices. Default is ``False``.
+        save_wavefunctions : bool, optional
+            Whether to return the eigenvectors at each Q-point. Default is ``False``.
 
-        :return: energies, intensities, sab, wavefunctions
-
-        If save_sab or save_wavefunctions are False, then sab or wavefunctions will be None
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies at each q-point.
+        intensities : list of numpy.ndarray
+            Calculated mode intensities at each q-point.
+        sab : numpy.ndarray or None
+            Spin-spin correlation matrices if ``save_sab`` is ``True``, otherwise ``None``.
+        wavefunctions : numpy.ndarray or None
+            Eigenvectors at each q-point if ``save_wavefunctions`` is ``True``,
+            otherwise ``None``.
         """
         energies, intensities, sab, wavefunctions, scaling, rlu_to_cart = \
             self.without_nonmagnetic()._spinwave_calculation(
@@ -518,13 +736,45 @@ class Hamiltonian(SPWSerialisable):
                               ):
         """Calculate the energy levels of the system for the given q-vectors.
 
-        ** Does not remove nonmagnetic sites **
+        Does not remove nonmagnetic sites.
 
-        :param q_vectors: *required* An array of q-vectors
-        :param field: Optional magnetic field vector, in tesla
-        :param use_rust: Whether to use Rust or Python calculator (default: True)
-        :param use_rotating: Whether to use the rotating frame calculator if possible (default: True)
-        :param intensity_unit: Whether to normalise intensity per unit cell or spin (default: 'cell')
+        Parameters
+        ----------
+        q_vectors : (N, 3) numpy.ndarray
+            An array of q-vectors.
+        field : array_like, optional
+            Magnetic field vector, in tesla. Default is ``None``.
+        use_rust : bool, optional
+            Whether to use Rust or Python calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Whether to normalise intensity per unit cell or spin. Default is ``'cell'``.
+        save_sab : bool, optional
+            Whether to return the Sab matrices. Default is ``False``.
+        save_wavefunctions : bool, optional
+            Whether to return the eigenvectors at each Q-point. Default is ``False``.
+
+        Returns
+        -------
+        energies : numpy.ndarray
+            Calculated mode energies at each q-point.
+        intensities : list of numpy.ndarray
+            Calculated mode intensities at each q-point.
+        sab : numpy.ndarray or None
+            Spin-spin correlation matrices if ``save_sab`` is ``True``, otherwise ``None``.
+        wavefunctions : numpy.ndarray or None
+            Eigenvectors at each q-point if ``save_wavefunctions`` is ``True``,
+            otherwise ``None``.
+        scaling : float or tuple of (int, int, int)
+            Supercell scaling factor applied to ``q_vectors``.
+        rlu_to_cart : (3, 3) numpy.ndarray
+            Transformation matrix from reciprocal lattice units to Cartesian coordinates.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``intensity_unit`` is ``BARNPERATOM`` or ``BARNPERCELL``.
         """
         intensity_unit = intensity_units(intensity_unit)
         if intensity_unit == IntensityUnits.BARNPERATOM or intensity_unit == IntensityUnits.BARNPERCELL:
@@ -689,7 +939,35 @@ class Hamiltonian(SPWSerialisable):
                             intensity_unit: IntensityUnits | str = 'cell',
                             scale: str='linear',
                             components: str='Sperp'):
-        """ Create a spaghetti diagram with energy top and intensity bottom """
+        """Create a spaghetti diagram with energy top and intensity bottom.
+
+        Parameters
+        ----------
+        path : Path
+            Path in reciprocal space along which to plot.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        show : bool, optional
+            Whether to display the plot with ``plt.show()``. Default is ``True``.
+        new_figure : bool, optional
+            Whether to create a new Matplotlib figure. Default is ``True``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Intensity normalisation unit. Default is ``'cell'``.
+        scale : str, optional
+            Y-axis scale for the intensity subplot (e.g. ``'linear'`` or ``'log'``).
+            Default is ``'linear'``.
+        components : str, optional
+            Polarised neutron component to compute. Default is ``'Sperp'``.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            Matplotlib figure if ``show`` is ``False``, otherwise ``None``.
+        """
         if new_figure:
             fig, axs = plt.subplots(2, 1)
         else:
@@ -734,7 +1012,45 @@ class Hamiltonian(SPWSerialisable):
                        intensity_unit: IntensityUnits | str = 'cell',
                        scale: str='linear',
                        components: str='Sperp'):
-        """ Create a spaghetti diagram with intensity as colorfill overplotted by mode energies """
+        """Create a spaghetti diagram with intensity as colorfill overplotted by mode energies.
+
+        Parameters
+        ----------
+        path : Path
+            Path in reciprocal space along which to plot.
+        evect : array_like, optional
+            1D array of energy grid points. If ``None``, an automatic range is
+            constructed. Default is ``None``.
+        dE : float or callable, optional
+            Gaussian energy broadening FWHM. If ``None``, a default based on
+            ``evect`` spacing is used. Default is ``None``.
+        vmin : float, optional
+            Minimum value of the colour scale. Default is ``0``.
+        vmax : float, optional
+            Maximum value of the colour scale. If ``None``, determined automatically.
+            Default is ``None``.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        show : bool, optional
+            Whether to display the plot with ``plt.show()``. Default is ``True``.
+        new_figure : bool, optional
+            Whether to create a new Matplotlib figure. Default is ``True``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Intensity normalisation unit. Default is ``'cell'``.
+        scale : str, optional
+            Intensity scale specification. Default is ``'linear'``.
+        components : str, optional
+            Polarised neutron component to compute. Default is ``'Sperp'``.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            Matplotlib figure if ``show`` is ``False``, otherwise ``None``.
+        """
         if new_figure:
             fig, ax = plt.subplots()
         else:
@@ -792,22 +1108,35 @@ class Hamiltonian(SPWSerialisable):
         Parameters
         ----------
         q_slice : Slice
-            2D slice object defining the grid of q-points. Energy bounds e_min
-            and e_max (in meV) are taken from this object.
-        vmin, vmax :
-            Color scale limits
-        field:
-            external field
-        show :
-            Whether to display the plot
-        new_figure :
-            Whether to create a new figure
-        use_rust, use_rotating, intensity_unit :
-            Same as energies_and_intensities
-        cmap :
-            Matplotlib colormap name
-        origin :
-            'lower' or 'upper' for matplotlib imshow origin
+            2D slice object defining the grid of q-points. Energy bounds ``e_min``
+            and ``e_max`` (in meV) are taken from this object.
+        vmin : float, optional
+            Minimum color scale limit. Default is ``0``.
+        vmax : float, optional
+            Maximum color scale limit. If ``None``, determined automatically.
+            Default is ``None``.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        show : bool, optional
+            Whether to display the plot. Default is ``True``.
+        new_figure : bool, optional
+            Whether to create a new figure. Default is ``True``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+        use_rotating : bool, optional
+            Whether to use the rotating frame calculator if possible. Default is ``True``.
+        intensity_unit : IntensityUnits or str, optional
+            Intensity normalisation unit. Default is ``'cell'``.
+        cmap : str, optional
+            Matplotlib colormap name. Default is ``"magma_r"``.
+        origin : str, optional
+            ``'lower'`` or ``'upper'`` for Matplotlib ``imshow`` origin. Default is
+            ``"lower"``.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            Matplotlib figure if ``show`` is ``False``, otherwise ``None``.
         """
         if new_figure:
             fig, ax = plt.subplots()
@@ -890,7 +1219,21 @@ class Hamiltonian(SPWSerialisable):
     def parameterize(self,
                      *parameters: ParametrizationType,
                      find_ground_state_with: dict | None = None) -> "HamiltonianParameterization":
-        """ Get a function that maps floats to a hamiltonian with the floats controlling the specified parameters"""
+        """Get a function that maps floats to a hamiltonian with the floats controlling the specified parameters.
+
+        Parameters
+        ----------
+        *parameters : ParametrizationType
+            Parameter specifications identifying exchange or anisotropy attributes to vary.
+        find_ground_state_with : dict, optional
+            Keyword arguments passed to :meth:`ground_state` when evaluating the
+            parameterized Hamiltonian. Default is ``None``.
+
+        Returns
+        -------
+        HamiltonianParameterization
+            Callable parameterization of this Hamiltonian.
+        """
         return HamiltonianParameterization(self,*parameters,
                                            find_ground_state_with=find_ground_state_with)
 
@@ -898,14 +1241,44 @@ class Hamiltonian(SPWSerialisable):
                                  path: Path,
                                  field: ArrayLike | None = None,
                                  use_rust: bool = True) -> list[np.ndarray]:
-        """ Return energies as series corresponding to q, sorted by energy """
+        """Return energies as series corresponding to q, sorted by energy.
+
+        Parameters
+        ----------
+        path : Path
+            Path in reciprocal space along which to calculate energies.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+
+        Returns
+        -------
+        list of numpy.ndarray
+            Sorted positive energy series along ``path``.
+        """
         return self._sorted_positive_energies(path.q_points(), field=field, use_rust=use_rust)
 
     def _sorted_positive_energies(self,
                                   q_vectors: np.ndarray,
                                   field: ArrayLike | None = None,
                                   use_rust: bool = True) -> list[np.ndarray]:
-        """ Return energies as series corresponding to q, sorted by energy, for an array of q-vectors """
+        """Return energies as series corresponding to q, sorted by energy, for an array of q-vectors.
+
+        Parameters
+        ----------
+        q_vectors : (N, 3) numpy.ndarray
+            Array of q-vectors in reciprocal lattice units.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+
+        Returns
+        -------
+        list of numpy.ndarray
+            Sorted positive energy series for ``q_vectors``.
+        """
         energy, intensities = self._energies_and_intensities(q_vectors, field=field, use_rust=use_rust)
 
         energy = np.array(energy)
@@ -925,7 +1298,21 @@ class Hamiltonian(SPWSerialisable):
                     show: bool=True,
                     new_figure: bool=True,
                     use_rust: bool=True):
-        """ Create a spaghetti diagram """
+        """Create a spaghetti diagram.
+
+        Parameters
+        ----------
+        path : Path
+            Path in reciprocal space along which to plot mode energies.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        show : bool, optional
+            Whether to display the plot with ``plt.show()``. Default is ``True``.
+        new_figure : bool, optional
+            Whether to create a new figure. Default is ``True``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+        """
         if new_figure:
             plt.figure("Energy")
 
@@ -951,24 +1338,54 @@ class Hamiltonian(SPWSerialisable):
                      atol: float=1e-12,
                      max_iters: int=1000,
                      verbose: bool=True):
-        """ Get the classical ground state via gradient descent
+        """Get the classical ground state via gradient descent.
 
-        For more direct control, use the `ClassicalEnergyMinimisation` class
+        For more direct control, use the ``ClassicalEnergyMinimisation`` class.
 
-        :param fixed: List of sites that should be ignored by the minimisation, i.e. fixed in place
-        :param planar: List of sites, or (site, axis) tuples that should be constrained to a plane
-        :param planar_axis: Axis to use for planar constraints if not specified explicitly, default=[0,0,1]
-        :param field: Magnetic field applied, in tesla
-        :param step_size: Size of step to make relative to the force, smaller values than the default might be needed
-                          for systems with high energy.
-        :param initial_randomisation: Option to RANDOMISE or JITTER the starting state, default JITTER, can also be NONE
-        :param seed: Seed to use in any randomisation steps
-        :param rtol: Convergence criterion, stop when [energy change] < rtol x [initial energy change]
-        :param atol: Convergence criterion, stop when [energy change] < atol
-        :param max_iters: Limit on the number of iterations
-        :param verbose: Print information about the process to stdout
+        Parameters
+        ----------
+        fixed : list of Site, optional
+            List of sites that should be ignored by the minimisation, i.e. fixed in
+            place. Default is ``None``.
+        planar : list of (Site or tuple of (Site, array_like)), optional
+            List of sites, or ``(site, axis)`` tuples that should be constrained to a
+            plane. Default is ``None``.
+        planar_axis : array_like, optional
+            Axis to use for planar constraints if not specified explicitly. Default is
+            ``[0, 0, 1]``.
+        field : array_like, optional
+            Magnetic field applied, in tesla. Default is ``None``.
+        step_size : float, optional
+            Size of step to make relative to the force; smaller values than the default
+            might be needed for systems with high energy. Default is ``0.1``.
+        initial_randomisation : InitialRandomisation or str, optional
+            Option to ``RANDOMISE`` or ``JITTER`` the starting state, or ``NONE``.
+            Default is ``InitialRandomisation.JITTER``.
+        seed : int, optional
+            Seed to use in any randomisation steps. Default is ``None``.
+        rtol : float, optional
+            Convergence criterion; stop when ``[energy change] < rtol * [initial energy change]``.
+            Default is ``1e-10``.
+        atol : float, optional
+            Convergence criterion; stop when ``[energy change] < atol``. Default is
+            ``1e-12``.
+        max_iters : int, optional
+            Limit on the number of iterations. Default is ``1000``.
+        verbose : bool, optional
+            Print information about the process to stdout. Default is ``True``.
 
-        :returns: A new `Hamiltonian` with optimised spin state
+        Returns
+        -------
+        Hamiltonian
+            A new ``Hamiltonian`` with optimised spin state.
+
+        Raises
+        ------
+        ValueError
+            If any tuple in ``planar`` does not have length 2.
+        TypeError
+            If entries in ``planar`` are not ``Site`` instances or valid
+            ``(Site, array_like)`` tuples.
         """
         #
         # Build the constraints
@@ -1070,7 +1487,22 @@ class Hamiltonian(SPWSerialisable):
                 structure: Structure | None = None,
                 exchanges: list[Exchange] | None = None,
                 anisotropies: list[Anisotropy] | None = None):
-        """ Create a new Hamiltonian, but with some fields replaced (those not None) """
+        """Create a new Hamiltonian, but with some fields replaced (those not None).
+
+        Parameters
+        ----------
+        structure : Structure, optional
+            Replacement magnetic structure. Default is ``None``.
+        exchanges : list of Exchange, optional
+            Replacement list of exchanges. Default is ``None``.
+        anisotropies : list of Anisotropy, optional
+            Replacement list of anisotropies. Default is ``None``.
+
+        Returns
+        -------
+        Hamiltonian
+            New ``Hamiltonian`` instance with the specified fields updated.
+        """
         return Hamiltonian(
             self.structure if structure is None else structure,
             self.exchanges if exchanges is None else exchanges,
@@ -1078,9 +1510,23 @@ class Hamiltonian(SPWSerialisable):
 
     @staticmethod
     def _combine_exchanges(exchanges: list[Exchange], swapped_exchanges: list[Exchange]):
-        """ Combines exchanges together if they have the matching sites and cell offset
+        """Combine exchanges together if they have the matching sites and cell offset.
 
         This might be if they're the same, or swapped.
+
+        Parameters
+        ----------
+        exchanges : list of Exchange
+            Exchanges sharing the same site pair order.
+        swapped_exchanges : list of Exchange
+            Exchanges with reversed site pair order.
+
+        Returns
+        -------
+        combined : dict of (tuple of (int, int, int), numpy.ndarray)
+            Summed 3x3 exchange matrices keyed by cell offset tuple.
+        swapped_combined : dict of (tuple of (int, int, int), numpy.ndarray)
+            Summed 3x3 transposed exchange matrices keyed by reversed cell offset tuple.
         """
         by_offset = defaultdict(list)
         swapped_by_offset = defaultdict(list)
@@ -1103,7 +1549,14 @@ class Hamiltonian(SPWSerialisable):
 
 
     def symmetry_filled(self) -> "Hamiltonian":
-        """ Check that the hamiltonian obeys its symmetry """
+        """Creates a new `Hamiltonian` for which the exchanges and anisotropies are filled out to obey the symmetry.
+
+        Returns
+        -------
+        Hamiltonian
+            New ``Hamiltonian`` with symmetry-equivalent exchanges and anisotropies
+            generated from the structure's spacegroup.
+        """
         new_exchanges = []
         for exchange in self.exchanges:
             new_exchanges += exchange.symmetry_fill(self.structure, include_original=True)
@@ -1115,10 +1568,25 @@ class Hamiltonian(SPWSerialisable):
         return Hamiltonian(self.structure, new_exchanges, new_anisotropies)
 
     def symmetry_transformed(self, operation: SpaceOperation):
-        """ Transform the Hamiltonian using this spacegroup
+        """Transform the Hamiltonian using this spacegroup.
 
-        If your system is physical this should not do anything to it except change the names/colors etc around.
-        Useful for checking things related to symmetry.
+        If your system is physical this should not do anything to it except change
+        the names/colors etc around. Useful for checking things related to symmetry.
+
+        Parameters
+        ----------
+        operation : SpaceOperation
+            Spacegroup symmetry operation to apply to the Hamiltonian.
+
+        Returns
+        -------
+        Hamiltonian
+            Symmetry-transformed ``Hamiltonian`` instance.
+
+        Raises
+        ------
+        ValueError
+            If ``operation`` does not belong to the structure's spacegroup.
         """
         if operation not in self.structure.spacegroup:
             raise ValueError(f"'{operation}' does not belong to spacegroup '{self.structure.spacegroup}'")
@@ -1203,9 +1671,29 @@ class Hamiltonian(SPWSerialisable):
 
 
 class HamiltonianParameterization:
-    """ Parameterisation of a Hamiltonian
+    """Parameterisation of a Hamiltonian.
 
-    This is a callable class that returns a Hamiltonian with exchanges set by specified parameters
+    This is a callable class that returns a Hamiltonian with exchanges set by
+    specified parameters. Calling an instance with ``*parameters`` returns the
+    ``Hamiltonian`` with those parameter values set.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian
+        Base Hamiltonian to parameterize.
+    *parameters : ParametrizationType
+        Parameter specifications identifying exchange or anisotropy attributes to vary.
+    find_ground_state_with : dict, optional
+        Keyword arguments passed to :meth:`Hamiltonian.ground_state` when evaluating
+        the parameterized Hamiltonian. Default is ``None``.
+
+    Raises
+    ------
+    ValueError
+        If multiple parameters are assigned to the same exchange or anisotropy
+        attribute.
+    TypeError
+        If a target exchange or anisotropy does not have the specified parameter.
     """
 
     def __init__(self,
@@ -1285,6 +1773,20 @@ class HamiltonianParameterization:
 
     @staticmethod
     def _legend_entry(exchange_name, parameter_name):
+        """Format a legend entry from an exchange name and parameter name.
+
+        Parameters
+        ----------
+        exchange_name : str or None
+            Name of the exchange or anisotropy term.
+        parameter_name : str
+            Name of the parameter attribute.
+
+        Returns
+        -------
+        str
+            Formatted legend label.
+        """
         if exchange_name is None or exchange_name == "":
             return parameter_name
         else:
@@ -1299,7 +1801,35 @@ class HamiltonianParameterization:
                     new_figure: bool = True,
                     show_legend=True,
                     use_rust: bool = True):
-        """ Show a plot of the energies """
+        """Show a plot of the energies.
+
+        Parameters
+        ----------
+        parameter_values : array_like
+            1D or 2D array of parameter values at which to evaluate and plot the
+            Hamiltonian energies.
+        path : Path
+            Path in reciprocal space along which to calculate energies.
+        field : array_like, optional
+            External magnetic field vector in tesla. Default is ``None``.
+        show : bool, optional
+            Whether to display the plot with ``plt.show()``. Default is ``True``.
+        colormap_name : str, optional
+            Name of the Matplotlib colormap used to colour the curves. Default is
+            ``'jet'``.
+        new_figure : bool, optional
+            Whether to create a new figure. Default is ``True``.
+        show_legend : bool, optional
+            Whether to display a legend on the plot. Default is ``True``.
+        use_rust : bool, optional
+            Whether to use the Rust calculator. Default is ``True``.
+
+        Raises
+        ------
+        ValueError
+            If the second dimension of ``parameter_values`` does not match the
+            number of parameterized variables.
+        """
         # Check/regularise input values
         parameter_values = np.array(parameter_values)
         if len(parameter_values.shape) == 1:
@@ -1351,8 +1881,7 @@ class HamiltonianParameterization:
 
 
 
-    def __call__(self, *parameters: float) -> Hamiltonian:
-        """ Get the Hamiltonian with parameters set """
+    def __call__(self, *parameters: float) -> Hamiltonian:  # noqa: D102
         if len(parameters) != self._n_parameters:
             raise ValueError(f"Expected {self._n_parameters} parameters, got {len(parameters)}")
 

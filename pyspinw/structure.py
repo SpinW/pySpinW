@@ -1,4 +1,4 @@
-""" Magnetic structures """
+"""Magnetic structures."""
 import logging
 
 import numpy as np
@@ -21,7 +21,37 @@ from pyspinw.util import connected_components, arraylike_equality, IncrementalPo
 logger = logging.getLogger("Structure")
 
 class Structure(SPWSerialisable):
-    """ Representation of the magnetic structure """
+    """Representation of the magnetic structure.
+
+    Parameters
+    ----------
+    sites : list of Site
+        Sites used to define the structure.
+    unit_cell : UnitCell
+        Unit cell of the crystal structure.
+    spacegroup : SymmetryGroup or None, optional
+        Space group or symmetry group of the structure. If ``None``, P1
+        symmetry is used. Default is ``None``.
+    supercell : Supercell or None, optional
+        Supercell definition. If ``None``, a ``TiledSupercell`` is used.
+        Default is ``None``.
+    skip_checks : bool, optional
+        Whether to skip validation checks on supercell spin dimensions and unit
+        cell symmetry constraints. Default is ``False``.
+    show_unit_cell_warning : bool, optional
+        Whether to log a warning if the unit cell violates negative lattice
+        constraints. Default is ``True``.
+    assume_symmetric_sites_are_provided : bool, optional
+        Whether ``symmetric_sites`` already contains all symmetry-implied
+        sites. Default is ``False``.
+    cooerce_spin_data_to_match_supercell : bool, optional
+        Whether single-component site spin data should be repeated to match
+        the number of supercell components. Default is ``True``.
+    symmetric_sites : list of Site or None, optional
+        Pre-computed list of symmetry-expanded sites used when
+        ``assume_symmetric_sites_are_provided`` is ``True``. Default is
+        ``None``.
+    """
 
     serialisation_name = "structure"
 
@@ -104,7 +134,14 @@ class Structure(SPWSerialisable):
 
 
     def full_structure_site_list(self):
-        """ All the sites in the structure"""
+        """All the sites in the structure.
+
+        Returns
+        -------
+        list of Site
+            All sites across all cells in the supercell, including
+            symmetry-implied sites.
+        """
         all_sites = []
 
         # unit cell stuff
@@ -123,14 +160,36 @@ class Structure(SPWSerialisable):
         return all_sites
 
     def matplotlib_site_data(self):
-        """ Data for making matplotlib scatter plots of sites """
+        """Data for making matplotlib scatter plots of sites.
+
+        Returns
+        -------
+        x : numpy.ndarray
+            Cartesian x-coordinates of all sites in the supercell.
+        y : numpy.ndarray
+            Cartesian y-coordinates of all sites in the supercell.
+        z : numpy.ndarray
+            Cartesian z-coordinates of all sites in the supercell.
+        """
         array_data = np.array([self.unit_cell.lattice_units_to_cartesian(site._ijk)
                          for site in self.full_structure_site_list()])
 
         return array_data[:,0], array_data[:, 1], array_data[:, 2]
 
     def _extended_sites(self)  -> list[Site]:
-        """ All the sites, including those implied by symmetry """
+        """All the sites, including those implied by symmetry.
+
+        Returns
+        -------
+        list of Site
+            Unique sites within the unit cell after applying space group
+            operations and resolving site collisions.
+
+        Raises
+        ------
+        ValueError
+            If multiple input sites occupy the same spatial location.
+        """
         site_list = self._input_sites.copy()
         for site in self._input_sites:
             site_list += self._spacegroup.implied_sites_for(site, self.unit_cell)
@@ -210,7 +269,22 @@ class Structure(SPWSerialisable):
         return unique_sites
 
     def _expansion_site_mapping(self, supercell_size: tuple[int, int, int] | None = None):
-        """ Expand supercell into a single, bigger cell """
+        """Expand supercell into a single, bigger cell.
+
+        Parameters
+        ----------
+        supercell_size : tuple of (int, int, int) or None, optional
+            Explicit supercell scaling ``(na, nb, nc)``. If ``None``, the
+            current supercell's ``cell_size()`` is used. Default is ``None``.
+
+        Returns
+        -------
+        big_cell : UnitCell
+            Expanded unit cell scaled by ``supercell_size``.
+        mapping : dict
+            Mapping from ``(site_unique_id, cell_offset_tuple)`` to the
+            corresponding ``Site`` in the expanded unit cell.
+        """
         # Calculate new cell
         if supercell_size is None:
             scale = self.supercell.cell_size()
@@ -249,7 +323,15 @@ class Structure(SPWSerialisable):
         return big_cell, mapping
 
     def site_pairs(self):
-        """ Generator for pairs of sites"""
+        """Generator for pairs of sites.
+
+        Yields
+        ------
+        site_1 : Site
+            First site in the pair.
+        site_2 : Site
+            Second site in the pair (distinct from ``site_1``).
+        """
         for index_1, site_1 in enumerate(self.sites):
             for index_2, site_2 in enumerate(self.sites):
                 if index_1 == index_2:
@@ -257,7 +339,13 @@ class Structure(SPWSerialisable):
                 yield site_1, site_2
 
     def expand(self):
-        """ Expand supercell into a single, bigger cell """
+        """Expand supercell into a single, bigger cell.
+
+        Returns
+        -------
+        Structure
+            New structure whose unit cell encompasses the entire supercell.
+        """
         cell, mapping = self._expansion_site_mapping()
 
 
@@ -269,7 +357,15 @@ class Structure(SPWSerialisable):
         )
 
     def _without_nonmagnetic_with_removed_uids(self) -> tuple["Structure", set[int]]:
-        """ Get a copy of the structure without magnetic sites, along with a list of uids for the removed sites """
+        """Get a copy of the structure without non-magnetic sites, along with a list of uids for the removed sites.
+
+        Returns
+        -------
+        new_structure : Structure
+            Structure with non-magnetic sites removed.
+        excluded_uids : set of int
+            Unique IDs of the removed non-magnetic sites.
+        """
         new_sites: list[Site] = []
 
         # Get rid of the nonmagnetic atoms from input sites
@@ -299,27 +395,61 @@ class Structure(SPWSerialisable):
         return new_structure, excluded_uids
 
     def without_nonmagnetic(self) -> "Structure":
-        """ Get a copy of this structure with non-magnetic sites removed"""
+        """Get a copy of this structure with non-magnetic sites removed.
+
+        Returns
+        -------
+        Structure
+            Copy of this structure containing only magnetic sites.
+        """
         structure, _ = self._without_nonmagnetic_with_removed_uids()
 
         return structure
 
     def _build_sites(self):
-        """ Updates the site variable on parameter changes"""
+        """Updates the site variable on parameter changes."""
         self._sites = self._extended_sites()
 
     @property
     def sites(self) -> list[Site]:
-        """ Get the sites used to define the structure and implied by symmetry """
+        """Get the sites used to define the structure and implied by symmetry."""
         return self._sites.copy()
         # return self._input_sites.copy()
 
     def sites_by_name(self, name) -> list[Site]:
-        """ Get sites where name matches regex"""
+        """Find sites by their name, can make multiple matches.
+
+        Parameters
+        ----------
+        name : str
+            Case-insensitive prefix used to match site names.
+
+        Returns
+        -------
+        list of Site
+            Sites whose names start with ``name`` (case-insensitive).
+        """
         return [site for site in self._sites if site.name.lower().startswith(name.lower())]
 
     def site_by_name(self, name: str):
-        """ Get a single site by its name"""
+        """Get a single site by its name.
+
+        Parameters
+        ----------
+        name : str
+            Site name or prefix to look up.
+
+        Returns
+        -------
+        Site
+            Matching site.
+
+        Raises
+        ------
+        ValueError
+            If no site matches ``name`` or if multiple sites match without a
+            unique exact match.
+        """
         found = self.sites_by_name(name)
         if len(found) == 0:
             raise ValueError(f"No site matching '{name}' found")
@@ -344,13 +474,45 @@ class Structure(SPWSerialisable):
             return found[0]
 
     def sites_by_element(self, element: str | None) -> list[Site]:
-        """ Get list of sites with the specified element in the metadata"""
+        """Get list of sites with the specified element in the metadata.
+
+        Parameters
+        ----------
+        element : str or None
+            Chemical element symbol to match (or ``None``).
+
+        Returns
+        -------
+        list of Site
+            Sites whose metadata element equals ``element``.
+
+        Raises
+        ------
+        ValueError
+            If ``element`` is not a known chemical symbol.
+        """
         if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"{element} is not a known element")
         return [site for site in self._sites if site.metadata.element == element]
 
     def without_elements(self, *elements):
-        """ Get the structure without sites with given elements"""
+        """Get the structure without sites with given elements.
+
+        Parameters
+        ----------
+        *elements : str or None
+            Chemical element symbols to exclude from the structure.
+
+        Returns
+        -------
+        Structure
+            New structure with sites matching ``elements`` removed.
+
+        Raises
+        ------
+        ValueError
+            If any specified element is not a known chemical symbol.
+        """
         for element in elements:
             if element is not None and element not in chemical_symbols[1:]:
                 raise ValueError(f"{element} is not a known element")
@@ -362,7 +524,7 @@ class Structure(SPWSerialisable):
 
     @property
     def text_summary(self) -> str:
-        """ Textual details of this structure """
+        """Textual details of this structure."""
         lines = []
         lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
         lines.append(f"Spacegroup: {self.spacegroup.preferred_symbol}")
@@ -379,7 +541,7 @@ class Structure(SPWSerialisable):
         return "\n".join(lines)
 
     def print_summary(self):
-        """ Print out details of this structure """
+        """Print out details of this structure."""
         print(self.text_summary)
 
     def all_neighbours(self,
@@ -388,13 +550,32 @@ class Structure(SPWSerialisable):
                        element: str | None = None,
                        direction_filter: DirectionalityFilter | None = None) \
             -> list[list[tuple[Site, CellOffset]]]:
-        """ Get list-of-lists containing (i<=n)-th nearest neighbours along with their cell offsets
+        """Get list-of-lists containing (i<=n)-th nearest neighbours along with their cell offsets.
 
-        :param n: maximum n for n-th nearest neighbour
-        :param element: Restrict search to this element
-        :param direction_filter: Filter the results using this
+        Parameters
+        ----------
+        site : Site
+            Reference site from which neighbour distances are measured.
+        n : int, optional
+            Maximum neighbour order ``n`` for ``n``-th nearest neighbours.
+            Default is ``1``.
+        element : str or None, optional
+            Restrict search to sites of this chemical element. Default is
+            ``None``.
+        direction_filter : DirectionalityFilter or None, optional
+            Filter the results using this directionality filter. Default is
+            ``None``.
 
-        :returns: a list of (site, offset) pairs for each order up-to and including `neighbour`
+        Returns
+        -------
+        list of list of tuple of (Site, CellOffset)
+            List of ``(site, offset)`` pairs for each neighbour order from 0
+            up to and including ``n``.
+
+        Raises
+        ------
+        ValueError
+            If ``element`` is not a valid chemical element symbol.
         """
         if element is not None and element not in chemical_symbols[1:]:
             raise ValueError(f"{element} is not an element")
@@ -456,13 +637,27 @@ class Structure(SPWSerialisable):
                    n=1,
                    element: str | None = None,
                    direction_filter: DirectionalityFilter | None = None):
-        """ Get a list of n-th nearest neighbours, along with cell offsets
+        """Get a list of n-th nearest neighbours, along with cell offsets.
 
-        :param n: maximum n for n-th nearest neighbour
-        :param element: Restrict search to this element
-        :param direction_filter: Filter the results using this
+        Parameters
+        ----------
+        site : Site
+            Reference site from which neighbour distances are measured.
+        n : int, optional
+            Neighbour order ``n`` for ``n``-th nearest neighbours. Default is
+            ``1``.
+        element : str or None, optional
+            Restrict search to sites of this chemical element. Default is
+            ``None``.
+        direction_filter : DirectionalityFilter or None, optional
+            Filter the results using this directionality filter. Default is
+            ``None``.
 
-        :returns: a list of (site, offset) for n-th nearest neighbour
+        Returns
+        -------
+        list of tuple of (Site, CellOffset)
+            List of ``(site, offset)`` pairs for the ``n``-th nearest
+            neighbours.
         """
         all_neighbors = self.all_neighbours(
                 site = site,
@@ -477,13 +672,31 @@ class Structure(SPWSerialisable):
                       n=1,
                       element: str | None = None,
                       direction_filter: DirectionalityFilter | None = None):
-        """ Get one, arbitrary, n-th nearest neighbours, along with cell offsets
+        """Get one, arbitrary, n-th nearest neighbour, along with cell offset.
 
-        :param n: maximum n for n-th nearest neighbour
-        :param element: Restrict search to this element
-        :param direction_filter: Filter the results using this
+        Parameters
+        ----------
+        site : Site
+            Reference site from which neighbour distances are measured.
+        n : int, optional
+            Neighbour order ``n`` for ``n``-th nearest neighbours. Default is
+            ``1``.
+        element : str or None, optional
+            Restrict search to sites of this chemical element. Default is
+            ``None``.
+        direction_filter : DirectionalityFilter or None, optional
+            Filter the results using this directionality filter. Default is
+            ``None``.
 
-        :returns: a list of (site, offset) for n-th nearest neighbour
+        Returns
+        -------
+        tuple of (Site, CellOffset)
+            Single ``(site, offset)`` pair for an ``n``-th nearest neighbour.
+
+        Raises
+        ------
+        ValueError
+            If no neighbours pass the filter.
         """
         neighbors = self.neighbours(
             site=site,
@@ -498,7 +711,20 @@ class Structure(SPWSerialisable):
 
 
     def symmetry_related(self, site: Site) -> list[tuple[Site, set[SpaceOperation]]]:
-        """ Get a list of sites related to the specified site by symmetry, including the original site"""
+        """Get a list of sites related to the specified site by symmetry, including the original site.
+
+        Parameters
+        ----------
+        site : Site
+            Reference site to match under space group operations.
+
+        Returns
+        -------
+        list of tuple of (Site, set of SpaceOperation)
+            Pairs of ``(other_site, operations)`` where ``operations`` is the
+            non-empty set of space group operations mapping ``site`` to
+            ``other_site``.
+        """
         symmetry_related = []
         for other_site in self._sites:
 
@@ -510,7 +736,7 @@ class Structure(SPWSerialisable):
 
     @property
     def text_summary(self) -> str:
-        """ Textual details of this structure """
+        """Textual details of this structure."""
         lines = []
         lines.append(f"Unit Cell: {self.unit_cell.text_summary}")
         lines.append(f"Spacegroup: {self.spacegroup._description()}")
@@ -527,33 +753,31 @@ class Structure(SPWSerialisable):
         return "\n".join(lines)
 
     def print_summary(self):
-        """ Print out details of this structure """
+        """Print out details of this structure."""
         print(self.text_summary)
 
     @property
     def spacegroup(self) -> SpaceGroup:
-        """ Get the spacegroup"""
+        """Get the spacegroup."""
         return self._spacegroup
 
     @property
     def unit_cell(self) -> UnitCell:
-        """ Get the unit cell"""
+        """Get the unit cell."""
         return self._unit_cell
 
     @unit_cell.setter
     def unit_cell(self, unit_cell: UnitCell):
-        """ Set the unit cell"""
         self._unit_cell = unit_cell
         self._build_sites()
 
     @property
     def supercell(self) -> Supercell:
-        """ Get the supercell """
+        """Get the supercell."""
         return self._supercell
 
     @supercell.setter
     def supercell(self, supercell: Supercell):
-        """ Set the supercell """
         self._supercell = supercell
         self._build_sites()
 
@@ -562,12 +786,33 @@ class Structure(SPWSerialisable):
                 unit_cell: UnitCell | None = None,
                 spacegroup: SymmetryGroup | None = None,
                 supercell: Supercell | None = None):
-        """ Make a copy of this structure, but with selected (not None) fields replaced"""
+        """Make a copy of this structure, but with selected (not None) fields replaced.
+
+        Parameters
+        ----------
+        sites : list of Site or None, optional
+            Replacement site list. If ``None``, the current sites are reused.
+            Default is ``None``.
+        unit_cell : UnitCell or None, optional
+            Replacement unit cell. If ``None``, the current unit cell is
+            reused. Default is ``None``.
+        spacegroup : SymmetryGroup or None, optional
+            Replacement space group. If ``None``, the current space group is
+            reused. Default is ``None``.
+        supercell : Supercell or None, optional
+            Replacement supercell. If ``None``, the current supercell is
+            reused. Default is ``None``.
+
+        Returns
+        -------
+        Structure
+            Updated copy of this structure.
+        """
         symmetry_considerations_changed = sites is not None and spacegroup is not None
         sites_to_send = None if symmetry_considerations_changed else self.sites
 
         return Structure(
-            self._input_sites,
+            self._input_sites if sites is None else sites,
             self._unit_cell if unit_cell is None else unit_cell,
             self._spacegroup if spacegroup is None else spacegroup,
             self._supercell if supercell is None else supercell,
@@ -580,7 +825,31 @@ class Structure(SPWSerialisable):
                              site_1: Site | str | ArrayLike,
                              site_2: Site | str | ArrayLike,
                              do_print=True):
-        """ Get the constraints for the exchange matrix between two sites """
+        """Get the constraints for the exchange matrix between two sites.
+
+        Parameters
+        ----------
+        site_1 : Site or str or array_like
+            First site, specified as a ``Site``, site name, or 3-element
+            fractional coordinate vector.
+        site_2 : Site or str or array_like
+            Second site, specified as a ``Site``, site name, or 3-element
+            fractional coordinate vector.
+        do_print : bool, optional
+            Whether to print the constraints to standard output. Default is
+            ``True``.
+
+        Returns
+        -------
+        ParameterizationResult
+            Symmetry constraints on the exchange matrix between ``site_1`` and
+            ``site_2``.
+
+        Raises
+        ------
+        TypeError
+            If ``site_1`` or ``site_2`` cannot be resolved to a ``Site``.
+        """
         if isinstance(site_1, str):
             site_1 = self.site_by_name(site_1)
 
@@ -611,7 +880,27 @@ class Structure(SPWSerialisable):
     def anisotropy_constraints(self,
                                site: Site | str | ArrayLike,
                                do_print=True):
-        """ Get the constraints on anisotropies for a given site """
+        """Get the constraints on anisotropies for a given site.
+
+        Parameters
+        ----------
+        site : Site or str or array_like
+            Target site, specified as a ``Site``, site name, or 3-element
+            fractional coordinate vector.
+        do_print : bool, optional
+            Whether to print the constraints to standard output. Default is
+            ``True``.
+
+        Returns
+        -------
+        ParameterizationResult
+            Symmetry constraints on the anisotropy matrix at ``site``.
+
+        Raises
+        ------
+        TypeError
+            If ``site`` cannot be resolved to a ``Site``.
+        """
         if isinstance(site, str):
             site = self.site_by_name(site)
 

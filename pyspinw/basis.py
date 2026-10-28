@@ -1,4 +1,4 @@
-"""Functions for working with different basis vectors"""
+"""Functions for working with different basis vectors."""
 
 import numpy as np
 from pyspinw.checks import check_sizes
@@ -8,10 +8,23 @@ from pyspinw.util import triple_product_matrix
 
 @check_sizes(vectors=(-1, 3))
 def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Find a set of orthonormal basis vectors aligned with the first being aligned to the input vectors
+    """Find a set of orthonormal basis vectors aligned with the first being aligned to the input vectors.
 
-    :param vectors: an n-by-3 numpy array containing the vectors to use to calculate the basis
-    :param rcond: tolerance on the calculation, default is 3 * machine precision
+    Parameters
+    ----------
+    vectors : (N, 3) numpy.ndarray
+        An n-by-3 numpy array containing the vectors to use to calculate the basis.
+    rcond : float, optional
+        Tolerance on the calculation. Default is 3 * machine precision.
+
+    Returns
+    -------
+    e_1 : (N, 3) numpy.ndarray
+        First basis vectors, aligned with the input vectors.
+    e_2 : (N, 3) numpy.ndarray
+        Second basis vectors, orthogonal to ``e_1``.
+    e_3 : (N, 3) numpy.ndarray
+        Third basis vectors, orthogonal to ``e_1`` and ``e_2``.
     """
     if rcond is None:
         rcond = 3*np.finfo(vectors.dtype).eps # N * floating point epsilon
@@ -52,14 +65,45 @@ def find_aligned_basis(vectors: np.ndarray, rcond: float | None = None) -> tuple
     return e_1, e_2, e_3
 
 def site_rotations(vectors: np.ndarray, rcond: float | None = None):
-    """ Return an aligned basis as an n-by-3-by-3 matrix """
+    """Return an aligned basis as an n-by-3-by-3 matrix.
+
+    Parameters
+    ----------
+    vectors : (N, 3) numpy.ndarray
+        An n-by-3 numpy array containing the vectors to use to calculate the basis.
+    rcond : float, optional
+        Tolerance on the calculation. Default is 3 * machine precision.
+
+    Returns
+    -------
+    (N, 3, 3) numpy.ndarray
+        Stacked orthonormal basis matrices ``[e3, e2, e1]`` for each vector.
+    """
     e1, e2, e3 = find_aligned_basis(vectors, rcond)
 
     return np.stack([e3, e2, e1], axis=2)
 
 @check_sizes(axis=(3,), force_numpy=True)
 def angle_axis_rotation_matrix(angle_rad, axis: np.ndarray):
-    """ Get a matrix for rotation by `angle_rad` radians around the axis `axis`"""
+    """Get a matrix for rotation by `angle_rad` radians around the axis `axis`.
+
+    Parameters
+    ----------
+    angle_rad : float
+        Rotation angle in radians.
+    axis : (3,) array_like
+        3D vector defining the axis of rotation.
+
+    Returns
+    -------
+    (3, 3) numpy.ndarray
+        3x3 rotation matrix.
+
+    Raises
+    ------
+    ValueError
+        If the rotation axis has a very small or zero magnitude.
+    """
     mag = np.sqrt(np.sum(axis**2))
 
     if mag < tolerances.IS_ZERO_TOL:
@@ -77,7 +121,7 @@ def angle_axis_rotation_matrix(angle_rad, axis: np.ndarray):
     return part1 + part2 + part3
 
 def demo_find_aligned_basis():
-    """Example / test for find_aligned_basis"""
+    """Example / test for find_aligned_basis."""
     test_vectors = np.array([
         [2, 0, 0],
         [0, 3, 0],
@@ -92,7 +136,7 @@ def demo_find_aligned_basis():
     print(e3)
 
 def demo_angle_axis_rotation_matrix():
-    """ Show some plots demonstrating the angle-axis rotations"""
+    """Show some plots demonstrating the angle-axis rotations."""
     import matplotlib.pyplot as plt
 
     v = np.array([1,0,0])

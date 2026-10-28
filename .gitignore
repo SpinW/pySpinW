@@ -187,3 +187,6 @@ uv.lock
 
 # MacOS files
 .DS_Store
+
+# AI Agents
+.agents

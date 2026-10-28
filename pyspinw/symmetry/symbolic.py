@@ -1,4 +1,4 @@
-""" The contents of this file is used for parsing text forms of symmetry operations, e.g. (y-x,x,z+1/2)"""
+"""The contents of this file is used for parsing text forms of symmetry operations, e.g. (y-x,x,z+1/2)."""
 
 import ast
 import operator
@@ -12,11 +12,24 @@ OPS = {
 }
 
 def evaluate(expression, variables):
-    """ Numerical evaluation of algebraic expression written as a string
+    """Numerical evaluation of algebraic expression written as a string.
 
-    :param expression: String form expression, e.g. x+y
-    :param variables: dictionary of string/value pairs e.g. {"x": 1, "y": 2}
+    Parameters
+    ----------
+    expression : str
+        String form expression, e.g. ``"x+y"``.
+    variables : dict of {str: float or numpy.ndarray}
+        Dictionary of variable name and value pairs, e.g. ``{"x": 1, "y": 2}``.
 
+    Returns
+    -------
+    float or numpy.ndarray
+        Evaluated result of the algebraic expression.
+
+    Raises
+    ------
+    ValueError
+        If the expression contains an unsupported AST node.
     """
     tree = ast.parse(expression, mode="eval")
 

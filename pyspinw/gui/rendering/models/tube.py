@@ -1,4 +1,4 @@
-""" Tube Model """
+"""Tube Model."""
 
 import numpy as np
 
@@ -6,7 +6,16 @@ from pyspinw.gui.rendering.model import Model
 
 
 class Tube(Model):
-    """ 3D Model of hollow tube """
+    """3D Model of hollow tube.
+
+    Parameters
+    ----------
+    n_points : int, optional
+        Number of angular sample points around the circumference. Default is ``51``.
+    padding : float, optional
+        Radial padding added to the unit tube radius (e.g., for selection outlines).
+        Default is ``0.0``.
+    """
 
     def __init__(self, n_points=51, padding=0.0):
         super().__init__()

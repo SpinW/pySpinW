@@ -1,9 +1,20 @@
-""" Functions for dealing with the sites/exchanges lying on the boundary of the unit/super cell"""
+"""Functions for dealing with the sites/exchanges lying on the boundary of the unit/super cell."""
 
 import numpy as np
 
 def _hypercube(n):
-    """ Inner loop for `hypercube`"""
+    """Inner loop for `hypercube`.
+
+    Parameters
+    ----------
+    n : int
+        Dimension of the hypercube.
+
+    Returns
+    -------
+    list of list of int
+        List of vertex coordinate lists in ``{0, 1}^n``.
+    """
     if n <= 0:
         return [[]]
 
@@ -12,7 +23,18 @@ def _hypercube(n):
         return [x + [0] for x in smaller] + [x + [1] for x in smaller]
 
 def hypercube(n):
-    """ Generate points in an n-dimensional unit hypercube"""
+    """Generate points in an n-dimensional unit hypercube.
+
+    Parameters
+    ----------
+    n : int
+        Dimension of the hypercube.
+
+    Returns
+    -------
+    list of numpy.ndarray
+        List of 1D arrays representing the vertices of the unit hypercube.
+    """
     return [np.array(x) for x in _hypercube(n)]
 
 # rules for replacement
@@ -20,13 +42,27 @@ replacements = {i: hypercube(i) for i in range(4)}
 
 
 def add_extra_edge_lines(point_pairs: list[tuple[np.ndarray, np.ndarray]], tol=1e-12):
-    """ When a line lives on the x/y/z=0 face/edges of the unit cube, make extra ones
+    """When a line lives on the x/y/z=0 face/edges of the unit cube, make extra ones.
 
     * If a line lives on a face an not an edge, i.e. one component in both points are zero, we replace
        two copies, one where the component is zero, the other where it is one.
-    * If a line lives on an edge, i.e. 2 two of the components in both points are zero, we need to make 4 copies
-       with the two components being [0,0], [0,1], [1,0] and [0,0]
+    * If a line lives on an edge, i.e. two of the components in both points are zero, we need to make 4 copies
+       with the two components being [0,0], [0,1], [1,0] and [1,1]
     * Three being zero should not happen, because the line will have length zero
+
+    Parameters
+    ----------
+    point_pairs : list of tuple of (numpy.ndarray, numpy.ndarray)
+        List of line segment endpoint pairs in fractional coordinates.
+    tol : float, optional
+        Absolute tolerance for checking whether a coordinate is zero. Default
+        is ``1e-12``.
+
+    Returns
+    -------
+    list of tuple of (numpy.ndarray, numpy.ndarray)
+        Expanded list of line segment endpoint pairs including periodic
+        boundary copies.
     """
     new_pair_list = []
     for a, b in point_pairs:
@@ -49,7 +85,21 @@ def add_extra_edge_lines(point_pairs: list[tuple[np.ndarray, np.ndarray]], tol=1
 
 
 def add_extra_edge_points(point, tol=1e-12):
-    """ If a point has any coordinate of zero, add extra ones at 1 """
+    """If a point has any coordinate of zero, add extra ones at 1.
+
+    Parameters
+    ----------
+    point : numpy.ndarray
+        Point coordinates in the unit cube.
+    tol : float, optional
+        Absolute tolerance for checking whether a coordinate is zero. Default
+        is ``1e-12``.
+
+    Returns
+    -------
+    list of numpy.ndarray
+        List of point coordinate arrays including periodic boundary copies.
+    """
     zeros = np.isclose(point, 0, atol=tol)
 
     n_zeros = int(np.sum(zeros))

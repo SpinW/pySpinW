@@ -1,4 +1,4 @@
-""" Main widget for Qt/GL rendering of magnetic crystal structures"""
+"""Main widget for Qt/GL rendering of magnetic crystal structures."""
 
 import numpy as np
 from PySide6.QtCore import QTimer, QPoint, Signal
@@ -38,7 +38,17 @@ _selection_size = 0.2
 _orthographic_axes_fixed_size = 3
 
 class CrystalViewerWidget(QOpenGLWidget):
-    """ Qt widget to show magnetic crystal structures """
+    """Qt widget to show magnetic crystal structures.
+
+    Parameters
+    ----------
+    render_model : RenderModel
+        Model containing the crystal structure and magnetic interactions to render.
+    initial_rotation : (3, 3) numpy.ndarray or None, optional
+        Initial 3x3 view rotation matrix. Default is ``None`` (identity matrix).
+    initial_distance : float or None, optional
+        Initial camera distance from the view origin. Default is ``None`` (``10.0``).
+    """
 
     hoverChanged = Signal()
     selectionChanged = Signal()
@@ -101,7 +111,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
     def initializeGL(self):
-        """ Qt override, set up the GL rendering """
+        """Qt override, set up the GL rendering."""
         glEnable(GL_DEPTH_TEST)
 
         try:
@@ -151,7 +161,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             logger.exception(e)
 
     def paintGL(self):
-        """ Qt override, paints the GL canvas"""
+        """Qt override, paints the GL canvas."""
         #
         # Normal painting, let Qt do its thing
         #
@@ -256,7 +266,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                             else:
                                 mode = SelectionMode.NOT_SELECTED
 
-                        show_arrow = site.is_magnetic and self.display_options.show_atoms_not_spins
+                        show_arrow = site.is_magnetic and self.display_options.show_spins_not_atoms
                         render_object = self.arrow if show_arrow else self.small_sphere
                         selection_render_object = self.selection_arrow if show_arrow else self.selection_small_sphere
 
@@ -544,7 +554,14 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.last_hover_id = id
 
     def snapshot(self) -> np.ndarray:
-        """ Get the data from the current frame """
+        """Get the data from the current frame.
+
+        Returns
+        -------
+        numpy.ndarray
+            3D array of shape ``(height, width, 4)`` with dtype ``uint8``
+            containing the RGBA image of the current frame.
+        """
         qimage = self.grabFramebuffer()
         qimage = qimage.convertToFormat(QImage.Format.Format_RGBA8888)
 
@@ -556,7 +573,7 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
     def resizeGL(self, w, h):
-        """ Qt override, called when window is resized """
+        """Qt override, called when window is resized."""
         self.camera.horizontal_pixels = w
         self.camera.vertical_pixels = h
         dpr = self.devicePixelRatio()
@@ -564,13 +581,21 @@ class CrystalViewerWidget(QOpenGLWidget):
 
 
     def reset_view(self):
-        """ Reset the view to default """
+        """Reset the view to default."""
         self.view_origin = self.render_model.expanded.structure.unit_cell.centre
         self.view_rotation = np.eye(3)
         self.view_radius = 10.0
 
     def click_on_element(self, index: int, shift: bool):
-        """ Response to clicking on an element """
+        """Response to clicking on an element.
+
+        Parameters
+        ----------
+        index : int
+            Render ID of the clicked element (``0`` if background).
+        shift : bool
+            Whether the Shift modifier key was held during the click.
+        """
         if index == 0:
             if not shift:
                 self.current_selection = []
@@ -585,7 +610,7 @@ class CrystalViewerWidget(QOpenGLWidget):
             self.selectionChanged.emit()
 
     def mousePressEvent(self, event):
-        """ Qt override, called on mouse press"""
+        """Qt override, called on mouse press."""
         if self.mouse_data is None:
             self.mouse_data = event.position(), event.button(), self.hover_ids
 
@@ -597,7 +622,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                 self.mouse_origin = np.zeros((3, ), dtype=float)
 
     def mouseMoveEvent(self, event):
-        """Qt override, called on mouse movement"""
+        """Qt override, called on mouse movement."""
         self.mouse_position = event.position()
 
         if self.mouse_data is not None:
@@ -621,7 +646,7 @@ class CrystalViewerWidget(QOpenGLWidget):
                     0.0])
 
     def mouseReleaseEvent(self, event):
-        """ Qt override, called on mouse up"""
+        """Qt override, called on mouse up."""
         if event.button() == Qt.MouseButton.LeftButton:
 
             start, button, _ = self.mouse_data
@@ -646,14 +671,14 @@ class CrystalViewerWidget(QOpenGLWidget):
         self.mouse_origin = np.zeros((3, ), dtype=float)
 
     def wheelEvent(self, event):
-        """ Qt override, called when scroll wheel moves """
+        """Qt override, called when scroll wheel moves."""
         self.view_radius *= 2**(self.mouse_zoom_sensitivity * event.angleDelta().y())
 
         if self.view_radius < self.min_view_radius:
             self.view_radius = self.min_view_radius
 
     def leaveEvent(self, event):
-        """ Qt override, mouse leaves widget"""
+        """Qt override, mouse leaves widget."""
         self.mouse_position = None
         event.accept()
 

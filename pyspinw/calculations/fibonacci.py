@@ -1,8 +1,9 @@
-""" Routines for calculating a Fibonacci distribution on a sphere
+"""Routines for calculating a Fibonacci distribution on a sphere.
 
-See: J H Hannay and J F Nye 2004 J. Phys. A: Math. Gen. 37 11591
-DOI: 10.1088/0305-4470/37/48/005
-
+References
+----------
+.. [1] J. H. Hannay and J. F. Nye, J. Phys. A: Math. Gen. 37, 11591 (2004).
+   DOI: 10.1088/0305-4470/37/48/005
 """
 
 
@@ -14,16 +15,30 @@ _golden_ratio_inv_neg = -0.5*(_root_5 - 1)
 
 
 class Fibonacci:
-    """ Routines for calculating a Fibonacci distribution on a sphere
+    """Routines for calculating a Fibonacci distribution on a sphere.
 
-    See: J H Hannay and J F Nye 2004 J. Phys. A: Math. Gen. 37 11591
-    DOI: 10.1088/0305-4470/37/48/005
-
+    References
+    ----------
+    .. [1] J. H. Hannay and J. F. Nye, J. Phys. A: Math. Gen. 37, 11591 (2004).
+       DOI: 10.1088/0305-4470/37/48/005
     """
 
     @staticmethod
     def straddling_fibonaccis(n):
-        "Get the Fibonacci greater than or equal to n, and the one before "
+        """Get the Fibonacci greater than or equal to n, and the one before.
+
+        Parameters
+        ----------
+        n : int
+            Target number of points.
+
+        Returns
+        -------
+        a : int
+            Fibonacci number immediately preceding `b`.
+        b : int
+            Smallest Fibonacci number greater than or equal to `n`.
+        """
         a = 1
         b = 1
 
@@ -34,7 +49,22 @@ class Fibonacci:
 
     @staticmethod
     def _phi_z_and_weights(n_points_requested):
-        """ Calculate the points and weights for a given requested points"""
+        """Calculate the points and weights for a given requested points.
+
+        Parameters
+        ----------
+        n_points_requested : int
+            Requested minimum number of points on the sphere.
+
+        Returns
+        -------
+        phi : numpy.ndarray
+            Azimuthal angles of the Fibonacci points.
+        z : numpy.ndarray
+            Axial coordinates ($z$-values) of the Fibonacci points.
+        weights : numpy.ndarray
+            Integration weights for each point.
+        """
         # Notation used in paper, see class docstring
 
         F_prime, F = Fibonacci.straddling_fibonaccis(n_points_requested)
@@ -54,7 +84,20 @@ class Fibonacci:
 
     @staticmethod
     def points_and_weights(n_points_requested):
-        """ Get points on sphere and weights """
+        """Get points on sphere and weights.
+
+        Parameters
+        ----------
+        n_points_requested : int
+            Requested minimum number of points on the sphere.
+
+        Returns
+        -------
+        points : (N, 3) numpy.ndarray
+            Cartesian coordinates of points on the unit sphere.
+        weights : (N,) numpy.ndarray
+            Integration weights for each point.
+        """
         # Get points and weights in phi, z coordinates
         phi, z, weights = Fibonacci._phi_z_and_weights(n_points_requested)
 

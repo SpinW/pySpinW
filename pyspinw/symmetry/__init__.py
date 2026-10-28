@@ -1,1 +1,1 @@
-""" Symmetry module"""
+"""Symmetry module."""

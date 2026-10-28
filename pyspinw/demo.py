@@ -1,12 +1,12 @@
-""" Demonstrations / packaging tests """
+"""Demonstrations / packaging tests."""
 
 def run_demos():
-    """ Run through general tasks that should test things are installed correctly"""
+    """Run through general tasks that should test things are installed correctly."""
     demo_viewer()
     demo_chains()
 
 def demo_chains():
-    """ Antiferromagnetic chain example """
+    """Antiferromagnetic chain example."""
     from pyspinw import (UnitCell, Site, HeisenbergExchange, Structure,
                          Hamiltonian, Path)
 
@@ -61,7 +61,7 @@ def demo_chains():
     parameterized_hamiltonian.energy_plot(j_values, path)
 
 def demo_viewer():
-    """ Show the viewer with an example """
+    """Show the viewer with an example."""
     from pyspinw import (
         UnitCell, Site, Structure, TiledSupercell,
         generate_exchanges, HeisenbergExchange, Hamiltonian, view)

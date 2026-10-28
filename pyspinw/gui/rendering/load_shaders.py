@@ -1,4 +1,4 @@
-""" Helper methods for loading and compiling shaders """
+"""Helper methods for loading and compiling shaders."""
 
 import logging
 import os.path
@@ -13,7 +13,25 @@ from OpenGL.GL import (glCreateShader, glShaderSource, glCompileShader, glGetSha
 logger = logging.Logger("pyspinw.gui.rendering.shaders")
 
 def _compile_shader(source, shader_type):
-    """ Compile a shader """
+    """Compile a shader.
+
+    Parameters
+    ----------
+    source : str
+        GLSL shader source code.
+    shader_type : int
+        OpenGL shader type constant (e.g., ``GL_VERTEX_SHADER`` or ``GL_FRAGMENT_SHADER``).
+
+    Returns
+    -------
+    int
+        Compiled OpenGL shader handle.
+
+    Raises
+    ------
+    RuntimeError
+        If shader compilation fails.
+    """
     shader = glCreateShader(shader_type)
 
     glShaderSource(shader, source)
@@ -27,7 +45,25 @@ def _compile_shader(source, shader_type):
     return shader
 
 def _create_shader_program(vs_src, fs_src):
-    """ Create a program object with vertex and fragment shaders """
+    """Create a program object with vertex and fragment shaders.
+
+    Parameters
+    ----------
+    vs_src : str
+        Vertex shader GLSL source code.
+    fs_src : str
+        Fragment shader GLSL source code.
+
+    Returns
+    -------
+    int
+        Linked OpenGL shader program handle.
+
+    Raises
+    ------
+    RuntimeError
+        If shader compilation or program linking fails.
+    """
     vertex_shader = _compile_shader(vs_src, GL_VERTEX_SHADER)
     fragment_shader = _compile_shader(fs_src, GL_FRAGMENT_SHADER)
 
@@ -49,7 +85,20 @@ def _create_shader_program(vs_src, fs_src):
 
 
 def load_shaders(fragment_filename: str | None = None, vertex_filename: str | None = None):
-    """ Load shaders from file, or from the shaders directory"""
+    """Load shaders from file, or from the shaders directory.
+
+    Parameters
+    ----------
+    fragment_filename : str or None, optional
+        File path or shader resource name for the fragment shader. Default is ``None``.
+    vertex_filename : str or None, optional
+        File path or shader resource name for the vertex shader. Default is ``None``.
+
+    Returns
+    -------
+    int
+        Linked OpenGL shader program handle.
+    """
     if fragment_filename is None:
         frag_code = resources.read_text("pyspinw.gui.rendering.shaders", "default_fragment.glsl")
 

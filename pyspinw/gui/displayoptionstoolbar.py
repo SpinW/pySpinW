@@ -1,4 +1,4 @@
-""" Toolbar and display options data for the viewer"""
+"""Toolbar and display options data for the viewer."""
 import os
 
 from PySide6.QtCore import Signal, Qt, QSize
@@ -11,7 +11,17 @@ from pyspinw.gui.settings import SettingsDialog
 
 
 class IconWidget(QWidget):
-    """ Display an icon in a widget """
+    """Display an icon in a widget.
+
+    Parameters
+    ----------
+    icon_name : str
+        Name of the icon to load.
+    alt_text : str, optional
+        Tooltip text for the widget. Default is ``""``.
+    parent : QWidget or None, optional
+        Parent widget. Default is ``None``.
+    """
 
     def __init__(self, icon_name: str, alt_text="", parent=None):
         super().__init__(parent)
@@ -20,7 +30,7 @@ class IconWidget(QWidget):
         self.setMinimumSize(QSize(24,24))
 
     def paintEvent(self, event):
-        """ Qt override for painting """
+        """Qt override for painting."""
         painter = QPainter(self)
         self.icon.paint(
             painter,
@@ -31,7 +41,25 @@ class IconWidget(QWidget):
         )
 
 class GraphicalSlider(QWidget):
-    """ Slider class """
+    """Slider class.
+
+    Parameters
+    ----------
+    min_value : float
+        Minimum value represented by the slider.
+    max_value : float
+        Maximum value represented by the slider.
+    start_value : float
+        Initial value of the slider.
+    left_label : QWidget
+        Widget displayed to the left of the slider.
+    right_label : QWidget
+        Widget displayed to the right of the slider.
+    alt_text : str
+        Tooltip text for the slider and its labels.
+    parent : QWidget or None, optional
+        Parent widget. Default is ``None``.
+    """
 
     value_changed = Signal()
 
@@ -73,17 +101,42 @@ class GraphicalSlider(QWidget):
         self.setLayout(self.main_layout)
 
     def on_slider_changed(self):
-        """ Callback to send signal on """
+        """Callback to send signal on."""
         self.value_changed.emit()
 
     def value(self) -> float:
-        """ Get the value in floats """
+        """Get the value in floats.
+
+        Returns
+        -------
+        float
+            Current slider value mapped to ``[min_value, max_value]``.
+        """
         zero_one = self.slider.value() / 1000
 
         return self.min_value + zero_one * (self.max_value - self.min_value)
 
 class DisplayOptionsToolbar(QWidget):
-    """ Toolbar for setting values """
+    """Toolbar for setting values.
+
+    Parameters
+    ----------
+    initial_display_options : DisplayOptions or None, optional
+        Initial display options to populate the toolbar. If ``None``, loads
+        from the configuration file or uses defaults. Default is ``None``.
+    max_size_object_scaling : float, optional
+        Maximum value for the object scaling sliders. Default is ``10.0``.
+    save_config_on_exit : bool, optional
+        Whether to save display settings on widget close. Default is ``True``.
+    parent : QWidget or None, optional
+        Parent widget. Default is ``None``.
+
+    Raises
+    ------
+    TypeError
+        If ``initial_display_options`` is provided and is not an instance of
+        ``DisplayOptions``.
+    """
 
     settings_filename = "render_settings.conf"
 
@@ -96,7 +149,30 @@ class DisplayOptionsToolbar(QWidget):
                     target,
                     min_value: float, max_value: float, start_value: float,
                     left_label: QWidget, right_label: QWidget, alt_text: str):
-        """ Add a slider and wire it up """
+        """Add a slider and wire it up.
+
+        Parameters
+        ----------
+        target : QLayout
+            Layout to add the slider widget to.
+        min_value : float
+            Minimum value of the slider.
+        max_value : float
+            Maximum value of the slider.
+        start_value : float
+            Initial value of the slider.
+        left_label : QWidget
+            Widget displayed to the left of the slider.
+        right_label : QWidget
+            Widget displayed to the right of the slider.
+        alt_text : str
+            Tooltip text for the slider.
+
+        Returns
+        -------
+        GraphicalSlider
+            Created slider widget.
+        """
         slider = GraphicalSlider(
             min_value, max_value, start_value,
             left_label, right_label, alt_text)
@@ -107,7 +183,22 @@ class DisplayOptionsToolbar(QWidget):
         return slider
 
     def _toolbar_button(self, target, alt_text, icon: str | None):
-        """ Create a toolbar button with standardised formatting"""
+        """Create a toolbar button with standardised formatting.
+
+        Parameters
+        ----------
+        target : QLayout
+            Layout to add the button to.
+        alt_text : str
+            Tooltip text for the button.
+        icon : str or None
+            Name of the icon to display on the button, or ``None``.
+
+        Returns
+        -------
+        QPushButton
+            Created push button widget.
+        """
         btn = QPushButton()
 
         if icon is not None:
@@ -124,7 +215,24 @@ class DisplayOptionsToolbar(QWidget):
         return btn
 
     def _add_toggle_button(self, target, alt_text: str, icon: str | None = None, value: bool = True):
-        """ Add a toggle button and wire it up"""
+        """Add a toggle button and wire it up.
+
+        Parameters
+        ----------
+        target : QLayout
+            Layout to add the toggle button to.
+        alt_text : str
+            Tooltip text for the button.
+        icon : str or None, optional
+            Name of the icon to display on the button. Default is ``None``.
+        value : bool, optional
+            Initial checked state of the toggle button. Default is ``True``.
+
+        Returns
+        -------
+        QPushButton
+            Created checkable push button widget.
+        """
         btn = self._toolbar_button(target, alt_text, icon)
 
         btn.setCheckable(True)
@@ -234,7 +342,7 @@ class DisplayOptionsToolbar(QWidget):
         self.atom_or_spins = self._add_toggle_button(target=self.bar_1_layout,
                                                      alt_text="Switch between showing atoms and spins",
                                                      icon="momentatoms",
-                                                     value=settings.show_atoms_not_spins)
+                                                     value=settings.show_spins_not_atoms)
 
 
 
@@ -357,22 +465,28 @@ class DisplayOptionsToolbar(QWidget):
         self.scale_atoms.setVisible(False)
 
     def _on_change(self):
-        """ Called when anything changes, send signal """
+        """Called when anything changes, send signal."""
         self.displayOptionsChanged.emit()
 
     def on_reset_view_clicked(self):
-        """ Called when the view reset button is pressed, send a signal"""
+        """Called when the view reset button is pressed, send a signal."""
         self.requestViewReset.emit()
 
     def display_options(self) -> DisplayOptions:
-        """ Get the current render options """
+        """Get the current render options.
+
+        Returns
+        -------
+        DisplayOptions
+            Current display options read from the toolbar controls.
+        """
         return DisplayOptions(
             show_sites = self.show_sites.isChecked(),
             show_exchanges= self.show_exchanges.isChecked(),
             show_anisotropies = self.show_anisotropies.isChecked(),
             show_unit_cell = self.show_cell.isChecked(),
             show_supercell = self.show_supercell.isChecked(),
-            show_atoms_not_spins = self.atom_or_spins.isChecked(),
+            show_spins_not_atoms= self.atom_or_spins.isChecked(),
             show_nonmagnetic_atoms = self.show_nonmagnetic.isChecked(),
             use_atomic_radii = self.scale_atoms.isChecked(),
             atom_spin_scaling= self.spin_scale_slider.value(),
@@ -393,11 +507,11 @@ class DisplayOptionsToolbar(QWidget):
         )
 
     def on_snapshot(self):
-        """ Save a snapshot of the current render """
+        """Save a snapshot of the current render."""
         self.requestSnapshot.emit()
 
     def on_settings(self):
-        """ Change the settings that are not on the toolbar """
+        """Change the settings that are not on the toolbar."""
         widget = SettingsDialog(self.display_options(), parent=self)
 
         if widget.exec() == QDialog.Accepted:
@@ -414,12 +528,12 @@ class DisplayOptionsToolbar(QWidget):
             self.displayOptionsChanged.emit()
 
     def save_settings(self):
-        """ Save the current settings"""
+        """Save the current settings."""
         with open(self.settings_filename, 'w') as file:
             file.write(self.display_options().serialise())
 
     def closeEvent(self, event):
-        """ Qt override, window closed"""
+        """Qt override, window closed."""
         # we want to save the settings before exiting
         if self.save_config_on_exit:
             self.save_settings()

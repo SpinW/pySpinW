@@ -1,4 +1,4 @@
-""" Unit cells"""
+"""Unit cells."""
 
 import numpy as np
 
@@ -9,10 +9,21 @@ from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWD
 
 
 class BadCellDefinition(Exception):
-    """ Error for bad cell definition"""
+    """Error for bad cell definition."""
 
 class RawUnitCell(SPWSerialisable):
-    """ Unit cell defined in terms of a matrix, its subclass `UnitCell` is constructed by lengths and angles"""
+    """Unit cell defined in terms of a matrix; its subclass ``UnitCell`` is constructed by lengths and angles.
+
+    Parameters
+    ----------
+    xyz : (3, 3) numpy.ndarray
+        Transformation matrix from lattice units to Cartesian coordinates, where rows are lattice vectors.
+
+    Raises
+    ------
+    BadCellDefinition
+        If ``xyz`` or the derived spin/normalised basis matrices are not invertible.
+    """
 
     serialisation_name = "unit_cell"
 
@@ -81,42 +92,104 @@ class RawUnitCell(SPWSerialisable):
 
     # @check_sizes(points=(-1, 3))
     def lattice_units_to_cartesian(self, points: np.ndarray):
-        """ Convert a list of points  from the fractional (ijk) type to cartesian (xyz) """
+        """Convert a list of points from the fractional (ijk) type to cartesian (xyz).
+
+        Parameters
+        ----------
+        points : (N, 3) numpy.ndarray
+            Points in fractional lattice coordinates.
+
+        Returns
+        -------
+        (N, 3) numpy.ndarray
+            Points in Cartesian coordinates.
+        """
         return points @ self._xyz
 
     # @check_sizes(points=(-1, 3))
     def cartesian_to_lattice_units(self, points: np.ndarray):
-        """ Convert a list of points from cartesian (xyz) to fractional (ijk) """
+        """Convert a list of points from cartesian (xyz) to fractional (ijk).
+
+        Parameters
+        ----------
+        points : (N, 3) numpy.ndarray
+            Points in Cartesian coordinates.
+
+        Returns
+        -------
+        (N, 3) numpy.ndarray
+            Points in fractional lattice coordinates.
+        """
         return points @ self._xyz_inv
 
     def spin_lattice_units_to_cartesian(self, spins: np.ndarray):
-        """ Convert a list of spins from lattice units to cartesian """
+        """Convert a list of spins from lattice units to cartesian.
+
+        Parameters
+        ----------
+        spins : (N, 3) numpy.ndarray
+            Spin vectors in lattice spin coordinates.
+
+        Returns
+        -------
+        (N, 3) numpy.ndarray
+            Spin vectors in Cartesian coordinates.
+        """
         return spins @ self._xyz_spins
 
     def spin_cartesian_to_lattice_units(self, spins: np.ndarray):
-        """ Convert a list of spins from cartesian to lattice units """
+        """Convert a list of spins from cartesian to lattice units.
+
+        Parameters
+        ----------
+        spins : (N, 3) numpy.ndarray
+            Spin vectors in Cartesian coordinates.
+
+        Returns
+        -------
+        (N, 3) numpy.ndarray
+            Spin vectors in lattice spin coordinates.
+        """
         return spins @ self._xyz_spins_inv
 
     @property
     def centre(self):
-        """ Point at centre of cell in cartesian coordinates"""
+        """Point at centre of cell in cartesian coordinates."""
         return self.lattice_units_to_cartesian(np.array([[0.5, 0.5, 0.5]]))[0, :]
 
     @property
     def main_diagonal_length(self):
-        """ Length of primary diagonal """
+        """Length of primary diagonal."""
         return np.sqrt(np.sum(self.lattice_units_to_cartesian(np.array([[1, 1, 1]]))[0, :] ** 2))
 
     def __eq__(self, other: "UnitCell"):
-        """Equality (approximate)"""
         return np.all(np.abs(self._xyz - other._xyz) < 1e-10)
 
     def _unit_cell_serialise(self):
+        """Serialise the unit cell data dictionary.
+
+        Returns
+        -------
+        dict
+            Serialised dictionary representation of the unit cell matrix.
+        """
         return {"xyz": numpy_serialise(self._xyz)}
 
     @staticmethod
     @expects_keys("xyz")
     def _unit_cell_deserialise(json):
+        """Deserialise a ``RawUnitCell`` from a dictionary.
+
+        Parameters
+        ----------
+        json : dict
+            Serialised unit cell dictionary containing ``"xyz"``.
+
+        Returns
+        -------
+        RawUnitCell
+            Deserialised raw unit cell instance.
+        """
         return RawUnitCell(numpy_deserialise(json["xyz"]))
 
     def _serialise(self, context: SPWSerialisationContext) -> dict:
@@ -139,7 +212,34 @@ class RawUnitCell(SPWSerialisable):
 
 
 class UnitCell(RawUnitCell):
-    """ A Unit Cell Definition """
+    """A unit cell definition.
+
+    See ``ase.geometry.cell.cellpar_to_cell`` for details of parameters.
+
+    Parameters
+    ----------
+    a : float
+        Length of lattice vector ``a`` in Angstroms.
+    b : float
+        Length of lattice vector ``b`` in Angstroms.
+    c : float
+        Length of lattice vector ``c`` in Angstroms.
+    alpha : float, optional
+        Angle between ``b`` and ``c`` in degrees. Default is ``90``.
+    beta : float, optional
+        Angle between ``a`` and ``c`` in degrees. Default is ``90``.
+    gamma : float, optional
+        Angle between ``a`` and ``b`` in degrees. Default is ``90``.
+    ab_normal : tuple of (float, float, float), optional
+        Normal vector to the ``ab`` plane. Default is ``(0, 0, 1)``.
+    direction : tuple of (float, float, float) or None, optional
+        Direction along which vector ``a`` is aligned. Default is ``None``.
+
+    Attributes
+    ----------
+    abc : (3,) numpy.ndarray
+        Array of lattice lengths ``[a, b, c]``.
+    """
 
     _unit_cell_name = "abc"
 
@@ -152,7 +252,6 @@ class UnitCell(RawUnitCell):
                  gamma: float = 90,
                  ab_normal: tuple[float, float, float]=(0,0,1),
                  direction: tuple[float, float, float] | None=None):
-        """See `ase.geometry.cell.cellpar_to_cell` for details of parameters"""
         self.a = a
         self.b = b
         self.c = c
@@ -180,10 +279,34 @@ class UnitCell(RawUnitCell):
                 ab_normal: tuple[float, float, float] | None = None,
                 direction: tuple[float, float, float] | None = None,
                 replace_direction=False):
-        """ Create a new unit cell with updated parameters
+        """Create a new unit cell with updated parameters.
 
-        :returns: a new unit cell
+        Parameters
+        ----------
+        a : float or None, optional
+            New lattice length ``a``. Default is ``None``.
+        b : float or None, optional
+            New lattice length ``b``. Default is ``None``.
+        c : float or None, optional
+            New lattice length ``c``. Default is ``None``.
+        alpha : float or None, optional
+            New lattice angle ``alpha`` in degrees. Default is ``None``.
+        beta : float or None, optional
+            New lattice angle ``beta`` in degrees. Default is ``None``.
+        gamma : float or None, optional
+            New lattice angle ``gamma`` in degrees. Default is ``None``.
+        ab_normal : tuple of (float, float, float) or None, optional
+            New normal vector to the ``ab`` plane. Default is ``None``.
+        direction : tuple of (float, float, float) or None, optional
+            New direction vector for ``a`` (only used if ``replace_direction=True``).
+            Default is ``None``.
+        replace_direction : bool, optional
+            Whether to replace ``direction`` with the passed value. Default is ``False``.
 
+        Returns
+        -------
+        UnitCell
+            A new unit cell with the updated parameters.
         """
         a = self.a if a is None else a
         b = self.b if b is None else b
@@ -202,7 +325,7 @@ class UnitCell(RawUnitCell):
 
     @property
     def short_name(self):
-        """ Get a short string that describes this unit cell """
+        """Short string that describes this unit cell."""
         parts = []
         for name, angle in [("α", self.alpha), ("β", self.beta), ("γ", self.gamma)]:
             if angle != 90:
@@ -212,11 +335,10 @@ class UnitCell(RawUnitCell):
 
     @property
     def text_summary(self):
-        """ Formatted text """
+        """Formatted text."""
         return f"({self.a}, {self.b}, {self.c}), alpha={self.alpha}, beta={self.beta}, gamma={self.gamma}"
 
     def __repr__(self):
-        """repr implementation"""
         return f"UnitCell({self.a}, {self.b}, {self.c} | {self.alpha}, {self.beta}, {self.gamma})"
 
 

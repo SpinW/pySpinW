@@ -1,1 +1,1 @@
-""" Classes and methods for doing rendering of magnetic crystal structures """
+"""Classes and methods for doing rendering of magnetic crystal structures."""

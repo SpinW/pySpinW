@@ -1,4 +1,4 @@
-"""Generally helpful functions that don't obviously live anywhere else in particular"""
+"""Generally helpful functions that don't obviously live anywhere else in particular."""
 import functools
 from collections import defaultdict
 from typing import TypeVar, Generic
@@ -13,9 +13,19 @@ from pyspinw.tolerances import tolerances
 
 @check_sizes(v=(3,), force_numpy=True)
 def triple_product_matrix(v: np.ndarray):
-    """Find the matrix, M, such that for all vectors X, Y
+    """Find the matrix, M, such that for all vectors X, Y.
 
     X^T M Y = V . (X x Y)
+
+    Parameters
+    ----------
+    v : (3,) numpy.ndarray
+        3-component vector ``V``.
+
+    Returns
+    -------
+    (3, 3) numpy.ndarray
+        Skew-symmetric matrix ``M`` satisfying ``X^T M Y = V . (X x Y)``.
     """
     x, y, z = v
 
@@ -26,7 +36,7 @@ def triple_product_matrix(v: np.ndarray):
 
 
 def demo_triple_product_matrix():
-    """Show an example of making a matrix that does the triple product"""
+    """Show an example of making a matrix that does the triple product."""
     v = [1, 2, 3]
     m = triple_product_matrix(v)
     print(m)
@@ -34,15 +44,23 @@ def demo_triple_product_matrix():
 def problematic_sites(sites: list[Site],
                       implied_sites: list[Site],
                       site_to_implied_site: list[list[int]]):
-    """ Find sites that are contradictory in terms of magnetism
+    """Find sites that are contradictory in terms of magnetism.
 
-    These sites have an image with same position but negated spin
+    These sites have an image with same position but negated spin.
 
-    :param sites: Asymmetric cell sites
-    :param implied_sites: Sites inferred by symmetry
-    :param site_to_implied_site: mapping from site index to implied site index
-    :returns: Indices of sites with this problem
+    Parameters
+    ----------
+    sites : list of Site
+        Asymmetric cell sites.
+    implied_sites : list of Site
+        Sites inferred by symmetry.
+    site_to_implied_site : list of list of int
+        Mapping from site index to implied site index.
 
+    Returns
+    -------
+    list of int
+        Indices of sites with this problem.
     """
     bad_sites = []
 
@@ -62,7 +80,26 @@ def problematic_sites(sites: list[Site],
 
 @check_sizes(axis=(3,), force_numpy=True)
 def rotation_matrix(angle, axis):
-    """ Create a rotation matrix """
+    """Create a rotation matrix.
+
+    Parameters
+    ----------
+    angle : float
+        Rotation angle in radians.
+    axis : array_like
+        3-component rotation axis vector.
+
+    Returns
+    -------
+    (3, 3) numpy.ndarray
+        3x3 rotation matrix corresponding to a rotation by ``angle`` about
+        ``axis``.
+
+    Raises
+    ------
+    ValueError
+        If ``axis`` is the zero vector ``(0, 0, 0)``.
+    """
     mag = np.sqrt(np.sum(axis**2))
 
     if mag == 0:
@@ -80,10 +117,18 @@ def rotation_matrix(angle, axis):
     return part1 + part2 + part3
 
 def connected_components(adjacency_matrix: np.ndarray) -> list[list[int]]:
-    """ Get the connected components of a graph specied by an adjacency matrix
+    """Get the connected components of a graph specied by an adjacency matrix.
 
-    :param adjacency_matrix: n-by-n numpy array of dtype bool representing the adjacency matrix
-    :returns: list of subgraphs, themselves lists of indices for the adjacency matrix
+    Parameters
+    ----------
+    adjacency_matrix : numpy.ndarray
+        n-by-n numpy array of dtype bool representing the adjacency matrix.
+
+    Returns
+    -------
+    list of list of int
+        List of subgraphs, themselves lists of indices for the adjacency
+        matrix.
     """
     assert len(adjacency_matrix.shape) == 2
     assert adjacency_matrix.shape[0] == adjacency_matrix.shape[1]
@@ -108,7 +153,23 @@ def connected_components(adjacency_matrix: np.ndarray) -> list[list[int]]:
     return components
 
 def arraylike_equality(array_1: ArrayLike, array_2: ArrayLike, abs_tol=1e-8):
-    """ Check for approximate equality of arrays that may or may not have the same shape """
+    """Check for approximate equality of arrays that may or may not have the same shape.
+
+    Parameters
+    ----------
+    array_1 : array_like
+        First array to compare.
+    array_2 : array_like
+        Second array to compare.
+    abs_tol : float, optional
+        Absolute tolerance for element-wise comparison. Default is ``1e-8``.
+
+    Returns
+    -------
+    bool
+        ``True`` if both arrays have the same shape and all elements differ by
+        less than ``abs_tol``, ``False`` otherwise.
+    """
     array_1 = np.array(array_1)
     array_2 = np.array(array_2)
 
@@ -122,7 +183,19 @@ if __name__ == "__main__":
 
 
 def rotation_from_z(target_vector):
-    """ Rotation matrix from (0,0,1) to the target vector direction """
+    """Rotation matrix from (0,0,1) to the target vector direction.
+
+    Parameters
+    ----------
+    target_vector : numpy.ndarray
+        3-component target direction vector.
+
+    Returns
+    -------
+    (3, 3) numpy.ndarray
+        3x3 rotation matrix mapping ``(0, 0, 1)`` onto the direction of
+        ``target_vector``.
+    """
     mag_sq = np.sum(target_vector**2)
 
     if mag_sq < 1e-9:
@@ -142,20 +215,46 @@ def rotation_from_z(target_vector):
     ])
 
 def is_diagonal(m: np.ndarray):
-    """ Check whether an array is diagonal """
+    """Check whether an array is diagonal.
+
+    Parameters
+    ----------
+    m : numpy.ndarray
+        2D square array to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if ``m`` is diagonal, ``False`` otherwise.
+    """
     return np.all(m == np.diag(np.diagonal(m)))
 
 
 T = TypeVar("T")
 class IncrementalPointHistogram(Generic[T]):
-    """ Histogramming method for finding nearest neighbour distances in lattices """
+    """Histogramming method for finding nearest neighbour distances in lattices.
+
+    Parameters
+    ----------
+    tolerance : float, optional
+        Distance tolerance within which two distances are grouped into the
+        same bin. Default is ``tolerances.SAME_SITE_ABS_TOL``.
+    """
 
     def __init__(self, tolerance=tolerances.SAME_SITE_ABS_TOL):
         self._tolerance = tolerance
         self._groups = defaultdict(list)
 
     def add(self, distance, entry: T):
-        """ Add an entry to the collection"""
+        """Add an entry to the collection.
+
+        Parameters
+        ----------
+        distance : float
+            Distance value associated with ``entry``.
+        entry : T
+            Item to store in the distance group.
+        """
         for key in self._groups:
             if abs(key - distance) < self._tolerance:
                 self._groups[key].append(entry)
@@ -165,15 +264,33 @@ class IncrementalPointHistogram(Generic[T]):
             self._groups[distance].append(entry)
 
     def groups(self):
-        """ Groups in order of distance"""
+        """Groups in order of distance.
+
+        Returns
+        -------
+        list of list of T
+            Grouped entries ordered by increasing distance.
+        """
         ordered_keys = sorted(self._groups.keys())
         return [self._groups[key] for key in ordered_keys]
 
     def group_sizes(self):
-        """ Size of each group"""
+        """Size of each group.
+
+        Returns
+        -------
+        list of int
+            Number of entries in each distance group, ordered by increasing
+            distance.
+        """
         return [len(group) for group in self.groups()]
 
     def n_groups(self):
-        """ Number of groups at different distances """
-        return len(self._groups)
+        """Number of groups at different distances.
 
+        Returns
+        -------
+        int
+            Total number of distinct distance groups.
+        """
+        return len(self._groups)

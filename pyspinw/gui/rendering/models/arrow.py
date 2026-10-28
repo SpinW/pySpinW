@@ -1,4 +1,4 @@
-""" Arrow Model """
+"""Arrow Model."""
 
 import numpy as np
 
@@ -6,7 +6,25 @@ from pyspinw.gui.rendering.model import Model
 
 
 class Arrow(Model):
-    """ Model of an arrow """
+    """Model of an arrow.
+
+    Parameters
+    ----------
+    n_points : int, optional
+        Number of angular sample points around the circumference. Default is ``51``.
+    r_shaft : float, optional
+        Radius of the arrow shaft. Default is ``0.05``.
+    r_head : float, optional
+        Radius of the base of the arrow head. Default is ``0.1``.
+    head_fraction : float, optional
+        Fraction of the total arrow length occupied by the head. Default is ``0.3``.
+    padding : float, optional
+        Radial and axial padding added to the arrow geometry (e.g., for selection outlines).
+        Default is ``0.0``.
+    modify_ring : bool, optional
+        If ``True``, orient the ring normals radially inward for back-face outline rendering.
+        Default is ``False``.
+    """
 
     def __init__(self,
                  n_points=51,

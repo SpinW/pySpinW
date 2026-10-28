@@ -9,7 +9,37 @@ from pyspinw.structure import Structure
 
 
 class Path:
-    """Path through q-space."""
+    """Path through q-space (in RLU).
+
+    Parameters
+    ----------
+    points : array_like
+        Sequence of 3D q-points of shape ``(n_points, 3)`` defining the vertices
+        of the path.
+    n_points_per_segment : int, default=101
+        Number of interpolated q-points along each segment between consecutive
+        vertices.
+    labels : list of str, optional
+        Labels corresponding to each vertex in `points`. If ``None``, coordinate
+        strings are generated automatically.
+    avoid_endpoints : bool, default=True
+        If ``True``, offset segment endpoints slightly from the exact vertex
+        positions.
+    scale_by_distance : bool, default=False
+        If ``True``, scale segment lengths along the plotting x-axis by the
+        Euclidean distance between vertices.
+    convert_to_lattice_units_with : Structure or UnitCell, optional
+        Structure or unit cell used to transform `points`.
+
+    Raises
+    ------
+    ValueError
+        If `points` is not an ``(n, 3)`` array with at least 2 points, or if
+        the length of `labels` does not match the number of points.
+    TypeError
+        If `convert_to_lattice_units_with` is not a :class:`Structure`,
+        :class:`UnitCell`, or ``None``.
+    """
 
     def __init__(self,
                  points: ArrayLike,
@@ -59,7 +89,13 @@ class Path:
             self._section_scalings = [1.0 for _ in range(1, self._n_points)]
 
     def q_points(self):
-        """Get the list of q-points along the path."""
+        """Get the list of q-points along the path.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of 3D q-points along the path of shape ``(n_q, 3)``.
+        """
         output = []
         if self._avoid_endpoints:
             # If we avoid endpoints, we choose points that are close to each of the positions, but not equal
@@ -94,7 +130,13 @@ class Path:
         return np.concatenate(output, axis=1).T
 
     def x_values(self):
-        """Get the x values used for plotting."""
+        """Get the x values used for plotting.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of x-coordinates corresponding to each q-point along the path.
+        """
         output = []
         f = np.linspace(0, 1, self._n_points_per_segment)
 
@@ -111,18 +153,36 @@ class Path:
         return np.concatenate(output).T
 
     def x_ticks(self):
-        """Get the x positions of ticks used to mark positions on a plot."""
+        """Get the x positions of ticks used to mark positions on a plot.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of x-axis tick positions at the path vertices.
+        """
         # we want the cumulative sum including a leading zero
         return np.cumsum([0] + self._section_scalings)
 
     def x_tick_labels(self):
-        """Get the x-axis tick labels corresponding to the tick positions."""
+        """Get the x-axis tick labels corresponding to the tick positions.
+
+        Returns
+        -------
+        list of str
+            Tick labels for each vertex along the path.
+        """
         return self._labels
 
     def format_plot(self, plt_or_fig=None):
         """Apply formatting to a matplotlib plot/figure/axis.
 
         If None, it will import matplotlib.pyplot and work on that.
+
+        Parameters
+        ----------
+        plt_or_fig : matplotlib.pyplot or matplotlib.axes.Axes, optional
+            Target matplotlib module or axes object to format. If ``None``,
+            ``matplotlib.pyplot`` is imported and used.
         """
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
@@ -133,7 +193,6 @@ class Path:
             plt_or_fig.set_xticks(self.x_ticks(), self.x_tick_labels())
 
     def __repr__(self):
-        """Return a string representation of the path."""
         path_string = ", ".join([repr(pt) for pt in self._points])
         return f"Path({path_string})"
 
@@ -143,25 +202,54 @@ class Slice:
 
     Parameters
     ----------
-    origin :
-        Corner point of the rectangle as a 3D q-vector.
-    axis_1 :
-        First edge vector, defining the horizontal plotting axis.
-    axis_2 :
-        Second edge vector, defining the vertical plotting axis.
-    n_a :
+    origin : array_like, optional
+        Corner point of the rectangle as a 3D q-vector. Default is ``[0, 0, 0]``.
+    axis_1 : array_like, optional
+        First edge vector, defining the horizontal plotting axis. Default is
+        ``[1, 0, 0]``.
+    axis_2 : array_like, optional
+        Second edge vector, defining the vertical plotting axis. Default is
+        ``[0, 1, 0]``.
+    n_a : int, default=101
         Number of points along ``axis_1``.
-    n_b :
+    n_b : int, default=101
         Number of points along ``axis_2``.
-    labels :
+    labels : list of str, optional
         Optional ``[a_label, b_label]`` for the plot axes.
-    padding :
+    padding : float, default=0.0
         Extra padding beyond the slice boundaries as a fraction of the slice
         size (e.g. ``0.1`` extends the slice by 10% on each side).
-    e_min :
+    e_min : float, optional
         Optional minimum energy in meV for the ``intensity_map()`` integration window.
-    e_max :
+    e_max : float, optional
         Optional maximum energy in meV for the ``intensity_map()`` integration window.
+
+    Attributes
+    ----------
+    origin : (3,) numpy.ndarray
+        Corner point of the rectangle as a 3D q-vector.
+    axis_1 : (3,) numpy.ndarray
+        First edge vector defining the horizontal plotting axis.
+    axis_2 : (3,) numpy.ndarray
+        Second edge vector defining the vertical plotting axis.
+    n_a : int
+        Number of points along ``axis_1``.
+    n_b : int
+        Number of points along ``axis_2``.
+    padding : float
+        Extra padding fraction beyond the slice boundaries.
+    e_min : float or None
+        Minimum energy in meV for the integration window.
+    e_max : float or None
+        Maximum energy in meV for the integration window.
+    labels : list of str
+        Axis labels ``[a_label, b_label]``.
+
+    Raises
+    ------
+    ValueError
+        If `origin`, `axis_1`, or `axis_2` is not a 3-element vector, or if
+        `labels` does not contain two strings.
     """
 
     def __init__(
@@ -207,7 +295,13 @@ class Slice:
             self.labels = labels
 
     def q_points(self) -> np.ndarray:
-        """Get all q-points in the slice as an ``(n_a * n_b, 3)`` array."""
+        """Get all q-points in the slice as an ``(n_a * n_b, 3)`` array.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of 3D q-points of shape ``(n_a * n_b, 3)``.
+        """
         # Create parameters s and t from -padding to 1+padding
         s = np.linspace(-self.padding, 1 + self.padding, self.n_a)  # shape = (n_a,)
         t = np.linspace(-self.padding, 1 + self.padding, self.n_b)  # shape = (n_b,)
@@ -225,18 +319,35 @@ class Slice:
         return q_points
 
     def grid_shape(self):
-          """Get the grid shape ``(n_a, n_b)`` for reshaping flattened results.
+        """Get the grid shape ``(n_a, n_b)`` for reshaping flattened results.
 
-          First dimension corresponds to axis_1 (horizontal), second to axis_2 (vertical).
-          """
-          return (self.n_a, self.n_b)
+        First dimension corresponds to axis_1 (horizontal), second to axis_2 (vertical).
+
+        Returns
+        -------
+        tuple of (int, int)
+            Grid shape ``(n_a, n_b)``.
+        """
+        return (self.n_a, self.n_b)
 
     def extent(self) -> list[float]:
-          """Get the parameter-space extent ``[s_min, s_max, t_min, t_max]``."""
-          return [-self.padding, 1 + self.padding, -self.padding, 1 + self.padding]
+        """Get the parameter-space extent ``[s_min, s_max, t_min, t_max]``.
+
+        Returns
+        -------
+        list of float
+            Parameter-space bounds ``[s_min, s_max, t_min, t_max]``.
+        """
+        return [-self.padding, 1 + self.padding, -self.padding, 1 + self.padding]
 
     def x_ticks(self):
-        """Get the x-axis tick positions along the ``axis_1`` direction."""
+        """Get the x-axis tick positions along the ``axis_1`` direction.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of x-axis tick positions.
+        """
         extent = self.extent()
         a_min, a_max = extent[0], extent[1]
         # Ticks at min, middle, and max of the data range
@@ -244,7 +355,13 @@ class Slice:
         return tick_positions
 
     def x_tick_labels(self):
-        """Get the x-axis tick labels as (hkl) q-vectors."""
+        """Get the x-axis tick labels as (hkl) q-vectors.
+
+        Returns
+        -------
+        list of str
+            Formatted ``(h, k, l)`` labels for the x-axis ticks.
+        """
         # X-axis labels show coordinates along the bottom edge of the plot
         # With padding, the bottom edge is at t=-padding (not t=0)
         # Ticks are at s = -padding, 0.5, 1+padding
@@ -259,7 +376,13 @@ class Slice:
         return labels
 
     def y_ticks(self):
-        """Get the y-axis tick positions along the ``axis_2`` direction."""
+        """Get the y-axis tick positions along the ``axis_2`` direction.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of y-axis tick positions.
+        """
         extent = self.extent()
         b_min, b_max = extent[2], extent[3]
         # Ticks at min, middle, and max of the data range
@@ -267,7 +390,13 @@ class Slice:
         return tick_positions
 
     def y_tick_labels(self):
-        """Get the y-axis tick labels as (hkl) q-vectors."""
+        """Get the y-axis tick labels as (hkl) q-vectors.
+
+        Returns
+        -------
+        list of str
+            Formatted ``(h, k, l)`` labels for the y-axis ticks.
+        """
         # Y-axis labels show coordinates along the left edge of the plot
         # With padding, the left edge is at s=-padding (not s=0)
         # Ticks are at t = -padding, 0.5, 1+padding
@@ -293,6 +422,12 @@ class Slice:
         showing actual reciprocal space coordinates.
 
         If None, it will import matplotlib.pyplot and work on that.
+
+        Parameters
+        ----------
+        plt_or_fig : matplotlib.pyplot or matplotlib.axes.Axes, optional
+            Target matplotlib module or axes object to format. If ``None``,
+            ``matplotlib.pyplot`` is imported and used.
         """
         if plt_or_fig is None:
             import matplotlib.pyplot as plt_or_fig
@@ -311,7 +446,6 @@ class Slice:
             plt_or_fig.set_yticks(self.y_ticks(), self.y_tick_labels())
 
     def __repr__(self):
-        """Return a string representation of the slice."""
         return (
             f"Slice(origin={self.origin}, "
             f"axis_1={self.axis_1}, axis_2={self.axis_2}, "
@@ -324,10 +458,37 @@ class Path1DBase(ABC):
 
     @abstractmethod
     def q_values(self):
-        """Get the q values for this path."""
+        """Get the q values for this path.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of q values.
+        """
 
 class Path1D(Path1DBase):
-    """1D path, i.e. just values in absolute q."""
+    """1D path, i.e. just values in absolute q.
+
+    Parameters
+    ----------
+    q_min : float, default=0.0
+        Minimum q magnitude.
+    q_max : float, default=1.0
+        Maximum q magnitude.
+    avoid_endpoints : bool, default=True
+        If ``True``, offset the endpoints slightly from `q_min` and `q_max`.
+    n_q : int, default=101
+        Number of q values along the path.
+
+    Attributes
+    ----------
+    q_min : float
+        Minimum q magnitude.
+    q_max : float
+        Maximum q magnitude.
+    avoid_endpoints : bool
+        Whether endpoints are slightly offset from `q_min` and `q_max`.
+    """
 
     def __init__(self,
                  q_min: float = 0.0,
@@ -343,7 +504,13 @@ class Path1D(Path1DBase):
         self.avoid_endpoints = avoid_endpoints
 
     def q_values(self):
-        """Get the q magnitudes."""
+        """Get the q magnitudes.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of q magnitudes.
+        """
         base = np.linspace(0, 1, self._n_q)
 
         if self.avoid_endpoints:
@@ -354,7 +521,18 @@ class Path1D(Path1DBase):
 
 
 class EmpiricalPath1D(Path1DBase):
-    """Path based on data specifying each q value, rather than min, max, n."""
+    """Path based on data specifying each q value, rather than min, max, n.
+
+    Parameters
+    ----------
+    q_values : array_like
+        1D array of q magnitudes.
+
+    Raises
+    ------
+    ValueError
+        If `q_values` is not a 1D array.
+    """
 
     def __init__(self, q_values: ArrayLike):
 
@@ -366,7 +544,13 @@ class EmpiricalPath1D(Path1DBase):
             raise ValueError("Expected q_values to be a 1D array")
 
     def q_values(self):
-        """Get the q values."""
+        """Get the q values.
+
+        Returns
+        -------
+        numpy.ndarray
+            1D array of q magnitudes.
+        """
         return self._q_values
 
 
@@ -390,4 +574,3 @@ if __name__ == "__main__":
     print(path.x_values())
     print(path.x_ticks())
     print(path.x_tick_labels())
-

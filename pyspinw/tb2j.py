@@ -1,4 +1,4 @@
-""" Reads TB2J output files and returns Hamiltonian object """
+"""Reads TB2J output files and returns Hamiltonian object."""
 import pickle
 import numpy as np
 import ase
@@ -35,7 +35,14 @@ JANI_EXPR = r'J_ani:\s*$\s*\[\[\s*([\d\-\.]*)\s*([\d\-\.]*)\s*([\d\-\.]*)\s*\]\s
                         r'\s*\[\s*([\d\-\.]*)\s*([\d\-\.]*)\s*([\d\-\.]*)\s*\]\]\s*$'
 
 class _sym_index:
-    """ Helper class to generate atom ID indices from element string """
+    """Helper class to generate atom ID indices from element string.
+
+    Attributes
+    ----------
+    syms : dict
+        Mapping from chemical symbol to the current count of atoms of that
+        element.
+    """
 
     def __init__(self):
         self.syms = {}
@@ -45,7 +52,26 @@ class _sym_index:
 
 
 class _coupling:
-    """ Helper class to use list comprehension to determine duplicated reverse couplings """
+    """Helper class to use list comprehension to determine duplicated reverse couplings.
+
+    Parameters
+    ----------
+    s1 : str
+        Identifier of the first site in the bond.
+    s2 : str
+        Identifier of the second site in the bond.
+    icv : array_like
+        Inter-cell lattice vector connecting ``s1`` and ``s2``.
+
+    Attributes
+    ----------
+    s1 : str
+        Identifier of the first site in the bond.
+    s2 : str
+        Identifier of the second site in the bond.
+    icv : numpy.ndarray
+        Inter-cell lattice vector connecting ``s1`` and ``s2``.
+    """
 
     def __init__(self, s1, s2, icv):
         self.s1, self.s2, self.icv = s1, s2, np.array(icv)
@@ -56,7 +82,21 @@ class _coupling:
 
 
 class TB2J_Input:
-    """ Handles input from TB2J and conversion to Hamiltonian object """
+    """Handles input from TB2J and conversion to Hamiltonian object.
+
+    Parameters
+    ----------
+    filename : pathlib.Path or str or None, optional
+        Path to a TB2J ``exchange.out`` text file or ``TB2J.pickle`` file.
+        Default is ``None``.
+
+    Attributes
+    ----------
+    type : str or None
+        Format of the loaded TB2J data (``"text"``, ``"pickle"``, or ``None``).
+    data : str or dict or None
+        Raw contents loaded from the TB2J input.
+    """
 
     type = None
     data = None
@@ -72,6 +112,19 @@ class TB2J_Input:
                     self._parse_text(f.read())
 
     def _parse_text(self, text: str):
+        """Parse the contents of a TB2J ``exchange.out`` text file.
+
+        Parameters
+        ----------
+        text : str
+            Raw text content of a TB2J ``exchange.out`` file.
+
+        Raises
+        ------
+        RuntimeError
+            If required section headers are missing or if exchange counts are
+            inconsistent.
+        """
         self.type, self.data = ('text', text)
         if not all([kw in self.data for kw in ['Cell (Angstrom):', 'Atoms:', 'Exchange:']]):
             raise RuntimeError('Could not find one of the required keys, "Cell", "Atoms", or "Exchange"')
@@ -105,6 +158,13 @@ class TB2J_Input:
         self.struct = ase.Atoms(cell=cell, symbols=syms, positions=pos, magmoms=magmoms)
 
     def _parse_pickle(self, data: dict):
+        """Parse a dictionary loaded from a ``TB2J.pickle`` file.
+
+        Parameters
+        ----------
+        data : dict
+            Unpickled dictionary containing TB2J structure and exchange data.
+        """
         self.type, self.data = ('pickle', data)
         self.noncolinear = not self.data['colinear']
         if self.noncolinear:
@@ -138,27 +198,97 @@ class TB2J_Input:
             self.j_ani = [1000*self.data['Jani_dict'][k] for k in ord_k]
 
     def _get_symmetrized_structure(self, pos: ArrayLike, moms: ArrayLike, precision: float=1e-5):
-        raise NotImplementedError
+        """Obtain the symmetrized unit cell, positions, and magnetic moments.
+
+        Parameters
+        ----------
+        pos : array_like
+            Fractional atomic positions.
+        moms : array_like
+            Atomic magnetic moments.
+        precision : float, optional
+            Symmetry search precision. Default is ``1e-5``.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised as symmetry reduction is not yet implemented.
+        """
+        raise NotImplementedError()
 
     @classmethod
     def from_exchange_out(cls, filename: pathlib.Path | str):
-        """ Read input from an exchange.out TB2J file """
+        """Read input from an exchange.out TB2J file.
+
+        Parameters
+        ----------
+        filename : pathlib.Path or str
+            Path to an ``exchange.out`` TB2J file.
+
+        Returns
+        -------
+        TB2J_Input or None
+            Parsed TB2J input instance.
+        """
+        obj = cls()
         with open(filename, 'r') as f:
-            return cls()._parse_text(f.read())
+            obj._parse_text(f.read())
+        obj.file = str(filename)
+        return obj
 
     @classmethod
     def from_text(cls, text: str):
-        """ Read input from text string containing the contents of an exchange.out TB2J file """
-        return cls()._parse_text(text)
+        """Read input from text string containing the contents of an exchange.out TB2J file.
+
+        Parameters
+        ----------
+        text : str
+            Raw text content of an ``exchange.out`` TB2J file.
+
+        Returns
+        -------
+        TB2J_Input or None
+            Parsed TB2J input instance.
+        """
+        obj = cls()
+        obj.file = None
+        obj._parse_text(text)
+        return obj
 
     @classmethod
     def from_pickle(cls, filename: pathlib.Path | str):
-        """ Read input from a TB2J.pickle file """
+        """Read input from a TB2J.pickle file.
+
+        Parameters
+        ----------
+        filename : pathlib.Path or str
+            Path to a ``TB2J.pickle`` file.
+
+        Returns
+        -------
+        TB2J_Input or None
+            Parsed TB2J input instance.
+        """
+        obj = cls()
         with open(filename, 'rb') as f:
-            return cls()._parse_pickle(pickle.load(f))
+            return obj._parse_pickle(pickle.load(f))
+        obj.file = str(filename)
+        return obj
 
     def to_hamiltonian(self, symmetrize: bool=False):
-        """ Create a SpinW Hamiltonian object from the TB2J inputs """
+        """Create a SpinW Hamiltonian object from the TB2J inputs.
+
+        Parameters
+        ----------
+        symmetrize : bool, optional
+            Whether to symmetrize the crystal structure before building the
+            Hamiltonian. Default is ``False``.
+
+        Returns
+        -------
+        Hamiltonian
+            Constructed SpinW Hamiltonian object.
+        """
         # ASE and TB2J uses moments in uB; SpinW wants it as spin length S where mu = g*S
         pos, moms = self.struct.get_scaled_positions(), self.struct.get_initial_magnetic_moments() / 2
         if symmetrize:
@@ -208,4 +338,3 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     fig = hamiltonian.spaghetti_plot(path, show=False, use_rotating=False)
     plt.show()
-
