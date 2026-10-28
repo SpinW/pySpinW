@@ -162,8 +162,6 @@ def batch_exchanges(sites: list[Site],
                     both_directions: bool=False):
     """Find all the exchanges within a certain distance.
 
-    Most of the work here is about constraining by order and giving it a sensible name.
-
     Parameters
     ----------
     sites : list of Site
@@ -185,6 +183,8 @@ def batch_exchanges(sites: list[Site],
     list of AbstractExchange
         List of `AbstractExchange` objects sorted by distance.
     """
+    # Most of the work here is about constraining by order and giving it a sensible name.
+
     unique_sites = set([site.parent_site if isinstance(site, ImpliedLatticeSite) else site for site in sites])
     unique_index = {site: index for index, site in enumerate(unique_sites)}
 

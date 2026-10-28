@@ -75,7 +75,7 @@ class SpinwaveResult:
     raw_energies : numpy.ndarray
         Calculated spinwave mode energies.
     intensities : numpy.ndarray or None, optional
-        Perpendicular neutron scattering intensities. Default is ``None``.
+        Unpolarised neutron scattering intensities $S^{\perp}(\mathbf{q}, \omega)$. Default is ``None``.
     sab : numpy.ndarray or None, optional
         Spin-spin correlation tensor $S^{\alpha\beta}(\mathbf{q}, \omega)$.
         Default is ``None``.
