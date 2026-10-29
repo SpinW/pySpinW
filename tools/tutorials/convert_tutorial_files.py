@@ -104,11 +104,18 @@ def run(files):
             comment_level = 0
             blocks = []
             current_block = []
+            skip_lines = 0
             with open(tutorial_input_dir / md_file, 'r') as input_file:
                 for line in input_file:
                     if line.startswith("## "):
-                        new_comment_level = 2
-                        add_line = line[3:]
+                        # Parses skipped lines here so we don't break code blocks
+                        if line[2:].strip().startswith("skip"):
+                            parts = line.split(":")
+                            skip_lines = 2 if len(parts) <= 1 else int(parts[1]) + 1
+                            add_line = '"""skip\n'
+                        else:
+                            new_comment_level = 2
+                            add_line = line[3:]
                     elif line.startswith("#"):
                         new_comment_level = 1
                         add_line = line[1:]
@@ -124,6 +131,12 @@ def run(files):
                     comment_level = new_comment_level
                     current_block.append(add_line)
 
+                    if skip_lines == 1:
+                        current_block.append('skip"""\n')
+                        skip_lines = 0
+                    if skip_lines > 1:
+                        skip_lines -= 1
+
                 blocks.append((comment_level, current_block))
 
             blocks = [(level, block) for level, block in blocks if not (level == 2 and len(block) == 0)]
@@ -135,7 +148,6 @@ def run(files):
 
             # Create the corresponding output files
             started = False
-            skip_lines = 0
             stdout_capture_index = 0
             stderr_capture_index = 0
             image_index = 0
@@ -169,33 +181,28 @@ def run(files):
                                         md_file.write("\n```python\n")
 
                                         for line in md_lines:
-                                            md_file.write(line)
+                                            md_file.write(line.replace('"""skip\n','').replace('skip"""\n',''))
 
                                         md_file.write("```\n")
 
-                                    # Skip any skipped lines, only for artefacts
-                                    artefact_lines = block[skip_lines:]
-
                                     # Write to artefacts file
-                                    for line in artefact_lines:
+                                    for line in block:
                                         artifacts_file.write(line)
 
-                                    jupyter.add_code(md_lines)
+                                    jupyter.add_code([l.replace('"""skip\n','').replace('skip"""\n','') for l in md_lines])
 
                                 else:
                                     pass #print(f"'{block}' comes before title tag, skipping")
 
-                                skip_lines = 0
 
                             case 1: # It's text
                                 if started:
-                                    for line in block[skip_lines:]:
+                                    for line in block:
                                         md_file.write(line)
 
-                                    jupyter.add_text(block[skip_lines:])
+                                    jupyter.add_text(block)
                                 else:
                                     pass # print(f"'{block}' comes before title tag, skipping")
-                                skip_lines = 0
 
                             case 2: # It's a control tag
                                 rest_is_code = False # Flag to treat the rest of this block as code to be added
@@ -232,13 +239,6 @@ def run(files):
                                                 rest_is_code = True
                                                 is_image_block = True
 
-                                            elif line.startswith("skip"): # Skips a certain number of lines
-                                                parts = line.split(":")
-                                                if len(parts) <= 1:
-                                                    skip_lines = 1
-                                                else:
-                                                    skip_lines = int(parts[1])
-
                                             elif line.startswith("reproduces"):
                                                 indices = [int(v) for v in line.split(":")[1].strip().split(",")]
                                                 md_file.write(spinw_tutorial_text % (indices[0], indices[0]))
@@ -267,6 +267,9 @@ def run(files):
                                                     "\n" + md_placeholder_stderr + str(stderr_capture_index) + "\n")
                                                 artifacts_file.write(
                                                     f'print("######:{stderr_capture_index}", file=sys.stderr)\n')
+
+                                            elif line.startswith('"""skip'):
+                                                artifacts_file.write(line)
 
                                             else:
                                                 raise ValueError(f"Do not know what to do with instruction: {line}")
@@ -301,7 +304,7 @@ def run(files):
                 for level, block in blocks:
                     if level == 0:
                         for line in block:
-                            file.write(line)
+                            file.write(line.replace('"""skip\n','').replace('skip"""\n',''))
                     if level == 1:
                         for line in block:
                             file.write("#" + line)

@@ -1314,7 +1314,9 @@ class Hamiltonian(SPWSerialisable):
             Whether to use the Rust calculator. Default is ``True``.
         """
         if new_figure:
-            plt.figure("Energy")
+            fig = plt.figure("Energy")
+        else:
+            fig = plt.gcf()
 
         x_values = path.x_values()
 
@@ -1325,6 +1327,8 @@ class Hamiltonian(SPWSerialisable):
 
         if show:
             plt.show()
+        else:
+            return fig
 
     def ground_state(self,
                      fixed: list[Site] | None = None,
@@ -1856,7 +1860,9 @@ class HamiltonianParameterization:
 
         # Figure
         if new_figure:
-            plt.figure("Energy")
+            fig = plt.figure("Energy")
+        else:
+            fig = plt.gcf()
 
         x_values = path.x_values()
 
@@ -1879,6 +1885,8 @@ class HamiltonianParameterization:
 
         if show:
             plt.show()
+        else:
+            return fig
 
 
 
