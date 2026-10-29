@@ -13,13 +13,12 @@ import numpy as np
 
 
 def _set_white_recursive(artist):
-    print(type(artist), artist)
     if isinstance(artist, QuadMesh):
         colors = artist.get_cmap().colors
         # Check if colormap goes from light to dark (light==sqrt(3)==1.7)
         if np.linalg.norm(colors[0]) > 1.5 and np.linalg.norm(colors[-1]) < 0.1:
             artist.set_cmap(artist.get_cmap().reversed())
-    if isinstance(artist, (Spine, Polygon, Rectangle)):
+    elif isinstance(artist, (Spine, Polygon, Rectangle)):
         artist.set_edgecolor('white')
     elif isinstance(artist, (Text,)):
         artist.set_color('white')
