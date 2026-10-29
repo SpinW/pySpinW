@@ -37,16 +37,18 @@ def _parse_images():
             savefig_dark_cmd = 'savefig_dark(' + savefig_cmd.group(1) + ',' + savefig_cmd.group(2)
             savefig_dark_cmd = savefig_dark_cmd.replace(filename, filename.replace('.', '_dark.'))
             artifacts_py = artifacts_py.replace(savefig_cmd.group(2), savefig_cmd.group(2) + '\n' + savefig_dark_cmd)
+            filename_dark = filename.replace('.', '_dark.')
             image_blocks.append([f'```{{image}} {filename}\n:class: only-light\n```\n',
-                                 f'```{{image}} {filename.replace('.', '_dark.')}\n:class: only-dark\n```\n'])
+                                 f'```{{image}} {filename_dark}\n:class: only-dark\n```\n'])
         elif 'snapshot' in image_code:
             snapshot_cmd = re.search(r'(snapshot\(.*[\'"]' + filename + r'[\'"].*\))', image_code, re.DOTALL | re.MULTILINE).group(1)
             snapshotlight_cmd = snapshot_cmd.replace('snapshot', 'snapshot_light')
             snapshotlight_cmd = snapshotlight_cmd.replace(filename, filename.replace('.', '_light.'))
             snapshotdark_cmd = snapshot_cmd.replace('snapshot', 'snapshot_dark')
             artifacts_py = artifacts_py.replace(snapshot_cmd, snapshotdark_cmd + '\n' + snapshotlight_cmd)
+            filename_light = filename.replace('.', '_light.')
             image_blocks.append([f'```{{image}} {filename}\n:class: only-dark\n```\n',
-                                 f'```{{image}} {filename.replace('.', '_light.')}\n:class: only-light\n```\n'])
+                                 f'```{{image}} {filename_light}\n:class: only-light\n```\n'])
         else:
             image_blocks.append([f"\n![]({filename})\n\n"])
 
