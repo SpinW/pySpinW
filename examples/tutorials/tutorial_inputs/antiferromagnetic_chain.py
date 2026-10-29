@@ -54,14 +54,14 @@ two_site_hamiltonian = Hamiltonian(two_site_structure, two_site_exchanges)
 # View it
 ## skip
 view(two_site_hamiltonian)
-## image: two_site_hamiltonian.png
+## image:
 ## snapshot(two_site_hamiltonian, "two_site_hamiltonian.png", view_point=(0,-5,-0.5), display_options=DisplayOptions())
 
 # And plot the dispersion, here we specify the path in angstroms to make it comparable with different unit cells.
 path = Path([(0, 0, 0), (1, 0, 0)], convert_to_lattice_units_with=two_site_unit_cell)
 ## skip
 two_site_hamiltonian.spaghetti_plot(path)
-## image: two_site_dispersion.png
+## image:
 ## fig = two_site_hamiltonian.spaghetti_plot(path, show=False)
 ## fig.savefig("two_site_dispersion.png")
 
@@ -95,7 +95,7 @@ hamiltonian = Hamiltonian(structure, [one_site_exchange])
 # View it
 ## skip
 view(hamiltonian)
-## image: one_spin_hamiltonian_1.png
+## image:
 ## snapshot(hamiltonian, "one_spin_hamiltonian_1.png", view_point=(0,-5,-0.5))
 
 # The dispersion looks the same, only we are going from zero to one reciprocal lattice units in this case,
@@ -104,7 +104,7 @@ view(hamiltonian)
 path = Path([(0,0,0), (1,0,0)], convert_to_lattice_units_with=unit_cell)
 ## skip
 hamiltonian.spaghetti_plot(path)
-## image: one_spin_dispersion_1.png
+## image:
 ## fig = hamiltonian.spaghetti_plot(path, show=False)
 ## fig.savefig("one_spin_dispersion_1.png")
 
@@ -144,7 +144,7 @@ hamiltonian.print_summary()
 ## skip
 view(hamiltonian)
 
-## image: one_site_hamiltonian_2.png
+## image:
 ## snapshot(hamiltonian, filename="one_site_hamiltonian_2.png", view_point=(0,-5,-0.5),
 ##           display_options=DisplayOptions())
 
@@ -156,6 +156,6 @@ path = Path([[0,0,0], [1,0,0]])
 ## skip: 1
 hamiltonian.spaghetti_plot(path, scale='log')
 
-## image: one_site_dispersion_2.png
+## image:
 ## fig = hamiltonian.spaghetti_plot(path, scale='log', show=False)
 ## fig.savefig("one_site_dispersion_2.png")

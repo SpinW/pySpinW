@@ -60,7 +60,8 @@ def _parse_images():
 
 def run(files):
 
-    spinw_tutorial_text = "\n_This tutorial mirrors MATLAB spinW [Tutorial %d](../../../spinw/tutorials/tutorial%02d)_\n\n"
+    spinw_tutorial_link = "[Tutorial %d](../../../spinw/tutorials/tutorial%02d)"
+    spinw_tutorial_text = f"\n_This tutorial mirrors MATLAB spinW {spinw_tutorial_link}"
     md_placeholder_stdout = "%%%%% stdout "
     md_placeholder_stderr = "%%%%% stderr "
     md_placeholder_image = "%%%%% image "
@@ -240,8 +241,11 @@ def run(files):
                                                     skip_lines = int(parts[1])
 
                                             elif line.startswith("reproduces"):
-                                                index = int(line.split(":")[1].strip())
-                                                md_file.write(spinw_tutorial_text % (index, index))
+                                                indices = [int(v) for v in line.split(":")[1].strip().split(",")]
+                                                md_file.write(spinw_tutorial_text % (indices[0], indices[0]))
+                                                for n in range(1, len(indices)):
+                                                    md_file.write(', ' + spinw_tutorial_link % (indices[n], indices[n]))
+                                                md_file.write("_\n\n")
 
                                             elif line.startswith("capture-stdout"):
                                                 # Five hashes and a colon, all of this is hacky

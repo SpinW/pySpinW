@@ -3,7 +3,7 @@
 Reproduces Tutorial 11: https://spinw.org/tutorials/11tutorial
 """
 ## title: Square-lattice antiferromagnet
-## reproduces: 4
+## reproduces: 4, 11
 
 # In this tutorial we will show how to calculate the magnon spectrum for a square lattice
 # antiferromagnet, and in particular for the case of La$_2$CuO$_4$ (Coldea et al., 
@@ -36,7 +36,7 @@ hamiltonian = Hamiltonian(struc, exchanges)
 hamiltonian.print_summary()
 ## skip
 view(hamiltonian)
-## image: j1j2square.png
+## image:
 ## snapshot(hamiltonian, "j1j2square.png", view_point=(0,0,-4), display_options=DisplayOptions())
 
 # Now we calculate the magnon spectrum along the main in-plane wavevectors
@@ -46,7 +46,7 @@ fig = hamiltonian.spaghetti_plot(path, show=False)
 fig.axes[0].set_ylim(0, 6.5)
 ## skip
 plt.show()
-## image: j1j2spectrum.png
+## image:
 ## fig.savefig("j1j2spectrum.png")
 
 ## subtitle: The case of La$_2$CuO$_4$
@@ -62,7 +62,7 @@ hamiltonian = Hamiltonian(struc, j1 + j2 + j3)
 hamiltonian.print_summary()
 ## skip
 view(hamiltonian)
-## image: lco_structure.png
+## image:
 ## snapshot(hamiltonian, "lco_structure.png", view_point=(0,0,-4), display_options=DisplayOptions())
 
 # This time we use a slightly different path to emphasise the effect of the third neighbour
@@ -73,5 +73,5 @@ fig = hamiltonian.spaghetti_plot(path, show=False)
 fig.axes[0].set_ylim(0, 300)
 ## skip
 plt.show()
-## image: lco_spectrum.png
+## image:
 ## fig.savefig("lco_spectrum.png")
