@@ -227,7 +227,6 @@ def run(files):
                                                 md_file.write("## " + parts[1])
 
                                             elif line.startswith("image"): # Put an image tag in .md, and code in the python
-                                                parts = line.split(":")
                                                 md_file.write("\n" + md_placeholder_image + str(image_index) + "\n")
                                                 artifacts_file.write(f'\n#$$$$:{image_index}\n')
                                                 rest_is_code = True
