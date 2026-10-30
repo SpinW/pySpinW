@@ -199,6 +199,8 @@ def run(files):
                                 if started:
                                     for line in block:
                                         md_file.write(line)
+                                        if '"""skip' in line:
+                                            artifacts_file.write(line)
 
                                     jupyter.add_text(block)
                                 else:
