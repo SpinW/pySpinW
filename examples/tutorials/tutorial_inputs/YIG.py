@@ -1,12 +1,10 @@
-import numpy as np
-
 ## title: Yttrium Iron Garnet Example
 
 # This tutorial uses a CIF file for specifying the crystal structure, [download it here](YIG_10K.cif)
 ## file: YIG_10K.cif
 
-# Import pyspinw and load in the structure
-
+# Import numpy, pyspinw and load in the structure
+import numpy as np
 from pyspinw import *
 
 structure = load("YIG_10K.cif")
