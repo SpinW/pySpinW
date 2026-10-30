@@ -32,29 +32,20 @@ class AbstractExchange:
         Cartesian distance between the sites.
     order : int
         Shell order index (increasing with distance).
-
-    Attributes
-    ----------
-    name : str
-        Name of the exchange.
-    site_1 : Site
-        First site of the exchange pair.
-    site_2 : Site
-        Second site of the exchange pair.
-    cell_offset : CellOffset
-        Unit cell offset between ``site_1`` and ``site_2``.
-    distance : float
-        Cartesian distance between the sites.
-    order : int
-        Shell order index (increasing with distance).
     """
 
     name: str
+    """Name of the exchange."""
     site_1: Site
+    """First site of the exchange pair."""
     site_2: Site
+    """Second site of the exchange pair."""
     cell_offset: CellOffset
+    """Unit cell offset between ``site_1`` and ``site_2``."""
     distance: float
+    """Cartesian distance between the sites."""
     order: int
+    """Shell order index (increasing with distance)."""
 
 def approx_equal(v1, v2):
     """Are two vectors approximately the same (within tolerance).
@@ -162,8 +153,6 @@ def batch_exchanges(sites: list[Site],
                     both_directions: bool=False):
     """Find all the exchanges within a certain distance.
 
-    Most of the work here is about constraining by order and giving it a sensible name.
-
     Parameters
     ----------
     sites : list of Site
@@ -185,6 +174,8 @@ def batch_exchanges(sites: list[Site],
     list of AbstractExchange
         List of `AbstractExchange` objects sorted by distance.
     """
+    # Most of the work here is about constraining by order and giving it a sensible name.
+
     unique_sites = set([site.parent_site if isinstance(site, ImpliedLatticeSite) else site for site in sites])
     unique_index = {site: index for index, site in enumerate(unique_sites)}
 

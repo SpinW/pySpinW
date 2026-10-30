@@ -4,15 +4,19 @@ We just want to check the syntax does not throw errors and do not
 check for output values or graphs
 """
 
-import os
+import os, sys
 import runpy
 import pytest
 import shutil
 
 import pyspinw
 
-path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'tutorials')
+pkg_root = os.path.join(os.path.dirname(__file__), '..')
+path = os.path.join(pkg_root, 'examples', 'tutorials')
 output_directory = os.path.join(path, "tutorial_outputs")
+
+sys.path.append(pkg_root)
+import tools.tutorials.darkmode
 
 @pytest.fixture
 def preserve_directory(tmp_path):
@@ -39,6 +43,8 @@ def test_tutorial_docs_build(preserve_directory, monkeypatch):
 
     # Patch out snapshot as running it on a runner causes all sorts of issues!!!!!
     monkeypatch.setattr(pyspinw, "snapshot", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tools.tutorials.darkmode, "snapshot_light", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tools.tutorials.darkmode, "snapshot_dark", lambda *args, **kwargs: None)
 
     runpy.run_path(
         os.path.join(

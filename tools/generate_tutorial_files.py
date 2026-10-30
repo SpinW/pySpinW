@@ -14,7 +14,14 @@ print("Writing index...")
 
 with open(tutorial_output_dir / "index.md", 'w') as file:
     file.write("# Tutorials\n\n")
+    file.write("```{toctree}\n")
+    file.write(":maxdepth: 2\n")
+    file.write(":hidden:\n")
+    file.write(":glob:\n\n")
+    for filename in filenames:
+        file.write(f'tutorials/{filename[:-3]}/index.md\n')
+    file.write("```\n\n")
 
     for index, (filename, text) in enumerate(zip(filenames, text)):
 
-        file.write(f" - [Tutorial {index+1}]({filename[:-3]}/tutorial.md) {text}")
+        file.write(f" - [Tutorial {index+1}](tutorials/{filename[:-3]}/index.md) {text}")

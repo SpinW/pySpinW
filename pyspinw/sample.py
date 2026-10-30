@@ -692,7 +692,7 @@ class Multidomain(Sample3D):
 class Twin(Multidomain):
     """Specify a twinned crystal by a twinning plane.
 
-    This is a special case of `Multidomain`, which can use completely general transformations,
+    This is a special case of :class:`Multidomain`, which can use completely general transformations,
     and have more than one "twin".
 
     Parameters
@@ -1078,8 +1078,9 @@ class Powder(Sample1D):
                       new_figure: bool = True,
                       use_rust: bool = True,
                       data: ArrayLike | None = None,
-                      ignore_imaginary: bool = False):
-        """Show the powder spectrum.
+                      ignore_imaginary: bool = False,
+                      **kwargs):
+        r"""Show the powder spectrum.
 
         Parameters
         ----------
@@ -1112,6 +1113,8 @@ class Powder(Sample1D):
         ignore_imaginary : bool, default=False
             If ``True``, zero out intensities of modes with significant imaginary
             energy components.
+        \**kwargs :
+            Any extra keyword arguments are passed to Matplotlib pcolormesh command
 
         Returns
         -------
@@ -1150,7 +1153,7 @@ class Powder(Sample1D):
         else:
             fig, ax = plt.gcf(), plt.gca()
 
-        ax.pcolormesh(q, e, data.T, shading='nearest')
+        ax.pcolormesh(q, e, data.T, shading='nearest', **kwargs)
         ax.set_xlabel(r"$|q| (\AA^{-1})$")
         ax.set_ylabel("Energy (meV)")
         ax.set_aspect(0.2)

@@ -281,11 +281,11 @@ def _regularise_parameters(hamiltonian: "Hamiltonian", parameter_data: Parametri
 class Hamiltonian(SPWSerialisable):
     """Representation of a Hamiltonian - this could be considered the central class for pyspinw.
 
-    `Hamiltonian`s contain all the information needed to calculate the scattering for a given q in
-    a unform material, and is composed of a `Structure` object, `Exchange`s and `Anisotropy`s.
+    ``Hamiltonian`` contain all the information needed to calculate the scattering for a given q in
+    a unform material, and is composed of a ``Structure`` object, ``Exchange`` and ``Anisotropy``.
 
-    The `Hamiltonian` object does not deal with non-uniform materials, such as powders or twins,
-    these are specified with the `Sample` subclasses, which take `Hamiltonian` classes as inputs.
+    The ``Hamiltonian`` object does not deal with non-uniform materials, such as powders or twins,
+    these are specified with the ``Sample`` subclasses, which take ``Hamiltonian`` classes as inputs.
 
     Parameters
     ----------
@@ -1314,7 +1314,9 @@ class Hamiltonian(SPWSerialisable):
             Whether to use the Rust calculator. Default is ``True``.
         """
         if new_figure:
-            plt.figure("Energy")
+            fig = plt.figure("Energy")
+        else:
+            fig = plt.gcf()
 
         x_values = path.x_values()
 
@@ -1325,6 +1327,8 @@ class Hamiltonian(SPWSerialisable):
 
         if show:
             plt.show()
+        else:
+            return fig
 
     def ground_state(self,
                      fixed: list[Site] | None = None,
@@ -1340,7 +1344,8 @@ class Hamiltonian(SPWSerialisable):
                      verbose: bool=True):
         """Get the classical ground state via gradient descent.
 
-        For more direct control, use the ``ClassicalEnergyMinimisation`` class.
+        For more direct control, use the
+        :py:class:`~pyspinw.calculations.energy_minimisation.ClassicalEnergyMinimisation` class
 
         Parameters
         ----------
@@ -1377,7 +1382,7 @@ class Hamiltonian(SPWSerialisable):
         Returns
         -------
         Hamiltonian
-            A new ``Hamiltonian`` with optimised spin state.
+            A new :class:`Hamiltonian` with optimised spin state.
 
         Raises
         ------
@@ -1855,7 +1860,9 @@ class HamiltonianParameterization:
 
         # Figure
         if new_figure:
-            plt.figure("Energy")
+            fig = plt.figure("Energy")
+        else:
+            fig = plt.gcf()
 
         x_values = path.x_values()
 
@@ -1878,6 +1885,8 @@ class HamiltonianParameterization:
 
         if show:
             plt.show()
+        else:
+            return fig
 
 
 

@@ -37,7 +37,7 @@ structure = Structure([only_site], unit_cell=unit_cell)
 # We can look at the structure using the viewer, we'll use the `copies` parameter to show five copies in $x$ direction
 ## skip
 view(structure, copies=(5,1,1))
-## image: ferromagnet_structure.png
+## image:
 ## snapshot(structure, "ferromagnet_structure.png", view_point=(0,-6,-1), copies=(5,1,1))
 
 # We now come to defining the exchanges, which we will need as a list.
@@ -76,7 +76,7 @@ hamiltonian = Hamiltonian(structure, exchanges)
 # We can now see the exchanges in the viewer by viewing the hamiltonian object
 ## skip
 view(hamiltonian, copies=(5,1,1))
-## image: ferromagnet_hamiltonian.png
+## image:
 ## snapshot(hamiltonian, "ferromagnet_hamiltonian.png", view_point=(0,-6,-1), copies=(5,1,1))
 
 ## subtitle: Plotting
@@ -90,6 +90,6 @@ path = Path([[0,0,0], [1,0,0]])
 
 ## skip
 hamiltonian.spaghetti_plot(path, dE=0.4)
-## image: spaghetti_plot.png
+## image:
 ## fig = hamiltonian.spaghetti_plot(path, dE=0.4, show=False)
 ## fig.savefig("spaghetti_plot.png")
