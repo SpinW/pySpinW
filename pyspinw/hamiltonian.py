@@ -1454,7 +1454,8 @@ class Hamiltonian(SPWSerialisable):
             old_uid = site.unique_id
             new_site = Site(site.i, site.j, site.k,
                             supercell_spins=spin_data,
-                            g=site.g, name=site.name)
+                            g=site.g, name=site.name,
+                            metadata=site.metadata)
 
             new_sites.append(new_site)
             old_uid_to_new_site[old_uid] = new_site

@@ -6,19 +6,24 @@
 # Import numpy, pyspinw and load in the structure
 import numpy as np
 from pyspinw import *
+from pyspinw.calculations.energy_minimisation import InitialRandomisation
 
 structure = load("YIG_10K.cif")
 
 # This structure has two iron sublattices
-# Colour the sublattices associated with Fe1 and Fe2 atoms
+# Colour the sublattices associated with Fe1 and Fe2 atoms, and set all the spins
 
-for site in structure.sites_by_name("Fe1"):
+
+fe1 = structure.sites_by_name("Fe1")
+fe2 = structure.sites_by_name("Fe2")
+
+for site in fe1:
     site.metadata.color = 1,0,0
-    site.spin = 3/2, 0, 0
+    site.spin = 0, 0, 3/2
 
-for site in structure.sites_by_name("Fe2"):
+for site in fe2:
     site.metadata.color = 0,0,1
-    site.spin = 3/2, 0, 0
+    site.spin = 0, 0, -3/2
 
 # The paper says "Neutron scattering [9] indicates that nearest-neighbor exchange dominates and we adopt
 # Jad ~ −9.60 × 10−21 J, Jdd ~ −3.24 × 10−21 J, and Jaa ~−0.92 × 10−21 J [3], where the subscripts refer to the
@@ -28,8 +33,8 @@ for site in structure.sites_by_name("Fe2"):
 # all by using `sites_by_name`.
 
 ## capture-stdout
-print("Fe1 count:", len(structure.sites_by_name("Fe1")))
-print("Fe2 count:", len(structure.sites_by_name("Fe2")))
+print("Fe1 count:", len(fe1))
+print("Fe2 count:", len(fe2))
 ## end-capture-stdout
 
 # So "Fe2" is the majority, and corresponds to "d" in the paper.
@@ -75,6 +80,20 @@ hamiltonian = Hamiltonian(structure, exchanges).symmetry_filled()
 
 field = np.array([0, 0, 0.01])
 
+# optimised = hamiltonian.ground_state(fixed=[base_site_a], step_size=0.001, max_iters=2000,
+#                                      field=field, initial_randomisation=InitialRandomisation.RANDOMISED)
+
+
 ## skip
+# view(optimised)
 view(hamiltonian)
 
+# Q0  = T*[1 2 3]';
+# Q_N = T*[ 1/2  1/2    0]'+Q0;
+# Q_G = T*[   0    0    0]'+Q0;
+# Q_H = T*[   0    0    1]'+Q0;
+
+path = Path([[1/2, 1/2, 0], [0,0,0], [0,0,1]])
+
+# optimised.spaghetti_plot(path, field=field)
+hamiltonian.spaghetti_plot(path, field=field)

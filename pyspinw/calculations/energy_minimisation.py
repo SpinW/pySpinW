@@ -620,7 +620,7 @@ class ClassicalEnergyMinimisation:
                         other_cell = self.supercell.wrap_sum(cell, exchange.cell_offset)
                         other_spin = self.supercell.spin_calculation(other_spin_data, other_cell)
 
-                        forces_planar[site_index] -= dS_dtheta @ exchange.exchange_matrix @ other_spin
+                        forces_planar[param_index] -= dS_dtheta @ exchange.exchange_matrix @ other_spin
 
                     # Anisotropies
                     for anisotropy in self.site_to_anisotropy[site_uid]:
