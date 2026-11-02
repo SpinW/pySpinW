@@ -75,5 +75,6 @@ hamiltonian = Hamiltonian(structure, exchanges).symmetry_filled()
 
 field = np.array([0, 0, 0.01])
 
+## skip
 view(hamiltonian)
 
