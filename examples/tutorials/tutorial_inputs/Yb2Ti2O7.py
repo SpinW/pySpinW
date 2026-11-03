@@ -27,6 +27,7 @@ structure = Structure(sites, unit_cell, sg)
 structure.print_summary()
 
 yb_neighbour, offset = structure.neighbours(yb, element="Yb")[-1]
+structure.exchange_constraints(yb, yb_neighbour)
 
 hamiltonian = Hamiltonian(structure, [], [])
 

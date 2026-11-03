@@ -19,11 +19,11 @@ fe2 = structure.sites_by_name("Fe2")
 
 for site in fe1:
     site.metadata.color = 1,0,0
-    site.spin = 0, 0, 3/2
+    site.spin = 0, 0, -3/2
 
 for site in fe2:
     site.metadata.color = 0,0,1
-    site.spin = 0, 0, -3/2
+    site.spin = 0, 0, 3/2
 
 # The paper says "Neutron scattering [9] indicates that nearest-neighbor exchange dominates and we adopt
 # Jad ~ −9.60 × 10−21 J, Jdd ~ −3.24 × 10−21 J, and Jaa ~−0.92 × 10−21 J [3], where the subscripts refer to the
@@ -56,9 +56,15 @@ Jaa = 0.5 * 0.92e-21 * J_to_meV
 base_site_a = structure.site_by_name("Fe1")
 base_site_d = structure.site_by_name("Fe2")
 
+for site, offset in structure.neighbours(base_site_a, name_filter="Fe2"):
+    ops = structure.spacegroup.operations_on_single_site_pairs(base_site_a, site, offset)
+    print(site.name, offset, ops)
+
 # Fe1 to Fe2 (a to d)
-neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe2")
-exchange_ad = HeisenbergExchange(base_site_a, neighbour, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
+# neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe2", n=0)
+x, offset = structure.site_by_name("Fe1 [4]"), (0, 0, 0)
+y = structure.site_by_name("Fe2 [4]")
+exchange_ad = HeisenbergExchange(x, y, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
 
 # Fe1 to Fe1 (a to a)
 neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe1")
@@ -76,6 +82,7 @@ for exchange in exchanges:
 
 
 
+
 hamiltonian = Hamiltonian(structure, exchanges).symmetry_filled()
 
 field = np.array([0, 0, 0.01])
@@ -83,6 +90,7 @@ field = np.array([0, 0, 0.01])
 # optimised = hamiltonian.ground_state(fixed=[base_site_a], step_size=0.001, max_iters=2000,
 #                                      field=field, initial_randomisation=InitialRandomisation.RANDOMISED)
 
+print(len(hamiltonian.exchanges_by_name("Jad")))
 
 ## skip
 # view(optimised)
@@ -94,6 +102,7 @@ view(hamiltonian)
 # Q_H = T*[   0    0    1]'+Q0;
 
 path = Path([[1/2, 1/2, 0], [0,0,0], [0,0,1]])
+# path = Path([[1 + 1/2, 2 + 1/2, 3 + 0], [1 + 0,2 + 0,3 + 0], [1 + 0,2 + 0,3 + 1]])
 
 # optimised.spaghetti_plot(path, field=field)
-hamiltonian.spaghetti_plot(path, field=field)
+hamiltonian.spaghetti_plot(path)
