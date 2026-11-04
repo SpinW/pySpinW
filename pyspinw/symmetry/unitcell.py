@@ -368,6 +368,14 @@ class UnitCell(RawUnitCell):
             direction=None if json["direction"] is None else vec3_deserialise(json["direction"])
         )
 
+    @property
+    def smallest_cell_length(self):
+        return min([self.a, self.b, self.c])
+
+    @property
+    def largest_cell_length(self):
+        return min([self.a, self.b, self.c])
+
 
 unit_cell_types = {cls._unit_cell_name: cls for cls in [RawUnitCell, UnitCell]}
 
