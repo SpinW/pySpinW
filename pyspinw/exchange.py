@@ -699,6 +699,11 @@ class Exchange(SPWSerialisable):
         return equiv_bond and np.allclose(self.exchange_matrix, other.exchange_matrix,
                                           atol=tolerances.SAME_SITE_ABS_TOL)
 
+    def __hash__(self):
+        return hash((self.site_1, 
+                     self.site_2, 
+                     self.cell_offset.vector.tobytes() if hasattr(self.cell_offset, 'vector') else None,
+                     self.exchange_matrix.tobytes()))
 
 
 
