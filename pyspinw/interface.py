@@ -20,7 +20,7 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
 from pyspinw.tb2j import TB2J_Input
-from pyspinw.tolerances import tolerances 
+from pyspinw.tolerances import tolerances
 
 BOND_DECIMAL = int(np.log10(np.floor(1 / tolerances.BOND_TOL)))
 
