@@ -700,8 +700,8 @@ class Exchange(SPWSerialisable):
                                           atol=tolerances.SAME_SITE_ABS_TOL)
 
     def __hash__(self):
-        return hash((self.site_1, 
-                     self.site_2, 
+        return hash((self.site_1,
+                     self.site_2,
                      self.cell_offset.vector.tobytes() if hasattr(self.cell_offset, 'vector') else None,
                      self.exchange_matrix.tobytes()))
 
