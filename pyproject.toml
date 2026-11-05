@@ -35,6 +35,13 @@ dependencies = [
     "imageio",
 ]
 
+[project.optional-dependencies]
+jupyter = [
+    "ipywidgets>=8.0.0",
+    "ipywebgl>=0.4.0",
+    "ipyevents>=2.0.1",
+]
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "pyspinw.rust"
