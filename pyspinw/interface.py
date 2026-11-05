@@ -4,13 +4,14 @@ import warnings
 
 import numpy as np
 from numpy._typing import ArrayLike
+from collections import defaultdict
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_exchanges import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, ExchangeGroup, \
-    BiDirectionFilter, get_symmetry_equivalent_exchange_sets
+    BiDirectionFilter
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import Site
 from pyspinw.structure import Structure
@@ -694,26 +695,75 @@ def generate_exchanges(sites: list[Site] | Structure,
     exchanges = group.exchanges(sites, unit_cell)
 
     if use_sym:
-        bond_sets, symm_sets = {}, []
-        for bond in exchanges:
-            # Check the exchange is compatible with the symmetry
-            if not bond.obeys_symmetry(structure):
-                warnings.warn(f'Input exchange matrix of bond {bond} is incompatible with the symmetry ' \
-                          'of the structure. The symmetry allowed matrix is:' \
-                          + str(structure.exchange_constraints(group[0].site_1, group[0].site_2)))
-            dist = np.round(bond.distance(unit_cell), BOND_DECIMAL)
-            if dist not in bond_sets.keys():
-                bond_sets[dist] = []
-            bond_sets[dist].append(bond.symmetry_fill(structure, include_original=True))
-        # Sort bonds at the same distance into symmetry-equivalent sets
-        for dist, bonds in bond_sets.items():
-            if len(bonds) == 1:
-                symm_sets.append(bonds[0])
-            else:
-                symm_sets += [bonds for bonds in get_symmetry_equivalent_exchange_sets(bonds)]
-        return symm_sets
+        return get_symmetry_equivalent_exchange_sets(exchanges, structure)
 
     return exchanges
+
+
+def get_symmetry_equivalent_exchange_sets(exchanges: list[Exchange],
+                                          structure: Structure) -> list[list[Exchange]]:
+    """Returns sets of symmetry equivalent exchanges
+
+    For each exchange in the input list, find a set of symmetry equivalent exchanges
+    and returns a list of non-identical sets.
+
+    Parameters
+    ----------
+
+    exchanges : list of Exchange
+        list of input Exchange
+    structure : Structure
+        The crystal structure
+
+    Returns
+    -------
+    list of list of Exchange
+        Non-identical sets of symmetry-equivalent `Exchange` instances.
+    """
+
+    def compare_exchange(j1, j2):
+        is_forward = j1.site_1 == j2.site_1 and j1.site_2 == j2.site_2 and j1.cell_offset == j2.cell_offset
+        is_reverse = j1.site_1 == j2.site_2 and j1.site_1 == j2.site_2 and \
+                     np.allclose(j1.lattice_vector, -j2.lattice_vector, atol=tolerances.SAME_SITE_ABS_TOL)
+        return is_forward or is_reverse
+
+    def is_equiv(set1: list[Exchange], set2: list[Exchange]) -> bool:
+        if len(set1) != len(set2):
+            return False
+        equiv_mat = np.zeros((len(set1), len(set2)))
+        # Need to iterate over all members of both set as sets are unordered
+        for i in range(len(set1)):
+            for j in range(len(set2)):
+                equiv_mat[i, j] = compare_exchange(set1[i], set2[j])
+        return np.sum(equiv_mat) == len(set1)
+
+    # Generate symmetry equivalent sets from each input Exchange
+    bond_sets = defaultdict(list)
+    for bond in exchanges:
+        # Check the exchange is compatible with the symmetry
+        if not bond.obeys_symmetry(structure):
+            warnings.warn(f'Input exchange matrix of bond {bond} is incompatible with the symmetry ' \
+                      'of the structure. The symmetry allowed matrix is:' \
+                      + str(structure.exchange_constraints(group[0].site_1, group[0].site_2)))
+        dist = np.round(bond.distance(structure.unit_cell), BOND_DECIMAL)
+        # Get all other symmetry equivalent exchanges to this one and index by bond distance
+        bond_sets[dist].append(bond.symmetry_fill(structure, include_original=True))
+
+    # Sort bonds at the same distance into symmetry-equivalent sets
+    symm_sets = []
+    for dist, bonds in bond_sets.items():
+        cur_ind = 0
+        symm_sets.append(bonds[cur_ind])
+        non_equivalent_sets = set(range(1, len(bonds)))
+        while True:
+            # On each iteration of this loop find all sets of exchanges equivalent to the
+            # current set and remove them from the list of non_equivalent sets to be parsed
+            non_equivalent_sets -= set(j for j in non_equivalent_sets if is_equiv(bonds[cur_ind], bonds[j]))
+            if len(non_equivalent_sets) == 0:
+                break
+            cur_ind = non_equivalent_sets.pop()
+            symm_sets.append(bonds[cur_ind])
+    return symm_sets
 
 
 @check_sizes(axis=(3, ), force_numpy=True)
