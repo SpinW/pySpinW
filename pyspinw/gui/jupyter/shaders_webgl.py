@@ -170,15 +170,6 @@ class ObjectShaderWebGL:
         self.viewer = viewer
         self.program = compile_webgl_program(viewer, OBJECT_VERTEX_SHADER, OBJECT_FRAGMENT_SHADER)
 
-        self._model_loc = viewer.get_uniform_location(self.program, "model")
-        self._projection_view_loc = viewer.get_uniform_location(self.program, "projectionView")
-        self._light_pos_loc = viewer.get_uniform_location(self.program, "lightPos")
-        self._view_pos_loc = viewer.get_uniform_location(self.program, "viewPos")
-        self._light_color_loc = viewer.get_uniform_location(self.program, "lightColor")
-        self._object_color_loc = viewer.get_uniform_location(self.program, "objectColor")
-        self._specular_strength_loc = viewer.get_uniform_location(self.program, "specularStrength")
-        self._ambient_strength_loc = viewer.get_uniform_location(self.program, "ambientStrength")
-
         self.light_position = (-20.0, 0.0, 0.0)
         self.light_color = (1.0, 1.0, 1.0)
         self.specular_strength = 0.3
@@ -194,21 +185,20 @@ class ObjectShaderWebGL:
         proj = camera.projection_matrix(0.01, 100.0)
         pv = proj @ view
 
-        self.viewer.uniform_matrix_4fv(self._projection_view_loc, False, _mat_to_col_major(pv))
-        self.viewer.uniform_3f(self._view_pos_loc, *camera.position)
-        self.viewer.uniform_3f(self._light_pos_loc, *self.light_position)
-        self.viewer.uniform_3f(self._light_color_loc, *self.light_color)
-        self.viewer.uniform_1f(self._specular_strength_loc, self.specular_strength)
-        self.viewer.uniform_1f(self._ambient_strength_loc, self.ambient_strength)
+        self.viewer.uniform_matrix("projectionView", _mat_to_col_major(pv))
+        self.viewer.uniform("viewPos", np.array(camera.position, dtype=np.float32))
+        self.viewer.uniform("lightPos", np.array(self.light_position, dtype=np.float32))
+        self.viewer.uniform("lightColor", np.array(self.light_color, dtype=np.float32))
+        self.viewer.uniform("specularStrength", np.array([self.specular_strength], dtype=np.float32))
+        self.viewer.uniform("ambientStrength", np.array([self.ambient_strength], dtype=np.float32))
 
     def set_model_matrix(self, model_matrix: np.ndarray):
         """Set model transformation matrix."""
-        self.viewer.uniform_matrix_4fv(self._model_loc, False, _mat_to_col_major(model_matrix))
+        self.viewer.uniform_matrix("model", _mat_to_col_major(model_matrix))
 
     def set_color(self, color: tuple[float, float, float] | list[float] | np.ndarray):
         """Set object diffuse color."""
-        r, g, b = float(color[0]), float(color[1]), float(color[2])
-        self.viewer.uniform_3f(self._object_color_loc, r, g, b)
+        self.viewer.uniform("objectColor", np.array(color[:3], dtype=np.float32))
 
 
 class CellShaderWebGL:
@@ -217,10 +207,6 @@ class CellShaderWebGL:
     def __init__(self, viewer):
         self.viewer = viewer
         self.program = compile_webgl_program(viewer, SIMPLE_VERTEX_SHADER, CELL_FRAGMENT_SHADER)
-
-        self._model_loc = viewer.get_uniform_location(self.program, "model")
-        self._projection_view_loc = viewer.get_uniform_location(self.program, "projectionView")
-        self._cell_color_loc = viewer.get_uniform_location(self.program, "cellColor")
 
     def use(self):
         """Bind this shader program."""
@@ -231,16 +217,15 @@ class CellShaderWebGL:
         view = camera.view_matrix()
         proj = camera.projection_matrix(0.01, 100.0)
         pv = proj @ view
-        self.viewer.uniform_matrix_4fv(self._projection_view_loc, False, _mat_to_col_major(pv))
+        self.viewer.uniform_matrix("projectionView", _mat_to_col_major(pv))
 
     def set_model_matrix(self, model_matrix: np.ndarray):
         """Set model transformation matrix."""
-        self.viewer.uniform_matrix_4fv(self._model_loc, False, _mat_to_col_major(model_matrix))
+        self.viewer.uniform_matrix("model", _mat_to_col_major(model_matrix))
 
     def set_color(self, color: tuple[float, float, float] = (0.6, 0.6, 0.6)):
         """Set wireframe color."""
-        r, g, b = float(color[0]), float(color[1]), float(color[2])
-        self.viewer.uniform_3f(self._cell_color_loc, r, g, b)
+        self.viewer.uniform("cellColor", np.array(color[:3], dtype=np.float32))
 
 
 class AnisotropyShaderWebGL:
@@ -249,11 +234,6 @@ class AnisotropyShaderWebGL:
     def __init__(self, viewer):
         self.viewer = viewer
         self.program = compile_webgl_program(viewer, OBJECT_VERTEX_SHADER, FRESNEL_FRAGMENT_SHADER)
-
-        self._model_loc = viewer.get_uniform_location(self.program, "model")
-        self._projection_view_loc = viewer.get_uniform_location(self.program, "projectionView")
-        self._view_pos_loc = viewer.get_uniform_location(self.program, "viewPos")
-        self._object_color_loc = viewer.get_uniform_location(self.program, "objectColor")
 
     def use(self):
         """Bind this shader program."""
@@ -264,17 +244,16 @@ class AnisotropyShaderWebGL:
         view = camera.view_matrix()
         proj = camera.projection_matrix(0.01, 100.0)
         pv = proj @ view
-        self.viewer.uniform_matrix_4fv(self._projection_view_loc, False, _mat_to_col_major(pv))
-        self.viewer.uniform_3f(self._view_pos_loc, *camera.position)
+        self.viewer.uniform_matrix("projectionView", _mat_to_col_major(pv))
+        self.viewer.uniform("viewPos", np.array(camera.position, dtype=np.float32))
 
     def set_model_matrix(self, model_matrix: np.ndarray):
         """Set model transformation matrix."""
-        self.viewer.uniform_matrix_4fv(self._model_loc, False, _mat_to_col_major(model_matrix))
+        self.viewer.uniform_matrix("model", _mat_to_col_major(model_matrix))
 
     def set_color(self, color: tuple[float, float, float] | list[float] | np.ndarray):
         """Set anisotropy color."""
-        r, g, b = float(color[0]), float(color[1]), float(color[2])
-        self.viewer.uniform_3f(self._object_color_loc, r, g, b)
+        self.viewer.uniform("objectColor", np.array(color[:3], dtype=np.float32))
 
 
 class AxesShaderWebGL:
@@ -283,10 +262,6 @@ class AxesShaderWebGL:
     def __init__(self, viewer):
         self.viewer = viewer
         self.program = compile_webgl_program(viewer, SIMPLE_VERTEX_SHADER, EMISSION_FRAGMENT_SHADER)
-
-        self._model_loc = viewer.get_uniform_location(self.program, "model")
-        self._projection_view_loc = viewer.get_uniform_location(self.program, "projectionView")
-        self._object_color_loc = viewer.get_uniform_location(self.program, "objectColor")
 
     def use(self):
         """Bind this shader program."""
@@ -297,16 +272,15 @@ class AxesShaderWebGL:
         view = camera.axes_view_matrix()
         proj = camera.orthographic_matrix(0.01, 100.0)
         pv = proj @ view
-        self.viewer.uniform_matrix_4fv(self._projection_view_loc, False, _mat_to_col_major(pv))
+        self.viewer.uniform_matrix("projectionView", _mat_to_col_major(pv))
 
     def set_model_matrix(self, model_matrix: np.ndarray):
         """Set model transformation matrix."""
-        self.viewer.uniform_matrix_4fv(self._model_loc, False, _mat_to_col_major(model_matrix))
+        self.viewer.uniform_matrix("model", _mat_to_col_major(model_matrix))
 
     def set_color(self, color: tuple[float, float, float] | list[float] | np.ndarray):
         """Set axes arrow color."""
-        r, g, b = float(color[0]), float(color[1]), float(color[2])
-        self.viewer.uniform_3f(self._object_color_loc, r, g, b)
+        self.viewer.uniform("objectColor", np.array(color[:3], dtype=np.float32))
 
 
 class SelectionShaderWebGL:
@@ -315,10 +289,6 @@ class SelectionShaderWebGL:
     def __init__(self, viewer):
         self.viewer = viewer
         self.program = compile_webgl_program(viewer, SIMPLE_VERTEX_SHADER, EMISSION_FRAGMENT_SHADER)
-
-        self._model_loc = viewer.get_uniform_location(self.program, "model")
-        self._projection_view_loc = viewer.get_uniform_location(self.program, "projectionView")
-        self._object_color_loc = viewer.get_uniform_location(self.program, "objectColor")
 
     def use(self):
         """Bind this shader program."""
@@ -329,14 +299,13 @@ class SelectionShaderWebGL:
         view = camera.view_matrix()
         proj = camera.projection_matrix(0.01, 100.0)
         pv = proj @ view
-        self.viewer.uniform_matrix_4fv(self._projection_view_loc, False, _mat_to_col_major(pv))
+        self.viewer.uniform_matrix("projectionView", _mat_to_col_major(pv))
 
     def set_model_matrix(self, model_matrix: np.ndarray):
         """Set model transformation matrix."""
-        self.viewer.uniform_matrix_4fv(self._model_loc, False, _mat_to_col_major(model_matrix))
+        self.viewer.uniform_matrix("model", _mat_to_col_major(model_matrix))
 
     def set_color(self, color: tuple[float, float, float]):
         """Set highlight color."""
-        r, g, b = float(color[0]), float(color[1]), float(color[2])
-        self.viewer.uniform_3f(self._object_color_loc, r, g, b)
+        self.viewer.uniform("objectColor", np.array(color[:3], dtype=np.float32))
 

@@ -32,5 +32,9 @@ def check_jupyter_dependencies() -> None:
         )
 
 
-__all__ = ["check_jupyter_dependencies"]
+from pyspinw.gui.jupyter.interaction import CanvasInteractionHandler
+from pyspinw.gui.jupyter.crystalview_jupyter import CrystalViewerWidget
+
+
+__all__ = ["check_jupyter_dependencies", "CanvasInteractionHandler", "CrystalViewerWidget"]
 

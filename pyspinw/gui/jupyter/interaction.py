@@ -61,7 +61,7 @@ class CanvasInteractionHandler:
             self.event_listener = Event(
                 source=source,
                 watched_events=["mousedown", "mousemove", "mouseup", "wheel", "contextmenu"],
-                prevent_default_action=["contextmenu", "wheel"],
+                prevent_default_action=True,
             )
             self.event_listener.on_dom_event(self.handle_event)
         except ImportError:

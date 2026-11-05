@@ -62,6 +62,12 @@ class MockGLViewer:
     def use_program(self, prog):
         self.calls.append(("use_program", prog))
 
+    def uniform_matrix(self, name, array):
+        self.calls.append(("uniform_matrix", name, len(array)))
+
+    def uniform(self, name, array):
+        self.calls.append(("uniform", name, len(array)))
+
     def get_uniform_location(self, prog, name):
         return f"loc_{name}"
 
