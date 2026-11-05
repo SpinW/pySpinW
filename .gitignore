@@ -190,3 +190,6 @@ uv.lock
 
 # AI Agents
 .agents
+
+/*.ipynb
+/*.diff

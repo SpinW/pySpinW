@@ -26,6 +26,7 @@ from pyspinw.gui.jupyter.shaders_webgl import (
     SelectionShaderWebGL,
 )
 from pyspinw.gui.rendering.selectionmode import SelectionMode
+from pyspinw.util import rotation_from_z
 
 if TYPE_CHECKING:
     from pyspinw.gui.rendermodel import RenderModel
@@ -153,6 +154,71 @@ class CrystalViewerWidget(widgets.VBox):
         self.mouse_rotation = np.eye(3, dtype=float)
         self.mouse_origin = np.zeros(3, dtype=float)
         self.render()
+
+    def align_view(self, axis: str) -> None:
+        """Align view direction along a crystallographic or Cartesian axis.
+
+        Parameters
+        ----------
+        axis : str
+            One of 'a', 'b', 'c', 'a*', 'b*', 'c*', 'x', 'y', 'z', '-x', '-y', '-z'.
+        """
+        unit_cell = self.render_model.hamiltonian.structure.unit_cell
+        axis_lower = axis.strip().lower()
+
+        if axis_lower in ("x", "+x"):
+            v = np.array([1.0, 0.0, 0.0])
+        elif axis_lower == "-x":
+            v = np.array([-1.0, 0.0, 0.0])
+        elif axis_lower in ("y", "+y"):
+            v = np.array([0.0, 1.0, 0.0])
+        elif axis_lower == "-y":
+            v = np.array([0.0, -1.0, 0.0])
+        elif axis_lower in ("z", "+z"):
+            v = np.array([0.0, 0.0, 1.0])
+        elif axis_lower == "-z":
+            v = np.array([0.0, 0.0, -1.0])
+        elif axis_lower in ("a", "+a"):
+            v = np.array(unit_cell.lattice_units_to_cartesian([1.0, 0.0, 0.0]), dtype=float)
+        elif axis_lower == "-a":
+            v = -np.array(unit_cell.lattice_units_to_cartesian([1.0, 0.0, 0.0]), dtype=float)
+        elif axis_lower in ("b", "+b"):
+            v = np.array(unit_cell.lattice_units_to_cartesian([0.0, 1.0, 0.0]), dtype=float)
+        elif axis_lower == "-b":
+            v = -np.array(unit_cell.lattice_units_to_cartesian([0.0, 1.0, 0.0]), dtype=float)
+        elif axis_lower in ("c", "+c"):
+            v = np.array(unit_cell.lattice_units_to_cartesian([0.0, 0.0, 1.0]), dtype=float)
+        elif axis_lower == "-c":
+            v = -np.array(unit_cell.lattice_units_to_cartesian([0.0, 0.0, 1.0]), dtype=float)
+        elif axis_lower in ("a*", "+a*"):
+            b_cart = np.array(unit_cell.lattice_units_to_cartesian([0.0, 1.0, 0.0]), dtype=float)
+            c_cart = np.array(unit_cell.lattice_units_to_cartesian([0.0, 0.0, 1.0]), dtype=float)
+            v = np.cross(b_cart, c_cart)
+        elif axis_lower in ("b*", "+b*"):
+            a_cart = np.array(unit_cell.lattice_units_to_cartesian([1.0, 0.0, 0.0]), dtype=float)
+            c_cart = np.array(unit_cell.lattice_units_to_cartesian([0.0, 0.0, 1.0]), dtype=float)
+            v = np.cross(c_cart, a_cart)
+        elif axis_lower in ("c*", "+c*"):
+            a_cart = np.array(unit_cell.lattice_units_to_cartesian([1.0, 0.0, 0.0]), dtype=float)
+            b_cart = np.array(unit_cell.lattice_units_to_cartesian([0.0, 1.0, 0.0]), dtype=float)
+            v = np.cross(a_cart, b_cart)
+        else:
+            raise ValueError(f"Unknown axis: {axis}. Supported: 'a', 'b', 'c', 'a*', 'b*', 'c*', 'x', 'y', 'z'.")
+
+        norm = np.linalg.norm(v)
+        if norm > 1e-8:
+            v = v / norm
+
+        self.view_rotation = rotation_from_z(v)
+        self.mouse_rotation = np.eye(3, dtype=float)
+        self.mouse_origin = np.zeros(3, dtype=float)
+        self.render()
+
+    def snapshot(self) -> np.ndarray | None:
+        """Capture the current WebGL canvas buffer if available."""
+        if hasattr(self.gl_viewer, "image_data"):
+            return self.gl_viewer.image_data
+        return None
 
     def on_canvas_click(self, shift: bool = False) -> None:
         """Handle canvas click for element selection."""
