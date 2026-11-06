@@ -21,6 +21,7 @@ This test module verifies that ``NeighbourSearch``:
 import math
 import sys
 import types
+from collections import defaultdict
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -47,40 +48,6 @@ from pyspinw.util import IncrementalPointHistogram
 
 
 MAX_OUTER_LOOP_ITERATIONS = 100
-
-
-@pytest.fixture(autouse=True)
-def _guard_neighbour_search_execution(monkeypatch):
-    """Prevent GUI plot windows and infinite loops during ``NeighbourSearch``.
-
-    1. Replaces ``matplotlib.pyplot.figure`` and ``matplotlib.pyplot.show`` with
-       mocks so any debug plotting code in ``NeighbourSearch`` does not block
-       test execution or fail on empty scatter sets.
-    2. Wraps ``IncrementalPointHistogram.n_groups`` (called once per outer-loop
-       iteration of ``NeighbourSearch``) with an iteration counter so that an
-       infinite loop fails fast with ``TimeoutError`` instead of hanging pytest.
-    """
-    import matplotlib.pyplot as plt
-
-    monkeypatch.setattr(plt, "figure", MagicMock())
-    monkeypatch.setattr(plt, "show", MagicMock())
-
-    orig_n_groups = IncrementalPointHistogram.n_groups
-    call_counts: dict[int, int] = {}
-
-    def guarded_n_groups(self):
-        hist_id = id(self)
-        call_counts[hist_id] = call_counts.get(hist_id, 0) + 1
-        if call_counts[hist_id] > MAX_OUTER_LOOP_ITERATIONS:
-            raise TimeoutError(
-                f"NeighbourSearch did not terminate after "
-                f"{MAX_OUTER_LOOP_ITERATIONS} outer-loop iterations "
-                f"(possible infinite loop)."
-            )
-        return orig_n_groups(self)
-
-    monkeypatch.setattr(IncrementalPointHistogram, "n_groups", guarded_n_groups)
-
 
 # ---------------------------------------------------------------------------
 # Reference helper functions for verifying nearest-neighbour shells
@@ -315,7 +282,7 @@ def test_empty_search_sites_raises_value_error():
     start_site = Site(0.0, 0.0, 0.0)
 
     with pytest.raises(ValueError, match="at least one search site"):
-        NeighbourSearch(start_site, [], unit_cell, n=1)
+        NeighbourSearch(start_site, [], unit_cell, n=1, max_iters=MAX_OUTER_LOOP_ITERATIONS)
 
 
 @pytest.mark.parametrize("negative_n", [-1, -2, -10])
@@ -330,7 +297,7 @@ def test_negative_n_raises_value_error(negative_n: int):
     site = Site(0.0, 0.0, 0.0)
 
     with pytest.raises(ValueError, match="positive"):
-        NeighbourSearch(site, [site], unit_cell, n=negative_n)
+        NeighbourSearch(site, [site], unit_cell, n=negative_n, max_iters=MAX_OUTER_LOOP_ITERATIONS)
 
 
 def test_n_zero_when_start_site_in_search_set():
@@ -344,7 +311,7 @@ def test_n_zero_when_start_site_in_search_set():
     unit_cell = UnitCell(1.0, 1.0, 1.0)
     site = Site(0.5, 0.5, 0.5)
 
-    search = NeighbourSearch(site, [site], unit_cell, n=0)
+    search = NeighbourSearch(site, [site], unit_cell, n=0, max_iters=MAX_OUTER_LOOP_ITERATIONS)
     shells = search.neighbour_sites()
 
     assert len(shells) == 1
@@ -365,7 +332,7 @@ def test_n_zero_when_start_site_not_in_search_set():
     start_site = Site(0.0, 0.0, 0.0)
     other_site = Site(0.5, 0.5, 0.5)
 
-    search = NeighbourSearch(start_site, [other_site], unit_cell, n=0)
+    search = NeighbourSearch(start_site, [other_site], unit_cell, n=0, max_iters=MAX_OUTER_LOOP_ITERATIONS)
     shells = search.neighbour_sites()
 
     assert shells == [[]]
@@ -403,7 +370,9 @@ def test_1d_uniform_chain_start_in_search_set(
     site = Site(0.5, 0.5, 0.5, name=f"chain_{chain_axis}")
     n = 10
 
-    shells = NeighbourSearch(site, [site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(site, [site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
+
     distances = assert_shells_match_reference(shells, site, [site], unit_cell, n=n)
 
     sx, sy, sz = expected_step
@@ -430,7 +399,8 @@ def test_1d_chain_with_transverse_crossover():
     site = Site(0.5, 0.5, 0.5)
     n = 10
 
-    shells = NeighbourSearch(site, [site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(site, [site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     distances = assert_shells_match_reference(shells, site, [site], unit_cell, n=n)
 
     # Shells 1..4: pure 1D along b
@@ -475,7 +445,8 @@ def test_1d_chain_start_site_not_in_search_set():
     target_site = Site(0.5, 0.0, 0.5, name="chain_atom")
     n = 6
 
-    shells = NeighbourSearch(start_site, [target_site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(start_site, [target_site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     distances = assert_shells_match_reference(shells, start_site, [target_site], unit_cell, n=n)
 
     expected_m_sequence = [0, 1, -1, 2, -2, 3]
@@ -504,7 +475,8 @@ def test_1d_dimerized_two_site_chain():
     n = 8
 
     # Case 1: start_site (s0) is in search_sites ([s0, s1])
-    shells_all = NeighbourSearch(s0, [s0, s1], unit_cell, n=n).neighbour_sites()
+    shells_all = NeighbourSearch(s0, [s0, s1], unit_cell, n=n,
+                                 max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     dists_all = assert_shells_match_reference(shells_all, s0, [s0, s1], unit_cell, n=n)
     assert shells_all[1] == [(s1, (0, 0, 0))]
     assert math.isclose(dists_all[1], 0.35, abs_tol=1e-9)
@@ -514,7 +486,8 @@ def test_1d_dimerized_two_site_chain():
     assert math.isclose(dists_all[3], 1.00, abs_tol=1e-9)
 
     # Case 2: start_site (s0) is NOT in search_sites ([s1] only)
-    shells_b_only = NeighbourSearch(s0, [s1], unit_cell, n=n).neighbour_sites()
+    shells_b_only = NeighbourSearch(s0, [s1], unit_cell, n=n,
+                                    max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     dists_b_only = assert_shells_match_reference(shells_b_only, s0, [s1], unit_cell, n=n)
     assert shells_b_only[0] == []
     assert shells_b_only[1] == [(s1, (0, 0, 0))]
@@ -549,7 +522,8 @@ def test_2d_square_lattice():
     site = Site(0.0, 0.0, 0.0)
     n = 8
 
-    shells = NeighbourSearch(site, [site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(site, [site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     distances = assert_shells_match_reference(shells, site, [site], unit_cell, n=n)
 
     expected_sq_dists = [0, 1, 2, 4, 5, 8, 9, 10, 13]
@@ -579,7 +553,8 @@ def test_2d_triangular_lattice_non_orthogonal():
     site = Site(0.0, 0.0, 0.0)
     n = 6
 
-    shells = NeighbourSearch(site, [site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(site, [site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     distances = assert_shells_match_reference(shells, site, [site], unit_cell, n=n)
 
     expected_sq_dists = [0, 1, 3, 4, 7, 9, 12]
@@ -615,7 +590,8 @@ def test_2d_anisotropic_and_oblique_lattices(
     site = Site(0.25, 0.4, 0.1, name=plane_description)
     n = 8
 
-    shells = NeighbourSearch(site, [site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(site, [site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells, site, [site], unit_cell, n=n)
 
 
@@ -643,7 +619,8 @@ def test_2d_kagome_lattice_via_structure_and_spacegroup():
     assert len(kagome_sites) == 3
 
     # 1. Start site is one of the Kagome sites (in search_sites)
-    shells_in = NeighbourSearch(kagome_sites[0], kagome_sites, unit_cell, n=6).neighbour_sites()
+    shells_in = NeighbourSearch(kagome_sites[0], kagome_sites, unit_cell, n=6,
+                                max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     dists_in = assert_shells_match_reference(shells_in, kagome_sites[0], kagome_sites, unit_cell, n=6)
     assert [len(shells_in[k]) for k in range(4)] == [1, 4, 4, 6]
     assert math.isclose(dists_in[1], 0.5, abs_tol=1e-8)
@@ -652,7 +629,8 @@ def test_2d_kagome_lattice_via_structure_and_spacegroup():
 
     # 2. Start site is the hexagon center (0, 0, 0), NOT in search_sites
     hexagon_center = Site(0.0, 0.0, 0.0, name="center")
-    shells_out = NeighbourSearch(hexagon_center, kagome_sites, unit_cell, n=5).neighbour_sites()
+    shells_out = NeighbourSearch(hexagon_center, kagome_sites, unit_cell, n=5,
+                                 max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     dists_out = assert_shells_match_reference(shells_out, hexagon_center, kagome_sites, unit_cell, n=5)
     assert len(shells_out[0]) == 0
     assert len(shells_out[1]) == 6
@@ -694,7 +672,8 @@ def test_3d_cubic_bravais_lattices_via_spacegroup(
     assert len(sites) == expected_sites_in_cell
 
     n = 6
-    shells = NeighbourSearch(sites[0], sites, unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(sites[0], sites, unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells, sites[0], sites, unit_cell, n=n)
     assert [len(s) for s in shells] == expected_shell_sizes
 
@@ -733,11 +712,13 @@ def test_3d_diverse_unit_cell_geometries(
     n = 8
 
     # 1. start_site in search_sites
-    shells_in = NeighbourSearch(lattice_site, [lattice_site], unit_cell, n=n).neighbour_sites()
+    shells_in = NeighbourSearch(lattice_site, [lattice_site], unit_cell, n=n,
+                                max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells_in, lattice_site, [lattice_site], unit_cell, n=n)
 
     # 2. start_site NOT in search_sites
-    shells_out = NeighbourSearch(interstitial_site, [lattice_site], unit_cell, n=n).neighbour_sites()
+    shells_out = NeighbourSearch(interstitial_site, [lattice_site], unit_cell, n=n,
+                                 max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells_out, interstitial_site, [lattice_site], unit_cell, n=n)
 
 
@@ -767,12 +748,14 @@ def test_low_symmetry_p1_four_site_example():
     n = 6
 
     # Start site in search_sites
-    shells_in = NeighbourSearch(sites[1], sites, unit_cell, n=n).neighbour_sites()
+    shells_in = NeighbourSearch(sites[1], sites, unit_cell, n=n,
+                                max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells_in, sites[1], sites, unit_cell, n=n)
 
     # Start site NOT in search_sites
     other_sites = [sites[0], sites[2], sites[3]]
-    shells_out = NeighbourSearch(sites[1], other_sites, unit_cell, n=n).neighbour_sites()
+    shells_out = NeighbourSearch(sites[1], other_sites, unit_cell, n=n,
+                                 max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells_out, sites[1], other_sites, unit_cell, n=n)
 
 
@@ -872,12 +855,14 @@ def test_symmetric_structures_across_site_multiplicities(
     start_site = all_sites[0]
 
     # 1. Start site in search_sites
-    shells_in = NeighbourSearch(start_site, all_sites, unit_cell, n=n).neighbour_sites()
+    shells_in = NeighbourSearch(start_site, all_sites, unit_cell, n=n,
+                                max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells_in, start_site, all_sites, unit_cell, n=n)
 
     # 2. Start site NOT in search_sites
     other_sites = all_sites[1:]
-    shells_out = NeighbourSearch(start_site, other_sites, unit_cell, n=n).neighbour_sites()
+    shells_out = NeighbourSearch(start_site, other_sites, unit_cell, n=n,
+                                 max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells_out, start_site, other_sites, unit_cell, n=n)
 
 
@@ -899,7 +884,8 @@ def test_start_site_near_cell_corner_finds_closer_neighbour_in_adjacent_cell():
     target_site = Site(0.05, 0.06, 0.04, name="origin_target")
     n = 6
 
-    shells = NeighbourSearch(start_site, [target_site], unit_cell, n=n).neighbour_sites()
+    shells = NeighbourSearch(start_site, [target_site], unit_cell, n=n,
+                             max_iters=MAX_OUTER_LOOP_ITERATIONS).neighbour_sites()
     assert_shells_match_reference(shells, start_site, [target_site], unit_cell, n=n)
 
     # The 1st nearest neighbour must be in the adjacent cell (+1, +1, +1)

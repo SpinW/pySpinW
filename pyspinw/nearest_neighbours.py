@@ -39,11 +39,13 @@ class CellData:
 def add_triple(a: tuple[int, int, int], b: tuple[int, int, int]):
     return a[0] + b[0], a[1] + b[1], a[2] + b[2]
 
-
+def while_true_iter():
+    while True:
+        yield None
 
 class NeighbourSearch:
     def __init__(self, start_site: Site, search_sites: list[Site], unit_cell: UnitCell, n: int=1,
-                 shell_tolerance=tolerances.SAME_SITE_ABS_TOL):
+                 shell_tolerance=tolerances.SAME_SITE_ABS_TOL, max_iters: int | None = None):
 
         if len(search_sites) < 1:
             raise ValueError("Need at least one search site")
@@ -75,19 +77,20 @@ class NeighbourSearch:
         found_n_groups = False
 
         # We want to have at least one point in the search, whatever happens
-        current_distance_sq = unit_cell.largest_cell_length**2
+        current_distance_sq = unit_cell.main_diagonal_length**2
 
         search_data: dict[tuple[int,int,int], CellData] = {}
 
         histogram = IncrementalPointHistogram(tolerance=shell_tolerance)
 
         # The outer loop sets the target distance
-        while True:
+        iteration_counter = while_true_iter() if max_iters is None else range(max_iters)
+        for _ in iteration_counter:
 
             # The inner loop iterates until we have found all the cells larger than a certain amount
             while True:
 
-                print("Searching:", to_calculate)
+                # print("Searching:", to_calculate)
 
                 # Check all the distances in the parts
                 for lu_offset, cartesian_offset in zip(to_calculate,
@@ -118,16 +121,16 @@ class NeighbourSearch:
             # for key in search_data:
             #     print(key, search_data[key].min_distance_sq >= current_distance_sq, search_data[key])
 
-            # Debugging: plot
-            import matplotlib.pyplot as plt
-            fig = plt.figure(f"Distance {current_distance_sq}")
-            ax = fig.add_subplot(111, projection="3d")
-            inside = [key for key in search_data if search_data[key].min_distance_sq < current_distance_sq]
-            outside = [key for key in search_data if search_data[key].min_distance_sq >= current_distance_sq]
-
-            ax.scatter(*zip(*inside), color='b')
-            ax.scatter(*zip(*outside), color='r')
-            plt.show()
+            # # Debugging: plot
+            # import matplotlib.pyplot as plt
+            # fig = plt.figure(f"Distance {current_distance_sq}")
+            # ax = fig.add_subplot(111, projection="3d")
+            # inside = [key for key in search_data if search_data[key].min_distance_sq < current_distance_sq]
+            # outside = [key for key in search_data if search_data[key].min_distance_sq >= current_distance_sq]
+            #
+            # ax.scatter(*zip(*inside), color='b')
+            # ax.scatter(*zip(*outside), color='r')
+            # plt.show()
             #
             # # Debugging: histogram data
             # for index, distance in enumerate(sorted(histogram._groups.keys())):
@@ -138,9 +141,15 @@ class NeighbourSearch:
             groups = sorted(histogram._groups.keys())
             assert len(groups) > 0, "Should always have groups"
 
-            if histogram.n_groups() < n:
+            print(groups)
+
+            n_groups = len(groups)
+
+            if n_groups <= n:
                 # If we don't have n groups yet, redo the search with the greatest search value,
                 # this should always increase as we will automatically add new layers
+
+                print(f"{n_groups}/{n}: {current_distance_sq}")
 
                 current_distance_sq = groups[-1]
 
@@ -154,12 +163,16 @@ class NeighbourSearch:
 
                 found_n_groups = True
 
+        else:
+            raise RuntimeError("Reached maximum iterations")
+
         # Deal with the indexing change based on whether the start site is in the search sites
         if not self.start_in_search_set:
             self.groups = [[]] + histogram.groups()[:n+1]
 
         else:
             self.groups = histogram.groups()[:n+1]
+
 
     def neighbour_sites(self):
         output = []
@@ -185,7 +198,7 @@ if __name__ == "__main__":
         NeighbourSearch(sites[1], sites, unit_cell, n=6)
 
     if True:
-        unit_cell = UnitCell(1, 0.2, 1)
+        unit_cell = UnitCell(1, 1, 1)
         sites = [Site(0.5, 0.5, 0.5)]
         search_results = NeighbourSearch(sites[0], sites, unit_cell, n=10)
 
