@@ -141,15 +141,13 @@ class NeighbourSearch:
             groups = sorted(histogram._groups.keys())
             assert len(groups) > 0, "Should always have groups"
 
-            print(groups)
-
             n_groups = len(groups)
 
             if n_groups <= n:
                 # If we don't have n groups yet, redo the search with the greatest search value,
                 # this should always increase as we will automatically add new layers
 
-                print(f"{n_groups}/{n}: {current_distance_sq}")
+                # print(f"{n_groups}/{n}: {current_distance_sq}")
 
                 current_distance_sq = groups[-1]
 

@@ -12,6 +12,7 @@ from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
 from pyspinw.cell_offsets import cell_offset_generator
+from pyspinw.nearest_neighbours import NeighbourSearch
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import Site
 from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
@@ -599,44 +600,26 @@ class Structure(SPWSerialisable):
 
             sites_to_check.append(test_site)
 
-        # We want the n-th nearest neighbour, but we generate offsets in terms of distance
-        #  so we need a strict bound on the distance that will cover all the points of a given order
-
-        # possibly a very loose bound for systems with lots of sites, because it is based on
-        #  having one site per unit cell
-        search_radius = (n-1) * min([self.unit_cell.a, self.unit_cell.b, self.unit_cell.b])
-
-        offsets = full_search_space(self.unit_cell._xyz, search_radius)
-
-        n_checks = offsets.shape[0]*len(sites_to_check)
-
-        if n_checks > 10_000:
-            logger.warning(f"Neighbours is not optimised for large neighbour distances."
-                           f"Finding the order-{n} neighbours entails checking {n_checks} "
-                           f"unit cells")
-
-        hist = IncrementalPointHistogram()
-
-        for test_site in sites_to_check:
-
-            lattice_vectors = test_site.ijk - site.ijk + offsets
-            xyz_vectors = self.unit_cell.lattice_units_to_cartesian(lattice_vectors)
-            distances = np.sqrt(np.sum(xyz_vectors**2, axis=1))
-
-            for i in range(len(distances)):
-                hist.add(distances[i], (test_site, xyz_vectors[i,:], offsets[i,:]))
-
-        # Should have at least `neighbour+1` groups
-        groups = hist.groups()[:n + 1]
+        groups = NeighbourSearch(site, sites_to_check, unit_cell=self.unit_cell, n=n).neighbour_sites()
 
         if direction_filter is None:
             return [[(test_site, CellOffset.coerce(offset))
-                     for test_site, _, offset in order]
+                     for test_site, offset in order]
                         for order in groups]
         else:
+            # Calculate the vector between sites
+            with_vector = []
+            for group in groups:
+                this_with_vector = []
+                for test_site, offset in group:
+                    v = self.unit_cell.lattice_units_to_cartesian(test_site.ijk + offset.vector - site)
+                    this_with_vector.append((test_site, v, offset))
+                with_vector.append(this_with_vector)
+
+            # Check it
             return [[(test_site, CellOffset.coerce(offset))
-                     for test_site, vector, offset in order if direction_filter.accept(vector)]
-                    for order in groups]
+                     for test_site, vector, offset in group if direction_filter.accept(vector)]
+                    for group in with_vector]
 
 
 

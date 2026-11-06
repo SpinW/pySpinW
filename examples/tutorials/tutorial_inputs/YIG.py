@@ -56,15 +56,16 @@ Jaa = 0.5 * 0.92e-21 * J_to_meV
 base_site_a = structure.site_by_name("Fe1")
 base_site_d = structure.site_by_name("Fe2")
 
-for site, offset in structure.neighbours(base_site_a, name_filter="Fe2"):
-    ops = structure.spacegroup.operations_on_single_site_pairs(base_site_a, site, offset)
-    print(site.name, offset, ops)
-
 # Fe1 to Fe2 (a to d)
 # neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe2", n=0)
-x, offset = structure.site_by_name("Fe1 [4]"), (0, 0, 0)
-y = structure.site_by_name("Fe2 [4]")
-exchange_ad = HeisenbergExchange(x, y, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
+# x, offset = structure.site_by_name("Fe1 [4]"), (0, 0, 0)
+# y = structure.site_by_name("Fe2 [4]")
+# exchange_ad = HeisenbergExchange(x, y, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
+
+# Fe1 to Fe2 (a to d)
+neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe2")
+exchange_ad = HeisenbergExchange(base_site_a, neighbour, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
+
 
 # Fe1 to Fe1 (a to a)
 neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe1")
@@ -75,13 +76,6 @@ neighbour, offset = structure.one_neighbour(base_site_d, name_filter="Fe2")
 exchange_dd = HeisenbergExchange(base_site_d, neighbour, cell_offset=offset, j=Jdd, name="Jdd", color=(.1,.1,.9))
 
 exchanges = [exchange_ad, exchange_aa, exchange_dd]
-
-# As noted in the paper, these exchanges should all be the same length
-for exchange in exchanges:
-    print(exchange.name, "length =", np.linalg.norm(exchange.vector(structure.unit_cell)))
-
-
-
 
 hamiltonian = Hamiltonian(structure, exchanges).symmetry_filled()
 
