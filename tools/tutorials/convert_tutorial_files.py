@@ -181,6 +181,13 @@ def run(files):
 
                                                 md_file.write("## " + parts[1])
 
+                                            elif line.startswith("file"): # Move a file over
+                                                parts = line.split(":", 1)
+
+                                                filename = parts[1].strip()
+                                                shutil.copy(tutorial_input_dir / filename,
+                                                            output_target_dir / filename)
+
                                             elif line.startswith("image"): # Put an image tag in .md, and code in the python
                                                 parts = line.split(":")
                                                 image_filename = parts[1]
@@ -224,7 +231,8 @@ def run(files):
                                                 raise ValueError(f"Do not know what to do with instruction: {line}")
 
                                         except Exception as e:
-                                            raise ValueError(f"Could not parse line {line.strip()}") from e
+                                            raise ValueError(f"Could not parse line '{line.strip()}' "
+                                                             f"- {e.args}") from e
                             case _:
                                 raise ValueError(f"Unknown level {level}")
 

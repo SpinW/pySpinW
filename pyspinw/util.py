@@ -274,6 +274,7 @@ class IncrementalPointHistogram(Generic[T]):
         ordered_keys = sorted(self._groups.keys())
         return [self._groups[key] for key in ordered_keys]
 
+
     def group_sizes(self):
         """Size of each group.
 
