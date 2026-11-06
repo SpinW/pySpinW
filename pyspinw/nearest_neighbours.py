@@ -1,8 +1,6 @@
 """ Nearest neighbour searching """
 
 import numpy as np
-from numpy._typing import ArrayLike
-from plotly.express import histogram
 
 from pyspinw.site import Site
 from pyspinw.symmetry.unitcell import UnitCell
