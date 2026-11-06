@@ -370,10 +370,12 @@ class UnitCell(RawUnitCell):
 
     @property
     def smallest_cell_length(self):
+        """ Smallest of the a, b, and c axes"""
         return min([self.a, self.b, self.c])
 
     @property
     def largest_cell_length(self):
+        """ Largest of the a, b, and c axes"""
         return max([self.a, self.b, self.c])
 
 

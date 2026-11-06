@@ -27,6 +27,8 @@ relative_neighbours = [
 ]
 
 class CellData:
+    """ Used to contain the data for each cell in the nearest neighbour search """
+
     def __init__(self, distance_sq):
         self.distance_sq = distance_sq
         self.min_distance_sq = np.min(distance_sq)
@@ -37,13 +39,17 @@ class CellData:
 
 
 def add_triple(a: tuple[int, int, int], b: tuple[int, int, int]):
+    """ Pairwise addition of the contents of two triples """
     return a[0] + b[0], a[1] + b[1], a[2] + b[2]
 
 def while_true_iter():
+    """ Iterator that keeps iterating forever """
     while True:
         yield None
 
 class NeighbourSearch:
+    """ Does a nearest neighbour search, and serves as a data storage class for the output """
+
     def __init__(self, start_site: Site, search_sites: list[Site], unit_cell: UnitCell, n: int=1,
                  shell_tolerance=tolerances.SAME_SITE_ABS_TOL, max_iters: int | None = None):
 
@@ -105,8 +111,8 @@ class NeighbourSearch:
 
                 # Find new sites to search
                 expanded = set()
-                for offset in search_data:
-                    if search_data[offset].min_distance_sq < current_distance_sq:
+                for offset, value in search_data.items():
+                    if value.min_distance_sq < current_distance_sq:
                         for relative in relative_neighbours:
                             expanded.add(add_triple(offset, relative))
 
@@ -173,6 +179,7 @@ class NeighbourSearch:
 
 
     def neighbour_sites(self):
+        """ Get the group information in terms of sites"""
         output = []
         for group in self.groups:
             output.append([(self.search_sites[index], offset) for offset, index in group])
