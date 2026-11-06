@@ -1,5 +1,6 @@
 """Helper functions for python interface."""
 import math
+import warnings
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -9,7 +10,7 @@ from pyspinw.batch_exchanges import default_naming_pattern
 from pyspinw.checks import check_sizes
 from pyspinw.exchange import Exchange, HeisenbergExchange
 from pyspinw.exchangegroup import DirectionalityFilter, InPlaneFilter, InDirectionFilter, ExchangeGroup, \
-    BiDirectionFilter
+    BiDirectionFilter, get_symmetry_equivalent_exchange_sets
 from pyspinw.hamiltonian import Hamiltonian
 from pyspinw.site import Site
 from pyspinw.structure import Structure
@@ -19,6 +20,9 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
 from pyspinw.tb2j import TB2J_Input
+from pyspinw.tolerances import tolerances
+
+BOND_DECIMAL = int(np.log10(np.floor(1 / tolerances.BOND_TOL)))
 
 try:
     from pyspinw.gui.viewer import show_object
@@ -541,6 +545,7 @@ def generate_exchanges(sites: list[Site] | Structure,
                        min_distance: float = 0.0,
                        direction_filter: DirectionalityFilter | None = None,
                        max_order: int | None = None,
+                       use_sym: bool = False,
                        j: float | None = None,
                        j_x: float | None = None,
                        j_y: float | None = None,
@@ -576,6 +581,11 @@ def generate_exchanges(sites: list[Site] | Structure,
         create exchanges in certain directions. Default is ``None``.
     max_order : int, optional
         Maximum "order" of exchanges. Default is ``None``.
+    use_sym : bool, optional
+        Whether to determine the symmetry allowed set of exchange interactions or not
+        If true will return a list of lists of Exchange with each list being a set
+        of symmetry equivalent exchanges, rather than a single list of Exchange.
+        Default is ``False``
     j : float, optional
         Constant for scalar valued Heisenberg exchanges (only needed for
         Heisenberg). Default is ``None``.
@@ -620,10 +630,13 @@ def generate_exchanges(sites: list[Site] | Structure,
         neither ``bond`` nor distance bounds are specified.
     """
     if isinstance(sites, Structure):
-        unit_cell = sites.unit_cell
-        sites = sites.sites
+        structure = sites
+        unit_cell = structure.unit_cell
+        sites = structure.sites
     elif unit_cell is None:
         raise RuntimeError('If first argument is not a Structure, you need to specify a unit_cell')
+    elif use_sym is True:
+        raise RuntimeError('Can only determine symmetry when the first argument is a Structure')
 
     if bond == 0 and max_distance == 0.0 and min_distance == 0.0:
         raise RuntimeError('You must specify either a bond index or maximum/minimum distance pairs')
@@ -678,7 +691,29 @@ def generate_exchanges(sites: list[Site] | Structure,
         exchange_parameters= used_parameters,
         direction_filter = direction_filter)
 
-    return group.exchanges(sites, unit_cell)
+    exchanges = group.exchanges(sites, unit_cell)
+
+    if use_sym:
+        bond_sets, symm_sets = {}, []
+        for bond in exchanges:
+            # Check the exchange is compatible with the symmetry
+            if not bond.obeys_symmetry(structure):
+                warnings.warn(f'Input exchange matrix of bond {bond} is incompatible with the symmetry ' \
+                          'of the structure. The symmetry allowed matrix is:' \
+                          + str(structure.exchange_constraints(group[0].site_1, group[0].site_2)))
+            dist = np.round(bond.distance(unit_cell), BOND_DECIMAL)
+            if dist not in bond_sets.keys():
+                bond_sets[dist] = []
+            bond_sets[dist].append(bond.symmetry_fill(structure, include_original=True))
+        # Sort bonds at the same distance into symmetry-equivalent sets
+        for dist, bonds in bond_sets.items():
+            if len(bonds) == 1:
+                symm_sets.append(bonds[0])
+            else:
+                symm_sets += [bonds for bonds in get_symmetry_equivalent_exchange_sets(bonds)]
+        return symm_sets
+
+    return exchanges
 
 
 @check_sizes(axis=(3, ), force_numpy=True)

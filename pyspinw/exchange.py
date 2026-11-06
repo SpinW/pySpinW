@@ -641,6 +641,7 @@ class Exchange(SPWSerialisable):
                     to_remove.append(j + i + 1)
 
             # Remove the ones we need to remove, as its ordered we can do
+            to_remove = list(set(to_remove))
             to_remove.reverse() # in place reverse
             for j in to_remove:
                 del new_exchanges[j]
@@ -690,6 +691,19 @@ class Exchange(SPWSerialisable):
             self.parameter_string,
             ")"])
 
+    def __eq__(self, other):
+        equiv_bond = (self.site_1 == other.site_1 and self.site_2 == other.site_2 and \
+                self.cell_offset == other.cell_offset) or \
+            (self.site_1 == other.site_2 and self.site_2 == other.site_1 and \
+             np.allclose(self.lattice_vector, -other.lattice_vector, atol=tolerances.SAME_SITE_ABS_TOL))
+        return equiv_bond and np.allclose(self.exchange_matrix, other.exchange_matrix,
+                                          atol=tolerances.SAME_SITE_ABS_TOL)
+
+    def __hash__(self):
+        return hash((self.site_1,
+                     self.site_2,
+                     self.cell_offset.vector.tobytes() if hasattr(self.cell_offset, 'vector') else None,
+                     self.exchange_matrix.tobytes()))
 
 
 
