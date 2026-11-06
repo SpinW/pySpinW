@@ -374,7 +374,7 @@ class UnitCell(RawUnitCell):
 
     @property
     def largest_cell_length(self):
-        return min([self.a, self.b, self.c])
+        return max([self.a, self.b, self.c])
 
 
 unit_cell_types = {cls._unit_cell_name: cls for cls in [RawUnitCell, UnitCell]}
