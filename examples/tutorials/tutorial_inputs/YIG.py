@@ -84,10 +84,7 @@ field = np.array([0, 0, 0.01])
 # optimised = hamiltonian.ground_state(fixed=[base_site_a], step_size=0.001, max_iters=2000,
 #                                      field=field, initial_randomisation=InitialRandomisation.RANDOMISED)
 
-print(len(hamiltonian.exchanges_by_name("Jad")))
-
 ## skip
-# view(optimised)
 view(hamiltonian)
 
 # Q0  = T*[1 2 3]';
@@ -99,4 +96,5 @@ path = Path([[1/2, 1/2, 0], [0,0,0], [0,0,1]])
 # path = Path([[1 + 1/2, 2 + 1/2, 3 + 0], [1 + 0,2 + 0,3 + 0], [1 + 0,2 + 0,3 + 1]])
 
 # optimised.spaghetti_plot(path, field=field)
+## skip
 hamiltonian.spaghetti_plot(path)
