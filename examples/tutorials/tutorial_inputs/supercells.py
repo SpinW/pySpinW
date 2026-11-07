@@ -69,7 +69,7 @@ structure = Structure(
     supercell=supercell)
 ## skip
 view(structure)
-## image: tiled.png
+## image:
 ## snapshot(structure, "tiled.png", view_point=(-2,-3,8))
 
 # The scaling option is available for all commensurate supercells.
@@ -110,7 +110,7 @@ supercell = SummationSupercell([
 structure = Structure([site], UnitCell(1, 1, 1), supercell=supercell)
 ## skip
 view(structure)
-## image: summation_1.png
+## image:
 ## snapshot(structure, "summation_1.png", view_point=(0,1,8))
 
 # We can do more complex things with this kind of system, for example, the following system
@@ -141,7 +141,7 @@ sites = [
 structure = Structure(sites, UnitCell(2, 2, 1), supercell=supercell)
 ## skip
 view(structure)
-## image: summation_2.png
+## image:
 ## snapshot(structure, "summation_2.png", view_point=(1,1,16),
 ##          display_options=DisplayOptions(show_unit_cell=False))
 
@@ -183,7 +183,7 @@ structure = Structure(
 
 ## skip
 view(structure)
-## image: transformation.png
+## image:
 ## snapshot(structure, "transformation.png", view_point=(0.5,0.5,5), display_options=DisplayOptions())
 
 
@@ -219,7 +219,7 @@ structure = Structure(
 
 ## skip
 view(structure)
-## image: rotation.png
+## image:
 ## snapshot(structure, "rotation.png", view_point=(5,2,5),
 ##          display_options=DisplayOptions(show_unit_cell=False, perspective=False))
 
@@ -249,7 +249,7 @@ structure.print_summary()
 
 ## skip
 view(structure)
-## image: rotation_approximant.png
+## image:
 ## snapshot(structure, "rotation_approximant.png", view_point=(5,2,5),
 ##          display_options=DisplayOptions(show_unit_cell=False, perspective=False))
 
@@ -272,7 +272,7 @@ structure = Structure([site], unit_cell, supercell=supercell)
 
 ## skip
 view(structure)
-## image: direct_1.png
+## image:
 ## snapshot(structure, "direct_1.png", view_point=(-0.3,-3,0.3))
 
 # This supercell also has a helper function for setting either individual spins or groups of spins.
@@ -296,5 +296,5 @@ structure = Structure([site], unit_cell, supercell=supercell)
 
 ## skip
 view(structure)
-## image: direct_2.png
+## image:
 ## snapshot(structure, "direct_2.png", view_point=(0,0,5))

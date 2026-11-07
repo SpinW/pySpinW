@@ -46,26 +46,18 @@ class ExchangeBaseDeserialisation:
         Offset between the unit cells containing the two sites.
     metadata : ExchangeMetadata
         Metadata attached to the exchange term.
-
-    Attributes
-    ----------
-    name : str
-        Name of the exchange term.
-    site_1 : Site
-        First lattice site in the exchange term.
-    site_2 : Site
-        Second lattice site in the exchange term.
-    cell_offset : CellOffset
-        Offset between the unit cells containing the two sites.
-    metadata : ExchangeMetadata
-        Metadata attached to the exchange term.
     """
 
     name: str
+    """Name of the exchange term."""
     site_1: Site
+    """First lattice site in the exchange term."""
     site_2: Site
+    """Second lattice site in the exchange term."""
     cell_offset: CellOffset
+    """Offset between the unit cells containing the two sites."""
     metadata: ExchangeMetadata
+    """Metadata attached to the exchange term."""
 
 
 class Exchange(SPWSerialisable):
