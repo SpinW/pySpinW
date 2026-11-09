@@ -31,6 +31,8 @@ dependencies = [
     "scipy",
     "pyopengl>=3.1.10",
     "PySide6-Essentials",
+    "ipywidgets",
+    "ipywebgl",
     "matplotlib>=3.10.5",
     "imageio",
 ]

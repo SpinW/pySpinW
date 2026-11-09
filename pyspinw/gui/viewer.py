@@ -390,11 +390,31 @@ def snapshot(object: Hamiltonian | Structure,
         imwrite(filename, data)
 
 
+def _is_notebook() -> bool:
+    """Detect whether execution is running inside an interactive Jupyter notebook kernel.
+
+    Returns
+    -------
+    bool
+        ``True`` if running inside a Jupyter ``ZMQInteractiveShell``, otherwise ``False``.
+    """
+    try:
+        from IPython import get_ipython
+
+        shell = get_ipython()
+        if shell is None:
+            return False
+        return shell.__class__.__name__ == "ZMQInteractiveShell"
+    except Exception:
+        return False
+
+
 def show_object(object: Hamiltonian | Structure,
                 block=True,
                 copies: tuple[int,int,int]=(1,1,1),
                 rotation_supercell_expansion_max: tuple[int,int,int]=(10,10,10),
-                propagation_vector_commensurability_tolerance=1e-4):
+                propagation_vector_commensurability_tolerance=1e-4,
+                jupyter: bool | None = None):
     """Show a Hamiltonian or structure in the viewer.
 
     Parameters
@@ -402,8 +422,8 @@ def show_object(object: Hamiltonian | Structure,
     object : Hamiltonian or Structure
         Hamiltonian or Structure object to display.
     block : bool, optional
-        Whether to block execution by running the Qt event loop. Default is
-        ``True``.
+        Whether to block execution by running the Qt event loop (desktop mode).
+        Default is ``True``.
     copies : tuple of (int, int, int), optional
         Supercell scaling along each lattice vector. Default is ``(1, 1, 1)``.
     rotation_supercell_expansion_max : tuple of (int, int, int), optional
@@ -413,22 +433,55 @@ def show_object(object: Hamiltonian | Structure,
     propagation_vector_commensurability_tolerance : float, optional
         Tolerance for matching a propagation vector component to a rational
         fraction. Default is ``1e-4``.
+    jupyter : bool or None, optional
+        Whether to use the Jupyter ``ipywidgets``/``ipywebgl`` viewer instead
+        of the desktop ``PySide6`` viewer. If ``None``, automatically detects
+        whether code is running inside a Jupyter notebook. Default is ``None``.
+
+    Returns
+    -------
+    JupyterViewer or None
+        Returns the ``JupyterViewer`` widget when running in Jupyter mode,
+        otherwise ``None``.
 
     Raises
     ------
     TypeError
         If ``object`` is not a ``Hamiltonian`` or ``Structure``.
     """
-    try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
-    except Exception:
-        pass
-
     if isinstance(object, Structure):
         object = Hamiltonian(object, [])
 
     if not isinstance(object, Hamiltonian):
         raise TypeError("Viewer needs to be given a Hamiltonian or Structure")
+
+    if jupyter is None:
+        jupyter = _is_notebook()
+
+    if jupyter:
+        from pyspinw.gui.jupyter.viewer import JupyterViewer
+
+        viewer = JupyterViewer(
+            object,
+            copies=copies,
+            rotation_supercell_expansion_max=rotation_supercell_expansion_max,
+            propagation_vector_commensurability_tolerance=propagation_vector_commensurability_tolerance,
+        )
+        _VIEWERS[viewer._unique_id] = viewer
+
+        try:
+            from IPython.display import display
+
+            display(viewer)
+        except Exception:
+            pass
+
+        return viewer
+
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("org.spinw.pyspinw")
+    except Exception:
+        pass
 
     app = get_app()
 

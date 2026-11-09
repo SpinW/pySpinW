@@ -180,11 +180,11 @@ class JupyterTextDisplay(widgets.VBox):
         # HTML Table Views
         self.site_table_html = widgets.HTML(
             value=self._render_table_html(self.SITE_HEADERS, self.site_nodes),
-            layout=widgets.Layout(width="100%", max_height="240px", overflow_y="auto"),
+            layout=widgets.Layout(width="100%", max_height="240px", overflow="auto"),
         )
         self.exchange_table_html = widgets.HTML(
             value=self._render_table_html(self.EXCHANGE_HEADERS, self.exchange_nodes),
-            layout=widgets.Layout(width="100%", max_height="240px", overflow_y="auto"),
+            layout=widgets.Layout(width="100%", max_height="240px", overflow="auto"),
         )
 
         sites_box = widgets.VBox(
@@ -314,7 +314,11 @@ class JupyterTextDisplay(widgets.VBox):
                 unexpanded_exchange.site_2.name,
                 unexpanded_exchange.parameter_string,
             ]
-            parent_label = f"{unexpanded_exchange.name} ({unexpanded_exchange.site_1.name}→{unexpanded_exchange.site_2.name}) [all {len(children)}]"
+            parent_label = (
+                f"{unexpanded_exchange.name} "
+                f"({unexpanded_exchange.site_1.name}→{unexpanded_exchange.site_2.name}) "
+                f"[all {len(children)}]"
+            )
             parent_node = TableRowNode(
                 label=parent_label,
                 columns=parent_cols,
