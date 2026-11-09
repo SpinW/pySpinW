@@ -17,20 +17,7 @@ class WireframeCube:
     """
 
     def __init__(self):
-        edges = np.array([
-            [0,0,0], [0,0,1], # Z direction edges
-            [1,0,0], [1,0,1],
-            [0,1,0], [0,1,1],
-            [1,1,0], [1,1,1],
-            [0,0,0], [0,1,0], # Y direction edges
-            [1,0,0], [1,1,0],
-            [0,0,1], [0,1,1],
-            [1,0,1], [1,1,1],
-            [0,0,0], [1,0,0], # X direction edges
-            [0,1,0], [1,1,0],
-            [0,0,1], [1,0,1],
-            [0,1,1], [1,1,1],
-        ], dtype=np.float32)
+        edges = self.build_geometry()
 
         self.vao = glGenVertexArrays(1)
         self.vbo = glGenBuffers(1)
@@ -44,6 +31,30 @@ class WireframeCube:
         glEnableVertexAttribArray(0)
 
         glBindVertexArray(0)
+
+    @staticmethod
+    def build_geometry() -> np.ndarray:
+        """Build the vertex array for a unit wireframe cube without OpenGL calls.
+
+        Returns
+        -------
+        (24, 3) numpy.ndarray
+            2D ``float32`` array of 12 line segment endpoint pairs.
+        """
+        return np.array([
+            [0, 0, 0], [0, 0, 1],  # Z direction edges
+            [1, 0, 0], [1, 0, 1],
+            [0, 1, 0], [0, 1, 1],
+            [1, 1, 0], [1, 1, 1],
+            [0, 0, 0], [0, 1, 0],  # Y direction edges
+            [1, 0, 0], [1, 1, 0],
+            [0, 0, 1], [0, 1, 1],
+            [1, 0, 1], [1, 1, 1],
+            [0, 0, 0], [1, 0, 0],  # X direction edges
+            [0, 1, 0], [1, 1, 0],
+            [0, 0, 1], [1, 0, 1],
+            [0, 1, 1], [1, 1, 1],
+        ], dtype=np.float32)
 
     def render_wireframe(self):
         """Render the wireframe using GL_LINES."""
