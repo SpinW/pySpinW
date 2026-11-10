@@ -1,6 +1,5 @@
 """Helper functions for python interface."""
 import math
-import warnings
 
 import numpy as np
 from numpy._typing import ArrayLike
@@ -742,9 +741,9 @@ def get_symmetry_equivalent_exchange_sets(exchanges: list[Exchange],
     for bond in exchanges:
         # Check the exchange is compatible with the symmetry
         if not bond.obeys_symmetry(structure):
-            warnings.warn(f'Input exchange matrix of bond {bond} is incompatible with the symmetry ' \
-                      'of the structure. The symmetry allowed matrix is:' \
-                      + str(structure.exchange_constraints(group[0].site_1, group[0].site_2)))
+            raise RuntimeError(f'Input exchange matrix of bond {bond} is incompatible with the symmetry ' \
+                               'of the structure. The symmetry allowed matrix is:' \
+                               + str(structure.exchange_constraints(bond.site_1, bond.site_2)))
         dist = np.round(bond.distance(structure.unit_cell), BOND_DECIMAL)
         # Get all other symmetry equivalent exchanges to this one and index by bond distance
         bond_sets[dist].append(bond.symmetry_fill(structure, include_original=True))
