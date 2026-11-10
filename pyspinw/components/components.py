@@ -1,3 +1,5 @@
+from typing import overload
+
 import numpy as np
 
 
@@ -130,18 +132,61 @@ class BottomLevelComponent(Component):
         return self.name
 
 class PolarisationComponent(Component):
-    def __init__(self, a: int, b: int, name: str):
+
+    def __init__(self, a: int, b: int, name: str, z_dir: np.ndarray | None = None):
         self.a = a
         self.b = b
         self.name = name
+        self.z_dir = [0,0,1] if z_dir is None else z_dir
+        self.z_dir = np.array(z_dir, dtype=float)
+        self.z_dir /= np.sqrt(np.sum(z_dir ** 2))
+
+    @overload
+    def __call__(
+            self,
+            s_ab: np.ndarray,
+            q_vectors: np.ndarray,
+            rlu_to_cart: np.ndarray,
+            multimagnon: np.ndarray | None = None
+    ): ...
+
+    @overload
+    def __call__(
+            self,
+            z_dir: np.ndarray
+    ): ...
+
 
     def __call__(self,
                  s_ab: np.ndarray,
-                 q_vectors: np.ndarray,
-                 rlu_to_cart: np.ndarray,
+                 q_vectors: np.ndarray | None = None,
+                 rlu_to_cart: np.ndarray | None = None,
                  multimagnon: np.ndarray | None = None):
 
-        pass
+        if (q_vectors is None and rlu_to_cart is not None) or (q_vectors is not None and rlu_to_cart is None):
+            raise ValueError("Expected both or neither `rlu_to_cart` and `q_vectors` to be None")
+
+        if multimagnon is not None and q_vectors is None:
+            raise ValueError("`multimagnon` should be None if `q_vectors` is None")
+
+        if q_vectors is None:
+            # We have been given a z direction
+            z = np.array(s_ab).reshape(-1)
+            if len(z) != 3:
+                raise ValueError("Expected z to be a 3 vector")
+
+            return PolarisationComponent(self.a, self.b, self.name, z)
+
+        else:
+            # We have been given data to calculate the output for
+
+            # Calculate the coordinate frame
+
+            # x direction is the q vector in cartesian coordinates
+            xdir = q_vectors @ rlu_to_cart
+            xdir /= np.sqrt(np.sum(xdir ** 2))
+
+
 
 
 # List of components
