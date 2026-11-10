@@ -641,6 +641,7 @@ class Exchange(SPWSerialisable):
                     to_remove.append(j + i + 1)
 
             # Remove the ones we need to remove, as its ordered we can do
+            to_remove = list(set(to_remove))
             to_remove.reverse() # in place reverse
             for j in to_remove:
                 del new_exchanges[j]
