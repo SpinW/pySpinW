@@ -8,24 +8,24 @@ same calculation in index notation, with the step-by-step reductions and a list 
 Data layout and independence
 ----------------------------
 
-`Sab` has shape `(3, 3, n_modes, n_q)`: a 2D array, over modes $\ell$ and q-points $q$, of
-complex $3\times3$ matrices $\mathsf{S}^{(\ell,q)}$. Every formula below acts on one
-$(\ell, q)$ pair at a time and involves only $3\times3$ matrices and 3-vectors. The frame depends on
-$q$ only and is shared by all modes at that $q$. We fix $(\ell, q)$ and write $\mathsf{S}$.
+`Sab` has shape `(3, 3, n_modes, n_q)`: a 2D array, over modes $`\ell`$ and q-points $`q`$, of
+complex $`3\times3`$ matrices $`\mathsf{S}^{(\ell,q)}`$. Every formula below acts on one
+$`(\ell, q)`$ pair at a time and involves only $`3\times3`$ matrices and 3-vectors. The frame depends on
+$`q`$ only and is shared by all modes at that $`q`$. We fix $`(\ell, q)`$ and write $`\mathsf{S}`$.
 
-Notation: bold lower case for column 3-vectors, sans-serif capitals for $3\times3$ matrices,
-${}^T$ for the plain transpose (no conjugation), $\mathbf{1} = (1,1,1)^T$, $\mathsf{I}$ for the identity.
+Notation: bold lower case for column 3-vectors, sans-serif capitals for $`3\times3`$ matrices,
+$`{}^T`$ for the plain transpose (no conjugation), $`\mathbf{1} = (1,1,1)^T`$, $`\mathsf{I}`$ for the identity.
 
-Inputs per $(\ell, q)$
+Inputs per $`(\ell, q)`$
 ----------------------
 
 | Symbol | Code | Meaning |
 |---|---|---|
-| $\mathsf{S}$ | `Sab[:, :, l, q]` | spin–spin correlation matrix |
-| $S_\perp$ | `Sperp[q, l]` | unpolarised intensity (scalar, supplied by the caller; should equal $\operatorname{tr}(\Pi\mathsf{S})$) |
-| $\mathbf{q}$ | `q_vectors[q]` | momentum transfer, r.l.u. |
-| $\mathsf{R}$ | `rlu_to_cart` | r.l.u. → Cartesian |
-| $\mathbf{n}$ | `normal` | normal to the horizontal plane |
+| $`\mathsf{S}`$ | `Sab[:, :, l, q]` | spin–spin correlation matrix |
+| $`S_\perp`$ | `Sperp[q, l]` | unpolarised intensity (scalar, supplied by the caller; should equal $`\mathrm{tr}(\Pi\mathsf{S})`$) |
+| $`\mathbf{q}`$ | `q_vectors[q]` | momentum transfer, r.l.u. |
+| $`\mathsf{R}`$ | `rlu_to_cart` | r.l.u. → Cartesian |
+| $`\mathbf{n}`$ | `normal` | normal to the horizontal plane |
 
 Blume–Maleev frame
 ------------------
@@ -36,7 +36,7 @@ Blume–Maleev frame
 \hat{\mathbf{y}} = \frac{\hat{\mathbf{z}}\times\hat{\mathbf{x}}}{\lVert\hat{\mathbf{z}}\times\hat{\mathbf{x}}\rVert}
 ```
 
-(`q @ rlu_to_cart` is $\mathsf{R}^T\mathbf{q}$ as a column vector.)
+(`q @ rlu_to_cart` is $`\mathsf{R}^T\mathbf{q}`$ as a column vector.)
 
 ```math
 \mathsf{P} = \begin{pmatrix} \hat{\mathbf{x}} & \hat{\mathbf{y}} & \hat{\mathbf{z}} \end{pmatrix}
@@ -44,8 +44,8 @@ Blume–Maleev frame
 \Pi = \mathsf{I} - \hat{\mathbf{x}}\hat{\mathbf{x}}^T
 ```
 
-For an orthonormal, right-handed frame, $\mathsf{P}^{-1} = \mathsf{P}^T$ and
-$\mathsf{P}^T\Pi\mathsf{P} = \mathsf{D} \equiv \operatorname{diag}(0, 1, 1)$.
+For an orthonormal, right-handed frame, $`\mathsf{P}^{-1} = \mathsf{P}^T`$ and
+$`\mathsf{P}^T\Pi\mathsf{P} = \mathsf{D} \equiv \mathrm{diag}(0, 1, 1)`$.
 
 Auxiliary quantities
 --------------------
@@ -55,7 +55,7 @@ Auxiliary quantities
 \mathsf{S}^A = \tfrac12(\mathsf{S} - \mathsf{S}^T)
 ```
 
-The chiral vector $\mathbf{c}$ is the axial vector of $\mathsf{S}^A$:
+The chiral vector $`\mathbf{c}`$ is the axial vector of $`\mathsf{S}^A`$:
 
 ```math
 \mathbf{c} = \begin{pmatrix} S_{yz} - S_{zy} \\ S_{zx} - S_{xz} \\ S_{xy} - S_{yx} \end{pmatrix},
@@ -65,7 +65,7 @@ The chiral vector $\mathbf{c}$ is the axial vector of $\mathsf{S}^A$:
 \mathsf{S}^A\mathbf{v} = \tfrac12\,\mathbf{v}\times\mathbf{c}
 ```
 
-Here $[\mathbf{c}]_\times$ is the cross-product matrix, $[\mathbf{c}]_\times\mathbf{v} = \mathbf{c}\times\mathbf{v}$.
+Here $`[\mathbf{c}]_\times`$ is the cross-product matrix, $`[\mathbf{c}]_\times\mathbf{v} = \mathbf{c}\times\mathbf{v}`$.
 
 ### The chiral term (`mat3`)
 
@@ -75,8 +75,8 @@ The code computes
 \mathbf{h} = \mathbf{c} - 2\,(\mathsf{S}^A\hat{\mathbf{x}})\times\hat{\mathbf{x}}
 ```
 
-Using $\mathsf{S}^A\hat{\mathbf{x}} = \tfrac12\hat{\mathbf{x}}\times\mathbf{c}$ and
-$(\mathbf{a}\times\mathbf{b})\times\mathbf{d} = \mathbf{b}(\mathbf{a}\cdot\mathbf{d}) - \mathbf{a}(\mathbf{b}\cdot\mathbf{d})$:
+Using $`\mathsf{S}^A\hat{\mathbf{x}} = \tfrac12\hat{\mathbf{x}}\times\mathbf{c}`$ and
+$`(\mathbf{a}\times\mathbf{b})\times\mathbf{d} = \mathbf{b}(\mathbf{a}\cdot\mathbf{d}) - \mathbf{a}(\mathbf{b}\cdot\mathbf{d})`$:
 
 ```math
 -2(\mathsf{S}^A\hat{\mathbf{x}})\times\hat{\mathbf{x}} = (\mathbf{c}\times\hat{\mathbf{x}})\times\hat{\mathbf{x}}
@@ -89,12 +89,12 @@ so
 \boxed{\,\mathbf{h} = \hat{\mathbf{x}}\hat{\mathbf{x}}^T\mathbf{c}\,}
 ```
 
-That is, the chiral vector projected onto $\mathbf{Q}$.
+That is, the chiral vector projected onto $`\mathbf{Q}`$.
 
 Outputs
 -------
 
-### `Mab`: $\mathsf{S}$ in the Blume–Maleev frame
+### `Mab`: $`\mathsf{S}`$ in the Blume–Maleev frame
 
 ```math
 \mathsf{M} = \mathsf{P}^{-1}\,\mathsf{S}\,\mathsf{P}^{-T}
@@ -107,7 +107,7 @@ Outputs
 \mathbf{I} = S_\perp\,\mathbf{1} + i\,\mathsf{P}^T\mathbf{h}
 ```
 
-### `Pab`: full polarisation, a $3\times3$ matrix (row = first letter of `Pab`)
+### `Pab`: full polarisation, a $`3\times3`$ matrix (row = first letter of `Pab`)
 
 ```math
 \mathcal{P} = \mathsf{P}^{-1}\left(2\,\Pi\,\mathsf{S}^S\,\Pi\,\mathsf{P} \;-\; S_\perp\,\mathsf{P} \;-\; i\,\mathbf{h}\,\mathbf{1}^T\right)
@@ -115,14 +115,14 @@ Outputs
 ```
 
 The three bracketed terms correspond to `2*(Pab1 + Pab2)`, `Pab3` and `1j*Pab4` in the code.
-The outer product $\mathbf{h}\mathbf{1}^T$ puts the chiral term in every column. Rows therefore behave as the
+The outer product $`\mathbf{h}\mathbf{1}^T`$ puts the chiral term in every column. Rows therefore behave as the
 final polarisation direction and columns as the incident one. The values are not normalised by the total cross-section.
 
-Orthonormal frame: everything in terms of $\mathsf{M}$
+Orthonormal frame: everything in terms of $`\mathsf{M}`$
 ------------------------------------------------------
 
-With $\mathsf{P}^{-1} = \mathsf{P}^T$, $\mathsf{M}^S = \tfrac12(\mathsf{M}+\mathsf{M}^T)$,
-$S_\perp = M_{yy}+M_{zz}$ and $\chi \equiv \hat{\mathbf{x}}^T\mathbf{c} = M_{yz} - M_{zy}$:
+With $`\mathsf{P}^{-1} = \mathsf{P}^T`$, $`\mathsf{M}^S = \tfrac12(\mathsf{M}+\mathsf{M}^T)`$,
+$`S_\perp = M_{yy}+M_{zz}`$ and $`\chi \equiv \hat{\mathbf{x}}^T\mathbf{c} = M_{yz} - M_{zy}`$:
 
 ```math
 \mathbf{I} = S_\perp\mathbf{1} + i\chi\,\mathbf{e}_x
@@ -138,28 +138,28 @@ $S_\perp = M_{yy}+M_{zz}$ and $\chi \equiv \hat{\mathbf{x}}^T\mathbf{c} = M_{yz}
 \end{pmatrix}
 ```
 
-For Hermitian $\mathsf{S}$, $i\chi = -2\,\mathrm{Im}\,M_{yz}$ and $2M^S_{yz} = 2\,\mathrm{Re}\,M_{yz}$, so every entry is real.
+For Hermitian $`\mathsf{S}`$, $`i\chi = -2\,\mathrm{Im}\,M_{yz}`$ and $`2M^S_{yz} = 2\,\mathrm{Re}\,M_{yz}`$, so every entry is real.
 
 Combining components
 --------------------
 
-For terms $(w_t, X_t)$ parsed from the component string, with $X_t$ an entry of $\mathsf{M}$,
-$\mathbf{I}$ or $\mathcal{P}$:
+For terms $`(w_t, X_t)`$ parsed from the component string, with $`X_t`$ an entry of $`\mathsf{M}`$,
+$`\mathbf{I}`$ or $`\mathcal{P}`$:
 
 ```math
 I^{(\ell,q)} = \sum_t w_t\,\overline{X_t^{(\ell,q)}}
 ```
 
-Equivalently, for full-polarisation or `M` terms, $I = \operatorname{tr}(\mathsf{W}^T\overline{\mathcal{X}})$,
-where $\mathsf{W}$ is the $3\times3$ weight matrix with entries $w_t$ at the selected positions.
-`components='all'` returns $(\mathcal{P}, \mathbf{I}, \mathsf{M})$ stacked over $(\ell, q)$, without conjugation.
+Equivalently, for full-polarisation or `M` terms, $`I = \mathrm{tr}(\mathsf{W}^T\overline{\mathcal{X}})`$,
+where $`\mathsf{W}`$ is the $`3\times3`$ weight matrix with entries $`w_t`$ at the selected positions.
+`components='all'` returns $`(\mathcal{P}, \mathbf{I}, \mathsf{M})`$ stacked over $`(\ell, q)`$, without conjugation.
 
 Batched form
 ------------
 
-Because each $(\ell,q)$ is independent and the frame depends only on $q$, all of the above can be
-vectorised with the matrix axes leading and $(\ell, q)$ trailing. Take `Pinv` with shape `(n_q, 3, 3)`,
-`P` with shape `(n_q, 3, 3)`, `Pi` (the projector $\Pi$) with shape `(n_q, 3, 3)`, `xhat` with shape `(n_q, 3)`,
+Because each $`(\ell,q)`$ is independent and the frame depends only on $`q`$, all of the above can be
+vectorised with the matrix axes leading and $`(\ell, q)`$ trailing. Take `Pinv` with shape `(n_q, 3, 3)`,
+`P` with shape `(n_q, 3, 3)`, `Pi` (the projector $`\Pi`$) with shape `(n_q, 3, 3)`, `xhat` with shape `(n_q, 3)`,
 `S` with shape `(3, 3, n_modes, n_q)` and `Sperp` with shape `(n_q, n_modes)`:
 
 ```python
