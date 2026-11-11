@@ -26,37 +26,10 @@ class Sphere(Model):
         Flattened ``float32`` array of interleaved vertex positions and normals.
     """
 
-    def __init__(self, divisions: int, radius: float=1.0, padding=0.0):
+    def __init__(self, divisions: int, radius: float=1.0, padding=0.0, webgl=None):
 
-        super().__init__()
+        super().__init__(webgl)
 
-        self.vertices_and_normals = self.build_geometry(
-            divisions=divisions,
-            radius=radius,
-            padding=padding,
-        ).reshape(-1)
-
-        self.add_vertex_normal_data(self.vertices_and_normals)
-
-    @staticmethod
-    def build_geometry(divisions: int, radius: float = 1.0, padding: float = 0.0) -> np.ndarray:
-        """Build the vertex and normal array for a geodesic sphere without OpenGL calls.
-
-        Parameters
-        ----------
-        divisions : int
-            Number of geodesic subdivisions used to generate the sphere mesh.
-        radius : float, optional
-            Radius of the sphere. Default is ``1.0``.
-        padding : float, optional
-            Radial padding added to the sphere radius (e.g., for selection outlines).
-            Default is ``0.0``.
-
-        Returns
-        -------
-        (n, 6) numpy.ndarray
-            2D ``float32`` array of interleaved 3D vertex positions and 3D normal vectors.
-        """
         # Build list of vertices
         points, _ = Geodesic.by_divisions(divisions)
 
@@ -71,6 +44,7 @@ class Sphere(Model):
             # Dereference faces
             face = hull.vertices[raw_face]
 
+
             # Find orientation
             a = points[face[1], :] - points[face[0], :]
             b = points[face[2], :] - points[face[0], :]
@@ -83,9 +57,13 @@ class Sphere(Model):
 
             # Add verts
             for i in face:
-                verts.append(np.concatenate(((radius + padding) * points[i, :], points[i, :])))
+                verts.append((radius + padding) * points[i, :])
+                verts.append(points[i, :]) # Normals
 
-        return np.array(verts, dtype=np.float32)
+
+        self.vertices_and_normals = np.array(verts, dtype=np.float32).reshape(-1) # Return as float32 for rendering
+
+        self.add_vertex_normal_data(self.vertices_and_normals)
 
 
 if __name__ == "__main__":

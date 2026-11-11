@@ -20,7 +20,7 @@ from pyspinw.gui.rendering.models.tube import Tube
 
 import logging
 
-from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
+from pyspinw.gui.rendering.models.wireframe_cube import WireframeCube
 from pyspinw.gui.rendering.object_shader import ObjectShader
 from pyspinw.gui.rendering.selectionmode import SelectionMode
 from pyspinw.gui.rendering.selection_shader import SelectionShader

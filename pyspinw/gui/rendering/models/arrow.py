@@ -32,56 +32,13 @@ class Arrow(Model):
                  r_head: float = 0.1,
                  head_fraction: float = 0.3,
                  padding: float = 0.0,
-                 modify_ring: bool = False):
+                 modify_ring: bool = False,
+                 webgl = None):
 
-        super().__init__()
+        super().__init__(webgl)
 
-        vertices_and_normals = self.build_geometry(
-            n_points=n_points,
-            r_shaft=r_shaft,
-            r_head=r_head,
-            head_fraction=head_fraction,
-            padding=padding,
-            modify_ring=modify_ring,
-        )
 
-        for v_n in vertices_and_normals:
-            self.add_vertex_normal_data(v_n)
 
-    @staticmethod
-    def build_geometry(
-        n_points: int = 51,
-        r_shaft: float = 0.05,
-        r_head: float = 0.1,
-        head_fraction: float = 0.3,
-        padding: float = 0.0,
-        modify_ring: bool = False,
-    ) -> list[np.ndarray]:
-        """Build the vertex and normal arrays for an arrow without OpenGL calls.
-
-        Parameters
-        ----------
-        n_points : int, optional
-            Number of angular sample points around the circumference. Default is ``51``.
-        r_shaft : float, optional
-            Radius of the arrow shaft. Default is ``0.05``.
-        r_head : float, optional
-            Radius of the base of the arrow head. Default is ``0.1``.
-        head_fraction : float, optional
-            Fraction of the total arrow length occupied by the head. Default is ``0.3``.
-        padding : float, optional
-            Radial and axial padding added to the arrow geometry (e.g., for selection outlines).
-            Default is ``0.0``.
-        modify_ring : bool, optional
-            If ``True``, orient the ring normals radially inward for back-face outline rendering.
-            Default is ``False``.
-
-        Returns
-        -------
-        list of (n, 6) numpy.ndarray
-            List of ``float32`` arrays (head, ring, shaft sides, base) containing
-            interleaved 3D vertex positions and 3D normal vectors.
-        """
         angles = np.linspace(0, 2*np.pi, n_points)
 
         mid_angles = 0.5*(angles[1:] + angles[:-1])
@@ -95,9 +52,10 @@ class Arrow(Model):
         x_shaft = (r_shaft + padding) * x
         y_shaft = (r_shaft + padding) * y
 
-        z_transition = 1 - (head_fraction + 0.01 * padding)
+        z_transition =  1-(head_fraction + 0.01*padding)
 
         vertices_and_normals = []
+
 
         #
         # Head
@@ -134,6 +92,7 @@ class Arrow(Model):
                 [0,   0,   z_with_pad,   x_mid[i],   y_mid[i],   head_normal_z],
             ]
 
+
         vertices_and_normals.append(section)
 
         #
@@ -154,6 +113,8 @@ class Arrow(Model):
             y_outer_0 = y_head[i]
             y_outer_1 = y_head[i+1]
 
+
+
             # If the ring flag is not set, we want to set the normals to be pointing outward, so they get culled
             #  in a good way
             if modify_ring:
@@ -172,6 +133,7 @@ class Arrow(Model):
                     [x_outer_0, y_outer_0, z_transition, nx_0, ny_0, 0],
                 ]
 
+
             else:
                 section += [
                     [x_inner_0, y_inner_0, z_transition, 0, 0, -1],
@@ -182,13 +144,14 @@ class Arrow(Model):
                     [x_outer_0, y_outer_0, z_transition, 0, 0, -1],
                 ]
 
+
         vertices_and_normals.append(section)
 
         #
         # Sides
         #
 
-        section = []
+        section=[]
         for i in range(n_points-1):
             x_0 = x_shaft[i]
             x_1 = x_shaft[i+1]
@@ -203,10 +166,10 @@ class Arrow(Model):
             ny_1 = y[i+1]
 
             section += [
-                [x_0, y_0, 0,            nx_0, ny_0, 0],
-                [x_1, y_1, 0,            nx_1, ny_1, 0],
+                [x_0, y_0, 0,     nx_0, ny_0, 0],
+                [x_1, y_1, 0,     nx_1, ny_1, 0],
                 [x_0, y_0, z_transition, nx_0, ny_0, 0],
-                [x_1, y_1, 0,            nx_1, ny_1, 0],
+                [x_1, y_1, 0,     nx_1, ny_1, 0],
                 [x_1, y_1, z_transition, nx_1, ny_1, 0],
                 [x_0, y_0, z_transition, nx_0, ny_0, 0],
             ]
@@ -226,8 +189,8 @@ class Arrow(Model):
             y_1 = y_shaft[i + 1]
 
             section += [
-                [x_1,      y_1,      0, 0, 0, -1],
-                [x_0,      y_0,      0, 0, 0, -1],
+                [ x_1,      y_1,     0, 0, 0, -1],
+                [ x_0,      y_0,     0, 0, 0, -1],
                 [-padding, -padding, 0, 0, 0, -1],
             ]
 
@@ -235,5 +198,8 @@ class Arrow(Model):
 
         vertices_and_normals = [np.array(v_n, dtype=np.float32) for v_n in vertices_and_normals]
 
-        centring_offset = np.array([[0, 0, -0.5, 0, 0, 0]], dtype=np.float32)
-        return [section + centring_offset for section in vertices_and_normals]
+        centring_offset = np.array([[0,0,-0.5,0,0,0]], dtype=np.float32)
+        vertices_and_normals = [section + centring_offset for section in vertices_and_normals]
+
+        for v_n in vertices_and_normals:
+            self.add_vertex_normal_data(v_n)

@@ -18,7 +18,7 @@ from pyspinw.gui.rendermodel import RenderModel
 from pyspinw.gui.rendering.models.arrow import Arrow
 from pyspinw.gui.rendering.models.sphere import Sphere
 from pyspinw.gui.rendering.models.tube import Tube
-from pyspinw.gui.rendering.models.wrireframe_cube import WireframeCube
+from pyspinw.gui.rendering.models.wireframe_cube import WireframeCube
 from pyspinw.gui.rendering.selectionmode import SelectionMode
 
 # Transforms for xyz arrows in axes viewport
@@ -27,108 +27,6 @@ _y_axis_mat = np.array([[1, 0, 0, 0], [0, 0, 1, 0.5], [0, -1, 0, 0], [0, 0, 0, 1
 _x_axis_mat = np.array([[0, 0, 1, 0.5], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]], dtype=np.float32)
 
 _selection_size = 0.2
-
-
-class WebGLMesh:
-    """WebGL vertex buffer and vertex array object wrapper for triangle meshes.
-
-    Parameters
-    ----------
-    gl : ipywebgl.GLViewer
-        Target WebGL viewer widget.
-    program : ipywebgl.glresource.GLResourceWidget
-        Reference shader program used when binding vertex attributes.
-    vertices_and_normals : (n, 6) numpy.ndarray or list of (n, 6) numpy.ndarray
-        Interleaved ``float32`` 3D vertex positions and 3D normals.
-    """
-
-    def __init__(self, gl: ipywebgl.GLViewer, program, vertices_and_normals: np.ndarray | list[np.ndarray]):
-        if isinstance(vertices_and_normals, list):
-            data = np.ascontiguousarray(np.vstack(vertices_and_normals), dtype=np.float32)
-        else:
-            data = np.ascontiguousarray(vertices_and_normals.reshape(-1, 6), dtype=np.float32)
-
-        self.vertex_count = int(data.shape[0])
-        self.vbo = gl.create_buffer_ext(
-            target="ARRAY_BUFFER",
-            src_data=data,
-            usage="STATIC_DRAW",
-            auto_execute=False,
-        )
-        self.vao = gl.create_vertex_array_ext(
-            program,
-            [(self.vbo, "3f32 3f32", 0, 1)],
-            auto_execute=False,
-        )
-
-    def render_triangles(self, gl: ipywebgl.GLViewer):
-        """Append front-face triangle draw commands to ``gl``.
-
-        Parameters
-        ----------
-        gl : ipywebgl.GLViewer
-            Target WebGL viewer widget.
-        """
-        gl.enable(cull_face=True)
-        gl.cull_face("BACK")
-        gl.bind_vertex_array(self.vao)
-        gl.draw_arrays("TRIANGLES", 0, self.vertex_count)
-        gl.bind_vertex_array(None)
-
-    def render_back(self, gl: ipywebgl.GLViewer):
-        """Append back-face triangle draw commands to ``gl`` for selection outlines.
-
-        Parameters
-        ----------
-        gl : ipywebgl.GLViewer
-            Target WebGL viewer widget.
-        """
-        gl.enable(cull_face=True)
-        gl.cull_face("FRONT")
-        gl.bind_vertex_array(self.vao)
-        gl.draw_arrays("TRIANGLES", 0, self.vertex_count)
-        gl.bind_vertex_array(None)
-
-
-class WebGLWireframeMesh:
-    """WebGL vertex buffer and vertex array object wrapper for wireframe line meshes.
-
-    Parameters
-    ----------
-    gl : ipywebgl.GLViewer
-        Target WebGL viewer widget.
-    program : ipywebgl.glresource.GLResourceWidget
-        Reference shader program used when binding vertex attributes.
-    vertices : (n, 3) numpy.ndarray
-        ``float32`` array of 3D line endpoint coordinates.
-    """
-
-    def __init__(self, gl: ipywebgl.GLViewer, program, vertices: np.ndarray):
-        data = np.ascontiguousarray(vertices.reshape(-1, 3), dtype=np.float32)
-        self.vertex_count = int(data.shape[0])
-        self.vbo = gl.create_buffer_ext(
-            target="ARRAY_BUFFER",
-            src_data=data,
-            usage="STATIC_DRAW",
-            auto_execute=False,
-        )
-        self.vao = gl.create_vertex_array_ext(
-            program,
-            [(self.vbo, "3f32", 0)],
-            auto_execute=False,
-        )
-
-    def render_wireframe(self, gl: ipywebgl.GLViewer):
-        """Append ``LINES`` draw commands to ``gl``.
-
-        Parameters
-        ----------
-        gl : ipywebgl.GLViewer
-            Target WebGL viewer widget.
-        """
-        gl.bind_vertex_array(self.vao)
-        gl.draw_arrays("LINES", 0, self.vertex_count)
-        gl.bind_vertex_array(None)
 
 
 class JupyterCrystalView:
@@ -286,20 +184,20 @@ class JupyterCrystalView:
 
         ref_prog = self.object_shader.program
 
-        self.sphere = WebGLMesh(self.gl, ref_prog, Sphere.build_geometry(3))
-        self.selection_sphere = WebGLMesh(self.gl, ref_prog, Sphere.build_geometry(3, padding=0.1))
+        self.sphere = Sphere(3, webgl=(self.gl, ref_prog))
+        self.selection_sphere = Sphere(3, padding=0.1, webgl=(self.gl, ref_prog))
 
-        self.small_sphere = WebGLMesh(self.gl, ref_prog, Sphere.build_geometry(3, radius=0.1))
-        self.selection_small_sphere = WebGLMesh(self.gl, ref_prog, Sphere.build_geometry(3, radius=0.1, padding=0.01))
-        self.anisotropy_sphere = WebGLMesh(self.gl, ref_prog, Sphere.build_geometry(5, radius=0.1))
+        self.small_sphere = Sphere(3, radius=0.1, webgl=(self.gl, ref_prog))
+        self.selection_small_sphere = Sphere(3, radius=0.1, padding=0.01, webgl=(self.gl, ref_prog))
+        self.anisotropy_sphere = Sphere(5, radius=0.1, webgl=(self.gl, ref_prog))
 
-        self.tube = WebGLMesh(self.gl, ref_prog, Tube.build_geometry())
-        self.selection_tube = WebGLMesh(self.gl, ref_prog, Tube.build_geometry(padding=0.2))
+        self.tube = Tube(webgl=(self.gl, ref_prog))
+        self.selection_tube = Tube(padding=0.2, webgl=(self.gl, ref_prog))
 
-        self.arrow = WebGLMesh(self.gl, ref_prog, Arrow.build_geometry())
-        self.selection_arrow = WebGLMesh(self.gl, ref_prog, Arrow.build_geometry(padding=0.03, modify_ring=True))
+        self.arrow = Arrow(webgl=(self.gl, ref_prog))
+        self.selection_arrow = Arrow(padding=0.03, modify_ring=True, webgl=(self.gl, ref_prog))
 
-        self.cube = WebGLWireframeMesh(self.gl, self.cell_shader.program, WireframeCube.build_geometry())
+        self.cube = WireframeCube(webgl=(self.gl, self.cell_shader.program))
 
         # Execute one-time resource creation commands
         self.gl.execute_commands(execute_once=True, clear_previous=True)
@@ -419,11 +317,11 @@ class JupyterCrystalView:
                     if mode != SelectionMode.NOT_SELECTED:
                         self.selection_shader.use(use_custom_proj, custom_proj)
                         self.selection_shader.set_object(site_model_matrix, mode)
-                        selection_render_object.render_back(self.gl)
+                        selection_render_object.render_back()
 
                     self.object_shader.use(use_custom_proj, custom_proj)
                     self.object_shader.set_object(site_model_matrix, site_color)
-                    render_object.render_triangles(self.gl)
+                    render_object.render_triangles()
 
         # 2. Exchanges
         if self._display_options.show_exchanges:
@@ -450,12 +348,12 @@ class JupyterCrystalView:
                         exchange_sel_matrix = model_matrix @ exchange_selection_scaling
                         self.selection_shader.use(use_custom_proj, custom_proj)
                         self.selection_shader.set_object(exchange_sel_matrix, mode)
-                        self.selection_tube.render_back(self.gl)
+                        self.selection_tube.render_back()
 
                     exchange_model_matrix = model_matrix @ exchange_scaling
                     self.object_shader.use(use_custom_proj, custom_proj)
                     self.object_shader.set_object(exchange_model_matrix, exchange_color)
-                    self.tube.render_triangles(self.gl)
+                    self.tube.render_triangles()
 
         # 3. Anisotropies (alpha-blended back-to-front)
         if self._display_options.show_anisotropies and self.render_model.anisotropies:
@@ -478,7 +376,7 @@ class JupyterCrystalView:
                 for model_matrix in anisotropy.model_matrices(self._display_options.prettify):
                     anisotropy_model_matrix = model_matrix @ anisotropy_scale_matrix
                     self.anisotropy_shader.set_model_matrix(anisotropy_model_matrix)
-                    self.anisotropy_sphere.render_triangles(self.gl)
+                    self.anisotropy_sphere.render_triangles()
 
             self.gl.disable(blend=True)
 
@@ -489,7 +387,7 @@ class JupyterCrystalView:
 
             self.cell_shader.use(use_custom_proj, custom_proj)
             self.cell_shader.set_model_matrix(supercell_matrix)
-            self.cube.render_wireframe(self.gl)
+            self.cube.render_wireframe()
 
         # 5. Unit Cell Wireframes
         if self._display_options.show_unit_cell:
@@ -501,7 +399,7 @@ class JupyterCrystalView:
                 translation_matrix = np.eye(4, dtype=np.float32)
                 translation_matrix[:3, 3] = offset.vector
                 self.cell_shader.set_model_matrix(unit_cell_transform @ translation_matrix)
-                self.cube.render_wireframe(self.gl)
+                self.cube.render_wireframe()
 
         # 6. Bottom-left Corner Viewport: Cartesian Axes
         if self._display_options.show_cartesian_axes:
@@ -515,13 +413,13 @@ class JupyterCrystalView:
             self.axes_shader.use()
 
             self.axes_shader.set_axis(_x_axis_mat, (1.0, 0.0, 0.0))
-            self.arrow.render_triangles(self.gl)
+            self.arrow.render_triangles()
 
             self.axes_shader.set_axis(_y_axis_mat, (0.0, 1.0, 0.0))
-            self.arrow.render_triangles(self.gl)
+            self.arrow.render_triangles()
 
             self.axes_shader.set_axis(_z_axis_mat, (0.0, 0.0, 1.0))
-            self.arrow.render_triangles(self.gl)
+            self.arrow.render_triangles()
 
             self.gl.viewport(0, 0, w, h)
             self.gl.enable(depth_test=True)
@@ -544,13 +442,13 @@ class JupyterCrystalView:
             )
 
             self.axes_shader.set_axis(transforms[0], (0.8, 0.4, 0.0))
-            self.arrow.render_triangles(self.gl)
+            self.arrow.render_triangles()
 
             self.axes_shader.set_axis(transforms[1], (0.6, 0.8, 0.0))
-            self.arrow.render_triangles(self.gl)
+            self.arrow.render_triangles()
 
             self.axes_shader.set_axis(transforms[2], (0.7, 0.3, 0.9))
-            self.arrow.render_triangles(self.gl)
+            self.arrow.render_triangles()
 
             self.gl.viewport(0, 0, w, h)
             self.gl.enable(depth_test=True)

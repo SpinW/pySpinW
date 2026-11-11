@@ -52,59 +52,6 @@ def hex_to_rgb(hex_color: str) -> tuple[float, float, float]:
     return (r, g, b)
 
 
-def load_svg_data_uri(icon_name: str, dark: bool = False) -> str:
-    """Load an SVG icon from ``pyspinw.gui.icons.svg`` and encode it as a ``data:`` URI.
-
-    Parameters
-    ----------
-    icon_name : str
-        Base name of the SVG icon without extension.
-    dark : bool, optional
-        Whether to use the ``-dark`` icon variant. Default is ``False``.
-
-    Returns
-    -------
-    str
-        Base64-encoded ``data:image/svg+xml;base64,...`` URI string.
-    """
-    variant = f"{icon_name}-dark.svg" if dark else f"{icon_name}.svg"
-    svg_files = resources.files("pyspinw.gui.icons.svg")
-    target = svg_files / variant
-    if not target.is_file():
-        target = svg_files / f"{icon_name}.svg"
-    raw_bytes = target.read_bytes()
-    b64 = base64.b64encode(raw_bytes).decode("ascii")
-    return f"data:image/svg+xml;base64,{b64}"
-
-
-def svg_img_html(icon_name: str, alt_text: str = "", size: int = 22, dark: bool = False) -> str:
-    """Build an HTML ``<img>`` tag displaying an SVG icon from ``pyspinw.gui.icons.svg``.
-
-    Parameters
-    ----------
-    icon_name : str
-        Base name of the SVG icon without extension.
-    alt_text : str, optional
-        Tooltip and alt text for the image. Default is ``""``.
-    size : int, optional
-        Width and height in pixels. Default is ``22``.
-    dark : bool, optional
-        Whether to use the ``-dark`` icon variant. Default is ``False``.
-
-    Returns
-    -------
-    str
-        HTML string containing the ``<img>`` element.
-    """
-    uri = load_svg_data_uri(icon_name, dark=dark)
-    escaped_alt = alt_text.replace('"', "&quot;")
-    return (
-        f'<img src="{uri}" width="{size}" height="{size}" '
-        f'title="{escaped_alt}" alt="{escaped_alt}" '
-        f'style="vertical-align: middle; display: inline-block;" />'
-    )
-
-
 class JupyterIconWidget(widgets.HTML):
     """Display an SVG icon inside an ``ipywidgets.HTML`` widget.
 
@@ -119,8 +66,23 @@ class JupyterIconWidget(widgets.HTML):
     """
 
     def __init__(self, icon_name: str, alt_text: str = "", size: int = 22):
+        dark = False
+        variant = f"{icon_name}-dark.svg" if dark else f"{icon_name}.svg"
+        svg_files = resources.files("pyspinw.gui.icons.svg")
+        target = svg_files / variant
+        if not target.is_file():
+            target = svg_files / f"{icon_name}.svg"
+        raw_bytes = target.read_bytes()
+        b64 = base64.b64encode(raw_bytes).decode("ascii")
+        uri = f"data:image/svg+xml;base64,{b64}"
+        escaped_alt = alt_text.replace('"', "&quot;")
+        svg_value = (
+            f'<img src="{uri}" width="{size}" height="{size}" '
+            f'title="{escaped_alt}" alt="{escaped_alt}" '
+            f'style="vertical-align: middle; display: inline-block;" />'
+        )
         super().__init__(
-            value=svg_img_html(icon_name, alt_text=alt_text, size=size),
+            value=svg_value,
             layout=widgets.Layout(
                 width=f"{size + 4}px",
                 height=f"{size + 4}px",

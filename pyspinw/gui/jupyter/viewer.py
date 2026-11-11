@@ -1,7 +1,7 @@
 """Main Jupyter notebook viewer widget combining toolbar, WebGL 3D canvas, and text tables."""
 
-from imageio import imwrite
 import ipywidgets as widgets
+from IPython.display import display
 import numpy as np
 
 from pyspinw.gui.displayoptions import DisplayOptions
@@ -34,15 +34,6 @@ class JupyterViewer(widgets.VBox):
     ----------
     hamiltonian : Hamiltonian
         Hamiltonian to display in the viewer.
-    initial_rotation : (3, 3) numpy.ndarray or None, optional
-        Initial 3x3 view rotation matrix. Default is ``None``.
-    initial_distance : float or None, optional
-        Initial camera distance from the view origin. Default is ``None``.
-    display_options : DisplayOptions or None, optional
-        Initial display options. Default is ``None``.
-    save_config_on_exit : bool, optional
-        Whether to save display configuration when display options change.
-        Default is ``True``.
     copies : tuple of (int, int, int), optional
         Supercell scaling along each lattice vector. Default is ``(1, 1, 1)``.
     rotation_supercell_expansion_max : tuple of (int, int, int), optional
@@ -55,6 +46,15 @@ class JupyterViewer(widgets.VBox):
     parent : object or None, optional
         Unused parent reference kept for API compatibility with ``Viewer``.
         Default is ``None``.
+    initial_rotation : (3, 3) numpy.ndarray or None, optional
+        Initial 3x3 view rotation matrix. Default is ``None``.
+    initial_distance : float or None, optional
+        Initial camera distance from the view origin. Default is ``None``.
+    display_options : DisplayOptions or None, optional
+        Initial display options. Default is ``None``.
+    save_config_on_exit : bool, optional
+        Whether to save display configuration when display options change.
+        Default is ``True``.
 
     Raises
     ------
@@ -67,14 +67,14 @@ class JupyterViewer(widgets.VBox):
     def __init__(
         self,
         hamiltonian: Hamiltonian,
-        initial_rotation: np.ndarray | None = None,
-        initial_distance: float | None = None,
-        display_options: DisplayOptions | None = None,
-        save_config_on_exit: bool = True,
         copies: tuple[int, int, int] = (1, 1, 1),
         rotation_supercell_expansion_max: tuple[int, int, int] = (10, 10, 10),
         propagation_vector_commensurability_tolerance: float = 1e-4,
         parent=None,
+        initial_rotation: np.ndarray | None = None,
+        initial_distance: float | None = None,
+        display_options: DisplayOptions | None = None,
+        save_config_on_exit: bool = True,
     ):
         if len(copies) != 3 or not all(isinstance(x, int) for x in copies):
             raise ValueError("Expected `copies` to be a triple of ints")
@@ -182,8 +182,13 @@ class JupyterViewer(widgets.VBox):
         filename : str
             Output image file path.
         """
-        data = self.viewer.snapshot()
-        imwrite(filename, data)
+        try:
+            from imageio import imwrite
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError('Could not load imageio module to save snapshot')
+        else:
+            data = self.viewer.snapshot()
+            imwrite(filename, data)
 
     def on_display_options_changed(self):
         """Update the 3D viewer when toolbar display options change."""
