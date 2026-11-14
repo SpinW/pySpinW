@@ -68,7 +68,7 @@ def test_headless_geometry_builders():
 
     sphere_data = Sphere.build_geometry(3, radius=0.5, padding=0.05)
     assert sphere_data.ndim == 2
-    assert sphere_data.shape[1] == 6
+    assert sphere_data.shape[1] == 3
     assert sphere_data.dtype == np.float32
 
     tube_data = Tube.build_geometry(n_points=21, padding=0.1)
@@ -138,27 +138,33 @@ def test_jupyter_viewer_toolbar_and_selection_sync(sample_hamiltonian, tmp_path)
     assert viewer.toolbar.settings_panel.layout.display == "none"
     assert np.allclose(viewer.viewer.display_options.background_color, hex_to_rgb("#112233"))
 
-    # Select sites via text_display and verify 3D viewer selection updates
-    first_site_option = viewer.text_display.site_selector.options[0]
-    viewer.text_display.site_selector.value = (first_site_option,)
+    # Select sites via text_display site_tree and verify 3D viewer selection updates
+    first_site_node = viewer.text_display.site_tree.nodes[0]
+    first_site_node.selected = True
     assert len(viewer.viewer.current_selection) > 0
+    assert viewer.viewer.current_selection == first_site_node.ids
     assert viewer.viewer.current_selection == viewer.text_display.current_selection
 
-    # Clear selection button
-    viewer.text_display._on_clear_selection_clicked(None)
+    # Deselect site node
+    first_site_node.selected = False
     assert viewer.viewer.current_selection == []
 
-    # Click on element from 3D viewer side and verify text_display updates
+    # Click on element from 3D viewer side and verify text_display updates and expands parent
     viewer.viewer.click_on_element(1, shift=False)
     assert viewer.text_display.current_selection == [1]
+    assert viewer.text_display.site_render_id_to_row_item[1][0].opened is True
+    assert viewer.text_display.site_render_id_to_row_item[1][1].selected is True
     viewer.viewer.click_on_element(2, shift=True)
     assert viewer.text_display.current_selection == [1, 2]
     viewer.viewer.click_on_element(0, shift=False)
     assert viewer.text_display.current_selection == []
+    assert viewer.text_display.site_tree.selected_nodes == ()
 
-    # Hover synchronization
+    # Hover synchronization and row bolding
     viewer.text_display.set_hover([1])
-    viewer.on_text_hover_changed()
+    assert "font-weight:bold" in viewer.text_display.site_render_id_to_row_item[1][1].name
+    viewer.text_display.site_tree.hover_ids = [1]
+    viewer.text_display.on_hover_changed()
     assert viewer.viewer.hover_ids == [1]
 
     # Reset view
