@@ -65,17 +65,11 @@ _TREE_STYLE_HTML = """
 """
 
 
-def _format_row_html(columns: list[str], is_bold: bool = False) -> str:
-    """Format a sequence of column strings as an inline-flex HTML row for ``ipytree.Node``."""
-    cells = "".join(f'<span class="pyspinw-tree-cell">{html.escape(str(col))}</span>' for col in columns)
+def _format_html(items: list[str], span_class: str, cont_class: str, is_bold: bool = False) -> str:
+    """Format a sequence of string items as an inline-flex HTML span."""
+    cells = "".join(f'<span class="{span_class}">{html.escape(str(item))}</span>' for item in items)
     weight = "font-weight:bold;" if is_bold else "font-weight:normal;"
-    return f'<span class="pyspinw-tree-row" style="{weight}">{cells}</span>'
-
-
-def _format_header_html(headers: list[str]) -> str:
-    """Format column header labels as an aligned HTML header bar."""
-    cells = "".join(f'<span class="pyspinw-tree-header-cell">{html.escape(str(h))}</span>' for h in headers)
-    return f'<div class="pyspinw-tree-header">{cells}</div>'
+    return f'<span class="{cont_class}" style="{weight}">{cells}</span>'
 
 
 class DisplayItem(ipytree.Node):
@@ -94,17 +88,12 @@ class DisplayItem(ipytree.Node):
     """
 
     def __init__(self, columns: list[str] | str, ids: list[int], opened: bool = False):
-        if isinstance(columns, str):
-            self.columns = [columns]
-        else:
-            self.columns = [str(c) for c in columns]
-
+        self.columns = [columns] if isinstance(columns, str) else [str(c) for c in columns]
         self.ids = ids
         self.parent_item: DisplayItem | None = None
         self._is_bold: bool = False
-
         super().__init__(
-            name=_format_row_html(self.columns, is_bold=False),
+            name=_format_html(self.columns, 'pyspinw-tree-cell', 'pyspinw-tree-row', is_bold=False),
             nodes=(),
             opened=opened,
             show_icon=False,
@@ -131,7 +120,7 @@ class DisplayItem(ipytree.Node):
         """
         if self._is_bold != is_bold:
             self._is_bold = is_bold
-            self.name = _format_row_html(self.columns, is_bold=is_bold)
+            self.name = _format_html(self.columns, 'pyspinw-tree-cell', 'pyspinw-tree-row', is_bold=is_bold),
 
 
 class ParameterTable(ipytree.Tree):
@@ -155,7 +144,7 @@ class ParameterTable(ipytree.Tree):
 
         self.headers: list[str] = list(headers) if headers is not None else []
         self.header_widget = widgets.HTML(
-            value=_format_header_html(self.headers) if self.headers else "",
+            value=_format_html(self.headers, 'pyspinw-tree-header-cell', 'pyspinw-tree-header') if self.headers else "",
             layout=widgets.Layout(width="100%", margin="0px"),
         )
 
@@ -177,7 +166,7 @@ class ParameterTable(ipytree.Tree):
             Column header names.
         """
         self.headers = list(headers)
-        self.header_widget.value = _format_header_html(self.headers)
+        self.header_widget.value = _format_html(self.headers, 'pyspinw-tree-header-cell', 'pyspinw-tree-header')
 
     def iter_all_items(self) -> list[DisplayItem]:
         """Return a flat list of all ``DisplayItem`` nodes in this tree.

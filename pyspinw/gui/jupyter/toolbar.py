@@ -65,7 +65,7 @@ class JupyterIconWidget(widgets.HTML):
         Icon size in pixels. Default is ``22``.
     """
 
-    def __init__(self, icon_name: str, alt_text: str = "", size: int = 22):
+    def __init__(self, icon_name: str, alt_text: str = "", size: int = 22, is_style=False):
         dark = False
         variant = f"{icon_name}-dark.svg" if dark else f"{icon_name}.svg"
         svg_files = resources.files("pyspinw.gui.icons.svg")
@@ -76,21 +76,24 @@ class JupyterIconWidget(widgets.HTML):
         b64 = base64.b64encode(raw_bytes).decode("ascii")
         uri = f"data:image/svg+xml;base64,{b64}"
         escaped_alt = alt_text.replace('"', "&quot;")
-        svg_value = (
-            f'<img src="{uri}" width="{size}" height="{size}" '
-            f'title="{escaped_alt}" alt="{escaped_alt}" '
-            f'style="vertical-align: middle; display: inline-block;" />'
-        )
+        if is_style:
+            svg_value = (
+                '<style>'
+                f'.{icon_name}-button {{ width: {size+4}px; height: {size+4}px; background-image: url({uri}); background-size: cover; }}'
+                '</style>'
+            )
+            layout = {'display':'None'}
+        else:
+            svg_value = (
+                f'<img src="{uri}" width="{size}" height="{size}" '
+                f'title="{escaped_alt}" alt="{escaped_alt}" '
+                f'style="vertical-align: middle; display: inline-block;" />'
+            )
+            layout = {'width':f"{size + 4}px", 'height':f"{size + 4}px", 'margin':"0px 2px",
+                      'display':"flex", 'align_items':"center", 'justify_content':"center"}
         super().__init__(
             value=svg_value,
-            layout=widgets.Layout(
-                width=f"{size + 4}px",
-                height=f"{size + 4}px",
-                margin="0px 2px",
-                display="flex",
-                align_items="center",
-                justify_content="center",
-            ),
+            layout=widgets.Layout(**layout),
         )
         self.icon_name = icon_name
         self.alt_text = alt_text
@@ -414,26 +417,26 @@ class JupyterToolbar(widgets.VBox):
         self.bar_2_items: list[widgets.Widget] = []
 
         # Top Bar Controls
-        self.prettify = self._add_toggle_button(
+        self.prettify = self._toolbar_button(
             self.bar_1_items,
             alt_text="Use cosmetic representation instead of direct input",
             icon="cosmetic",
             value=settings.prettify,
         )
 
-        self.atom_or_spins = self._add_toggle_button(
+        self.atom_or_spins = self._toolbar_button(
             self.bar_1_items,
             alt_text="Switch between showing atoms and spins",
             icon="momentatoms",
             value=settings.show_spins_not_atoms,
         )
-        self.show_nonmagnetic = self._add_toggle_button(
+        self.show_nonmagnetic = self._toolbar_button(
             self.bar_1_items,
             alt_text="Show non-magnetic sites",
             icon="nonmagnetic",
             value=settings.show_nonmagnetic_atoms,
         )
-        self.scale_atoms = self._add_toggle_button(
+        self.scale_atoms = self._toolbar_button(
             self.bar_1_items,
             alt_text="Scale atoms by atomic radii",
             icon="atomsizes",
@@ -441,25 +444,25 @@ class JupyterToolbar(widgets.VBox):
             visible=False,
         )
 
-        self.show_cartesian_axes = self._add_toggle_button(
+        self.show_cartesian_axes = self._toolbar_button(
             self.bar_1_items,
             alt_text="Show Cartesian axes",
             icon="cartesianaxes",
             value=settings.show_cartesian_axes,
         )
-        self.show_lattice_axes = self._add_toggle_button(
+        self.show_lattice_axes = self._toolbar_button(
             self.bar_1_items,
             alt_text="Show lattice aligned axes",
             icon="latticeaxes",
             value=settings.show_lattice_axes,
         )
-        self.orthogonal_lattice_axes = self._add_toggle_button(
+        self.orthogonal_lattice_axes = self._toolbar_button(
             self.bar_1_items,
             alt_text="Show orthogonal lattice axes",
             icon="latticeaxesorth",
             value=settings.orthogonal_lattice_axes,
         )
-        self.orthographic = self._add_toggle_button(
+        self.orthographic = self._toolbar_button(
             self.bar_1_items,
             alt_text="Toggle Orthographic/Perspective",
             icon="perspective",
@@ -488,31 +491,31 @@ class JupyterToolbar(widgets.VBox):
         self.settings_button.on_click(self._on_settings_clicked)
 
         # Lower Bar Controls
-        self.show_cell = self._add_toggle_button(
+        self.show_cell = self._toolbar_button(
             self.bar_2_items,
             alt_text="Show Unit Cell",
             icon="unitcell",
             value=settings.show_unit_cell,
         )
-        self.show_supercell = self._add_toggle_button(
+        self.show_supercell = self._toolbar_button(
             self.bar_2_items,
             alt_text="Show Supercell",
             icon="supercell",
             value=settings.show_supercell,
         )
-        self.show_sites = self._add_toggle_button(
+        self.show_sites = self._toolbar_button(
             self.bar_2_items,
             alt_text="Show Sites",
             icon="show_moments",
             value=settings.show_sites,
         )
-        self.show_exchanges = self._add_toggle_button(
+        self.show_exchanges = self._toolbar_button(
             self.bar_2_items,
             alt_text="Show Exchanges",
             icon="show_exchanges",
             value=settings.show_exchanges,
         )
-        self.show_anisotropies = self._add_toggle_button(
+        self.show_anisotropies = self._toolbar_button(
             self.bar_2_items,
             alt_text="Show Anisotropies",
             icon="anisotropies",
@@ -564,109 +567,31 @@ class JupyterToolbar(widgets.VBox):
             layout=widgets.Layout(width="100%", margin="0px 0px 4px 0px"),
         )
 
-    def _toolbar_button(
-        self,
-        target_list: list[widgets.Widget],
-        alt_text: str,
-        icon: str | None = None,
-    ) -> widgets.Button:
-        """Create an action button paired with an SVG icon tile.
-
-        Parameters
-        ----------
-        target_list : list of widgets.Widget
-            List of toolbar widgets to append the button tile to.
-        alt_text : str
-            Tooltip text for the button.
-        icon : str or None, optional
-            SVG icon name from ``pyspinw.gui.icons.svg``. Default is ``None``.
-
-        Returns
-        -------
-        widgets.Button
-            Created button widget.
-        """
-        btn = widgets.Button(
-            description="",
-            tooltip=alt_text,
-            layout=widgets.Layout(width="36px", height="32px", margin="0px"),
-        )
-        if icon is not None:
-            icon_widget = JupyterIconWidget(icon, alt_text=alt_text, size=20)
-            tile = widgets.HBox(
-                [icon_widget, btn],
-                layout=widgets.Layout(
-                    align_items="center",
-                    border="1px solid #555",
-                    margin="1px 2px",
-                    padding="1px 3px",
-                ),
-            )
-            target_list.append(tile)
-        else:
-            target_list.append(btn)
-        return btn
-
-    def _add_toggle_button(
-        self,
-        target_list: list[widgets.Widget],
-        alt_text: str,
-        icon: str | None = None,
-        value: bool = True,
-        visible: bool = True,
-    ) -> widgets.ToggleButton:
-        """Create a checkable ``ToggleButton`` paired with an SVG icon tile.
-
-        Parameters
-        ----------
-        target_list : list of widgets.Widget
-            List of toolbar widgets to append the toggle tile to.
-        alt_text : str
-            Tooltip text for the toggle button.
-        icon : str or None, optional
-            SVG icon name from ``pyspinw.gui.icons.svg``. Default is ``None``.
-        value : bool, optional
-            Initial checked state. Default is ``True``.
-        visible : bool, optional
-            Whether the control is visible in the toolbar. Default is ``True``.
-
-        Returns
-        -------
-        widgets.ToggleButton
-            Created toggle button widget.
-        """
-        btn = widgets.ToggleButton(
-            value=bool(value),
-            description="",
-            tooltip=alt_text,
-            button_style="info" if value else "",
-            layout=widgets.Layout(width="28px", height="28px", margin="0px"),
-        )
-
+    def _toolbar_button(self, target_list: list[widgets.Widget], alt_text: str, icon: str | None = None,
+                        value: bool | None = None, visible: bool = True):
+        """Create an action button with an SVG icon."""
         def _sync_style(change):
             btn.button_style = "info" if change["new"] else ""
             self._on_change()
-
-        btn.observe(_sync_style, names="value")
-
+        if value is None:
+            btn = widgets.Button(description="", tooltip=alt_text,
+                                 layout=widgets.Layout(width="36px", height="32px", margin="0px"))
+        else:
+            btn = widgets.ToggleButton(value=bool(value), description="", tooltip=alt_text,
+                                       button_style="info" if value else "",
+                                       layout=widgets.Layout(width="28px", height="28px", margin="0px"))
+            btn.observe(_sync_style, names="value")
         if icon is not None:
-            icon_widget = JupyterIconWidget(icon, alt_text=alt_text, size=20)
-            tile = widgets.HBox(
-                [icon_widget, btn],
-                layout=widgets.Layout(
-                    display="flex" if visible else "none",
-                    align_items="center",
-                    border="1px solid #555",
-                    margin="1px 2px",
-                    padding="1px 3px",
-                ),
-            )
+            icon_widget = JupyterIconWidget(icon, alt_text=alt_text, size=20, is_style=True)
+            btn.add_class(f'{icon}-button')
+            tile = widgets.HBox([icon_widget, btn],
+                layout=widgets.Layout(display="flex" if visible else "none", align_items="center",
+                                      border="1px solid #555", margin="1px 2px", padding="1px 3px"))
             target_list.append(tile)
         else:
             if not visible:
                 btn.layout.display = "none"
             target_list.append(btn)
-
         return btn
 
     def _add_slider(

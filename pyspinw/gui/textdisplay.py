@@ -2,12 +2,10 @@
 
 from collections import defaultdict
 
-import numpy as np
 from PySide6.QtCore import Signal, QItemSelection, QItemSelectionModel
 from PySide6.QtGui import QStandardItemModel, Qt, QStandardItem, QColor, QFont, QGuiApplication
 from PySide6.QtWidgets import QWidget, QSplitter, QTextEdit, QTreeView, QVBoxLayout
 
-from pyspinw.anisotropy import Anisotropy
 from pyspinw.gui.rendermodel import RenderModel, RenderExchange
 from pyspinw.gui.textdisplay_format import format_triple, format_spin_data, format_anisotropies, format_g
 

@@ -1,5 +1,8 @@
 """Text format utilities for the TextDisplay class without Qt/ipy imports"""
 
+import numpy as np
+from pyspinw.anisotropy import Anisotropy
+
 def format_triple(triple):
     """Rendering for numeric triples.
 
