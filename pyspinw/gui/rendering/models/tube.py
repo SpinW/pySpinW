@@ -17,8 +17,8 @@ class Tube(Model):
         Default is ``0.0``.
     """
 
-    def __init__(self, n_points=51, padding=0.0):
-        super().__init__()
+    def __init__(self, n_points=51, padding=0.0, webgl=None):
+        super().__init__(webgl)
 
         angles = np.linspace(0, 2*np.pi, n_points)
 

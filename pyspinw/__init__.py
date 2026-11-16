@@ -28,8 +28,8 @@ from pyspinw.sample import SingleCrystal, Multidomain, CrystalDomain, Twin, Powd
 from pyspinw.path import Path, Path1D, Slice
 
 from pyspinw.calculations.spherical_integration import SphericalPointGeneratorType
-from pyspinw.gui.viewer import show_object as view
-from pyspinw.gui.viewer import snapshot
+from pyspinw.gui import view, snapshot
+
 from pyspinw.gui.displayoptions import DisplayOptions
 
 from pyspinw.units import CoordsUnits, IntensityUnits

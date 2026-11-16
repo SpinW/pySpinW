@@ -32,9 +32,10 @@ class Arrow(Model):
                  r_head: float = 0.1,
                  head_fraction: float = 0.3,
                  padding: float = 0.0,
-                 modify_ring: bool = False):
+                 modify_ring: bool = False,
+                 webgl = None):
 
-        super().__init__()
+        super().__init__(webgl)
 
 
 

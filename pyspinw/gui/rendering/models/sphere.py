@@ -26,9 +26,9 @@ class Sphere(Model):
         Flattened ``float32`` array of interleaved vertex positions and normals.
     """
 
-    def __init__(self, divisions: int, radius: float=1.0, padding=0.0):
+    def __init__(self, divisions: int, radius: float=1.0, padding=0.0, webgl=None):
 
-        super().__init__()
+        super().__init__(webgl)
 
         # Build list of vertices
         points, _ = Geodesic.by_divisions(divisions)

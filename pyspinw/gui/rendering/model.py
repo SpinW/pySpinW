@@ -1,19 +1,39 @@
 """Base class for renderable objects."""
 
-import logging
-
 import numpy as np
-from OpenGL.GL import *
 
+# Must have one of either ipywebgl or OpenGL
+try:
+    import ipywebgl
+    HASWEBGL = True
+except ModuleNotFoundError:
+    HASWEBGL = False
+
+try:
+    from OpenGL.GL import *
+    HASOPENGL = True
+except ModuleNotFoundError:
+    HASOPENGL = False
+    if not HASWEBGL:
+        raise
+
+import logging
 logger = logging.Logger(__name__)
 
 class Model:
     """Base class for renderable objects."""
 
-    def __init__(self):
+    def __init__(self, webgl=None):
         self._vaos = []
         self._vbos = []
         self._lengths = []
+        self._webgldata = []
+        if webgl is not None and HASWEBGL:
+            self._webgl, self._webglprogram = webgl # tuple input
+        elif not HASOPENGL:
+            raise RuntimeError('OpenGL library cannot be loaded and WebGL not specified')
+        else:
+            self._webgl = None
 
     def add_vertex_normal_data(self, vertices_and_normals: np.ndarray):
         """Add vertex and normal data.
@@ -26,6 +46,10 @@ class Model:
             Array of interleaved 3D vertex positions and 3D normal vectors of
             dtype ``float32``.
         """
+        if self._webgl is not None:
+            self._webgldata.append(vertices_and_normals)
+            return
+
         vao = glGenVertexArrays(1)
         vbo = glGenBuffers(1)
 
@@ -55,8 +79,25 @@ class Model:
         glBindVertexArray(0)
 
 
+    def _render_webgldata(self, face):
+        if isinstance(self._webgldata, list):
+            self._webgldata = np.ascontiguousarray(np.vstack(self._webgldata), dtype=np.float32)
+            self.vertex_count = int(self._webgldata.shape[0])
+            vbo = self._webgl.create_buffer_ext(target="ARRAY_BUFFER", src_data=self._webgldata, usage="STATIC_DRAW",
+                                                auto_execute=False)
+            self.vao = self._webgl.create_vertex_array_ext(self._webglprogram, [(vbo, "3f32 3f32", 0, 1)],
+                                                           auto_execute=False)
+        self._webgl.enable(cull_face=True)
+        self._webgl.cull_face(face)
+        self._webgl.bind_vertex_array(self.vao)
+        self._webgl.draw_arrays("TRIANGLES", 0, self.vertex_count)
+        self._webgl.bind_vertex_array(None)
+
+
     def render_triangles(self):
         """Call the GL rendering for the triangles in this model."""
+        if self._webgl is not None:
+            return self._render_webgldata("BACK")
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
         for vao, length in zip(self._vaos, self._lengths):
@@ -67,6 +108,8 @@ class Model:
 
     def render_back(self):
         """Render the back faces only - used for making selections."""
+        if self._webgl is not None:
+            return self._render_webgldata("FRONT")
         glEnable(GL_CULL_FACE)
         glCullFace(GL_FRONT)
         for vao, length in zip(self._vaos, self._lengths):
