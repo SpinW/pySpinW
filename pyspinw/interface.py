@@ -3,6 +3,7 @@ import math
 
 import numpy as np
 from numpy._typing import ArrayLike
+from collections import defaultdict
 
 from pyspinw.anisotropy import AxisMagnitudeAnisotropy, Anisotropy
 from pyspinw.batch_exchanges import default_naming_pattern
@@ -19,6 +20,9 @@ from pyspinw.symmetry.supercell import PropagationVector, CommensuratePropagatio
 from pyspinw.symmetry.unitcell import UnitCell
 from pyspinw.units import CoordsUnits
 from pyspinw.tb2j import TB2J_Input
+from pyspinw.tolerances import tolerances
+
+BOND_DECIMAL = int(np.log10(np.floor(1 / tolerances.BOND_TOL)))
 
 try:
     from pyspinw.gui.viewer import show_object
@@ -541,6 +545,7 @@ def generate_exchanges(sites: list[Site] | Structure,
                        min_distance: float = 0.0,
                        direction_filter: DirectionalityFilter | None = None,
                        max_order: int | None = None,
+                       use_sym: bool = False,
                        j: float | None = None,
                        j_x: float | None = None,
                        j_y: float | None = None,
@@ -576,6 +581,11 @@ def generate_exchanges(sites: list[Site] | Structure,
         create exchanges in certain directions. Default is ``None``.
     max_order : int, optional
         Maximum "order" of exchanges. Default is ``None``.
+    use_sym : bool, optional
+        Whether to determine the symmetry allowed set of exchange interactions or not
+        If true will return a list of lists of Exchange with each list being a set
+        of symmetry equivalent exchanges, rather than a single list of Exchange.
+        Default is ``False``
     j : float, optional
         Constant for scalar valued Heisenberg exchanges (only needed for
         Heisenberg). Default is ``None``.
@@ -620,10 +630,13 @@ def generate_exchanges(sites: list[Site] | Structure,
         neither ``bond`` nor distance bounds are specified.
     """
     if isinstance(sites, Structure):
-        unit_cell = sites.unit_cell
-        sites = sites.sites
+        structure = sites
+        unit_cell = structure.unit_cell
+        sites = structure.sites
     elif unit_cell is None:
         raise RuntimeError('If first argument is not a Structure, you need to specify a unit_cell')
+    elif use_sym is True:
+        raise RuntimeError('Can only determine symmetry when the first argument is a Structure')
 
     if bond == 0 and max_distance == 0.0 and min_distance == 0.0:
         raise RuntimeError('You must specify either a bond index or maximum/minimum distance pairs')
@@ -678,7 +691,78 @@ def generate_exchanges(sites: list[Site] | Structure,
         exchange_parameters= used_parameters,
         direction_filter = direction_filter)
 
-    return group.exchanges(sites, unit_cell)
+    exchanges = group.exchanges(sites, unit_cell)
+
+    if use_sym:
+        return get_symmetry_equivalent_exchange_sets(exchanges, structure)
+
+    return exchanges
+
+
+def get_symmetry_equivalent_exchange_sets(exchanges: list[Exchange],
+                                          structure: Structure) -> list[list[Exchange]]:
+    """Returns sets of symmetry equivalent exchanges
+
+    For each exchange in the input list, find a set of symmetry equivalent exchanges
+    and returns a list of non-identical sets.
+
+    Parameters
+    ----------
+
+    exchanges : list of Exchange
+        list of input Exchange
+    structure : Structure
+        The crystal structure
+
+    Returns
+    -------
+    list of list of Exchange
+        Non-identical sets of symmetry-equivalent `Exchange` instances.
+    """
+
+    def compare_exchange(j1, j2):
+        is_forward = j1.site_1 == j2.site_1 and j1.site_2 == j2.site_2 and j1.cell_offset == j2.cell_offset
+        is_reverse = j1.site_1 == j2.site_2 and j1.site_1 == j2.site_2 and \
+                     np.allclose(j1.lattice_vector, -j2.lattice_vector, atol=tolerances.SAME_SITE_ABS_TOL)
+        return is_forward or is_reverse
+
+    def is_equiv(set1: list[Exchange], set2: list[Exchange]) -> bool:
+        if len(set1) != len(set2):
+            return False
+        equiv_mat = np.zeros((len(set1), len(set2)))
+        # Need to iterate over all members of both set as sets are unordered
+        for i in range(len(set1)):
+            for j in range(len(set2)):
+                equiv_mat[i, j] = compare_exchange(set1[i], set2[j])
+        return np.sum(equiv_mat) == len(set1)
+
+    # Generate symmetry equivalent sets from each input Exchange
+    bond_sets = defaultdict(list)
+    for bond in exchanges:
+        # Check the exchange is compatible with the symmetry
+        if not bond.obeys_symmetry(structure):
+            raise RuntimeError(f'Input exchange matrix of bond {bond} is incompatible with the symmetry ' \
+                               'of the structure. The symmetry allowed matrix is:' \
+                               + str(structure.exchange_constraints(bond.site_1, bond.site_2)))
+        dist = np.round(bond.distance(structure.unit_cell), BOND_DECIMAL)
+        # Get all other symmetry equivalent exchanges to this one and index by bond distance
+        bond_sets[dist].append(bond.symmetry_fill(structure, include_original=True))
+
+    # Sort bonds at the same distance into symmetry-equivalent sets
+    symm_sets = []
+    for dist, bonds in bond_sets.items():
+        cur_ind = 0
+        symm_sets.append(bonds[cur_ind])
+        non_equivalent_sets = set(range(1, len(bonds)))
+        while True:
+            # On each iteration of this loop find all sets of exchanges equivalent to the
+            # current set and remove them from the list of non_equivalent sets to be parsed
+            non_equivalent_sets -= set(j for j in non_equivalent_sets if is_equiv(bonds[cur_ind], bonds[j]))
+            if len(non_equivalent_sets) == 0:
+                break
+            cur_ind = non_equivalent_sets.pop()
+            symm_sets.append(bonds[cur_ind])
+    return symm_sets
 
 
 @check_sizes(axis=(3, ), force_numpy=True)
