@@ -133,3 +133,18 @@ class DisplayOptions:
         except Exception: # Anything at all goes wrong, just return default
 
             return DisplayOptions()
+
+    @staticmethod
+    def LightMode() -> 'DisplayOptions':
+        """Returns a set of viewer ``DisplayOptions`` with a light background"""
+        display_options = DisplayOptions()
+        display_options.background_color = 0.95, 0.95, 0.92
+        display_options.default_site_color = 0.5, 0.6, 0.4
+        display_options.hover_color = 0.0, 0.0, 0.0
+        display_options.selected_color = 0.8, 0.5, 0.1
+        return display_options
+
+    @staticmethod
+    def DarkMode() -> 'DisplayOptions':
+        """Returns a set of viwer ``DisplayOptions`` with a dark background"""
+        return DisplayOptions()

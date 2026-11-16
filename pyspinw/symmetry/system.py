@@ -91,17 +91,6 @@ class BravaisOptions:
 class LatticeSystem(ABC):
     """Base class for the various lattice systems.
 
-    Attributes
-    ----------
-    name : str
-        Name of the lattice system.
-    letter : str
-        Symbol letter of the lattice system.
-    positive_constraints : dict of {str: callable or float}
-        Values of parameters that should be fixed when using this lattice type.
-    negative_constraints : dict of {str: callable}
-        Functions that check whether the unit cell parameters are appropriate.
-
     Notes
     -----
     The positive constraints describe what is needed for the unit cell to count
@@ -110,7 +99,9 @@ class LatticeSystem(ABC):
     """
 
     name: str = ""
+    """Name of the lattice system."""
     letter: str = ""
+    """Symbol letter of the lattice system."""
 
     # Note on constraints: the positive constraints describe what is needed
     #  for the unit cell to count as the given type, the negative constraints

@@ -1,3 +1,5 @@
 ferromagnetic_chain An introduction to basic functionality using a ferromagnetic chain as an example
 antiferromagnetic_chain Introduces different approaches to calculation using the example of an antiferromagnetic chain
+square_antiferromagnet Examples of magnon dispersion on a square lattice with strong nearest neighbour antiferromagnetic interactions
+kagome_ferromagnet Examples of using symmetry in a ferromagnet with a kagome lattice
 supercells Gives an overview of the different magnetic supercells available in pySpinW
