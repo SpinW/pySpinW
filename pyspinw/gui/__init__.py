@@ -51,6 +51,17 @@ def view(object: Hamiltonian | Structure,
     TypeError
         If ``object`` is not a ``Hamiltonian`` or ``Structure``.
     """
+    if isinstance(object, Structure):
+        object = Hamiltonian(object, [])
+
+    if not HASQT and HASJUPYTER:
+        # Check if we are in a notebook, and if so set jupyter to True
+        try:
+            from IPython import get_ipython
+            jupyter = get_ipython() is not None
+        except ModuleNotFoundError:
+            pass
+
     if jupyter:
         if HASJUPYTER:
             display(JupyterViewer(object, copies, rotation_supercell_expansion_max,
