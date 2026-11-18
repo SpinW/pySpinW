@@ -5,6 +5,7 @@ from numpy._typing import ArrayLike
 
 
 class Component:
+    """ Base class for the representation of scattering intensities / polarisation """
 
     def __add__(self, other: "Component"):
         return Sum(self, other)
@@ -16,12 +17,12 @@ class Component:
         return self.__add__(other.__neg__())
 
     def __mul__(self, other: "Component | float | int"):
-        if isinstance(other, (float, int)):
+        if isinstance(other, (complex, float, int)):
             return Product(self, Constant(other))
         return Product(self, other)
 
     def __rmul__(self, other: "Component | float | int"):
-        if isinstance(other, (float, int)):
+        if isinstance(other, (complex, float, int)):
             return Product(Constant(other), self)
         return Product(other, self)
 
@@ -50,6 +51,7 @@ class Component:
         raise NotImplementedError("allows_negative is not implemented")
 
 class Division(Component):
+    """ Component division"""
     def __init__(self, numerator: Component, denominator: Component):
         self.numerator = numerator
         self.denominator = denominator
@@ -65,6 +67,7 @@ class Division(Component):
         return self.numerator.allows_negative or self.denominator.allows_negative
 
 class Product(Component):
+    """ Component product """
     def __init__(self, left: Component, right: Component):
         self.left = left
         self.right = right
@@ -81,6 +84,7 @@ class Product(Component):
         return self.left.allows_negative or self.right.allows_negative
 
 class Negation(Component):
+    """ Component negation """
     def __init__(self, parent: Component):
         self.parent = parent
 
@@ -95,6 +99,7 @@ class Negation(Component):
         return True
 
 class Sum(Component):
+    """ Component addition """
     def __init__(self, left: Component, right: Component):
         self.left = left
         self.right = right
@@ -106,7 +111,8 @@ class Sum(Component):
         return f"({self.left} + {self.right})"
 
 class Constant(Component):
-    def __init__(self, value):
+    """ Constant to be used in algebra"""
+    def __init__(self, value: int | float | complex):
         self.value = value
 
     def __call__(self, *data):
@@ -116,6 +122,7 @@ class Constant(Component):
         return repr(self.value)
 
 class SabComponent(Component):
+    """ Component of the scattering matrix Sab"""
     def __init__(self, a: int, b: int, name: str):
         self.a = a
         self.b = b
@@ -133,7 +140,7 @@ class SabComponent(Component):
         return self.name
 
 class PMComponent(Component):
-
+    """ Base class of P and M matrices and components """
     def __init__(self, a: int, b: int, name: str, z_dir: ArrayLike | None = None):
         self.a = a
         self.b = b
@@ -169,7 +176,7 @@ class PMComponent(Component):
             if len(z) != 3:
                 raise ValueError("Expected z to be a 3 vector")
 
-            return PMComponent(self.a, self.b, self.name, z)
+            return self.__class__(a=self.a, b=self.b, name=self.name, z_dir=z)
 
         else:
             # We have been given data to calculate the output for
@@ -214,22 +221,43 @@ class PMComponent(Component):
         else:
             return self.name + f"[{self.z_dir_input[0]},{self.z_dir_input[1]},{self.z_dir_input[2]}]"
 
-class MComponent(PMComponent):
-    def __init__(self, name: str, z_dir: ArrayLike | None = None):
-        super().__init__(a=0, b=0, name=name, z_dir=z_dir) # a and b are not used
+def m_calculation(s_ab, to_bm):
+    # The calculation is to_bm s_ab to_bm^T = P S P^T
+    # Lets write this in einstein notation:
+
+    #  M_[il,mn] = P_[ij,n] S_[jk,mn] P_[lk,n]
+    return np.einsum('ijn, jkmn, lkn -> lim n', to_bm, s_ab, to_bm)
+
+
+class MAll(PMComponent):
+    """ Mab matrix"""
+    def __init__(self, z_dir: ArrayLike | None = None, **kwargs):
+        super().__init__(a=0, b=0, name="M", z_dir=z_dir) # a and b are not used
 
     def _calculation(self, s_ab, to_bm, from_bm):
-        # The calculation is to_bm s_ab to_bm^T = P S P^T
-        # Lets write this in einstein notation:
+        return m_calculation(s_ab, to_bm)
 
-        # #  M_[il,mn] = P_[ij,n] S_[jk,mn] P_[kl,n]
-        # return np.einsum('ijn, jkmn, kln -> ilm n', to_bm, s_ab, to_bm)
+class MComponent(PMComponent):
+    """ Component of Mab matrix"""
+    def _calculation(self, s_ab, to_bm, from_bm):
+        m = m_calculation(s_ab, to_bm)
 
-        #  M_[il,mn] = P_[ij,n] S_[jk,mn] P_[lk,n]
-        return np.einsum('ijn, jkmn, lkn -> ilm n', to_bm, s_ab, to_bm)
+        return m[self.a, self.b, :, :]
 
-class PComponent():
-    pass
+class PAll(PMComponent):
+    """ Pab matrix"""
+
+    def __init__(self, z_dir: ArrayLike | None = None, **kwargs):
+        super().__init__(a=0, b=0, name="P", z_dir=z_dir) # a and b are not used
+
+class PComponentHalf(PMComponent):
+    """ Half polarisation components """
+
+    def __init__(self, a: int, name: str, z_dir: ArrayLike | None = None, **kwargs):
+        super().__init__(a=a, b=0, name=name, z_dir=z_dir) # b is not used
+
+class PComponentFull(PMComponent):
+    """ Full polarisation components """
 
 # List of components
 
@@ -245,7 +273,16 @@ Szz = SabComponent(2, 2, "Szz")
 
 #Pxx = PMComponent(1, 1, "Pxx")
 
-Mab = MComponent("M")
+Mab = MAll()
+Mxx = MComponent(0,0,"Mxx")
+Mxy = MComponent(0,1,"Mxy")
+Mxz = MComponent(0,2,"Mxz")
+Myx = MComponent(1,0,"Myx")
+Myy = MComponent(1,1,"Myy")
+Myz = MComponent(1,2,"Myz")
+Mzx = MComponent(2,0,"Mzx")
+Mzy = MComponent(2,1,"Mzy")
+Mzz = MComponent(2,2,"Mzz")
 
 
 if __name__ == "__main__":

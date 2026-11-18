@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+import pyspinw
 from pyspinw import *
 from pyspinw.polarisation import calculate_polarised_intensity
 from pyspinw.components.components import Mab
@@ -16,6 +17,8 @@ chain = make_ferromagnetic_chain()
 path = Path([[0, 0, 0], [1, 0, 0]], n_points_per_segment=11)
 
 xyz = [["xx", "xy", "xz"], ["yx", "yy", "yz"], ["zx", "zy", "zz"]]
+
+
 
 @pytest.mark.parametrize("i", range(3))
 @pytest.mark.parametrize("j", range(3))
@@ -37,20 +40,36 @@ def test_mab_consistent(use_rust, i, j):
     )
 
 
+    component = "M" + xyz[i][j]
+
+    # Test the big matrix
     m_matrix = Mab(sab, q_vectors, rlu_to_cart, None)
 
-    for i in range(3):
-        for j in range(3):
+    # Data from the original method
+    original = calculate_polarised_intensity(sab,
+        Sperp = intensities,
+        q_vectors=q_vectors,
+        components=component,
+        rlu_to_cart=rlu_to_cart).T
 
-            original = calculate_polarised_intensity(sab,
-                Sperp = intensities,
-                q_vectors=q_vectors,
-                components="M"+xyz[j][i],
-                rlu_to_cart=rlu_to_cart)
+    test_1 = m_matrix[i,j,:,:]
 
-            test = m_matrix[i,j,:,:]
+    # Test the MXX type
 
-            difference = original - test.T
+    globals().update({
+        "test_component": getattr(pyspinw.components.components, component)
+    })
 
-            assert np.allclose(difference, 0), f"{xyz[i][j]} components should match"
+
+    # IDE wont see this variable because we added it via globals()
+    test_2 = test_component(sab, q_vectors, rlu_to_cart, None)
+
+    difference = original - test_1
+    assert np.allclose(difference, 0), f"M[{i}][{j}] should agree with original"
+
+    difference = test_1 - test_2
+    assert np.allclose(difference, 0), f"M[{i}][{j}] should agree with M{xyz[i][j]}"
+
+    difference = original - test_2
+    assert np.allclose(difference, 0), f"{xyz[i][j]} components should match original"
 
