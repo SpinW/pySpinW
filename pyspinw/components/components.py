@@ -237,6 +237,16 @@ class MAll(PMComponent):
     def _calculation(self, s_ab, to_bm, from_bm):
         return m_calculation(s_ab, to_bm)
 
+class MSPerp(PMComponent):
+    """ Sperp """
+    def __init__(self, z_dir: ArrayLike | None = None, **kwargs):
+        super().__init__(a=0, b=0, name="Sperp", z_dir=z_dir) # a and b are not used
+
+    def _calculation(self, s_ab, to_bm, from_bm):
+        m = m_calculation(s_ab, to_bm)
+        return m[1,1, :, :] + m[2,2, :, :]
+
+
 class MComponent(PMComponent):
     """ Component of Mab matrix"""
     def _calculation(self, s_ab, to_bm, from_bm):
@@ -270,6 +280,8 @@ Syz = SabComponent(1, 2, "Syz")
 Szx = SabComponent(2, 0, "Szx")
 Szy = SabComponent(2, 1, "Szy")
 Szz = SabComponent(2, 2, "Szz")
+
+Sperp = MSPerp()
 
 #Pxx = PMComponent(1, 1, "Pxx")
 

@@ -4,7 +4,7 @@ import pytest
 import pyspinw
 from pyspinw import *
 from pyspinw.polarisation import calculate_polarised_intensity
-from pyspinw.components.components import Mab
+from pyspinw.components.components import Mab, Sperp
 
 def make_ferromagnetic_chain():
     """ A spin-1 ferromagnetic chain along a """
@@ -13,8 +13,9 @@ def make_ferromagnetic_chain():
     return Hamiltonian(Structure([site], UnitCell(3.0, 8.0, 8.0)), [coupling])
 
 chain = make_ferromagnetic_chain()
+simple_path = Path([[0, 0, 0], [1, 0, 0]], n_points_per_segment=11)
 
-path = Path([[0, 0, 0], [1, 0, 0]], n_points_per_segment=11)
+test_systems = [(chain, simple_path)]
 
 xyz = [["xx", "xy", "xz"], ["yx", "yy", "yz"], ["zx", "zy", "zz"]]
 
@@ -23,7 +24,8 @@ xyz = [["xx", "xy", "xz"], ["yx", "yy", "yz"], ["zx", "zy", "zz"]]
 @pytest.mark.parametrize("i", range(3))
 @pytest.mark.parametrize("j", range(3))
 @pytest.mark.parametrize("use_rust", [True, False])
-def test_mab_consistent(use_rust, i, j):
+@pytest.mark.parametrize("hamiltonian, path", test_systems)
+def test_mab_consistent(use_rust, i, j, hamiltonian, path):
     """ components='all' gives the (Pab, Pa, Mab) tuple, with q along the last axis """
 
 
@@ -72,4 +74,23 @@ def test_mab_consistent(use_rust, i, j):
 
     difference = original - test_2
     assert np.allclose(difference, 0), f"{xyz[i][j]} components should match original"
+
+@pytest.mark.parametrize("hamiltonian, path", test_systems)
+def test_sperp_consistent(hamiltonian, path):
+    q_vectors = simple_path.q_points()
+
+    # Get the Sab matrix and other stuff
+    energies, intensities, sab, _, scaling, rlu_to_cart = chain._spinwave_calculation(
+        q_vectors=q_vectors,
+        use_rotating=False,
+        intensity_unit='cell',
+        save_sab=True,
+    )
+
+
+    # IDE wont see this variable because we added it via globals()
+    sperp = Sperp(sab, q_vectors, rlu_to_cart, None)
+
+    assert np.allclose(sperp, np.array(intensities).T)
+
 
