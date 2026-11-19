@@ -225,10 +225,26 @@ def calculate_polarised_intensity(Sab: ArrayLike,
                 Mabs.append(Mab)
         # TODO: work out what code in sw_neutron is in relation to B-M equations...
         # TODO: For now just try to copy the code...
+
+        # np.expand_dims(xdir, (0,1)) is shape (1,1,3)
+        # Qdelta is shape (3,3,3), basically copies the above into remaining dims
         Qdelta = np.tile(np.expand_dims(xdir, (0,1)), (3, 3, 1))
+
+        # Levi-Civita should do X.(Y x Z)
+        # np.sum(LC * Qdelta, axis=2).T should do X.(Y x Qdelta)
+        # expand and tile should make many copies of this
+        # multiplication by Qdelta is then X.(Y x Qdelta) ^ Qdelta
         mat1 = np.tile(np.expand_dims(np.sum(LC * Qdelta, axis=2).T, axis=2), 3) * Qdelta
+
+        # What on earth is this?
+        #  2*mat1 + LC should be a rank 3 tensor that does
+        #  2 X.(Y x Qdelta) ^ (Qdelta ^ Z) + X.(Y x Z)
+        # this is mad
+        #
+        #
         mat3 = np.sum(np.sum(np.transpose(np.tile(np.expand_dims(2*mat1 + LC, 3), nMode), (1,2,3,0))
                  * np.tile(np.expand_dims(SabA[:,:,:,ii], 3), 3),0),0).T
+
         if return_all or len(components[0][1].value) == 2:
             # Half-polarisation calculations
             intP = 1j*np.einsum('ij,ik', Pi, mat3) + np.tile(np.expand_dims(Sperp[ii,:], 1), 3).T

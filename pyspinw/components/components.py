@@ -3,6 +3,8 @@ from typing import overload
 import numpy as np
 from numpy._typing import ArrayLike
 
+from constants import LEVI_CIVITA
+
 
 class Component:
     """ Base class for the representation of scattering intensities / polarisation """
@@ -254,19 +256,50 @@ class MComponent(PMComponent):
 
         return m[self.a, self.b, :, :]
 
-class PAll(PMComponent):
-    """ Pab matrix"""
 
-    def __init__(self, z_dir: ArrayLike | None = None, **kwargs):
-        super().__init__(a=0, b=0, name="P", z_dir=z_dir) # a and b are not used
+class PComponent(PMComponent):
+    def _calculation(self, s_ab, to_bm, from_bm):
+        m = m_calculation(s_ab, to_bm)
 
-class PComponentHalf(PMComponent):
+        s_sym = 0.5*(s_ab + s_ab.transpose(1,0,2,3)) # Symmetric component of S_ab
+        s_asym = 0.5*(s_ab - s_ab.transpose(1,0,2,3)) # Antisymmetric component
+
+        # Standard perpendicular component
+        s_perp = m[1,1,:,:] + m[2,2,:,:]
+
+        # Q vector direction
+        x_hat = from_bm[0, :, :, :]
+
+        # We want to do
+        #   h = -2(S_anti x_hat) cross x_hat
+        # In Einstein notation, we have (dropping the subscript anti and hat)
+        #   h[p,nm] = -2 S[ij,nm] X[i, nm] epsilon[pjk] X[k,nm]
+        h = -2 * np.einsum("ijnm, inm, pjk, knm -> pnm",
+                           s_asym, x_hat, LEVI_CIVITA, x_hat)
+
+        return self._p_calculation(from_bm, s_perp, h, s_sym)
+
+    def _p_calculation(self, from_bm, s_perp, h, s_sym):
+        raise NotImplementedError("Not implemented in base class")
+
+class PComponentHalf(PComponent):
     """ Half polarisation components """
 
     def __init__(self, a: int, name: str, z_dir: ArrayLike | None = None, **kwargs):
         super().__init__(a=a, b=0, name=name, z_dir=z_dir) # b is not used
 
-class PComponentFull(PMComponent):
+    def _p_calculation(self, from_bm, s_perp, h, s_sym):
+        # p is the component of the BM frame that we've asked for
+        p = from_bm[self.a, :, :, :]
+
+        # Calculate p.h
+        # <product>[nm] = p[i,nm] h[i,nm]
+
+        p_dot_h = np.einsum("inm, inm -> nm", p, h)
+        return s_perp + 1j*p_dot_h
+
+
+class PComponentFull(PComponent):
     """ Full polarisation components """
 
 # List of components
@@ -295,6 +328,8 @@ Myz = MComponent(1,2,"Myz")
 Mzx = MComponent(2,0,"Mzx")
 Mzy = MComponent(2,1,"Mzy")
 Mzz = MComponent(2,2,"Mzz")
+
+
 
 
 if __name__ == "__main__":
