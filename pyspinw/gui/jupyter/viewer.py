@@ -11,21 +11,6 @@ from pyspinw.gui.jupyter.toolbar import JupyterToolbar
 from pyspinw.gui.rendermodel import RenderModel
 from pyspinw.hamiltonian import Hamiltonian
 
-_unique_id_counter = -1
-
-
-def _generate_unique_id() -> int:
-    """Generate a unique integer ID for each Jupyter viewer instance.
-
-    Returns
-    -------
-    int
-        Unique integer identifier.
-    """
-    global _unique_id_counter  # noqa: PLW0603
-    _unique_id_counter += 1
-    return _unique_id_counter
-
 
 class JupyterViewer(widgets.VBox):
     """Main Jupyter notebook viewer widget using ``ipywidgets`` and ``ipywebgl``.
@@ -95,7 +80,6 @@ class JupyterViewer(widgets.VBox):
             raise ValueError("Expected initial distance to be strictly positive")
 
         self.save_config_on_exit = save_config_on_exit
-        self._unique_id = _generate_unique_id()
 
         self.render_model = RenderModel(
             hamiltonian,

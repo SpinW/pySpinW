@@ -362,9 +362,9 @@ def get_Executor():
     Returns
     -------
     type of concurrent.futures.Executor
-        ``ThreadPoolExecutor`` on Windows, or ``ProcessPoolExecutor`` on other platforms.
+        ``ThreadPoolExecutor`` on Windows/Emscripten, or ``ProcessPoolExecutor`` on other platforms.
     """
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" or platform.system() == "Emscripten":
         return ThreadPoolExecutor
 
     return ProcessPoolExecutor
