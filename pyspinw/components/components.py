@@ -329,9 +329,6 @@ Mzx = MComponent(2,0,"Mzx")
 Mzy = MComponent(2,1,"Mzy")
 Mzz = MComponent(2,2,"Mzz")
 
-
-
-
 if __name__ == "__main__":
     import numpy as np
 
