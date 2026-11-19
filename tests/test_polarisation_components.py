@@ -14,8 +14,10 @@ def make_ferromagnetic_chain():
 
 chain = make_ferromagnetic_chain()
 simple_path = Path([[0, 0, 0], [1, 0, 0]], n_points_per_segment=11)
+less_simple_path = Path([[-1, -1, 0], [0, 0, 0], [0, 0, 1]], n_points_per_segment=11)
 
-test_systems = [(chain, simple_path)]
+test_systems = [(chain, simple_path),
+                (chain, less_simple_path)]
 
 xyz = [["xx", "xy", "xz"], ["yx", "yy", "yz"], ["zx", "zy", "zz"]]
 
@@ -28,7 +30,7 @@ xyz = [["xx", "xy", "xz"], ["yx", "yy", "yz"], ["zx", "zy", "zz"]]
 def test_mab_consistent(use_rust, i, j, hamiltonian, path):
     """ components='all' gives the (Pab, Pa, Mab) tuple, with q along the last axis """
 
-
+    component = "M" + xyz[i][j]
 
     q_vectors = path.q_points()
 
@@ -41,12 +43,6 @@ def test_mab_consistent(use_rust, i, j, hamiltonian, path):
         save_sab=True,
     )
 
-
-    component = "M" + xyz[i][j]
-
-    # Test the big matrix
-    m_matrix = Mab(sab, q_vectors, rlu_to_cart, None)
-
     # Data from the original method
     original = calculate_polarised_intensity(sab,
         Sperp = intensities,
@@ -54,7 +50,15 @@ def test_mab_consistent(use_rust, i, j, hamiltonian, path):
         components=component,
         rlu_to_cart=rlu_to_cart).T
 
+
+
+    # Test the big matrix
+    m_matrix = Mab(sab, q_vectors, rlu_to_cart, None)
+
     test_1 = m_matrix[i,j,:,:]
+
+    print("Test data")
+    print(test_1)
 
     # Test the MXX type
 
@@ -77,7 +81,7 @@ def test_mab_consistent(use_rust, i, j, hamiltonian, path):
 
 @pytest.mark.parametrize("hamiltonian, path", test_systems)
 def test_sperp_consistent(hamiltonian, path):
-    q_vectors = simple_path.q_points()
+    q_vectors = path.q_points()
 
     # Get the Sab matrix and other stuff
     energies, intensities, sab, _, scaling, rlu_to_cart = chain._spinwave_calculation(
@@ -87,9 +91,12 @@ def test_sperp_consistent(hamiltonian, path):
         save_sab=True,
     )
 
+    print("intensities:", intensities)
 
     # IDE wont see this variable because we added it via globals()
     sperp = Sperp(sab, q_vectors, rlu_to_cart, None)
+
+
 
     assert np.allclose(sperp, np.array(intensities).T)
 
@@ -98,7 +105,7 @@ def test_sperp_consistent(hamiltonian, path):
 @pytest.mark.parametrize("direction", ["x", "y", "z"])
 @pytest.mark.parametrize("hamiltonian, path", test_systems)
 def test_half_polarisation_consistent(hamiltonian, path, direction):
-    q_vectors = simple_path.q_points()
+    q_vectors = path.q_points()
 
     # Get the Sab matrix and other stuff
     energies, intensities, sab, _, scaling, rlu_to_cart = chain._spinwave_calculation(

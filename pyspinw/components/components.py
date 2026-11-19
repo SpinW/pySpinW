@@ -55,6 +55,8 @@ class Component:
     def allows_negative(self) -> bool:
         raise NotImplementedError("allows_negative is not implemented")
 
+    # TODO: __getattr__ needs implementing
+
 class Division(Component):
     """ Component division"""
     def __init__(self, numerator: Component, denominator: Component):
@@ -175,46 +177,37 @@ class PMComponent(Component):
                  rlu_to_cart: np.ndarray,
                  multimagnon: np.ndarray | None = None):
 
-        if q_vectors is None:
-            # We have been given a z direction
-            z = np.array(s_ab).reshape(-1)
-            if len(z) != 3:
-                raise ValueError("Expected z to be a 3 vector")
+        # Calculate the coordinate frame
 
-            return self.__class__(a=self.a, b=self.b, name=self.name, z_dir=z)
+        # x direction is the q vector in cartesian coordinates
+        z_dir = self.z_dir
 
-        else:
-            # We have been given data to calculate the output for
+        x_dir = q_vectors @ rlu_to_cart
+        x_dir /= np.sqrt(np.sum(x_dir ** 2, axis=1)).reshape(-1, 1)
 
-            # Calculate the coordinate frame
+        y_dir = np.cross(z_dir, x_dir) # Right handed
+        y_dir /= np.sqrt(np.sum(y_dir ** 2, axis=1)).reshape(-1, 1)
 
-            # x direction is the q vector in cartesian coordinates
-            z_dir = self.z_dir
+        z_dir = np.tile(z_dir.reshape(1, 3), (q_vectors.shape[0], 1))
 
-            x_dir = q_vectors @ rlu_to_cart
-            x_dir /= np.sqrt(np.sum(x_dir ** 2, axis=1)).reshape(-1, 1)
+        #
+        # Blume–Maleev frame
+        #
 
-            y_dir = np.cross(z_dir, x_dir) # Right handed
-            y_dir /= np.sqrt(np.sum(y_dir ** 2, axis=1)).reshape(-1, 1)
+        from_bm = np.array([x_dir, y_dir, z_dir])
 
-            z_dir = np.tile(z_dir.reshape(1, 3), (q_vectors.shape[0], 1))
+        # Move q index from middle to front for inverse
+        # then transpose the last two
+        from_bm = from_bm.transpose(1, 0, 2)
+        from_bm = from_bm.transpose(0, 2, 1)
 
-            #
-            # Blume–Maleev frame
-            #
+        to_bm = np.linalg.inv(from_bm)
 
-            from_bm = np.array([x_dir, y_dir, z_dir])
+        # Move q index back to the end again
+        from_bm = from_bm.transpose(1,2,0)
+        to_bm = to_bm.transpose(1,2,0)
 
-            # Move q index from middle to front for inverse
-            from_bm = from_bm.transpose(1, 0, 2)
-
-            to_bm = np.linalg.inv(from_bm)
-
-            # Move q index back to the end again
-            from_bm = from_bm.transpose(1,2,0)
-            to_bm = to_bm.transpose(1,2,0)
-
-            return self._calculation(s_ab, to_bm, from_bm)
+        return self._calculation(s_ab, to_bm, from_bm)
 
     def _calculation(self, s_ab, to_bm, from_bm):
         """ Do the specific calculation for this class """
@@ -242,14 +235,33 @@ class MAll(PMComponent):
     def _calculation(self, s_ab, to_bm, from_bm):
         return m_calculation(s_ab, to_bm)
 
-class MSPerp(PMComponent):
+class SPerpClass(PMComponent):
     """ Sperp """
     def __init__(self, z_dir: ArrayLike | None = None, **kwargs):
         super().__init__(a=0, b=0, name="Sperp", z_dir=z_dir) # a and b are not used
 
-    def _calculation(self, s_ab, to_bm, from_bm):
-        m = m_calculation(s_ab, to_bm)
-        return m[1,1, :, :] + m[2,2, :, :]
+
+    def __call__(self,
+                 s_ab: np.ndarray,
+                 q_vectors: np.ndarray,
+                 rlu_to_cart: np.ndarray,
+                 multimagnon: np.ndarray | None = None):
+
+        x = q_vectors @ rlu_to_cart
+        x /= np.sqrt(np.sum(x ** 2, axis=1)).reshape(-1, 1)
+
+        # We want to apply the projection "I - xx^T", and then get the tensor contraction of this,
+        #   i.e. with P_ij = I - xx^T, then we want S_ij P_ij
+        # can spilt it up, so we have
+        #   (xx^T)_ii (self contraction)
+        # minus
+        #   x_i x^T_j S_ij
+        #
+
+        A = np.einsum("iimn -> mn", s_ab)
+        B = np.einsum("ijmn,ni,nj->mn", s_ab, x, x)
+
+        return A - B
 
 class MPerp():
     pass
@@ -330,7 +342,7 @@ Szx = SabComponent(2, 0, "Szx")
 Szy = SabComponent(2, 1, "Szy")
 Szz = SabComponent(2, 2, "Szz")
 
-Sperp = MSPerp()
+Sperp = SPerpClass()
 
 #Pxx = PMComponent(1, 1, "Pxx")
 
