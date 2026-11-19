@@ -94,3 +94,38 @@ def test_sperp_consistent(hamiltonian, path):
     assert np.allclose(sperp, np.array(intensities).T)
 
 
+
+@pytest.mark.parametrize("direction", ["x", "y", "z"])
+@pytest.mark.parametrize("hamiltonian, path", test_systems)
+def test_half_polarisation_consistent(hamiltonian, path, direction):
+    q_vectors = simple_path.q_points()
+
+    # Get the Sab matrix and other stuff
+    energies, intensities, sab, _, scaling, rlu_to_cart = chain._spinwave_calculation(
+        q_vectors=q_vectors,
+        use_rotating=False,
+        intensity_unit='cell',
+        save_sab=True,
+    )
+
+    component = "P" + direction
+    globals().update({
+        "test_component": getattr(pyspinw.components.components, component)
+    })
+
+    original = calculate_polarised_intensity(sab,
+        Sperp = intensities,
+        q_vectors=q_vectors,
+        components=component,
+        rlu_to_cart=rlu_to_cart).T
+
+    # IDE wont see this variable because we added it via globals()
+    pa = test_component(sab, q_vectors, rlu_to_cart, None)
+
+    print("original", original)
+    print("new", pa)
+
+    assert np.allclose(pa, original)
+
+
+

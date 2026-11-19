@@ -3,7 +3,7 @@ from typing import overload
 import numpy as np
 from numpy._typing import ArrayLike
 
-from constants import LEVI_CIVITA
+from pyspinw.constants import LEVI_CIVITA
 
 
 class Component:
@@ -14,6 +14,9 @@ class Component:
 
     def __neg__(self):
         return Negation(self)
+
+    def __pos__(self):
+        return self
 
     def __sub__(self, other: "Component | float | int"):
         return self.__add__(other.__neg__())
@@ -248,6 +251,8 @@ class MSPerp(PMComponent):
         m = m_calculation(s_ab, to_bm)
         return m[1,1, :, :] + m[2,2, :, :]
 
+class MPerp():
+    pass
 
 class MComponent(PMComponent):
     """ Component of Mab matrix"""
@@ -268,13 +273,18 @@ class PComponent(PMComponent):
         s_perp = m[1,1,:,:] + m[2,2,:,:]
 
         # Q vector direction
-        x_hat = from_bm[0, :, :, :]
+        x_hat = from_bm[0, :, :]
+
+        # Chiral vector (Syz−Szy, Szx−Sxz, Sxy−Syx)
+        # Use c[imn] = epsilon[ijk] S[jkmn]
+        c = np.einsum("ijk,jkmn->imn", LEVI_CIVITA, s_ab)
 
         # We want to do
         #   h = -2(S_anti x_hat) cross x_hat
         # In Einstein notation, we have (dropping the subscript anti and hat)
-        #   h[p,nm] = -2 S[ij,nm] X[i, nm] epsilon[pjk] X[k,nm]
-        h = -2 * np.einsum("ijnm, inm, pjk, knm -> pnm",
+        #   h[p,mn] = -2 S[ij,mn] X[i, n] epsilon[pjk] X[k,n]
+
+        h = c - 2* np.einsum("ijmn, in, pjk, kn -> pmn",
                            s_asym, x_hat, LEVI_CIVITA, x_hat)
 
         return self._p_calculation(from_bm, s_perp, h, s_sym)
@@ -290,17 +300,23 @@ class PComponentHalf(PComponent):
 
     def _p_calculation(self, from_bm, s_perp, h, s_sym):
         # p is the component of the BM frame that we've asked for
-        p = from_bm[self.a, :, :, :]
+        p = from_bm[self.a, :, :]
 
         # Calculate p.h
         # <product>[nm] = p[i,nm] h[i,nm]
 
-        p_dot_h = np.einsum("inm, inm -> nm", p, h)
-        return s_perp + 1j*p_dot_h
+        p_dot_h = np.einsum("in, imn -> mn", p, h)
 
+        print("Sperp", s_perp)
+        print("p.h", p_dot_h)
+
+        return s_perp + 1j*p_dot_h
 
 class PComponentFull(PComponent):
     """ Full polarisation components """
+
+    def _p_calculation(self, from_bm, s_perp, h, s_sym):
+        pass
 
 # List of components
 
@@ -328,6 +344,10 @@ Myz = MComponent(1,2,"Myz")
 Mzx = MComponent(2,0,"Mzx")
 Mzy = MComponent(2,1,"Mzy")
 Mzz = MComponent(2,2,"Mzz")
+
+Px = PComponentHalf(0, "Px")
+Py = PComponentHalf(1, "Py")
+Pz = PComponentHalf(2, "Pz")
 
 if __name__ == "__main__":
     import numpy as np

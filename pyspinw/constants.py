@@ -12,7 +12,7 @@ LEVI_CIVITA : numpy array
      $ (A\times B) = \epsilon_{ijk} A_j B_k $
 """
 
-
+import numpy as np
 
 # Bohr magneton in units meV/T
 MU_B = 0.057883818066
