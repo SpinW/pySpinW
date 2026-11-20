@@ -319,9 +319,6 @@ class PComponentHalf(PComponent):
 
         p_dot_h = np.einsum("in, imn -> mn", p, h)
 
-        print("Sperp", s_perp)
-        print("p.h", p_dot_h)
-
         return s_perp + 1j*p_dot_h
 
 class PComponentFull(PComponent):

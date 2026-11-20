@@ -51,14 +51,10 @@ def test_mab_consistent(use_rust, i, j, hamiltonian, path):
         rlu_to_cart=rlu_to_cart).T
 
 
-
     # Test the big matrix
     m_matrix = Mab(sab, q_vectors, rlu_to_cart, None)
 
     test_1 = m_matrix[i,j,:,:]
-
-    print("Test data")
-    print(test_1)
 
     # Test the MXX type
 
@@ -70,14 +66,11 @@ def test_mab_consistent(use_rust, i, j, hamiltonian, path):
     # IDE wont see this variable because we added it via globals()
     test_2 = test_component(sab, q_vectors, rlu_to_cart, None)
 
-    difference = original - test_1
-    assert np.allclose(difference, 0), f"M[{i}][{j}] should agree with original"
+    assert np.allclose(original, test_1, equal_nan=True), f"M[{i}][{j}] should agree with original"
 
-    difference = test_1 - test_2
-    assert np.allclose(difference, 0), f"M[{i}][{j}] should agree with M{xyz[i][j]}"
+    assert np.allclose(test_1, test_2, equal_nan=True), f"M[{i}][{j}] should agree with M{xyz[i][j]}"
 
-    difference = original - test_2
-    assert np.allclose(difference, 0), f"{xyz[i][j]} components should match original"
+    assert np.allclose(original, test_2, equal_nan=True), f"{xyz[i][j]} components should match original"
 
 @pytest.mark.parametrize("hamiltonian, path", test_systems)
 def test_sperp_consistent(hamiltonian, path):
@@ -90,8 +83,6 @@ def test_sperp_consistent(hamiltonian, path):
         intensity_unit='cell',
         save_sab=True,
     )
-
-    print("intensities:", intensities)
 
     # IDE wont see this variable because we added it via globals()
     sperp = Sperp(sab, q_vectors, rlu_to_cart, None)
