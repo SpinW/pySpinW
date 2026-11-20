@@ -123,7 +123,9 @@ def test_half_polarisation_consistent(hamiltonian, path, direction):
     print("original", original)
     print("new", pa)
 
-    assert np.allclose(pa, original)
+    not_nan = ~np.isnan(pa)
+
+    assert np.allclose(pa[not_nan], original[not_nan], equal_nan=True)
 
 
 

@@ -276,16 +276,20 @@ class MComponent(PMComponent):
 
 class PComponent(PMComponent):
     def _calculation(self, s_ab, to_bm, from_bm):
-        m = m_calculation(s_ab, to_bm)
+
+        # Q vector direction
+        x = from_bm[0, :, :]
+
 
         s_sym = 0.5*(s_ab + s_ab.transpose(1,0,2,3)) # Symmetric component of S_ab
         s_asym = 0.5*(s_ab - s_ab.transpose(1,0,2,3)) # Antisymmetric component
 
-        # Standard perpendicular component
-        s_perp = m[1,1,:,:] + m[2,2,:,:]
+        # Standard perpendicular component, see SPerp for details
 
-        # Q vector direction
-        x_hat = from_bm[0, :, :]
+        A = np.einsum("iimn -> mn", s_ab)
+        B = np.einsum("ijmn,in,jn->mn", s_ab, x, x)
+        s_perp = A - B
+
 
         # Chiral vector (Syz−Szy, Szx−Sxz, Sxy−Syx)
         # Use c[imn] = epsilon[ijk] S[jkmn]
@@ -297,11 +301,11 @@ class PComponent(PMComponent):
         #   h[p,mn] = -2 S[ij,mn] X[i, n] epsilon[pjk] X[k,n]
 
         h = c - 2* np.einsum("ijmn, in, pjk, kn -> pmn",
-                           s_asym, x_hat, LEVI_CIVITA, x_hat)
+                           s_asym, x, LEVI_CIVITA, x)
 
-        return self._p_calculation(from_bm, s_perp, h, s_sym)
+        return self._p_calculation(from_bm, to_bm, s_perp, h, s_sym)
 
-    def _p_calculation(self, from_bm, s_perp, h, s_sym):
+    def _p_calculation(self, from_bm, to_bm, s_perp, h, s_sym):
         raise NotImplementedError("Not implemented in base class")
 
 class PComponentHalf(PComponent):
@@ -310,22 +314,34 @@ class PComponentHalf(PComponent):
     def __init__(self, a: int, name: str, z_dir: ArrayLike | None = None, **kwargs):
         super().__init__(a=a, b=0, name=name, z_dir=z_dir) # b is not used
 
-    def _p_calculation(self, from_bm, s_perp, h, s_sym):
+    def _p_calculation(self, from_bm, to_bm, s_perp, h, s_sym):
         # p is the component of the BM frame that we've asked for
-        p = from_bm[self.a, :, :]
+        p = from_bm[:, self.a, :]
+        # p = from_bm[self.a, :, :]
 
         # Calculate p.h
         # <product>[nm] = p[i,nm] h[i,nm]
+        mags = np.nan_to_num(np.sum(p**2, axis=0), nan=1)
+        print(mags)
+        assert np.allclose(mags, 1), "Vectors should be normalised"
 
         p_dot_h = np.einsum("in, imn -> mn", p, h)
 
         return s_perp + 1j*p_dot_h
 
-class PComponentFull(PComponent):
+class PFull(PComponent):
     """ Full polarisation components """
 
-    def _p_calculation(self, from_bm, s_perp, h, s_sym):
-        pass
+    def _p_calculation(self, from_bm, to_bm, s_perp, h, s_sym):
+
+        # P^-1 S_perp P
+        #   P[ai,n]^-1 S[ij,mn] P[jb]
+        term1 = np.einsum("ain, ijmn, jb -> abmn",
+                          to_bm, s_perp, from_bm)
+
+        term2 = np.einsum("ijn, kmn", from_bm, s_perp)
+
+        
 
 # List of components
 
