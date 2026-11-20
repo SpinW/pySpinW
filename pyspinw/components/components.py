@@ -341,7 +341,7 @@ class PFull(PComponent):
 
         term2 = np.einsum("ijn, kmn", from_bm, s_perp)
 
-        
+
 
 # List of components
 
