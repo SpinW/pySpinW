@@ -537,7 +537,7 @@ def filter(direction: ArrayLike,
             return InDirectionFilter(direction=direction, max_dev_angle_deg=max_dev_angle_deg)
 
 
-def generate_exchanges(sites: list[Site] | Structure,
+def generate_exchanges(sites_or_structure: list[Site] | Structure,
                        unit_cell: UnitCell | None = None,
                        exchange_type: type[Exchange] = HeisenbergExchange,
                        bond: int = 0,
@@ -561,7 +561,7 @@ def generate_exchanges(sites: list[Site] | Structure,
 
     Parameters
     ----------
-    sites : list of Site or Structure
+    sites_or_structure : list of Site or Structure
         List of sites to make exchanges between or a ``Structure`` object.
     unit_cell : UnitCell, optional
         Unit cell (needed if first argument is a list of sites). Default is ``None``.
@@ -629,14 +629,16 @@ def generate_exchanges(sites: list[Site] | Structure,
         If ``sites`` is not a ``Structure`` and ``unit_cell`` is ``None``, or if
         neither ``bond`` nor distance bounds are specified.
     """
-    if isinstance(sites, Structure):
-        structure = sites
+    if isinstance(sites_or_structure, Structure):
+        structure = sites_or_structure
         unit_cell = structure.unit_cell
         sites = structure.sites
     elif unit_cell is None:
         raise RuntimeError('If first argument is not a Structure, you need to specify a unit_cell')
     elif use_sym is True:
         raise RuntimeError('Can only determine symmetry when the first argument is a Structure')
+    else:
+        sites = sites_or_structure
 
     if bond == 0 and max_distance == 0.0 and min_distance == 0.0:
         raise RuntimeError('You must specify either a bond index or maximum/minimum distance pairs')
