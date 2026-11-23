@@ -12,7 +12,7 @@ only_site = Site(0, 0, 0, 0, 0, 1, name="X")
 s = Structure([only_site], unit_cell=unit_cell)
 
 exchanges = generate_exchanges(
-    sites=[only_site],
+    sites_or_structure=[only_site],
     unit_cell=unit_cell,
     bond=1,
     j=-1

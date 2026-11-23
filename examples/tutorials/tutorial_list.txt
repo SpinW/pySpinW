@@ -3,3 +3,4 @@ antiferromagnetic_chain Introduces different approaches to calculation using the
 square_antiferromagnet Examples of magnon dispersion on a square lattice with strong nearest neighbour antiferromagnetic interactions
 kagome_ferromagnet Examples of using symmetry in a ferromagnet with a kagome lattice
 supercells Gives an overview of the different magnetic supercells available in pySpinW
+YIG Yittrium Iron Garnet example

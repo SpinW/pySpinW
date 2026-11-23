@@ -208,7 +208,7 @@ def test_simple_ferromagnet_fixed_free(spin_size):
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
-    exchanges = generate_exchanges(sites=sites,
+    exchanges = generate_exchanges(sites_or_structure=sites,
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
                                    exchange_type=HeisenbergExchange,
@@ -236,7 +236,7 @@ def test_simple_antiferromagnet_fixed_planar():
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
-    exchanges = generate_exchanges(sites=sites,
+    exchanges = generate_exchanges(sites_or_structure=sites,
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
                                    exchange_type=HeisenbergExchange,
@@ -268,7 +268,7 @@ def test_simple_antiferromagnet_free_planar(axis, spin_size):
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell())
 
-    exchanges = generate_exchanges(sites=sites,
+    exchanges = generate_exchanges(sites_or_structure=sites,
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
                                    exchange_type=HeisenbergExchange,

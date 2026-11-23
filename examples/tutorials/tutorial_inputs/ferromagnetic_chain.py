@@ -61,7 +61,7 @@ exchanges = [HeisenbergExchange(only_site, only_site, cell_offset=(1,0,0), j=-1)
 # In this case we constrain by distance, but other options are available,
 # and we apply a filter to pick out only exchanges that lie in (1,0,0) direction.
 
-exchanges = generate_exchanges(sites=[only_site],
+exchanges = generate_exchanges(sites_or_structure=[only_site],
                                unit_cell=unit_cell,
                                max_distance=1.1,
                                exchange_type=HeisenbergExchange,
