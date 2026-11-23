@@ -46,7 +46,31 @@ def while_true_iter():
         yield None
 
 class NeighbourSearch:
-    """ Does a nearest neighbour search, and serves as a data storage class for the output """
+    """ Does a nearest neighbour search for the nth nearest neighbour, and serves as a data storage class for the output
+
+
+    Parameters
+    ----------
+    start_site : Site
+        Site we want to get the neighbours of
+    search_sites : list of Site
+        Sites that might be neighbours and that we search
+    unit_cell : UnitCell
+        Unit cell for the lattice
+    n : Get the nearest neighbour shells up to this order
+
+    Returns
+    -------
+
+    shells : list of list of Site
+        A list of neighbours in "shells", 0th index is start_site or empty, first index is list of nearest neighbours,
+        2nd is the next nearest neighbours, etc
+
+    Raises
+    ------
+    NotImplementedError
+        Always raised in the abstract base class.
+    """
 
     def __init__(self, start_site: Site, search_sites: list[Site], unit_cell: UnitCell, n: int=1,
                  shell_tolerance=tolerances.SAME_SITE_ABS_TOL, max_iters: int | None = None):
@@ -65,8 +89,8 @@ class NeighbourSearch:
         self.start_site = start_site
         self.search_sites = search_sites
 
-        self.start_in_search_set = start_site.unique_id in set(site.unique_id for site in search_sites)
-
+        self.start_in_search_set = start_site in search_sites
+        # We want to index so that what we'd consider the nearest neighbour is always n=1
         if not self.start_in_search_set:
             n -= 1
 

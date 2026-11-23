@@ -26,8 +26,8 @@ for site in fe2:
     site.spin = 0, 0, 3/2
 
 # The paper says "Neutron scattering [9] indicates that nearest-neighbor exchange dominates and we adopt
-# Jad ~ −9.60 × 10−21 J, Jdd ~ −3.24 × 10−21 J, and Jaa ~−0.92 × 10−21 J [3], where the subscripts refer to the
-# majority (d) and minority (a) spins."
+# $J_{ad} \sim -9.6\times 10^{-21}$ J, $J_{dd} \sim -3.24\times 10^{-21}$ J and $J_{aa} \sim -0.92\times 10^{-21}$ J,
+# where the subscripts refer to the majority ($d$) and minority ($a$) spins."
 #
 # We can find which group is the majority by counting the Fe1 and Fe2 sites, we can list them
 # all by using `sites_by_name`.
@@ -56,22 +56,16 @@ Jaa = 0.5 * 0.92e-21 * J_to_meV
 base_site_a = structure.site_by_name("Fe1")
 base_site_d = structure.site_by_name("Fe2")
 
-# Fe1 to Fe2 (a to d)
-# neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe2", n=0)
-# x, offset = structure.site_by_name("Fe1 [4]"), (0, 0, 0)
-# y = structure.site_by_name("Fe2 [4]")
-# exchange_ad = HeisenbergExchange(x, y, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
-
-# Fe1 to Fe2 (a to d)
+# **Fe1 to Fe2 (a to d)**
 neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe2")
 exchange_ad = HeisenbergExchange(base_site_a, neighbour, cell_offset=offset, j=Jad, name="Jad", color=(.6,.1,.6))
 
 
-# Fe1 to Fe1 (a to a)
+# **Fe1 to Fe1 (a to a)**
 neighbour, offset = structure.one_neighbour(base_site_a, name_filter="Fe1")
 exchange_aa = HeisenbergExchange(base_site_a, neighbour, cell_offset=offset, j=Jaa, name="Jaa", color=(.9,.1,.1))
 
-# Fe2 to Fe2 (d to d)
+# **Fe2 to Fe2 (d to d)**
 neighbour, offset = structure.one_neighbour(base_site_d, name_filter="Fe2")
 exchange_dd = HeisenbergExchange(base_site_d, neighbour, cell_offset=offset, j=Jdd, name="Jdd", color=(.1,.1,.9))
 
