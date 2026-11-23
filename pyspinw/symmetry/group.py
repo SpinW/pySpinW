@@ -151,13 +151,27 @@ class SymmetryGroup(ABC):
         # In case 1, the constraint is on J, in the form J = M J M^T
         # In case 2, the constraint is on J^T, as J->J^T constitutes an inversion, J = M J^T M^T
 
+
+        # It was:
+        # # Case 1:
+        # identity_operations = set(self.operations_between_sites(site_1, site_1, offset)).intersection(
+        #     set(self.operations_between_sites(site_2, site_2, offset)))
+        #
+        # # Case 2:
+        # inversion_operations = set(self.operations_between_sites(site_1, site_2, offset)).intersection(
+        #     set(self.operations_between_sites(site_2, site_1, offset)))
+
         # Case 1:
-        identity_operations = set(self.operations_between_sites(site_1, site_1, offset)).intersection(
-            set(self.operations_between_sites(site_2, site_2, offset)))
+        #   Site 1 -> Site 1
+        #   Site 2 + offset -> Site 2 + offset
+        identity_operations = set(self.operations_between_sites(site_1, site_1)).intersection(
+            set(self.operations_between_sites(site_2, site_2)))
 
         # Case 2:
+        #   Site 1 -> Site 2 + offset
+        #   Site 2 + offset -> Site 1
         inversion_operations = set(self.operations_between_sites(site_1, site_2, offset)).intersection(
-            set(self.operations_between_sites(site_2, site_1, offset)))
+            set(self.operations_between_sites(site_2, site_1, -offset)))
 
         return identity_operations, inversion_operations
 

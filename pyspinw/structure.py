@@ -2,13 +2,17 @@
 import logging
 
 import numpy as np
-from ase.data import chemical_symbols
 from numpy._typing import ArrayLike
+
+import re
+
+from ase.data import chemical_symbols
 
 from pyspinw.cell_offsets import CellOffset
 from pyspinw.exchangegroup import DirectionalityFilter
 from pyspinw.lattice_distances import full_search_space
 from pyspinw.cell_offsets import cell_offset_generator
+from pyspinw.nearest_neighbours import NeighbourSearch
 from pyspinw.serialisation import SPWSerialisable, SPWSerialisationContext, SPWDeserialisationContext, expects_keys
 from pyspinw.site import Site
 from pyspinw.symmetry.group import SpaceGroup, SymmetryGroup, database
@@ -548,6 +552,7 @@ class Structure(SPWSerialisable):
                        site: Site,
                        n=1,
                        element: str | None = None,
+                       name_filter: str | None = None,
                        direction_filter: DirectionalityFilter | None = None) \
             -> list[list[tuple[Site, CellOffset]]]:
         """Get list-of-lists containing (i<=n)-th nearest neighbours along with their cell offsets.
@@ -562,6 +567,8 @@ class Structure(SPWSerialisable):
         element : str or None, optional
             Restrict search to sites of this chemical element. Default is
             ``None``.
+        name_filter : str or None, optional
+            Regex term to filter sites by.
         direction_filter : DirectionalityFilter or None, optional
             Filter the results using this directionality filter. Default is
             ``None``.
@@ -588,47 +595,31 @@ class Structure(SPWSerialisable):
             if element is not None and test_site.metadata.element != element:
                 continue
 
+            if name_filter is not None and not bool(re.search(name_filter, test_site.name)):
+                continue
 
             sites_to_check.append(test_site)
 
-        # We want the n-th nearest neighbour, but we generate offsets in terms of distance
-        #  so we need a strict bound on the distance that will cover all the points of a given order
-
-        # possibly a very loose bound for systems with lots of sites, because it is based on
-        #  having one site per unit cell
-        search_radius = (n-1) * min([self.unit_cell.a, self.unit_cell.b, self.unit_cell.b])
-
-        offsets = full_search_space(self.unit_cell._xyz, search_radius)
-
-        n_checks = offsets.shape[0]*len(sites_to_check)
-
-        if n_checks > 10_000:
-            logger.warning(f"Neighbours is not optimised for large neighbour distances."
-                           f"Finding the order-{n} neighbours entails checking {n_checks} "
-                           f"unit cells")
-
-        hist = IncrementalPointHistogram()
-
-        for test_site in sites_to_check:
-
-            lattice_vectors = test_site.ijk - site.ijk + offsets
-            xyz_vectors = self.unit_cell.lattice_units_to_cartesian(lattice_vectors)
-            distances = np.sqrt(np.sum(xyz_vectors**2, axis=1))
-
-            for i in range(len(distances)):
-                hist.add(distances[i], (test_site, xyz_vectors[i,:], offsets[i,:]))
-
-        # Should have at least `neighbour+1` groups
-        groups = hist.groups()[:n + 1]
+        groups = NeighbourSearch(site, sites_to_check, unit_cell=self.unit_cell, n=n).neighbour_sites()
 
         if direction_filter is None:
             return [[(test_site, CellOffset.coerce(offset))
-                     for test_site, _, offset in order]
+                     for test_site, offset in order]
                         for order in groups]
         else:
+            # Calculate the vector between sites
+            with_vector = []
+            for group in groups:
+                this_with_vector = []
+                for test_site, offset in group:
+                    v = self.unit_cell.lattice_units_to_cartesian(test_site.ijk + offset.vector - site)
+                    this_with_vector.append((test_site, v, offset))
+                with_vector.append(this_with_vector)
+
+            # Check it
             return [[(test_site, CellOffset.coerce(offset))
-                     for test_site, vector, offset in order if direction_filter.accept(vector)]
-                    for order in groups]
+                     for test_site, vector, offset in group if direction_filter.accept(vector)]
+                    for group in with_vector]
 
 
 
@@ -636,6 +627,7 @@ class Structure(SPWSerialisable):
                    site: Site,
                    n=1,
                    element: str | None = None,
+                   name_filter: str | None = None,
                    direction_filter: DirectionalityFilter | None = None):
         """Get a list of n-th nearest neighbours, along with cell offsets.
 
@@ -649,6 +641,8 @@ class Structure(SPWSerialisable):
         element : str or None, optional
             Restrict search to sites of this chemical element. Default is
             ``None``.
+        name_filter : str or None, optional
+            Regex term to filter sites by.
         direction_filter : DirectionalityFilter or None, optional
             Filter the results using this directionality filter. Default is
             ``None``.
@@ -663,6 +657,7 @@ class Structure(SPWSerialisable):
                 site = site,
                 n=n,
                 element=element,
+                name_filter=name_filter,
                 direction_filter=direction_filter)
 
         return all_neighbors[-1]
@@ -671,6 +666,7 @@ class Structure(SPWSerialisable):
                       site: Site,
                       n=1,
                       element: str | None = None,
+                      name_filter: str | None = None,
                       direction_filter: DirectionalityFilter | None = None):
         """Get one, arbitrary, n-th nearest neighbour, along with cell offset.
 
@@ -684,6 +680,8 @@ class Structure(SPWSerialisable):
         element : str or None, optional
             Restrict search to sites of this chemical element. Default is
             ``None``.
+        name_filter : str or None, optional
+            Regex term to filter sites by.
         direction_filter : DirectionalityFilter or None, optional
             Filter the results using this directionality filter. Default is
             ``None``.
@@ -702,6 +700,7 @@ class Structure(SPWSerialisable):
             site=site,
             n=n,
             element=element,
+            name_filter=name_filter,
             direction_filter=direction_filter)
 
         if len(neighbors) == 0:
