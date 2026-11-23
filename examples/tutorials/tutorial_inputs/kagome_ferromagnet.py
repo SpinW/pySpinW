@@ -58,6 +58,7 @@ hamiltonian.energy_plot(path)
 ## image
 ## fig = hamiltonian.energy_plot(path, show=False)
 ## fig.savefig("kagome_ferromagnet_nearest_disp.png")
+## fig.clear()
 
 ## subtitle: Nearest-neighbour powder
 
@@ -91,14 +92,6 @@ sample.show_spectrum(path1D, n_samples=1000, max_energy=7, n_energy_bins=200,
 # Now, we create the kagome lattice with up to 3rd neighbor interactions.
 # The symmetry related atoms are denoted by MCu1($i$)$_j$, where $i$ is the index of independent atomic positions,
 # $j$ is the index of the generated atomic positions of the $i$-th independent position.
-
-## capture-stdout
-from pyspinw import *
-unit_cell = UnitCell(6,6,10, gamma=120)
-site = Site(0.5, 0, 0, 0, 0, 1, name="Cu1")
-struc = Structure([site], unit_cell=unit_cell, spacegroup=get_spacegroup('P -3'))
-struc.print_summary()
-## end-capture-stdout
 
 # We add couplings up to 3rd neighbor interactions.
 # If the generation of the bond tables would depend on distance, J3a, J3b and J3c would be equivalent.
@@ -143,7 +136,7 @@ sample = Powder(hamiltonian)
 path1D = Path1D(0.1, 2.5, n_q=100)
 ## skip:2
 sample.show_spectrum(path1D, n_samples=1000, max_energy=7, n_energy_bins=200,
-                     method='random')
+                     method='random', vmin=0, vmax=0.1)
 ## image
 ## fig = sample.show_spectrum(path1D, n_samples=1000, max_energy=7, n_energy_bins=200,
 ##                            method='random', vmin=0, vmax=0.1, show=False)

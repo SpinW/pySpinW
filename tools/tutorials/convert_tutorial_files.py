@@ -243,10 +243,10 @@ def run(files):
                                                             output_target_dir / filename)
 
                                             elif line.startswith("image"): # Put an image tag in .md, and code in the python
-                                                parts = line.split(":")
-                                                if len(parts) > 1:
+                                                parts = line.strip().split(":")
+                                                if len(parts) > 1 and len(parts[1]) > 1:
                                                     image_filename = parts[1]
-                                                    md_file.write("\n![]({image_filename})\n\n")
+                                                    md_file.write(f"\n![]({image_filename})\n\n")
                                                     rest_is_code = True
                                                 else:
                                                     # Infer image name from code block
