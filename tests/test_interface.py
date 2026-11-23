@@ -59,7 +59,7 @@ def test_antiferro_chain():
     #                                   perpendicular=[0,0,1], propagation_vector=[0.5, 0, 0], names=["MCu1"])
     sites = generate_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]],
                                propagation_vectors=[0.5, 0, 0], names=["MCu1"])
-    exchanges = generate_exchanges(sites=sites, max_distance=3.1, j=1)
+    exchanges = generate_exchanges(sites_or_structure=sites, max_distance=3.1, j=1)
     hamiltonian = Hamiltonian(sites, exchanges)
     energy, intensity = hamiltonian._energies_and_intensities(QVECS, use_rust=False, intensity_unit='spin')
     _test_ref_data('antiferro_chain', *omegasum(energy, intensity, is_series=False))
@@ -69,7 +69,7 @@ def test_antiferro_chain():
 def test_antiferro_with_field():
     unit_cell = UnitCell(4,6,6)
     sites = generate_structure(unit_cell, positions=[[0,0,0], [0.5,0,0]], spins=[[0, 0, 1], [0, 0, -1]], names=['X', 'Y'])
-    exchanges = generate_exchanges(sites=sites, bond=1, j=1, direction_filter=filter([1,0,0], symmetric=True))
+    exchanges = generate_exchanges(sites_or_structure=sites, bond=1, j=1, direction_filter=filter([1,0,0], symmetric=True))
     anisotropies = axis_anisotropies(sites, -0.1)
     hamiltonian = Hamiltonian(sites, exchanges, anisotropies)
     energy, intensity = hamiltonian._energies_and_intensities(QVECS, field=[0,0,7], use_rust=False)
@@ -81,8 +81,8 @@ def test_kagome_antiferro():
     unit_cell = UnitCell(6, 6, 10, gamma=120)
     s = generate_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,0.5,0]], spins=[[1, 2, 0], [-2, -1, 0], [1, -1, 0]],
                            names=['X','Y','Z'], magnitudes=[1,1,1], spins_unit='lu')
-    j1 = generate_exchanges(sites=s, bond=1, j=1)
-    j2 = generate_exchanges(sites=s, bond=2, j=0.11)
+    j1 = generate_exchanges(sites_or_structure=s, bond=1, j=1)
+    j2 = generate_exchanges(sites_or_structure=s, bond=2, j=0.11)
     exchanges = j1 + j2
     hamiltonian = Hamiltonian(s, exchanges)
     energy, intensity = hamiltonian._energies_and_intensities(QVECS, use_rust=False, use_rotating=False)
@@ -95,7 +95,7 @@ def test_kagome_supercell():
     s = generate_helical_structure(unit_cell, positions=[[0.5,0,0], [0,0.5,0], [0.5,0.5,0]],
                                    spins=[[0, 1, 0], [0, 1, 0], [-1, -1, 0]], magnitudes=[1, 1, 1], names=['X', 'Y', 'Z'],
                                    spins_unit='lu', perpendicular=[0,0,1], propagation_vector=[-1./3., -1./3., 0])
-    exchanges = generate_exchanges(sites=s, bond=1, j=1)
+    exchanges = generate_exchanges(sites_or_structure=s, bond=1, j=1)
     hamiltonian = Hamiltonian(s, exchanges)
     energy, intensity = hamiltonian._energies_and_intensities(QVECS, use_rust=False, use_rotating=False)
     _test_ref_data('kagome_supercell', *omegasum(energy, intensity, is_series=False))
@@ -107,7 +107,7 @@ def test_tri_antiferro():
     unit_cell = UnitCell(3, 3, 4, gamma=120)
     sites = generate_helical_structure(unit_cell, positions=[[0,0,0]], spins=[[0, 1, 0]], magnitudes=[3. / 2], names=['X'],
                                        perpendicular=[0,0,1], propagation_vector=[1./3., 1./3., 0])
-    exchanges = generate_exchanges(sites=sites, bond=1, j=1)
+    exchanges = generate_exchanges(sites_or_structure=sites, bond=1, j=1)
     anisotropies = axis_anisotropies(sites, 0.2)
     hamiltonian = Hamiltonian(sites, exchanges, anisotropies)
     energy, intensity = hamiltonian._energies_and_intensities(QVECS, use_rust=False, use_rotating=True)

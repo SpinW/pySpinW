@@ -23,7 +23,7 @@ def test_energy_invariance_trivial_supercell():
 
     sites = [x1, x2]
 
-    exchanges = generate_exchanges(sites=sites,
+    exchanges = generate_exchanges(sites_or_structure=sites,
                                    unit_cell=unit_cell,
                                    max_distance=0.6,
                                    exchange_type=HeisenbergExchange,

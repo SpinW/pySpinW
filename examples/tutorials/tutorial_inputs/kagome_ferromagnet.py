@@ -16,7 +16,7 @@ sites = [x, y, z]
 s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(1, 1, 1)))
 
 
-exchanges = generate_exchanges(sites=[x, y, z],
+exchanges = generate_exchanges(sites_or_structure=[x, y, z],
                                unit_cell=unit_cell,
                                max_distance=4.,
                                exchange_type=HeisenbergExchange,

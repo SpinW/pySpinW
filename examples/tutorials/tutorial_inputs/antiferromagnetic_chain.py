@@ -123,7 +123,7 @@ structure = generate_helical_structure(unit_cell, positions=[[1/2,1/2,1/2]], spi
 
 
 # Generate Heisenberg exchanges based on distance (`max_distance`) and direction (`direction_filter`)
-exchanges = generate_exchanges(sites=structure,
+exchanges = generate_exchanges(structure,
                                max_distance=1.1,
                                exchange_type=HeisenbergExchange,
                                j=1,
