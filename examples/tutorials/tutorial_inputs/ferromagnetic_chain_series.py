@@ -15,7 +15,7 @@ only_site = Site(0, 0, 0, 0, 0, 1, name="X")
 
 s = Structure([only_site], unit_cell=unit_cell)
 
-exchanges = generate_exchanges(sites=[only_site],
+exchanges = generate_exchanges(sites_or_structure=[only_site],
                                unit_cell=unit_cell,
                                max_distance=1.1,
                                exchange_type=HeisenbergExchange,

@@ -15,7 +15,7 @@ def test_shape_sizes_non_rotating(use_rust: bool):
 
     s = Structure(sites, unit_cell=unit_cell, supercell=TiledSupercell(scaling=(1, 1, 1)))
 
-    exchanges = generate_exchanges(sites=[x, y, z],
+    exchanges = generate_exchanges(sites_or_structure=[x, y, z],
                                    unit_cell=unit_cell,
                                    max_distance=4.,
                                    exchange_type=HeisenbergExchange,
@@ -60,8 +60,8 @@ def test_shape_sizes_rotating(use_rust: bool):
                                        magnitudes=[3. / 2, 3. / 2], propagation_vector=[1. / 3, 1. / 3, 0],
                                        perpendicular=[0, 0, 1])
 
-    exchanges = generate_exchanges(sites=sites, bond=1, exchange_type=HeisenbergExchange, j=1) \
-                + generate_exchanges(sites=sites, bond=2, exchange_type=HeisenbergExchange, j=-0.1)
+    exchanges = generate_exchanges(sites_or_structure=sites, bond=1, exchange_type=HeisenbergExchange, j=1) \
+                + generate_exchanges(sites_or_structure=sites, bond=2, exchange_type=HeisenbergExchange, j=-0.1)
 
     anisotropies = axis_anisotropies(sites, 0.2)
     hamiltonian = Hamiltonian(sites, exchanges, anisotropies)
