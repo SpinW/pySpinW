@@ -48,7 +48,6 @@ def while_true_iter():
 class NeighbourSearch:
     """ Does a nearest neighbour search for the nth nearest neighbour, and serves as a data storage class for the output
 
-
     Parameters
     ----------
     start_site : Site
