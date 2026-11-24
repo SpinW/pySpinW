@@ -8,9 +8,11 @@ from matplotlib.text import Text
 from matplotlib.lines import Line2D
 from matplotlib.collections import QuadMesh
 from pyspinw.gui.displayoptions import DisplayOptions
+from pyspinw.gui.displayoptionstoolbar import DisplayOptionsToolbar
 from pyspinw.gui.viewer import snapshot
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 
 def _set_white_recursive(artist):
@@ -43,10 +45,12 @@ def savefig_dark(fig, outputfile):
 
 
 def snapshot_light(*args, **kwargs):
-    kwargs['display_options'] = DisplayOptions.LightMode()
+    if not os.path.exists(DisplayOptionsToolbar.settings_filename) and 'display_options' not in kwargs:
+        kwargs['display_options'] = DisplayOptions.LightMode()
     snapshot(*args, **kwargs)
 
 
 def snapshot_dark(*args, **kwargs):
-    kwargs['display_options'] = DisplayOptions.DarkMode()
+    if not os.path.exists(DisplayOptionsToolbar.settings_filename) and 'display_options' not in kwargs:
+        kwargs['display_options'] = DisplayOptions.DarkMode()
     snapshot(*args, **kwargs)

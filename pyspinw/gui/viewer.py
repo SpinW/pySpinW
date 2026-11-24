@@ -246,7 +246,8 @@ class Viewer(QWidget):
     def closeEvent(self, event):
         """Qt override for close event."""
         # Save settings on exit
-        self.toolbar.save_settings()
+        if self.save_config_on_exit:
+            self.toolbar.save_settings()
 
         try:
             del _VIEWERS[self._unique_id]
