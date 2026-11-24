@@ -76,13 +76,63 @@ $S_\perp = \mathrm{Tr}(\mathbf T) = \mathrm{Tr}(\mathbf P \mathbf S \mathbf P) =
 
 The last equality follows because $\mathbf P$ is a projection, 
 and thus idempotent. 
-When we calculate the trace it is effectively applied twice, which
+When we calculate the trace it is effectively applied twice, which, because of idempotency,
 is the same as applying it once. In pySpinW (and the MATLAB version), we calculate $S_\perp$ with
 this single application of the projection.
 
 Polarisation
 ------------
 
+There are two common polarising devices in a polarised neutron scatting experiment, 
+a "polariser" which selects the spin direction of the neutrons before scattering
+by the sample, and an "analyser", which selects them after scattering.
 
+There are also two types of experiment commonly conducted, both use an analyser,
+but one, the "half-polarised" case lacks a polariser, where the "fully-polarised"
+case has both.
+
+The polariser and analyser can both be defined by a polarisation direction, and a 
+magnitude between zero and one, with zero being unpolarised and one being complete polarisation.
+We can therefore specify a polarisation setup in two vectors, the half-polarised case
+being a special case of fully-polarised, with the polariser vector equal to zero.
+
+In this section we will work towards an expression for the polarised neutron scattering intensity
+in the following form
+
+$S_\text{polarised} = \sum_{a,b} T_{ab} Z_{ab}$
+
+where $T_{ab}$ is the projected spin-spin correlation defined above, and $Z_{ab}$ is a "polarisation tensor"
+that we will now derive.
+
+Density Matrix Formalism
+------------------------
+
+The mathematics of polarisation is much easier in a density matrix formalism. In this formalism,
+the polarisation state is represented as a linear combination of 4 Pauli matrices.
+
+$\mathbf\sigma_0 = \left(\begin{array}{cc} 1 & 0 \\ 0 & 1\end{array}\right) = \mathbf I$
+
+$\mathbf\sigma_1 = \left(\begin{array}{cc} 0 & 1 \\ 1 & 0\end{array}\right) = \mathbf \sigma_x$
+
+$\mathbf\sigma_2 = \left(\begin{array}{cc} 0 & -i \\ i & 0\end{array}\right) = \mathbf \sigma_y$
+
+$\mathbf\sigma_3 = \left(\begin{array}{cc} 1 & 0 \\ 0 & -1\end{array}\right) = \mathbf \sigma_z$
+
+This representation requires that the matrix is Hermitian (note, no imaginary numbers on the diagonal 
+and from $\sigma_1$ and $\sigma_2$ off diagonals are necessarily complex conjugates).
+
+We have 
+
+$\mathbf \rho = a_0 \mathbf \sigma_0 + a_1 \mathbf \sigma_0 + a_2 \mathbf \sigma_0 + a_3 \mathbf \sigma_3$  
+
+When representing polarisations, we have a constraint that the matrix representing the polarisation state has
+trace of 1. As all the Pauli matrices except $\sigma_0$ have trace 0, this constraint means that
+
+$1 = \mathrm{Tr}(\rho) = a_0 \mathrm{Tr}(\sigma_0) = 2 a_0$
+
+so $a_0 = 1/2$ all the time.
+
+The other coefficients, $a_1$, $a_2$ and $a_3$ are the degree of polarisation in each cartesian direction, x,y and z
+respectively.
 
 
