@@ -16,6 +16,10 @@ with open(path, 'r') as file:
         parts = line.split(" ", maxsplit=1)
         filenames.append(parts[0]+".py")
         if len(parts) > 1:
-            text.append(parts[1])
+            subparts = parts[1].split("|", maxsplit=1)
+            if len(subparts) > 1:
+                text.append(subparts)
+            else:
+                text.append(["", parts[1]])
         else:
-            text.append([])
+            text.append(["", ""])

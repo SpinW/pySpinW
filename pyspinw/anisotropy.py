@@ -38,8 +38,7 @@ class Anisotropy(SPWSerialisable):
     """Represent the anisotropy term at a given site.
 
     The anisotropy matrix is defined in spinW style cartesian coordinates
-    (orthogonal but lattice aligned as best as possible).
-    Assuming spins are understood to be quantum numbers, units are energy.
+    (x||a, z perpendicular to the a-b plane, y perpendicular to x-z)
 
     Parameters
     ----------
@@ -449,7 +448,7 @@ class AxisMagnitudeAnisotropy(Anisotropy):
 
     @property
     def constant(self):
-        """Amount of anisotropy (anisotropy constant), alias for `a`."""
+        """Amount of anisotropy (anisotropy constant), alias for ``a``."""
         return self._a
 
     @property
