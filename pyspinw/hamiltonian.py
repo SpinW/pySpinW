@@ -1320,8 +1320,9 @@ class Hamiltonian(SPWSerialisable):
 
         x_values = path.x_values()
 
+        lcol = 'k' if np.linalg.norm(fig.get_facecolor()[:3]) > 1.5 else 'w'
         for series in self.sorted_positive_energies(path, field=field, use_rust=use_rust):
-            plt.plot(x_values, series, 'k')
+            plt.plot(x_values, series, lcol)
 
         path.format_plot(plt)
 

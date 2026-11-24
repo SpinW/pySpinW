@@ -58,7 +58,6 @@ hamiltonian.energy_plot(path)
 ## image
 ## fig = hamiltonian.energy_plot(path, show=False)
 ## fig.savefig("kagome_ferromagnet_nearest_disp.png")
-## fig.clear()
 
 ## subtitle: Nearest-neighbour powder
 

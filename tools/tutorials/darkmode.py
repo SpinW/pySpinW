@@ -9,6 +9,7 @@ from matplotlib.lines import Line2D
 from matplotlib.collections import QuadMesh
 from pyspinw.gui.displayoptions import DisplayOptions
 from pyspinw.gui.viewer import snapshot
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -32,11 +33,13 @@ def _set_white_recursive(artist):
 
 
 def savefig_dark(fig, outputfile):
-    fig.set_facecolor('black')
-    for ax in fig.axes:
-        ax.set_facecolor('black')
-        _set_white_recursive(ax)
+    if np.linalg.norm(fig.get_facecolor()[:3]) > 1.5:
+        fig.set_facecolor('black')
+        for ax in fig.axes:
+            ax.set_facecolor('black')
+            _set_white_recursive(ax)
     fig.savefig(outputfile)
+    plt.close(fig)
 
 
 def snapshot_light(*args, **kwargs):
