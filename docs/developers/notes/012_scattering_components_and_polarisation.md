@@ -88,13 +88,13 @@ a "polariser" which selects the spin direction of the neutrons before scattering
 by the sample, and an "analyser", which selects them after scattering.
 
 There are also two types of experiment commonly conducted, both use an analyser,
-but one, the "half-polarised" case lacks a polariser, where the "fully-polarised"
+but one, the "half-polarised" case lacks a polariser or analyser, where the "fully-polarised"
 case has both.
 
 The polariser and analyser can both be defined by a polarisation direction, and a 
 magnitude between zero and one, with zero being unpolarised and one being complete polarisation.
 We can therefore specify a polarisation setup in two vectors, the half-polarised case
-being a special case of fully-polarised, with the polariser vector equal to zero.
+being a special case of fully-polarised, with the polariser or analyser vector equal to zero.
 
 In this section we will work towards an expression for the polarised neutron scattering intensity
 in the following form
@@ -123,16 +123,150 @@ and from $\sigma_1$ and $\sigma_2$ off diagonals are necessarily complex conjuga
 
 We have 
 
-$\mathbf \rho = a_0 \mathbf \sigma_0 + a_1 \mathbf \sigma_0 + a_2 \mathbf \sigma_0 + a_3 \mathbf \sigma_3$  
+$\mathbf \rho = a_0 \mathbf \sigma_0 + a_1 \mathbf \sigma_0 + a_2 \mathbf \sigma_0 + a_3 \mathbf \sigma_3 = a_0 \mathbf \sigma_0 \cdot \sigma$  
 
-When representing polarisations, we have a constraint that the matrix representing the polarisation state has
-trace of 1. As all the Pauli matrices except $\sigma_0$ have trace 0, this constraint means that
+Where $\sigma$ is a vector of $\sigma_x$, $\sigma_y$ and $\sigma_z$.
+
+When representing polarisations, we have a constraint that the trace of the matrix is the intensity, which initially
+we will assume is 1. As all the Pauli matrices except $\sigma_0$ have trace 0, this constraint means that
 
 $1 = \mathrm{Tr}(\rho) = a_0 \mathrm{Tr}(\sigma_0) = 2 a_0$
 
-so $a_0 = 1/2$ all the time.
+So, the initial state has $a_0 = 1/2$, regardless of polarisation.
 
-The other coefficients, $a_1$, $a_2$ and $a_3$ are the degree of polarisation in each cartesian direction, x,y and z
-respectively.
+The other coefficients, $a_1$, $a_2$ and $a_3$ are the degree of polarisation in each cartesian direction: x, y and z
+respectively. These form the vector discussed above describing the polarisation. If the beam
+is unpolarised, then we have
+
+$\rho_0 = \frac{1}{2} \mathbf I$
+
+Polarising Elements in Density Matrix Formalism
+-----------------------------------------------
+
+Next we'll work through the mathematics of polarising elements, demonstrating how the formalism works a little more.
+
+A polarising element in the density matrix formalism has the form
+
+$\Pi(\vec a) = \frac{1}{2} \left( \mathbf I + \vec{a} \cdot \mathbf \sigma \right)$ 
+
+and we can apply this as matrix to a state to get a new polarisation. For example,
+a polariser in $z$ would have a $\Pi$ matrix of
+
+$\Pi(\vec z) = \frac{1}{2} \left(\mathbf I + \sigma_z\right)$
+
+Applying to an unpolarised state would give (note that as the Pauli matrices are all Hermitian,
+$\sigma_i^\dagger = \sigma_i$)
+
+$\Pi(\vec z) \rho_0 \Pi(\vec z)^\dagger$ $= \frac{1}{2} \left(\mathbf I + \sigma_z\right) \left(\frac{1}{2} I\right) \frac{1}{2} \left(\mathbf I + \sigma_z\right)$
+
+$= \frac{1}{8} \left(\mathbf I + \sigma_z\right) \left(\mathbf I + \sigma_z\right)$
+
+$= \frac{1}{8} \left( \mathbf I + 2\sigma_z + \sigma_z^2\right)$
+
+The square of the Pauli matrices are the identity, so
+
+$= \frac{1}{8} \left( \mathbf I + 2\sigma_z + \mathbf I\right) = \frac{1}{4}\left( \mathbf I + \sigma_z \right)$
+
+The measured intensity is the trace of this
+
+$\mathrm{Tr}(\Pi(\vec z) \rho_0 \Pi(\vec z)^\dagger) = \frac{1}{2}$
+
+So, complete polarisation removes half the intensity, as expected.
+
+Spin-Spin Correlation in Terms of Density Matrices
+==================================================
+
+Technically, we can't write the spin-spin correlation matrix as an operation in the density matrix formalism,
+because it is a quadratic term. What we can do, however, is use the components that we called $M$ above, knowing
+that they will "square" to the spin-spin correlation, and hope that whatever we calculate turns out to only
+include square terms (it will).
+
+We can define a density matrix operator for the vector quantity $M$ as follows:
+
+$F = M\cdot\sigma$
+
+Note, this does not have an identity matrix like the projection vector, this is 
+where nuclear scattering would appear. As we're only concerned with magnetic changes,
+this nuclear term is absent.
+
+The magnetic selection rule is independent of this, so the maths is the same with or without it,
+only we will use $T$ instead of $S$ in the final calculation, and it will factor out.
+
+Combining the Terms
+===================
+
+With these matrices established, we can build a chain of components, with $\Pi_p$ and $\Pi_a$ being the 
+polarisation operators for the polariser and analyser. $\rho_d$ is density matrix at the detector
+
+$\Sigma = \Pi_a F \Pi_p$
+
+and 
+
+$\rho_d = \Sigma \rho_0 \Sigma^\dagger$
+
+We can expand $\Sigma$
+
+$= \frac{1}{4} \left( \mathbf I + \vec{p_a} \cdot \mathbf \sigma \right) \left( M\cdot\sigma\right) \left( \mathbf I + \vec{p_p} \cdot \mathbf \sigma \right)$
+
+$=\frac{1}{4}\left(\mathbf M\cdot\sigma + (\vec p_a \cdot \sigma) (M\cdot\sigma) + (M\cdot\sigma) (\vec p_p \cdot \sigma) + (\vec p_a \cdot \sigma) (M\cdot\sigma) (\vec p_p \cdot \sigma) \right)$
+
+There's lots of terms here that are products of inner products of $\sigma$, it will be useful to have a rules for
+working with them. The most useful is
+
+$(A \cdot \sigma)(B \cdot \sigma) = (A\cdot B) I + i (A \times B) \cdot \sigma$
+
+this can be applied twice to get
+
+$(A \cdot \sigma)(B \cdot \sigma)(C \cdot \sigma) = ((A\cdot B)C + (A\cdot C)B - (B\cdot C)A)\sigma + i ((A\times B)\cdot C)\mathbf I$
+
+
+so we have
+
+$\Sigma = \frac{1}{4}\left(\mathbf M\cdot\sigma + (\vec p_a\cdot M) \mathbf I + i(\vec p_a\times M) \cdot \sigma + (M \cdot \vec p_p) \mathbf I + i(M \times \vec p_p) \cdot \sigma + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a)\sigma + i ((p_a\times M)\cdot p_p)\mathbf I\right)$
+
+collecting $\sigma$ and $\mathbf I$ terms, and applying anti-symmetry of the cross product gives
+
+$= \frac{1}{4}\left( (M + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a) + i (p_a \times M) - i (p_p \times M)) \sigma + (p_a \cdot M + p_p \cdot M + i((p_a \times M)\cdot p_p)) \mathbf I \right)$
+
+using distributivity laws
+
+$= \frac{1}{4}\left( (M + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a) + i ((p_a - p_p) \times M)) \cdot \sigma + ((p_a + p_p) \cdot M + i((p_a \times M)\cdot p_p)) \mathbf I \right)$
+
+We can introduce some notation to make this simpler, let $U$ be the coefficient of the identity and $V$ be the 
+coefficient of $\sigma$, i.e.
+
+$\Sigma = U I + V \cdot \sigma$
+
+then
+
+$U = \frac{1}{4}\left( (M + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a) + i ((p_a - p_p) \times M)) \right)$
+
+which is a scalar
+
+$V = \frac{1}{4}\left( ((p_a + p_p) \cdot M + i((p_a \times M)\cdot p_p)) \mathbf I \right)$
+
+which is a vector.
+
+When we calculate $\rho_d$, we'll have
+
+$\rho_d = \left(U I + V \cdot \sigma\right) \left(\frac{1}{2} \mathbf I \right) \left(U^* I + V^* \cdot \sigma\right)$
+
+$= \frac{1}{2}(UU^*\mathbf I + UV^*\cdot\sigma + U^*V\cdot\sigma + (V\cdot\sigma)(V^*\cdot\sigma))$
+
+The last term can be simplified
+
+$(V\cdot\sigma)(V^*\cdot\sigma)) = (V\cdot V^*) \mathbf I + i (V \times V^*) \cdot \sigma = |V|^2 \mathbf I + i (V \times V^*) \cdot \sigma$
+
+so
+
+$\rho_d = \frac{1}{2} \left((|U|^2 + |V|^2)\mathbf I + (UV^* + U^*V + i(V\times V^*))\cdot\sigma \right)$
+
+
+
+
+
+
+
+
 
 
