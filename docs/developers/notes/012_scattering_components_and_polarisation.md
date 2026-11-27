@@ -204,68 +204,101 @@ and
 
 $\rho_d = \Sigma \rho_0 \Sigma^\dagger$
 
-We can expand $\Sigma$
+The measured intensity will be
 
-$= \frac{1}{4} \left( \mathbf I + \vec{p_a} \cdot \mathbf \sigma \right) \left( M\cdot\sigma\right) \left( \mathbf I + \vec{p_p} \cdot \mathbf \sigma \right)$
+$\mathrm{Tr}(\rho_d) = \mathrm{Tr}(\Pi_a F \Pi_p \rho_0 \Pi_p F^\dagger \Pi_a)$
 
-$=\frac{1}{4}\left(\mathbf M\cdot\sigma + (\vec p_a \cdot \sigma) (M\cdot\sigma) + (M\cdot\sigma) (\vec p_p \cdot \sigma) + (\vec p_a \cdot \sigma) (M\cdot\sigma) (\vec p_p \cdot \sigma) \right)$
+As $\rho_0$ is $\mathbf I/2$, this becomes
 
-There's lots of terms here that are products of inner products of $\sigma$, it will be useful to have a rules for
-working with them. The most useful is
+$\frac{1}{2} \mathrm{Tr}(\Pi_a F \Pi_p^2 F^\dagger \Pi_a)$
 
-$(A \cdot \sigma)(B \cdot \sigma) = (A\cdot B) I + i (A \times B) \cdot \sigma$
+and by cycling the contents of the trace
 
-this can be applied twice to get
+$=\frac{1}{2} \mathrm{Tr}(\Pi_a^2 F \Pi_p^2 F^\dagger)$
 
-$(A \cdot \sigma)(B \cdot \sigma)(C \cdot \sigma) = ((A\cdot B)C + (A\cdot C)B - (B\cdot C)A)\sigma + i ((A\times B)\cdot C)\mathbf I$
-
-
-so we have
-
-$\Sigma = \frac{1}{4}\left(\mathbf M\cdot\sigma + (\vec p_a\cdot M) \mathbf I + i(\vec p_a\times M) \cdot \sigma + (M \cdot \vec p_p) \mathbf I + i(M \times \vec p_p) \cdot \sigma + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a)\sigma + i ((p_a\times M)\cdot p_p)\mathbf I\right)$
-
-collecting $\sigma$ and $\mathbf I$ terms, and applying anti-symmetry of the cross product gives
-
-$= \frac{1}{4}\left( (M + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a) + i (p_a \times M) - i (p_p \times M)) \sigma + (p_a \cdot M + p_p \cdot M + i((p_a \times M)\cdot p_p)) \mathbf I \right)$
-
-using distributivity laws
-
-$= \frac{1}{4}\left( (M + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a) + i ((p_a - p_p) \times M)) \cdot \sigma + ((p_a + p_p) \cdot M + i((p_a \times M)\cdot p_p)) \mathbf I \right)$
-
-We can introduce some notation to make this simpler, let $U$ be the coefficient of the identity and $V$ be the 
-coefficient of $\sigma$, i.e.
-
-$\Sigma = U I + V \cdot \sigma$
-
-then
-
-$U = \frac{1}{4}\left( (M + ((p_a\cdot M)p_p + (p_a\cdot p_p)M - (M\cdot p_p)p_a) + i ((p_a - p_p) \times M)) \right)$
-
-which is a scalar
-
-$V = \frac{1}{4}\left( ((p_a + p_p) \cdot M + i((p_a \times M)\cdot p_p)) \mathbf I \right)$
-
-which is a vector.
-
-When we calculate $\rho_d$, we'll have
-
-$\rho_d = \left(U I + V \cdot \sigma\right) \left(\frac{1}{2} \mathbf I \right) \left(U^* I + V^* \cdot \sigma\right)$
-
-$= \frac{1}{2}(UU^*\mathbf I + UV^*\cdot\sigma + U^*V\cdot\sigma + (V\cdot\sigma)(V^*\cdot\sigma))$
-
-The last term can be simplified
-
-$(V\cdot\sigma)(V^*\cdot\sigma)) = (V\cdot V^*) \mathbf I + i (V \times V^*) \cdot \sigma = |V|^2 \mathbf I + i (V \times V^*) \cdot \sigma$
-
-so
-
-$\rho_d = \frac{1}{2} \left((|U|^2 + |V|^2)\mathbf I + (UV^* + U^*V + i(V\times V^*))\cdot\sigma \right)$
+and by the linearity of the trace, and the definition of $F$, and with $\sigma_i$ being Hermitian we can do
 
 
+$=\frac{1}{2} \mathrm{Tr}(\Pi_a^2 (\sum_i M_i \sigma_i) \Pi_p^2 (\sum_j M^\dagger_j \sigma_j))$
 
+$=\frac{1}{2} \sum_{ij} M_i M^\dagger_j \mathrm{Tr}(\Pi_a^2 \sigma_i \Pi_p^2 \sigma_j)$
 
+$=\frac{1}{2} \sum_{ij} T_{ij} \mathrm{Tr}(\Pi_a^2 \sigma_i \Pi_p^2 \sigma_j)$
 
+We assume that we have applied the magnetic selection rule to $M$, so we now have the expression for $Z$ as
 
+$Z_{ij} = \frac{1}{2}\mathrm{Tr}(\Pi_a^2 \sigma_i \Pi_p^2 \sigma_j)$
+
+The $\Pi^2$ operators can be expanded as
+
+$\Pi^2 = \frac{1}{4} \left( \mathbf I + \vec{a} \cdot \mathbf \sigma \right)^2$
+
+$=\frac{1}{4}(\mathbf I + 2\vec{a}\cdot\sigma + (\vec{a}\cdot\sigma)(\vec{a}\cdot\sigma))$
+
+We can then use the following rule
+
+$(A\cdot\sigma)(B\cdot\sigma) = (A.B)\mathbf I + i(A\times B)\cdot\sigma$
+
+to simplify the last term, note that $A\times A=0$
+
+giving
+
+$\Pi^2=\frac{1}{4}((1 + |\vec{a}|^2)\mathbf I + 2\vec{a}\cdot\sigma)$
+
+Note: if the polariser is perfect, i.e. $|\vec{a}|=1$, then $\Pi$ is idempotent as $\Pi^2=\Pi$.
+
+For the purposes of simplification, it makes sense to introduce $e_i$ as basis vectors when dealing with the $\sigma_i$
+terms. Substituting in for the $\Pi^2$, we get
+
+$Z_{ij} = \frac{1}{32}\mathrm{Tr} ((1 + |\vec{p_a}|^2)\mathbf I + 2\vec{p_a}\cdot\sigma) (e_i\cdot \sigma) (1 + |\vec{p_p}|^2)\mathbf I + 2\vec{p_p}\cdot\sigma) (e_j \cdot \sigma))$
+
+Letting $A_i=1+|\vec{p}_i|^2$ and $B_i = 2\vec{p}_i$ to make things easier
+
+$Z_{ij} = \frac{1}{32}\mathrm{Tr} (A_a\mathbf I + B_a\cdot\sigma) (e_i\cdot \sigma) (A_p\mathbf I + B_p\cdot\sigma) (e_j \cdot \sigma))$
+
+we can foil this out to give
+
+$Z_{ij} = \frac{1}{32}\mathrm{Tr} (A_a A_p (e_i\cdot \sigma) (e_j\cdot \sigma)$
+$+ A_p (B_a \cdot \sigma) (e_i\cdot \sigma) (e_j\cdot \sigma)$
+$+ A_a (e_i\cdot \sigma) (B_p \cdot \sigma) (e_j\cdot \sigma)$
+$+ (B_a \cdot \sigma)(e_i\cdot \sigma) (B_p \cdot \sigma) (e_j\cdot \sigma))$
+
+By exploiting the linearity of the dot product, we can use the following rules for the traces each set of terms:
+
+Two: $\mathrm{Tr}(\sigma_\alpha\sigma_\beta) = 2\delta_{\alpha\beta}$
+
+Three: $\mathrm{Tr}(\sigma_\alpha\sigma_\beta \sigma_\gamma) = 2i\epsilon_{\alpha\beta\gamma}$
+
+Four: $\mathrm{Tr}(\sigma_\alpha\sigma_\beta \sigma_\gamma\sigma_\delta) = 2\left(\delta_{\alpha\beta}\delta_{\gamma\delta} -\delta_{\alpha\gamma}\delta_{\beta\delta} +\delta_{\alpha\delta}\delta_{\beta\gamma} \right)$
+
+This will give us
+
+$Z_{ij} = \frac{1}{32} (2 A_a A_p \delta_{ij}$
+$+ 2i A_p B_{a, k} \epsilon_{kij}$
+$+ 2i A_a B_{p, k} \epsilon_{ikj}$
+$ + 2(B_{a,i}B_{p,j} +B_{a,j}B_{p,i} -(B_a \cdot B_p)\delta_{ij}))$
+
+some minor rearrangement and using $\epsilon_{kij} = \epsilon_{ijk}$ and $\epsilon_{ikj} = -\epsilon_{ijk}$
+
+$=\frac{1}{16}((A_a A_p - B_a\cdot B_p) \delta_{ij} + B_{a,i}B_{p,j} +B_{a,j}B_{p,i} + i(A_p B_{a,k} - A_a B_{p,k})\epsilon_{ijk})$
+
+We can then substitute in for $A$ and $B$
+
+$=\frac{1}{16}(((1+|\vec{p}_a|^2) (1+|\vec{p}_p|^2) - 4 p_a\cdot p_p) \delta_{ij}$ 
+$+ 4 p_{a,i}p_{p,j} + 4 p_{a,j}p_{p,i} $
+$+ 2i((1+|\vec{p}_p|^2)  p_{a,k} - (1+|\vec{p}_a|^2) p_{p,k})\epsilon_{ijk})$
+
+Giving a final value of
+
+$Z_{ij} =\left[\frac{1}{16}(1+|\vec{p}_a|^2) (1+|\vec{p}_p|^2) - \frac{1}{4} p_a\cdot p_p\right] \delta_{ij}$ 
+$+ \frac{1}{4} \left(p_{a,i}p_{p,j} + p_{a,j}p_{p,i} \right)$
+$+ \frac{1}{8} i \epsilon_{ijk} ((1+|\vec{p}_p|^2)  p_{a,k} - (1+|\vec{p}_a|^2) p_{p,k}))$
+
+Note that if the polarisers are perfect, we get
+
+$Z_{ij} =\frac{1}{4}((1 - p_a\cdot p_p) \delta_{ij}$ 
+$+ p_{a,i}p_{p,j} + p_{a,j}p_{p,i} $
+$+ i (p_{a,k} - p_{p,k})\epsilon_{ijk} )$
 
 
 
